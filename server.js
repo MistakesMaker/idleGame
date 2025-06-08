@@ -3,32 +3,24 @@ const express = require('express');
 const http = require('http');
 const path = require('path');
 const socketIo = require('socket.io');
-const cors = require('cors'); // Import the cors package
+const cors = require('cors');
 
 const app = express();
 
-// --- THE DEFINITIVE FIX - PART 1 ---
-// Use the cors middleware for all incoming Express requests.
-// This handles the initial connection handshake required by Socket.IO.
 app.use(cors({
-    origin: "https://idlegame-oqyq.onrender.com" // Your static site's URL
+    origin: "https://idlegame-oqyq.onrender.com"
 }));
-
 
 const server = http.createServer(app);
 
-// --- THE DEFINITIVE FIX - PART 2 ---
-// Configure Socket.IO with the same robust CORS options.
-// This handles the persistent WebSocket connection itself.
 const io = socketIo(server, {
   cors: {
-    origin: "https://idlegame-oqyq.onrender.com", // Your static site's URL
+    origin: "https://idlegame-oqyq.onrender.com",
     methods: ["GET", "POST"]
   }
 });
 
-
-// --- Serve Static Files (as a fallback) ---
+// --- Serve Static Files ---
 const publicPath = path.join(__dirname);
 app.use(express.static(publicPath));
 app.get('/', (req, res) => {
@@ -61,11 +53,26 @@ io.on('connection', (socket) => {
         }
     });
 
+    // --- NEW, MORE DETAILED ATTACK LISTENER ---
     socket.on('attackRaidBoss', (attackData) => {
-        console.log(`SERVER: 'attackRaidBoss' listener was triggered.`);
-        if (raidState.currentHp > 0 && raidState.players[socket.id] && attackData.damage) {
-            raidState.currentHp -= attackData.damage;
-            if (raidState.currentHp < 0) { raidState.currentHp = 0; }
+        console.log(`SERVER: 'attackRaidBoss' listener was triggered for socket ${socket.id}.`);
+
+        // Granular debugging checks
+        const bossHasHp = raidState.currentHp > 0;
+        const playerExists = raidState.players[socket.id] !== undefined;
+        console.log(`SERVER: Checking conditions -> Boss HP > 0: ${bossHasHp}, Player Exists: ${playerExists}`);
+        
+        if (bossHasHp && playerExists) {
+            // Check if the data is well-formed
+            if (attackData && typeof attackData.damage === 'number') {
+                raidState.currentHp -= attackData.damage;
+                if (raidState.currentHp < 0) { raidState.currentHp = 0; }
+                console.log(`SERVER: SUCCESS! Boss HP is now ${raidState.currentHp.toFixed(0)}`);
+            } else {
+                console.log(`SERVER: ERROR! Attack data is malformed. Data received:`, attackData);
+            }
+        } else {
+            console.log(`SERVER: Attack ignored. One of the conditions failed.`);
         }
     });
 
@@ -79,8 +86,15 @@ io.on('connection', (socket) => {
 setInterval(() => {
     if (Object.keys(raidState.players).length > 0) {
         if (!raidState.isActive) { console.log("Raid is now active!"); raidState.isActive = true; }
+        
         let totalDps = 0;
-        for (const playerId in raidState.players) { totalDps += raidState.players[playerId].dps || 0; }
+        // Small fix: ensure player and dps exist before adding
+        for (const playerId in raidState.players) {
+            if(raidState.players[playerId] && raidState.players[playerId].dps) {
+                totalDps += raidState.players[playerId].dps;
+            }
+        }
+
         if (raidState.currentHp > 0) {
             raidState.currentHp -= totalDps;
             if (raidState.currentHp <= 0) {
