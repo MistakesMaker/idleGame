@@ -8,32 +8,15 @@ function getDefaultGameState() {
         maxLevel: 1,
         currentFightingLevel: 1,
         isLevelLocked: false,
-        // FIXED: The monster object is now correctly included
-        monster: {
-            hp: 10,
-            maxHp: 10,
-        },
-        equipment: {
-            sword: null,
-            shield: null,
-            helmet: null,
-            necklace: null,
-            platebody: null,
-            platelegs: null,
-            ring1: null,
-            ring2: null,
-            belt: null,
-        },
+        monster: { hp: 10, maxHp: 10 },
+        equipment: { sword: null, shield: null, helmet: null, necklace: null, platebody: null, platelegs: null, ring1: null, ring2: null, belt: null, },
         inventory: [],
         legacyItems: [],
     };
 }
 
 // Player stats that are CALCULATED from the game state
-let playerStats = {
-    clickDamage: 1,
-    dps: 0,
-};
+let playerStats = { clickDamage: 1, dps: 0 };
 
 // --- DOM ELEMENT REFERENCES ---
 const goldStatEl = document.getElementById('gold-stat');
@@ -218,8 +201,7 @@ if (savedGame) {
 
 setInterval(gameLoop, 1000);
 
-
-// ---UNCHANGED FUNCTIONS (For complete copy-paste)---
+// ---UNCHANGED CORE FUNCTIONS---
 function gameLoop() { if (playerStats.dps > 0 && gameState.monster.hp > 0) { gameState.monster.hp -= playerStats.dps; if (gameState.monster.hp <= 0) { monsterDefeated(); } updateUI(); } }
 function clickMonster() { if (gameState.monster.hp <= 0) return; gameState.monster.hp -= playerStats.clickDamage; monsterImageEl.classList.add('monster-hit'); setTimeout(() => monsterImageEl.classList.remove('monster-hit'), 200); showDamagePopup(playerStats.clickDamage); if (gameState.monster.hp <= 0) { monsterDefeated(); } updateUI(); }
 function monsterDefeated() { let goldGained = Math.ceil(Math.pow(1.2, gameState.currentFightingLevel)); gameState.gold += goldGained; logMessage(`You defeated the monster and gained ${goldGained} gold.`); showGoldPopup(goldGained); if (isBossLevel(gameState.currentFightingLevel)) { dropLoot(); } if (!gameState.isLevelLocked) { gameState.currentFightingLevel++; if (gameState.currentFightingLevel > gameState.maxLevel) { gameState.maxLevel = gameState.currentFightingLevel; } } setTimeout(() => { generateMonster(); updateUI(); }, 300); }
@@ -238,3 +220,81 @@ let prestigeSelections = []; function initiatePrestige() { prestigeSelections = 
 function confirmPrestige() { if (prestigeSelections.length > 3) { alert("You can only select up to 3 items!"); return; } const allItems = [...Object.values(gameState.equipment).filter(i => i), ...gameState.inventory]; const itemsToKeep = allItems.filter(item => prestigeSelections.includes(item.id)); const oldLevel = gameState.maxLevel; gameState = getDefaultGameState(); gameState.legacyItems = itemsToKeep; logMessage(`PRESTIGE! You restarted from max level ${oldLevel}, keeping ${itemsToKeep.length} powerful items.`); prestigeSelectionEl.classList.add('hidden'); prestigeButton.classList.remove('hidden'); startGame(); }
 function isBossLevel(level) { return level % 10 === 0; }
 function isBigBossLevel(level) { return level % 100 === 0; }
+
+// =======================================================
+// --- RAID FEATURE LOGIC ---
+// =======================================================
+
+let socket;
+let isRaidPanelVisible = false;
+
+function toggleRaidPanel() {
+    const raidContainer = document.getElementById('raid-container');
+    if (isRaidPanelVisible) {
+        raidContainer.innerHTML = '';
+        if (socket) socket.disconnect();
+    } else {
+        raidContainer.innerHTML = `
+            <div id="raid-panel">
+                <div id="raid-boss-info">
+                    <h2 id="raid-boss-name">Loading...</h2>
+                    <div id="raid-boss-health-bar-container"><div id="raid-boss-health-bar" style="width: 100%;"></div></div>
+                    <p id="raid-boss-health-text">? / ?</p>
+                </div>
+                <div id="raid-main-content">
+                    <div id="raid-attack-area"><button id="raid-attack-button" onclick="attackRaidBoss()">ATTACK</button></div>
+                    <div id="raid-player-list"><h3>Participants</h3><ul id="raid-players-ul"></ul></div>
+                </div>
+            </div>`;
+        setupRaidSocket();
+    }
+    isRaidPanelVisible = !isRaidPanelVisible;
+}
+
+function setupRaidSocket() {
+    // !!! IMPORTANT !!!
+    // Replace the URL below with YOUR live Render server URL
+    socket = io("https://your-unique-name.onrender.com");
+
+    socket.on('connect', () => {
+        console.log('Connected to raid server!', socket.id);
+        socket.emit('joinRaid', { id: `Player_${Math.floor(Math.random() * 1000)}`, dps: playerStats.dps });
+    });
+
+    socket.on('raidUpdate', (raidState) => { updateRaidUI(raidState); });
+    socket.on('raidOver', (data) => {
+        alert(data.message);
+        const attackBtn = document.getElementById('raid-attack-button');
+        if(attackBtn) attackBtn.disabled = true;
+    });
+}
+
+function updateRaidUI(raidState) {
+    const nameEl = document.getElementById('raid-boss-name');
+    const healthTextEl = document.getElementById('raid-boss-health-text');
+    const healthBarEl = document.getElementById('raid-boss-health-bar');
+    const playersUl = document.getElementById('raid-players-ul');
+
+    if (nameEl) nameEl.textContent = raidState.boss.name;
+    if (healthTextEl) healthTextEl.textContent = `${Math.ceil(raidState.boss.currentHp)} / ${raidState.boss.maxHp}`;
+    if (healthBarEl) {
+        const percent = (raidState.boss.currentHp / raidState.boss.maxHp) * 100;
+        healthBarEl.style.width = `${percent}%`;
+    }
+    
+    if (playersUl) {
+        playersUl.innerHTML = '';
+        for (const playerId in raidState.players) {
+            const player = raidState.players[playerId];
+            const li = document.createElement('li');
+            li.textContent = `${player.id} (DPS: ${player.dps.toFixed(1)})`;
+            playersUl.appendChild(li);
+        }
+    }
+}
+
+function attackRaidBoss() {
+    if (socket) {
+        socket.emit('attackRaidBoss', { damage: playerStats.clickDamage });
+    }
+}

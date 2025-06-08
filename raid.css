@@ -1,0 +1,84 @@
+#raid-panel {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 80%;
+    max-width: 800px;
+    height: 400px;
+    background-color: rgba(20, 25, 30, 0.95);
+    border: 2px solid #f1c40f;
+    border-radius: 12px;
+    box-shadow: 0 0 20px rgba(241, 196, 15, 0.5);
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+    color: #ecf0f1;
+    font-family: 'Cinzel', serif;
+}
+
+#raid-boss-info {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+#raid-boss-info h2 {
+    font-size: 2em;
+    margin: 0;
+}
+
+#raid-boss-health-bar-container {
+    width: 100%;
+    height: 30px;
+    background-color: #1a1a1a;
+    border: 2px solid #4a637e;
+    border-radius: 5px;
+    margin-top: 10px;
+}
+
+#raid-boss-health-bar {
+    height: 100%;
+    background: linear-gradient(to right, #e74c3c, #c0392b);
+    transition: width 0.5s linear;
+}
+
+#raid-main-content {
+    display: flex;
+    gap: 20px;
+    flex-grow: 1;
+}
+
+#raid-attack-area {
+    flex: 2;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+#raid-attack-button {
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    font-size: 1.5em;
+    background: linear-gradient(145deg, #c0392b, #e74c3c);
+    border-bottom: 4px solid #7B241C;
+}
+
+#raid-player-list {
+    flex: 1;
+    background-color: rgba(0,0,0,0.3);
+    padding: 10px;
+    border-radius: 5px;
+    overflow-y: auto;
+}
+
+#raid-player-list h3 {
+    margin-top: 0;
+}
+
+#raid-player-list ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}

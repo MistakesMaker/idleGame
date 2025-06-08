@@ -4,15 +4,18 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Idle RPG Looter</title>
+    <!-- Fonts and Icons -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" />
+    <!-- Stylesheets -->
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="raid.css">
 </head>
 <body>
     <div class="game-container">
-        <!-- Left Panel remains the same -->
+        <!-- Left Panel -->
         <div class="panel left-panel">
             <h2>The Dungeon</h2>
             <div id="level-controls">
@@ -40,7 +43,7 @@
             <div id="game-log"><p>Welcome to Idle RPG Looter!</p></div>
         </div>
 
-        <!-- Middle Panel is COMPLETELY REBUILT -->
+        <!-- Middle Panel -->
         <div class="panel middle-panel">
             <h2>Your Hero</h2>
             <div id="player-stats">
@@ -54,7 +57,6 @@
             </div>
             <div id="equipment-view" class="view active">
                 <div id="equipment-paperdoll">
-                    <!-- These divs are containers for our equipment slots -->
                     <div id="slot-helmet" class="equipment-slot"></div>
                     <div id="slot-necklace" class="equipment-slot"></div>
                     <div id="slot-platebody" class="equipment-slot"></div>
@@ -72,12 +74,13 @@
             </div>
         </div>
 
-        <!-- Right Panel remains the same -->
+        <!-- Right Panel -->
         <div class="panel right-panel">
             <h2>Actions</h2>
             <button onclick="saveGame()">Save Game</button>
             <button onclick="loadGame()">Load Game</button>
             <button onclick="resetGame()">Hard Reset</button>
+            <button onclick="toggleRaidPanel()">Raid</button>
             <div id="prestige-area">
                 <h3>Prestige</h3>
                 <p>Reach Max Level 100 to unlock Prestige.</p>
@@ -90,6 +93,12 @@
             </div>
         </div>
     </div>
+
+    <!-- Raid Panel Container -->
+    <div id="raid-container"></div>
+
+    <!-- Scripts -->
+    <script src="/socket.io/socket.io.js"></script>
     <script src="game.js"></script>
 </body>
 </html>
