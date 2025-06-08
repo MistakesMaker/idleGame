@@ -7,9 +7,9 @@ const cors = require('cors'); // Import the cors package
 
 const app = express();
 
-// --- Use CORS Middleware ---
-// This handles the initial HTTP connection and tells the browser
-// that connections from your static site are trusted.
+// --- THE DEFINITIVE FIX - PART 1 ---
+// Use the cors middleware for all incoming Express requests.
+// This handles the initial connection handshake required by Socket.IO.
 app.use(cors({
     origin: "https://idlegame-oqyq.onrender.com" // Your static site's URL
 }));
@@ -17,8 +17,9 @@ app.use(cors({
 
 const server = http.createServer(app);
 
-// --- Configure Socket.IO with CORS ---
-// This handles the persistent WebSocket connection.
+// --- THE DEFINITIVE FIX - PART 2 ---
+// Configure Socket.IO with the same robust CORS options.
+// This handles the persistent WebSocket connection itself.
 const io = socketIo(server, {
   cors: {
     origin: "https://idlegame-oqyq.onrender.com", // Your static site's URL
@@ -27,7 +28,7 @@ const io = socketIo(server, {
 });
 
 
-// --- Serve Static Files ---
+// --- Serve Static Files (as a fallback) ---
 const publicPath = path.join(__dirname);
 app.use(express.static(publicPath));
 app.get('/', (req, res) => {
@@ -44,14 +45,11 @@ const raidState = {
 io.on('connection', (socket) => {
     console.log('A user connected with ID:', socket.id);
 
-    // --- CATCH-ALL DEBUGGER ---
-    // This will log every single event this socket sends to the server.
     socket.onAny((eventName, ...args) => {
         console.log(`SERVER: CATCH-ALL: Received event '${eventName}' from ${socket.id} with data:`, args);
     });
 
     socket.on('joinRaid', (playerData) => {
-        console.log(`${playerData.id} is joining raid with ${playerData.dps.toFixed(1)} DPS.`);
         raidState.players[socket.id] = { id: playerData.id, dps: playerData.dps };
         socket.join('raid_room');
         socket.emit('raidUpdate', raidState);
@@ -64,18 +62,10 @@ io.on('connection', (socket) => {
     });
 
     socket.on('attackRaidBoss', (attackData) => {
-        // Debugging log to confirm the message is received
-        console.log(`SERVER: Received 'attackRaidBoss' from ${socket.id} with data:`, attackData);
-        
-        if (raidState.currentHp > 0 && raidState.players[socket.id]) {
+        console.log(`SERVER: 'attackRaidBoss' listener was triggered.`);
+        if (raidState.currentHp > 0 && raidState.players[socket.id] && attackData.damage) {
             raidState.currentHp -= attackData.damage;
-            if (raidState.currentHp <= 0) { raidState.currentHp = 0; }
-            
-            // Debugging log to confirm health was reduced
-            console.log(`SERVER: Boss HP is now ${raidState.currentHp}`);
-        } else {
-            // Debugging log for ignored attacks
-            console.log(`SERVER: Attack from ${socket.id} was ignored (boss defeated or player not in raid).`);
+            if (raidState.currentHp < 0) { raidState.currentHp = 0; }
         }
     });
 
@@ -90,7 +80,7 @@ setInterval(() => {
     if (Object.keys(raidState.players).length > 0) {
         if (!raidState.isActive) { console.log("Raid is now active!"); raidState.isActive = true; }
         let totalDps = 0;
-        for (const playerId in raidState.players) { totalDps += raidState.players[playerId].dps; }
+        for (const playerId in raidState.players) { totalDps += raidState.players[playerId].dps || 0; }
         if (raidState.currentHp > 0) {
             raidState.currentHp -= totalDps;
             if (raidState.currentHp <= 0) {
