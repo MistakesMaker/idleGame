@@ -11,7 +11,7 @@ function getDefaultGameState() {
     };
 }
 
-// --- GLOBAL GAME STATE & FLAGS (DECLARED AT THE TOP TO PREVENT ERRORS) ---
+// --- GLOBAL GAME STATE & FLAGS ---
 let playerStats = { baseClickDamage: 1, baseDps: 0, totalClickDamage: 1, totalDps: 0 };
 let isSalvageModeActive = false;
 let socket;
@@ -135,9 +135,7 @@ function toggleRaidPanel() {
     isRaidPanelVisible = !isRaidPanelVisible;
 }
 function setupRaidSocket() {
-    // !!! CRUCIAL STEP !!!
-    // Replace the URL below with YOUR WEB SERVICE'S URL from Render.
-    // It should end in "-server.onrender.com" or similar.
+    // This URL points to your dedicated Web Service server.
     socket = io("https://idlegame-oqyq.onrender.com");
     
     socket.on('connect', () => { console.log('Connected to raid server!', socket.id); socket.emit('joinRaid', { id: `Player_${Math.floor(Math.random() * 1000)}`, dps: playerStats.totalDps }); });
