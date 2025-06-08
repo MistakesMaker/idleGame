@@ -84,7 +84,6 @@ button:disabled { background: #7f8c8d; cursor: not-allowed; border-bottom: 2px s
 #prestige-button:not(:disabled) { animation: pulse 2s infinite; background: linear-gradient(145deg, #f1c40f, #e67e22); border-bottom: 2px solid #d35400; }
 @keyframes pulse { 0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(241, 196, 15, 0.7); } 70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(241, 196, 15, 0); } 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(241, 196, 15, 0); } }
 
-/* --- NEW STYLES --- */
 #upgrades-area { margin-top: 20px; padding-top: 15px; border-top: 1px solid #4a637e; }
 .upgrade-button { background: linear-gradient(145deg, #2c3e50, #34495e); border: 1px solid #7f8c8d; padding: 10px; margin-bottom: 10px; border-radius: 5px; cursor: pointer; text-align: center; transition: all 0.2s ease; }
 .upgrade-button:hover { border-color: #f1c40f; transform: scale(1.02); }
@@ -96,3 +95,23 @@ button:disabled { background: #7f8c8d; cursor: not-allowed; border-bottom: 2px s
 body.salvage-mode-active #inventory-slots .item { cursor: crosshair; animation: salvage-pulse 1.5s infinite; }
 @keyframes salvage-pulse { 0% { box-shadow: inherit; } 50% { box-shadow: 0 0 15px #c0392b; } 100% { box-shadow: inherit; } }
 #salvage-mode-btn.active { background: #e74c3c; border-bottom-color: #922b21; }
+
+/* NEW: AUTOSAVE INDICATOR STYLE */
+#save-indicator {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background-color: #2ecc71;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 5px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+    z-index: 2000;
+    opacity: 0;
+    transition: opacity 0.5s ease-in-out;
+    pointer-events: none; /* Prevents it from being clickable */
+}
+
+#save-indicator.visible {
+    opacity: 1;
+}
