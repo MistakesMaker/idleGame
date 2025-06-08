@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Idle RPG Looter</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" />
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="game-container">
+        <!-- Left Panel remains the same -->
+        <div class="panel left-panel">
+            <h2>The Dungeon</h2>
+            <div id="level-controls">
+                <div class="control-group">
+                    <input type="checkbox" id="level-lock-checkbox" onchange="toggleLevelLock()">
+                    <label for="level-lock-checkbox">Lock Current Level</label>
+                </div>
+                <div class="control-group">
+                    <input type="number" id="level-select-input" min="1">
+                    <button onclick="goToLevel()">Go to Level</button>
+                </div>
+            </div>
+            <div id="monster-area">
+                <div id="monster-info">
+                    <span id="monster-name">Slime</span> - 
+                    <span>Lvl <span id="current-level">1</span></span>
+                </div>
+                <div id="monster-health-bar-container"><div id="monster-health-bar"></div></div>
+                <div id="monster-health-text">10 / 10</div>
+                <div id="monster-display">
+                    <img id="monster-image" src="images/slime.png" alt="Monster">
+                    <div id="popup-container"></div>
+                </div>
+            </div>
+            <div id="game-log"><p>Welcome to Idle RPG Looter!</p></div>
+        </div>
+
+        <!-- Middle Panel is COMPLETELY REBUILT -->
+        <div class="panel middle-panel">
+            <h2>Your Hero</h2>
+            <div id="player-stats">
+                <p><i class="fas fa-coins"></i> Gold: <span id="gold-stat">0</span></p>
+                <p><i class="fas fa-hand-rock"></i> Click Damage: <span id="click-damage-stat">1</span></p>
+                <p><i class="fas fa-sword"></i> Damage Per Second (DPS): <span id="dps-stat">0</span></p>
+            </div>
+            <div class="tabs">
+                <button class="tab-button active">Equipment</button>
+                <button class="tab-button">Inventory</button>
+            </div>
+            <div id="equipment-view" class="view active">
+                <div id="equipment-paperdoll">
+                    <!-- These divs are containers for our equipment slots -->
+                    <div id="slot-helmet" class="equipment-slot"></div>
+                    <div id="slot-necklace" class="equipment-slot"></div>
+                    <div id="slot-platebody" class="equipment-slot"></div>
+                    <div id="slot-platelegs" class="equipment-slot"></div>
+                    <div id="slot-belt" class="equipment-slot"></div>
+                    <div id="slot-sword" class="equipment-slot"></div>
+                    <div id="slot-shield" class="equipment-slot"></div>
+                    <div id="slot-ring1" class="equipment-slot"></div>
+                    <div id="slot-ring2" class="equipment-slot"></div>
+                </div>
+            </div>
+            <div id="inventory-view" class="view">
+                <h3>Inventory</h3>
+                <div id="inventory-slots"><p>Defeat bosses for loot!</p></div>
+            </div>
+        </div>
+
+        <!-- Right Panel remains the same -->
+        <div class="panel right-panel">
+            <h2>Actions</h2>
+            <button onclick="saveGame()">Save Game</button>
+            <button onclick="loadGame()">Load Game</button>
+            <button onclick="resetGame()">Hard Reset</button>
+            <div id="prestige-area">
+                <h3>Prestige</h3>
+                <p>Reach Max Level 100 to unlock Prestige.</p>
+                <button id="prestige-button" onclick="initiatePrestige()" disabled>Prestige Now</button>
+                <div id="prestige-selection" class="hidden">
+                    <h4>Select 3 Items to Keep</h4>
+                    <div id="prestige-inventory-slots"></div>
+                    <button onclick="confirmPrestige()">Confirm Prestige</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="game.js"></script>
+</body>
+</html>
