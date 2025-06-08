@@ -6,7 +6,19 @@ const socketIo = require('socket.io');
 
 const app = express();
 const server = http.createServer(app);
-const io = socketIo(server);
+
+// --- THE FIX IS HERE ---
+// Configure Socket.IO with CORS options
+const io = socketIo(server, {
+  cors: {
+    // This is the crucial part. It tells the server to allow
+    // connections from your Static Site's URL.
+    origin: "https://idlegame-oqyq.onrender.com",
+    methods: ["GET", "POST"]
+  }
+});
+// --- END OF FIX ---
+
 
 // --- Serve Static Files ---
 const publicPath = path.join(__dirname);
@@ -19,11 +31,7 @@ app.get('/', (req, res) => {
 
 // --- Raid Game State ---
 const raidState = {
-    boss: {
-        name: "World-Eater Ogre",
-        maxHp: 50000,
-        currentHp: 50000,
-    },
+    boss: { name: "World-Eater Ogre", maxHp: 50000, currentHp: 50000 },
     players: {},
     isActive: false,
 };
@@ -36,13 +44,10 @@ io.on('connection', (socket) => {
         console.log(`${playerData.id} is joining raid with ${playerData.dps.toFixed(1)} DPS.`);
         raidState.players[socket.id] = { id: playerData.id, dps: playerData.dps };
         socket.join('raid_room');
-        // Send initial state immediately to the new player
         socket.emit('raidUpdate', raidState);
     });
 
-    // --- NEW LISTENER FOR STAT UPDATES ---
     socket.on('updatePlayerStats', (playerData) => {
-        // Find the player and update their DPS if they exist
         if (raidState.players[socket.id]) {
             raidState.players[socket.id].dps = playerData.dps;
         }
@@ -68,12 +73,8 @@ setInterval(() => {
              console.log("Raid is now active!");
              raidState.isActive = true;
         }
-
         let totalDps = 0;
-        for (const playerId in raidState.players) {
-            totalDps += raidState.players[playerId].dps;
-        }
-
+        for (const playerId in raidState.players) { totalDps += raidState.players[playerId].dps; }
         if (raidState.currentHp > 0) {
             raidState.currentHp -= totalDps;
             if (raidState.currentHp <= 0) {
@@ -82,10 +83,7 @@ setInterval(() => {
                 setTimeout(resetRaidBoss, 10000);
             }
         }
-        
-        // Broadcast updates to all players in the raid
         io.to('raid_room').emit('raidUpdate', raidState);
-
     } else if (raidState.isActive) {
         console.log("All players left. Raid is now inactive.");
         raidState.isActive = false;
@@ -95,7 +93,6 @@ setInterval(() => {
 function resetRaidBoss() {
     console.log("Resetting raid boss...");
     raidState.boss.currentHp = raidState.boss.maxHp;
-    // Notify clients that the boss has reset
     io.to('raid_room').emit('raidUpdate', raidState);
 }
 
