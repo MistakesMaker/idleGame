@@ -4,12 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Idle RPG Looter</title>
-    <!-- Fonts and Icons -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" />
-    <!-- Stylesheets -->
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="raid.css">
 </head>
@@ -29,10 +27,7 @@
                 </div>
             </div>
             <div id="monster-area">
-                <div id="monster-info">
-                    <span id="monster-name">Slime</span> - 
-                    <span>Lvl <span id="current-level">1</span></span>
-                </div>
+                <div id="monster-info"><span id="monster-name">Slime</span> - <span>Lvl <span id="current-level">1</span></span></div>
                 <div id="monster-health-bar-container"><div id="monster-health-bar"></div></div>
                 <div id="monster-health-text">10 / 10</div>
                 <div id="monster-display">
@@ -48,6 +43,7 @@
             <h2>Your Hero</h2>
             <div id="player-stats">
                 <p><i class="fas fa-coins"></i> Gold: <span id="gold-stat">0</span></p>
+                <p><i class="fas fa-recycle"></i> Scrap: <span id="scrap-stat">0</span></p>
                 <p><i class="fas fa-hand-rock"></i> Click Damage: <span id="click-damage-stat">1</span></p>
                 <p><i class="fas fa-sword"></i> Damage Per Second (DPS): <span id="dps-stat">0</span></p>
             </div>
@@ -57,19 +53,19 @@
             </div>
             <div id="equipment-view" class="view active">
                 <div id="equipment-paperdoll">
-                    <div id="slot-helmet" class="equipment-slot"></div>
-                    <div id="slot-necklace" class="equipment-slot"></div>
-                    <div id="slot-platebody" class="equipment-slot"></div>
-                    <div id="slot-platelegs" class="equipment-slot"></div>
-                    <div id="slot-belt" class="equipment-slot"></div>
-                    <div id="slot-sword" class="equipment-slot"></div>
-                    <div id="slot-shield" class="equipment-slot"></div>
-                    <div id="slot-ring1" class="equipment-slot"></div>
+                    <div id="slot-helmet" class="equipment-slot"></div><div id="slot-necklace" class="equipment-slot"></div>
+                    <div id="slot-platebody" class="equipment-slot"></div><div id="slot-platelegs" class="equipment-slot"></div>
+                    <div id="slot-belt" class="equipment-slot"></div><div id="slot-sword" class="equipment-slot"></div>
+                    <div id="slot-shield" class="equipment-slot"></div><div id="slot-ring1" class="equipment-slot"></div>
                     <div id="slot-ring2" class="equipment-slot"></div>
                 </div>
             </div>
             <div id="inventory-view" class="view">
                 <h3>Inventory</h3>
+                <div class="inventory-actions">
+                    <button id="buy-loot-crate-btn" onclick="buyLootCrate()">Buy Crate (Cost: 50 Scrap)</button>
+                    <button id="salvage-mode-btn" onclick="toggleSalvageMode()">Enter Salvage Mode</button>
+                </div>
                 <div id="inventory-slots"><p>Defeat bosses for loot!</p></div>
             </div>
         </div>
@@ -81,6 +77,17 @@
             <button onclick="loadGame()">Load Game</button>
             <button onclick="resetGame()">Hard Reset</button>
             <button onclick="toggleRaidPanel()">Raid</button>
+            <div id="upgrades-area">
+                <h3>Upgrades</h3>
+                <div id="upgrade-click-damage" class="upgrade-button" onclick="buyUpgrade('clickDamage')">
+                    <p>Improve Clicks (<span id="upgrade-click-level">Lvl 0</span>)</p>
+                    <small>Cost: <span id="upgrade-click-cost">10</span> Gold</small>
+                </div>
+                <div id="upgrade-dps" class="upgrade-button" onclick="buyUpgrade('dps')">
+                    <p>Improve Idle DPS (<span id="upgrade-dps-level">Lvl 0</span>)</p>
+                    <small>Cost: <span id="upgrade-dps-cost">25</span> Gold</small>
+                </div>
+            </div>
             <div id="prestige-area">
                 <h3>Prestige</h3>
                 <p>Reach Max Level 100 to unlock Prestige.</p>
@@ -93,11 +100,7 @@
             </div>
         </div>
     </div>
-
-    <!-- Raid Panel Container -->
     <div id="raid-container"></div>
-
-    <!-- Scripts -->
     <script src="/socket.io/socket.io.js"></script>
     <script src="game.js"></script>
 </body>
