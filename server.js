@@ -1,14 +1,24 @@
 // --- Server Setup ---
 const express = require('express');
 const http = require('http');
+const path = require('path'); // Import the 'path' module
 const socketIo = require('socket.io');
 
 const app = express();
 const server = http.createServer(app);
 const io = socketIo(server);
 
-// This tells our server to serve all the files from our main project folder
-app.use(express.static(__dirname));
+// --- Serve Static Files ---
+// This tells Express to serve all files (css, js, images) from the main project folder.
+// __dirname is a Node.js variable that represents the current directory of the server.js file.
+const publicPath = path.join(__dirname);
+app.use(express.static(publicPath));
+
+// --- Main Route ---
+// This ensures that when someone visits the root URL, they get your index.html file.
+app.get('/', (req, res) => {
+    res.sendFile(path.join(publicPath, 'index.html'));
+});
 
 // --- Raid Game State ---
 const raidState = {
@@ -27,10 +37,7 @@ io.on('connection', (socket) => {
 
     socket.on('joinRaid', (playerData) => {
         console.log(`${playerData.id} is joining the raid with ${playerData.dps} DPS.`);
-        raidState.players[socket.id] = {
-            id: playerData.id,
-            dps: playerData.dps
-        };
+        raidState.players[socket.id] = { id: playerData.id, dps: playerData.dps };
         socket.join('raid_room');
         socket.emit('raidUpdate', raidState);
     });

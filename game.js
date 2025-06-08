@@ -254,7 +254,7 @@ function toggleRaidPanel() {
 function setupRaidSocket() {
     // !!! IMPORTANT !!!
     // Replace the URL below with YOUR live Render server URL
-    socket = io("https://your-unique-name.onrender.com");
+    socket = io("https://idlegame-oqyq.onrender.com");
 
     socket.on('connect', () => {
         console.log('Connected to raid server!', socket.id);
