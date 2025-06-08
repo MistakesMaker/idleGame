@@ -96,7 +96,6 @@ body.salvage-mode-active #inventory-slots .item { cursor: crosshair; animation: 
 @keyframes salvage-pulse { 0% { box-shadow: inherit; } 50% { box-shadow: 0 0 15px #c0392b; } 100% { box-shadow: inherit; } }
 #salvage-mode-btn.active { background: #e74c3c; border-bottom-color: #922b21; }
 
-/* NEW: AUTOSAVE INDICATOR STYLE */
 #save-indicator {
     position: fixed;
     bottom: 20px;
@@ -109,9 +108,8 @@ body.salvage-mode-active #inventory-slots .item { cursor: crosshair; animation: 
     z-index: 2000;
     opacity: 0;
     transition: opacity 0.5s ease-in-out;
-    pointer-events: none; /* Prevents it from being clickable */
+    pointer-events: none;
 }
-
 #save-indicator.visible {
     opacity: 1;
 }

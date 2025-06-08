@@ -1,8 +1,17 @@
 // A single object to hold the entire state of our game
 let gameState = {};
-function getDefaultGameState() { return { gold: 0, scrap: 0, upgrades: { clickDamage: 0, dps: 0 }, maxLevel: 1, currentFightingLevel: 1, isLevelLocked: false, monster: { hp: 10, maxHp: 10 }, equipment: { sword: null, shield: null, helmet: null, necklace: null, platebody: null, platelegs: null, ring1: null, ring2: null, belt: null, }, inventory: [], legacyItems: [], }; }
 
-// --- GLOBAL GAME STATE & FLAGS ---
+// Default state for a new game or prestige
+function getDefaultGameState() {
+    return {
+        gold: 0, scrap: 0, upgrades: { clickDamage: 0, dps: 0 }, maxLevel: 1, currentFightingLevel: 1,
+        isLevelLocked: false, monster: { hp: 10, maxHp: 10 },
+        equipment: { sword: null, shield: null, helmet: null, necklace: null, platebody: null, platelegs: null, ring1: null, ring2: null, belt: null, },
+        inventory: [], legacyItems: [],
+    };
+}
+
+// --- GLOBAL GAME STATE & FLAGS (DECLARED AT THE TOP TO PREVENT ERRORS) ---
 let playerStats = { baseClickDamage: 1, baseDps: 0, totalClickDamage: 1, totalDps: 0 };
 let isSalvageModeActive = false;
 let socket;
@@ -86,11 +95,34 @@ function updateUI() {
 
 // --- AUTOSAVE SYSTEM ---
 let saveTimeout;
-function autoSave() { localStorage.setItem('idleRPGSaveData', JSON.stringify(gameState)); saveIndicatorEl.classList.add('visible'); if (saveTimeout) clearTimeout(saveTimeout); saveTimeout = setTimeout(() => { saveIndicatorEl.classList.remove('visible'); }, 2000); }
+function autoSave() {
+    localStorage.setItem('idleRPGSaveData', JSON.stringify(gameState));
+    saveIndicatorEl.classList.add('visible');
+    if (saveTimeout) clearTimeout(saveTimeout);
+    saveTimeout = setTimeout(() => {
+        saveIndicatorEl.classList.remove('visible');
+    }, 2000);
+}
 
 // --- PRESTIGE AND RESET ---
-function confirmPrestige() { if (prestigeSelections.length > 3) { alert("You can only select up to 3 items!"); return; } const allItems = [...Object.values(gameState.equipment).filter(i => i), ...gameState.inventory]; const itemsToKeep = allItems.filter(item => prestigeSelections.includes(item.id)); const scrapToKeep = gameState.scrap; const oldLevel = gameState.maxLevel; gameState = getDefaultGameState(); gameState.legacyItems = itemsToKeep; gameState.scrap = scrapToKeep; logMessage(`PRESTIGE! Restarted from Lvl ${oldLevel}, keeping ${itemsToKeep.length} items and ${scrapToKeep} Scrap.`); prestigeSelectionEl.classList.add('hidden'); prestigeButton.classList.remove('hidden'); recalculateStats(); updateUI(); autoSave(); }
-function resetGame() { if (confirm("Are you sure? This will delete your save permanently.")) { localStorage.removeItem('idleRPGSaveData'); if (socket && socket.connected) { socket.disconnect(); } window.location.reload(); } }
+function confirmPrestige() {
+    if (prestigeSelections.length > 3) { alert("You can only select up to 3 items!"); return; }
+    const allItems = [...Object.values(gameState.equipment).filter(i => i), ...gameState.inventory];
+    const itemsToKeep = allItems.filter(item => prestigeSelections.includes(item.id));
+    const scrapToKeep = gameState.scrap; const oldLevel = gameState.maxLevel;
+    gameState = getDefaultGameState();
+    gameState.legacyItems = itemsToKeep; gameState.scrap = scrapToKeep;
+    logMessage(`PRESTIGE! Restarted from Lvl ${oldLevel}, keeping ${itemsToKeep.length} items and ${scrapToKeep} Scrap.`);
+    prestigeSelectionEl.classList.add('hidden'); prestigeButton.classList.remove('hidden');
+    recalculateStats(); updateUI(); autoSave();
+}
+function resetGame() {
+    if (confirm("Are you sure? This will delete your save permanently.")) {
+        localStorage.removeItem('idleRPGSaveData');
+        if (socket && socket.connected) { socket.disconnect(); }
+        window.location.reload();
+    }
+}
 
 // --- INITIALIZATION ---
 function initializeGame() {
@@ -126,7 +158,9 @@ function toggleRaidPanel() {
     isRaidPanelVisible = !isRaidPanelVisible;
 }
 function setupRaidSocket() {
-    socket = io("https://idlegame-oqyq.onrender.com"); // <-- IMPORTANT: USE YOUR SERVER URL
+    // !!! IMPORTANT: REPLACE WITH YOUR SERVER'S URL !!!
+    socket = io("https://idlegame-oqyq.onrender.com");
+    
     socket.on('connect', () => { console.log('Connected to raid server!', socket.id); socket.emit('joinRaid', { id: `Player_${Math.floor(Math.random() * 1000)}`, dps: playerStats.totalDps }); });
     socket.on('raidUpdate', (raidState) => { updateRaidUI(raidState); });
     socket.on('raidOver', (data) => { alert(data.message); const attackBtn = document.getElementById('raid-attack-button'); if(attackBtn) attackBtn.disabled = true; });
@@ -138,11 +172,8 @@ function updateRaidUI(raidState) {
     if (healthBarEl) { const percent = (raidState.boss.currentHp / raidState.boss.maxHp) * 100; healthBarEl.style.width = `${percent}%`; }
     if (playersUl) { playersUl.innerHTML = ''; for (const playerId in raidState.players) { const player = raidState.players[playerId]; const li = document.createElement('li'); li.textContent = `${player.id} (DPS: ${player.dps.toFixed(1)})`; playersUl.appendChild(li); } }
 }
-
-// THIS IS THE FUNCTION WE ARE DEBUGGING
 function attackRaidBoss() {
     if (socket) {
-        // Confirm that the click is registered by the client
         console.log(`CLIENT: Attempting to attack with ${playerStats.totalClickDamage} damage.`);
         socket.emit('attackRaidBoss', { damage: playerStats.totalClickDamage });
     }

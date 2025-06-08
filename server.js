@@ -7,14 +7,18 @@ const cors = require('cors'); // Import the cors package
 
 const app = express();
 
-// Use the cors middleware for all incoming Express requests.
+// --- Use CORS Middleware ---
+// This handles the initial HTTP connection and tells the browser
+// that connections from your static site are trusted.
 app.use(cors({
     origin: "https://idlegame-oqyq.onrender.com" // Your static site's URL
 }));
 
+
 const server = http.createServer(app);
 
-// Configure Socket.IO with the same CORS options.
+// --- Configure Socket.IO with CORS ---
+// This handles the persistent WebSocket connection.
 const io = socketIo(server, {
   cors: {
     origin: "https://idlegame-oqyq.onrender.com", // Your static site's URL
@@ -53,20 +57,19 @@ io.on('connection', (socket) => {
         }
     });
 
-    // THIS IS THE LISTENER WE ARE DEBUGGING
     socket.on('attackRaidBoss', (attackData) => {
-        // Confirm that the server received the message
+        // Debugging log to confirm the message is received
         console.log(`SERVER: Received 'attackRaidBoss' from ${socket.id} with data:`, attackData);
-
+        
         if (raidState.currentHp > 0 && raidState.players[socket.id]) {
             raidState.currentHp -= attackData.damage;
             if (raidState.currentHp <= 0) { raidState.currentHp = 0; }
             
-            // Confirm that the health was reduced
+            // Debugging log to confirm health was reduced
             console.log(`SERVER: Boss HP is now ${raidState.currentHp}`);
         } else {
-            // Log if the attack was ignored for some reason
-            console.log(`SERVER: Attack from ${socket.id} was ignored (boss already defeated or player not in raid).`);
+            // Debugging log for ignored attacks
+            console.log(`SERVER: Attack from ${socket.id} was ignored (boss defeated or player not in raid).`);
         }
     });
 
