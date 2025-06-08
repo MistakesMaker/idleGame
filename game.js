@@ -1,21 +1,12 @@
 // A single object to hold the entire state of our game
 let gameState = {};
+function getDefaultGameState() { return { gold: 0, scrap: 0, upgrades: { clickDamage: 0, dps: 0 }, maxLevel: 1, currentFightingLevel: 1, isLevelLocked: false, monster: { hp: 10, maxHp: 10 }, equipment: { sword: null, shield: null, helmet: null, necklace: null, platebody: null, platelegs: null, ring1: null, ring2: null, belt: null, }, inventory: [], legacyItems: [], }; }
 
-// Default state for a new game or prestige
-function getDefaultGameState() {
-    return {
-        gold: 0, scrap: 0, upgrades: { clickDamage: 0, dps: 0 }, maxLevel: 1, currentFightingLevel: 1,
-        isLevelLocked: false, monster: { hp: 10, maxHp: 10 },
-        equipment: { sword: null, shield: null, helmet: null, necklace: null, platebody: null, platelegs: null, ring1: null, ring2: null, belt: null, },
-        inventory: [], legacyItems: [],
-    };
-}
-
-// --- GLOBAL GAME STATE & FLAGS (MOVED TO TOP) ---
+// --- GLOBAL GAME STATE & FLAGS ---
 let playerStats = { baseClickDamage: 1, baseDps: 0, totalClickDamage: 1, totalDps: 0 };
 let isSalvageModeActive = false;
-let socket; // For raid connection
-let isRaidPanelVisible = false; // For raid panel visibility
+let socket;
+let isRaidPanelVisible = false;
 
 // --- DOM ELEMENT REFERENCES ---
 const saveIndicatorEl = document.getElementById('save-indicator');
@@ -62,7 +53,6 @@ function recalculateStats() {
     const dpsUpgradeBonus = gameState.upgrades.dps * 1;
     playerStats.totalClickDamage = playerStats.baseClickDamage + clickUpgradeBonus;
     playerStats.totalDps = playerStats.baseDps + dpsUpgradeBonus;
-    // This check is now safe because 'socket' is declared at the top.
     if (socket && socket.connected) { socket.emit('updatePlayerStats', { dps: playerStats.totalDps }); }
 }
 function addStatsFromItem(item) { for (const stat in item.stats) { const value = item.stats[stat]; if (stat === 'clickDamage') playerStats.baseClickDamage += value; if (stat === 'dps') playerStats.baseDps += value; } }
@@ -96,34 +86,11 @@ function updateUI() {
 
 // --- AUTOSAVE SYSTEM ---
 let saveTimeout;
-function autoSave() {
-    localStorage.setItem('idleRPGSaveData', JSON.stringify(gameState));
-    saveIndicatorEl.classList.add('visible');
-    if (saveTimeout) clearTimeout(saveTimeout);
-    saveTimeout = setTimeout(() => {
-        saveIndicatorEl.classList.remove('visible');
-    }, 2000);
-}
+function autoSave() { localStorage.setItem('idleRPGSaveData', JSON.stringify(gameState)); saveIndicatorEl.classList.add('visible'); if (saveTimeout) clearTimeout(saveTimeout); saveTimeout = setTimeout(() => { saveIndicatorEl.classList.remove('visible'); }, 2000); }
 
 // --- PRESTIGE AND RESET ---
-function confirmPrestige() {
-    if (prestigeSelections.length > 3) { alert("You can only select up to 3 items!"); return; }
-    const allItems = [...Object.values(gameState.equipment).filter(i => i), ...gameState.inventory];
-    const itemsToKeep = allItems.filter(item => prestigeSelections.includes(item.id));
-    const scrapToKeep = gameState.scrap; const oldLevel = gameState.maxLevel;
-    gameState = getDefaultGameState();
-    gameState.legacyItems = itemsToKeep; gameState.scrap = scrapToKeep;
-    logMessage(`PRESTIGE! Restarted from Lvl ${oldLevel}, keeping ${itemsToKeep.length} items and ${scrapToKeep} Scrap.`);
-    prestigeSelectionEl.classList.add('hidden'); prestigeButton.classList.remove('hidden');
-    recalculateStats(); updateUI(); autoSave();
-}
-function resetGame() {
-    if (confirm("Are you sure? This will delete your save permanently.")) {
-        localStorage.removeItem('idleRPGSaveData');
-        if (socket && socket.connected) { socket.disconnect(); }
-        window.location.reload();
-    }
-}
+function confirmPrestige() { if (prestigeSelections.length > 3) { alert("You can only select up to 3 items!"); return; } const allItems = [...Object.values(gameState.equipment).filter(i => i), ...gameState.inventory]; const itemsToKeep = allItems.filter(item => prestigeSelections.includes(item.id)); const scrapToKeep = gameState.scrap; const oldLevel = gameState.maxLevel; gameState = getDefaultGameState(); gameState.legacyItems = itemsToKeep; gameState.scrap = scrapToKeep; logMessage(`PRESTIGE! Restarted from Lvl ${oldLevel}, keeping ${itemsToKeep.length} items and ${scrapToKeep} Scrap.`); prestigeSelectionEl.classList.add('hidden'); prestigeButton.classList.remove('hidden'); recalculateStats(); updateUI(); autoSave(); }
+function resetGame() { if (confirm("Are you sure? This will delete your save permanently.")) { localStorage.removeItem('idleRPGSaveData'); if (socket && socket.connected) { socket.disconnect(); } window.location.reload(); } }
 
 // --- INITIALIZATION ---
 function initializeGame() {
@@ -147,7 +114,6 @@ function initializeGame() {
 }
 
 // --- RAID FEATURE LOGIC ---
-// The variables 'socket' and 'isRaidPanelVisible' are now declared at the top of the script.
 function toggleRaidPanel() {
     const raidContainer = document.getElementById('raid-container');
     if (isRaidPanelVisible) {
@@ -160,15 +126,27 @@ function toggleRaidPanel() {
     isRaidPanelVisible = !isRaidPanelVisible;
 }
 function setupRaidSocket() {
-    socket = io("https://idlegame-oqyq.onrender.com"); // <-- IMPORTANT: USE YOUR RENDER URL
+    socket = io("https://idlegame-oqyq-server.onrender.com"); // <-- IMPORTANT: USE YOUR SERVER URL
     socket.on('connect', () => { console.log('Connected to raid server!', socket.id); socket.emit('joinRaid', { id: `Player_${Math.floor(Math.random() * 1000)}`, dps: playerStats.totalDps }); });
     socket.on('raidUpdate', (raidState) => { updateRaidUI(raidState); });
     socket.on('raidOver', (data) => { alert(data.message); const attackBtn = document.getElementById('raid-attack-button'); if(attackBtn) attackBtn.disabled = true; });
     socket.on('connect_error', () => { setTimeout(() => { if(!socket.connected) { logMessage("Raid server offline."); const raidPanel = document.getElementById('raid-panel'); if(raidPanel) raidPanel.innerHTML = "<h2>Raid Server Offline</h2>"; } }, 2000); });
-    socket.on('updatePlayerStats', (playerData) => { if (raidState.players[socket.id]) { raidState.players[socket.id].dps = playerData.dps; } });
 }
-function updateRaidUI(raidState) { const nameEl = document.getElementById('raid-boss-name'); const healthTextEl = document.getElementById('raid-boss-health-text'); const healthBarEl = document.getElementById('raid-boss-health-bar'); const playersUl = document.getElementById('raid-players-ul'); if (nameEl) nameEl.textContent = raidState.boss.name; if (healthTextEl) healthTextEl.textContent = `${Math.ceil(raidState.boss.currentHp)} / ${raidState.boss.maxHp}`; if (healthBarEl) { const percent = (raidState.boss.currentHp / raidState.boss.maxHp) * 100; healthBarEl.style.width = `${percent}%`; } if (playersUl) { playersUl.innerHTML = ''; for (const playerId in raidState.players) { const player = raidState.players[playerId]; const li = document.createElement('li'); li.textContent = `${player.id} (DPS: ${player.dps.toFixed(1)})`; playersUl.appendChild(li); } } }
-function attackRaidBoss() { if (socket) { socket.emit('attackRaidBoss', { damage: playerStats.totalClickDamage }); } }
+function updateRaidUI(raidState) {
+    const nameEl = document.getElementById('raid-boss-name'); const healthTextEl = document.getElementById('raid-boss-health-text'); const healthBarEl = document.getElementById('raid-boss-health-bar'); const playersUl = document.getElementById('raid-players-ul');
+    if (nameEl) nameEl.textContent = raidState.boss.name; if (healthTextEl) healthTextEl.textContent = `${Math.ceil(raidState.boss.currentHp)} / ${raidState.boss.maxHp}`;
+    if (healthBarEl) { const percent = (raidState.boss.currentHp / raidState.boss.maxHp) * 100; healthBarEl.style.width = `${percent}%`; }
+    if (playersUl) { playersUl.innerHTML = ''; for (const playerId in raidState.players) { const player = raidState.players[playerId]; const li = document.createElement('li'); li.textContent = `${player.id} (DPS: ${player.dps.toFixed(1)})`; playersUl.appendChild(li); } }
+}
+
+// THIS IS THE FUNCTION WE ARE DEBUGGING
+function attackRaidBoss() {
+    if (socket) {
+        // Confirm that the click is registered by the client
+        console.log(`CLIENT: Attempting to attack with ${playerStats.totalClickDamage} damage.`);
+        socket.emit('attackRaidBoss', { damage: playerStats.totalClickDamage });
+    }
+}
 
 // --- ALL OTHER UNCHANGED FUNCTIONS ---
 function setupTabs() { const tabs = document.querySelectorAll('.tab-button'); const views = document.querySelectorAll('.view'); tabs.forEach(tab => { tab.addEventListener('click', () => { tabs.forEach(t => t.classList.remove('active')); views.forEach(v => v.classList.remove('active')); tab.classList.add('active'); if (tab.textContent === 'Equipment') { document.getElementById('equipment-view').classList.add('active'); } else { document.getElementById('inventory-view').classList.add('active'); } }); }); }

@@ -3,28 +3,29 @@ const express = require('express');
 const http = require('http');
 const path = require('path');
 const socketIo = require('socket.io');
+const cors = require('cors'); // Import the cors package
 
 const app = express();
+
+// Use the cors middleware for all incoming Express requests.
+app.use(cors({
+    origin: "https://idlegame-oqyq.onrender.com" // Your static site's URL
+}));
+
 const server = http.createServer(app);
 
-// --- THE FIX IS HERE ---
-// Configure Socket.IO with CORS options
+// Configure Socket.IO with the same CORS options.
 const io = socketIo(server, {
   cors: {
-    // This is the crucial part. It tells the server to allow
-    // connections from your Static Site's URL.
-    origin: "https://idlegame-oqyq.onrender.com",
+    origin: "https://idlegame-oqyq.onrender.com", // Your static site's URL
     methods: ["GET", "POST"]
   }
 });
-// --- END OF FIX ---
 
 
 // --- Serve Static Files ---
 const publicPath = path.join(__dirname);
 app.use(express.static(publicPath));
-
-// --- Main Route ---
 app.get('/', (req, res) => {
     res.sendFile(path.join(publicPath, 'index.html'));
 });
@@ -32,8 +33,7 @@ app.get('/', (req, res) => {
 // --- Raid Game State ---
 const raidState = {
     boss: { name: "World-Eater Ogre", maxHp: 50000, currentHp: 50000 },
-    players: {},
-    isActive: false,
+    players: {}, isActive: false,
 };
 
 // --- Real-time Raid Logic ---
@@ -53,10 +53,20 @@ io.on('connection', (socket) => {
         }
     });
 
+    // THIS IS THE LISTENER WE ARE DEBUGGING
     socket.on('attackRaidBoss', (attackData) => {
+        // Confirm that the server received the message
+        console.log(`SERVER: Received 'attackRaidBoss' from ${socket.id} with data:`, attackData);
+
         if (raidState.currentHp > 0 && raidState.players[socket.id]) {
             raidState.currentHp -= attackData.damage;
             if (raidState.currentHp <= 0) { raidState.currentHp = 0; }
+            
+            // Confirm that the health was reduced
+            console.log(`SERVER: Boss HP is now ${raidState.currentHp}`);
+        } else {
+            // Log if the attack was ignored for some reason
+            console.log(`SERVER: Attack from ${socket.id} was ignored (boss already defeated or player not in raid).`);
         }
     });
 
@@ -66,13 +76,10 @@ io.on('connection', (socket) => {
     });
 });
 
-// --- Server-side Game Loop for the Raid ---
+// --- Server-side Game Loop ---
 setInterval(() => {
     if (Object.keys(raidState.players).length > 0) {
-        if (!raidState.isActive) {
-             console.log("Raid is now active!");
-             raidState.isActive = true;
-        }
+        if (!raidState.isActive) { console.log("Raid is now active!"); raidState.isActive = true; }
         let totalDps = 0;
         for (const playerId in raidState.players) { totalDps += raidState.players[playerId].dps; }
         if (raidState.currentHp > 0) {
