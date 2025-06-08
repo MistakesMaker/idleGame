@@ -95,34 +95,11 @@ function updateUI() {
 
 // --- AUTOSAVE SYSTEM ---
 let saveTimeout;
-function autoSave() {
-    localStorage.setItem('idleRPGSaveData', JSON.stringify(gameState));
-    saveIndicatorEl.classList.add('visible');
-    if (saveTimeout) clearTimeout(saveTimeout);
-    saveTimeout = setTimeout(() => {
-        saveIndicatorEl.classList.remove('visible');
-    }, 2000);
-}
+function autoSave() { localStorage.setItem('idleRPGSaveData', JSON.stringify(gameState)); saveIndicatorEl.classList.add('visible'); if (saveTimeout) clearTimeout(saveTimeout); saveTimeout = setTimeout(() => { saveIndicatorEl.classList.remove('visible'); }, 2000); }
 
 // --- PRESTIGE AND RESET ---
-function confirmPrestige() {
-    if (prestigeSelections.length > 3) { alert("You can only select up to 3 items!"); return; }
-    const allItems = [...Object.values(gameState.equipment).filter(i => i), ...gameState.inventory];
-    const itemsToKeep = allItems.filter(item => prestigeSelections.includes(item.id));
-    const scrapToKeep = gameState.scrap; const oldLevel = gameState.maxLevel;
-    gameState = getDefaultGameState();
-    gameState.legacyItems = itemsToKeep; gameState.scrap = scrapToKeep;
-    logMessage(`PRESTIGE! Restarted from Lvl ${oldLevel}, keeping ${itemsToKeep.length} items and ${scrapToKeep} Scrap.`);
-    prestigeSelectionEl.classList.add('hidden'); prestigeButton.classList.remove('hidden');
-    recalculateStats(); updateUI(); autoSave();
-}
-function resetGame() {
-    if (confirm("Are you sure? This will delete your save permanently.")) {
-        localStorage.removeItem('idleRPGSaveData');
-        if (socket && socket.connected) { socket.disconnect(); }
-        window.location.reload();
-    }
-}
+function confirmPrestige() { if (prestigeSelections.length > 3) { alert("You can only select up to 3 items!"); return; } const allItems = [...Object.values(gameState.equipment).filter(i => i), ...gameState.inventory]; const itemsToKeep = allItems.filter(item => prestigeSelections.includes(item.id)); const scrapToKeep = gameState.scrap; const oldLevel = gameState.maxLevel; gameState = getDefaultGameState(); gameState.legacyItems = itemsToKeep; gameState.scrap = scrapToKeep; logMessage(`PRESTIGE! Restarted from Lvl ${oldLevel}, keeping ${itemsToKeep.length} items and ${scrapToKeep} Scrap.`); prestigeSelectionEl.classList.add('hidden'); prestigeButton.classList.remove('hidden'); recalculateStats(); updateUI(); autoSave(); }
+function resetGame() { if (confirm("Are you sure? This will delete your save permanently.")) { localStorage.removeItem('idleRPGSaveData'); if (socket && socket.connected) { socket.disconnect(); } window.location.reload(); } }
 
 // --- INITIALIZATION ---
 function initializeGame() {
@@ -158,7 +135,9 @@ function toggleRaidPanel() {
     isRaidPanelVisible = !isRaidPanelVisible;
 }
 function setupRaidSocket() {
-    // !!! IMPORTANT: REPLACE WITH YOUR SERVER'S URL !!!
+    // !!! CRUCIAL STEP !!!
+    // Replace the URL below with YOUR WEB SERVICE'S URL from Render.
+    // It should end in "-server.onrender.com" or similar.
     socket = io("https://idlegame-oqyq.onrender.com");
     
     socket.on('connect', () => { console.log('Connected to raid server!', socket.id); socket.emit('joinRaid', { id: `Player_${Math.floor(Math.random() * 1000)}`, dps: playerStats.totalDps }); });
@@ -174,6 +153,7 @@ function updateRaidUI(raidState) {
 }
 function attackRaidBoss() {
     if (socket) {
+        console.log('CLIENT: Socket connection status is:', socket.connected);
         console.log(`CLIENT: Attempting to attack with ${playerStats.totalClickDamage} damage.`);
         socket.emit('attackRaidBoss', { damage: playerStats.totalClickDamage });
     }

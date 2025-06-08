@@ -44,6 +44,12 @@ const raidState = {
 io.on('connection', (socket) => {
     console.log('A user connected with ID:', socket.id);
 
+    // --- CATCH-ALL DEBUGGER ---
+    // This will log every single event this socket sends to the server.
+    socket.onAny((eventName, ...args) => {
+        console.log(`SERVER: CATCH-ALL: Received event '${eventName}' from ${socket.id} with data:`, args);
+    });
+
     socket.on('joinRaid', (playerData) => {
         console.log(`${playerData.id} is joining raid with ${playerData.dps.toFixed(1)} DPS.`);
         raidState.players[socket.id] = { id: playerData.id, dps: playerData.dps };
