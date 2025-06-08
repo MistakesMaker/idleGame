@@ -37,11 +37,8 @@ const raidState = {
 io.on('connection', (socket) => {
     console.log('A user connected with ID:', socket.id);
 
-    socket.onAny((eventName, ...args) => {
-        console.log(`SERVER: CATCH-ALL: Received event '${eventName}' from ${socket.id} with data:`, args);
-    });
-
     socket.on('joinRaid', (playerData) => {
+        console.log(`${playerData.id} joining with ${playerData.dps.toFixed(1)} DPS.`);
         raidState.players[socket.id] = { id: playerData.id, dps: playerData.dps };
         socket.join('raid_room');
         socket.emit('raidUpdate', raidState);
@@ -53,26 +50,11 @@ io.on('connection', (socket) => {
         }
     });
 
-    // --- NEW, MORE DETAILED ATTACK LISTENER ---
     socket.on('attackRaidBoss', (attackData) => {
-        console.log(`SERVER: 'attackRaidBoss' listener was triggered for socket ${socket.id}.`);
-
-        // Granular debugging checks
-        const bossHasHp = raidState.currentHp > 0;
-        const playerExists = raidState.players[socket.id] !== undefined;
-        console.log(`SERVER: Checking conditions -> Boss HP > 0: ${bossHasHp}, Player Exists: ${playerExists}`);
-        
-        if (bossHasHp && playerExists) {
-            // Check if the data is well-formed
-            if (attackData && typeof attackData.damage === 'number') {
-                raidState.currentHp -= attackData.damage;
-                if (raidState.currentHp < 0) { raidState.currentHp = 0; }
-                console.log(`SERVER: SUCCESS! Boss HP is now ${raidState.currentHp.toFixed(0)}`);
-            } else {
-                console.log(`SERVER: ERROR! Attack data is malformed. Data received:`, attackData);
-            }
-        } else {
-            console.log(`SERVER: Attack ignored. One of the conditions failed.`);
+        // --- THE FIX IS HERE ---
+        if (raidState.boss.currentHp > 0 && raidState.players[socket.id] && attackData && typeof attackData.damage === 'number') {
+            raidState.boss.currentHp -= attackData.damage;
+            if (raidState.boss.currentHp < 0) { raidState.boss.currentHp = 0; }
         }
     });
 
@@ -88,17 +70,15 @@ setInterval(() => {
         if (!raidState.isActive) { console.log("Raid is now active!"); raidState.isActive = true; }
         
         let totalDps = 0;
-        // Small fix: ensure player and dps exist before adding
         for (const playerId in raidState.players) {
-            if(raidState.players[playerId] && raidState.players[playerId].dps) {
-                totalDps += raidState.players[playerId].dps;
-            }
+            totalDps += raidState.players[playerId].dps || 0;
         }
 
-        if (raidState.currentHp > 0) {
-            raidState.currentHp -= totalDps;
-            if (raidState.currentHp <= 0) {
-                raidState.currentHp = 0;
+        // --- THE FIX IS HERE ---
+        if (raidState.boss.currentHp > 0) {
+            raidState.boss.currentHp -= totalDps;
+            if (raidState.boss.currentHp <= 0) {
+                raidState.boss.currentHp = 0;
                 io.to('raid_room').emit('raidOver', { message: "The World-Eater Ogre has been defeated! Rewards are distributed!" });
                 setTimeout(resetRaidBoss, 10000);
             }
@@ -112,6 +92,7 @@ setInterval(() => {
 
 function resetRaidBoss() {
     console.log("Resetting raid boss...");
+    // --- THE FIX IS HERE ---
     raidState.boss.currentHp = raidState.boss.maxHp;
     io.to('raid_room').emit('raidUpdate', raidState);
 }
