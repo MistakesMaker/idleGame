@@ -160,7 +160,7 @@ function toggleRaidPanel() {
     isRaidPanelVisible = !isRaidPanelVisible;
 }
 function setupRaidSocket() {
-    socket = io("https://your-unique-name.onrender.com"); // <-- IMPORTANT: USE YOUR RENDER URL
+    socket = io("https://idlegame-oqyq.onrender.com"); // <-- IMPORTANT: USE YOUR RENDER URL
     socket.on('connect', () => { console.log('Connected to raid server!', socket.id); socket.emit('joinRaid', { id: `Player_${Math.floor(Math.random() * 1000)}`, dps: playerStats.totalDps }); });
     socket.on('raidUpdate', (raidState) => { updateRaidUI(raidState); });
     socket.on('raidOver', (data) => { alert(data.message); const attackBtn = document.getElementById('raid-attack-button'); if(attackBtn) attackBtn.disabled = true; });
