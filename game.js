@@ -266,9 +266,11 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
     
+    // --- THIS IS THE FIX ---
     function createItemHTML(item, isEquipped) {
         if (isEquipped) {
-            return `<img src="${getItemIcon(item.type)}" class="item-icon" title="${item.name} - Click to Unequip">`;
+            // Removed the 'title' attribute to prevent ugly browser tooltips on the equipment screen.
+            return `<img src="${getItemIcon(item.type)}" class="item-icon">`;
         }
 
         const lockHTML = `<i class="fas ${item.locked ? 'fa-lock' : 'fa-lock-open'} lock-icon"></i>`;
@@ -283,7 +285,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const lockedClass = item.locked ? 'locked-item' : '';
 
-        // Simplified structure. Header and stats are direct children.
         return `<div class="item ${item.rarity} ${lockedClass}">
                     ${lockHTML}
                     <div class="item-header">
@@ -293,6 +294,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <img src="${getItemIcon(item.type)}" class="item-bg-icon" alt="">
                 </div>`;
     }
+    // --- END OF FIX ---
 
 
     function getItemIcon(type) { const iconMap = { sword: 'images/icons/sword.png', shield: 'images/icons/shield.png', helmet: 'images/icons/helmet.png', necklace: 'images/icons/necklace.png', platebody: 'images/icons/platebody.png', platelegs: 'images/icons/platelegs.png', ring: 'images/icons/ring.png', belt: 'images/icons/belt.png' }; return iconMap[type] || 'images/icons/sword.png'; }
@@ -470,14 +472,13 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('confirm-salvage-btn').addEventListener('click', salvageSelectedItems);
         document.getElementById('reset-game-btn').addEventListener('click', resetGame);
         
-        // --- RAID: Hook up the button ---
         const raidBtn = document.getElementById('raid-btn');
         if (raidBtn) {
             raidBtn.addEventListener('click', () => {
                 if (raidPanel) {
                     destroyRaidPanel();
-                    socket.disconnect(); // Manually disconnect
-                    socket.connect(); // Reconnect to get a fresh state
+                    socket.disconnect(); 
+                    socket.connect(); 
                 } else {
                     createRaidPanel();
                 }
