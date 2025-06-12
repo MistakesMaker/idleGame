@@ -28,7 +28,6 @@ document.addEventListener('DOMContentLoaded', () => {
     let saveTimeout;
     
     // --- DOM ELEMENT REFERENCES ---
-    // All DOM elements are declared here and will be assigned in main()
     let saveIndicatorEl, goldStatEl, scrapStatEl, upgradeClickCostEl, upgradeDpsCostEl, upgradeClickLevelEl, 
         upgradeDpsLevelEl, monsterNameEl, currentLevelEl, monsterHealthBarEl, monsterHealthTextEl, 
         inventorySlotsEl, gameLogEl, prestigeButton, prestigeSelectionEl, prestigeInventorySlotsEl, 
@@ -37,8 +36,22 @@ document.addEventListener('DOMContentLoaded', () => {
         addStrengthBtn, addAgilityBtn, addLuckBtn, clickDamageStatEl, dpsStatEl, bonusGoldStatEl, 
         magicFindStatEl, lootMonsterNameEl, lootDropChanceEl, lootTableDisplayEl;
 
+    // --- START OF RAID SECTION ---
+    const socket = io('https://idlegame-oqyq.onrender.com'); // IMPORTANT: Use your server URL
+    let raidPanel = null;
+    let raidPlayerId = `Player_${Math.random().toString(36).substr(2, 5)}`;
+    // --- END OF RAID SECTION ---
+
     // --- HELPER & UTILITY FUNCTIONS ---
-    function logMessage(message) { const p = document.createElement('p'); p.innerHTML = message; gameLogEl.prepend(p); if (gameLogEl.children.length > 20) { gameLogEl.removeChild(gameLogEl.lastChild); } }
+    function logMessage(message, className = '') { 
+        const p = document.createElement('p'); 
+        p.innerHTML = message; 
+        if (className) p.classList.add(className);
+        gameLogEl.prepend(p); 
+        if (gameLogEl.children.length > 20) { 
+            gameLogEl.removeChild(gameLogEl.lastChild); 
+        } 
+    }
     function isBossLevel(level) { return level % 10 === 0; }
     function isBigBossLevel(level) { return level % 100 === 0; }
     
@@ -133,6 +146,11 @@ document.addEventListener('DOMContentLoaded', () => {
         let finalDps = playerStats.baseDps + dpsUpgradeBonus;
         finalDps *= (1 + (strengthBonusDpsPercent + agilityBonusDpsPercent) / 100);
         playerStats.totalDps = finalDps;
+
+        // --- RAID: Update server with new stats ---
+        if (socket.connected) {
+            socket.emit('updatePlayerStats', { dps: playerStats.totalDps });
+        }
     }
     function addStatsFromItem(item) { for (const stat in item.stats) { const value = item.stats[stat]; if (stat === 'clickDamage') playerStats.baseClickDamage += value; if (stat === 'dps') playerStats.baseDps += value; } }
     
@@ -248,7 +266,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
     
-    // --- THIS IS THE FIX ---
     function createItemHTML(item, isEquipped) {
         if (isEquipped) {
             return `<img src="${getItemIcon(item.type)}" class="item-icon" title="${item.name} - Click to Unequip">`;
@@ -276,7 +293,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     <img src="${getItemIcon(item.type)}" class="item-bg-icon" alt="">
                 </div>`;
     }
-    // --- END OF FIX ---
 
 
     function getItemIcon(type) { const iconMap = { sword: 'images/icons/sword.png', shield: 'images/icons/shield.png', helmet: 'images/icons/helmet.png', necklace: 'images/icons/necklace.png', platebody: 'images/icons/platebody.png', platelegs: 'images/icons/platelegs.png', ring: 'images/icons/ring.png', belt: 'images/icons/belt.png' }; return iconMap[type] || 'images/icons/sword.png'; }
@@ -359,6 +375,91 @@ document.addEventListener('DOMContentLoaded', () => {
         autoSave();
     }
     
+    // --- START OF RAID FUNCTIONS ---
+    function createRaidPanel() {
+        if (document.getElementById('raid-panel')) return; // Panel already exists
+
+        const raidContainer = document.getElementById('raid-container');
+        raidContainer.innerHTML = `
+            <div id="raid-panel">
+                <div id="raid-boss-info">
+                    <h2 id="raid-boss-name">Loading...</h2>
+                    <div id="raid-boss-health-bar-container">
+                        <div id="raid-boss-health-bar"></div>
+                    </div>
+                    <p id="raid-boss-health-text">0 / 0</p>
+                </div>
+                <div id="raid-main-content">
+                    <div id="raid-attack-area">
+                        <button id="raid-attack-button">ATTACK!</button>
+                    </div>
+                    <div id="raid-player-list">
+                        <h3>Participants</h3>
+                        <ul></ul>
+                    </div>
+                </div>
+            </div>`;
+
+        raidPanel = document.getElementById('raid-panel');
+        document.getElementById('raid-attack-button').addEventListener('click', () => {
+            socket.emit('attackRaidBoss', { damage: playerStats.totalClickDamage });
+        });
+
+        socket.emit('joinRaid', { id: raidPlayerId, dps: playerStats.totalDps });
+    }
+
+    function destroyRaidPanel() {
+        if (raidPanel) {
+            raidPanel.remove();
+            raidPanel = null;
+        }
+    }
+
+    function updateRaidUI(raidState) {
+        if (!raidPanel) return;
+
+        const boss = raidState.boss;
+        document.getElementById('raid-boss-name').textContent = boss.name;
+        document.getElementById('raid-boss-health-text').textContent = `${Math.ceil(boss.currentHp)} / ${boss.maxHp}`;
+        
+        const healthPercent = (boss.currentHp / boss.maxHp) * 100;
+        document.getElementById('raid-boss-health-bar').style.width = `${healthPercent}%`;
+
+        const playerListEl = raidPanel.querySelector('#raid-player-list ul');
+        playerListEl.innerHTML = '';
+        Object.values(raidState.players).forEach(player => {
+            const li = document.createElement('li');
+            li.textContent = `${player.id} - ${player.dps.toFixed(1)} DPS`;
+            playerListEl.appendChild(li);
+        });
+    }
+
+    function setupRaidListeners() {
+        socket.on('connect', () => {
+            logMessage('Connected to Raid Server!', 'uncommon');
+        });
+
+        socket.on('disconnect', () => {
+            logMessage('Disconnected from Raid Server.', 'rare');
+            destroyRaidPanel();
+        });
+
+        socket.on('raidUpdate', (raidState) => {
+            updateRaidUI(raidState);
+        });
+
+        socket.on('raidOver', (data) => {
+            logMessage(`RAID OVER: ${data.message}`, 'legendary');
+            // Give a reward
+            const scrapReward = 500;
+            gameState.scrap += scrapReward;
+            logMessage(`You received ${scrapReward} Scrap for participating!`, 'epic');
+            updateUI();
+            destroyRaidPanel();
+        });
+    }
+    // --- END OF RAID FUNCTIONS ---
+    
     function setupEventListeners() {
         document.getElementById('go-to-level-btn').addEventListener('click', goToLevel);
         levelLockCheckbox.addEventListener('change', toggleLevelLock);
@@ -369,9 +470,18 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('confirm-salvage-btn').addEventListener('click', salvageSelectedItems);
         document.getElementById('reset-game-btn').addEventListener('click', resetGame);
         
+        // --- RAID: Hook up the button ---
         const raidBtn = document.getElementById('raid-btn');
         if (raidBtn) {
-            raidBtn.addEventListener('click', () => alert("Raid functionality coming soon!"));
+            raidBtn.addEventListener('click', () => {
+                if (raidPanel) {
+                    destroyRaidPanel();
+                    socket.disconnect(); // Manually disconnect
+                    socket.connect(); // Reconnect to get a fresh state
+                } else {
+                    createRaidPanel();
+                }
+            });
         }
         
         addStrengthBtn.addEventListener('click', () => spendAttributePoint('strength'));
@@ -483,6 +593,9 @@ document.addEventListener('DOMContentLoaded', () => {
             logMessage("Saved game loaded!");
         }
         updateUI();
+
+        // --- RAID: Initialize raid listeners ---
+        setupRaidListeners();
         
         // Start the game loops
         setInterval(autoSave, 30000);
