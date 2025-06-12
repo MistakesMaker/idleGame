@@ -73,20 +73,12 @@ document.addEventListener('DOMContentLoaded', () => {
     function gameLoop() { if (playerStats.totalDps > 0 && gameState.monster.hp > 0) { gameState.monster.hp -= playerStats.totalDps; if (gameState.monster.hp <= 0) { monsterDefeated(); } updateUI(); } }
     
     function monsterDefeated() { 
-        // --- THIS IS THE FIX: BALANCED GOLD SCALING ---
-        // This now uses the same "stair-step" logic as monster health.
         const level = gameState.currentFightingLevel;
         const tier = Math.floor((level - 1) / 10);
         const difficultyResetFactor = 4;
         const effectiveLevel = level - (tier * difficultyResetFactor);
-        
-        // This exponent is slightly higher than the monster health exponent (1.15)
-        // to ensure the player's income gently outpaces difficulty.
         const goldExponent = 1.17; 
-        
-        // The base gold is slightly higher than base monster health to give a starting advantage.
         const baseGold = 15;
-
         let goldGained = Math.ceil(baseGold * Math.pow(goldExponent, effectiveLevel) * (1 + (playerStats.bonusGold / 100)));
         gameState.gold += goldGained;
         
@@ -322,6 +314,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function toggleLevelLock() { gameState.isLevelLocked = levelLockCheckbox.checked; logMessage(`Level lock ${gameState.isLevelLocked ? 'enabled' : 'disabled'}.`); }
     function goToLevel() { const desiredLevel = parseInt(levelSelectInput.value, 10); if (isNaN(desiredLevel) || desiredLevel <= 0) { alert("Please enter a valid level > 0."); return; } if (desiredLevel > gameState.maxLevel) { alert(`Your max level is ${gameState.maxLevel}.`); levelSelectInput.value = gameState.maxLevel; return; } gameState.currentFightingLevel = desiredLevel; logMessage(`Traveling to level ${desiredLevel}...`); generateMonster(); updateUI(); }
     
+    // --- THIS IS THE FIX ---
     function setupTooltipListeners() {
         inventorySlotsEl.addEventListener('mouseover', (event) => {
             const itemWrapper = event.target.closest('.item-wrapper');
@@ -329,6 +322,11 @@ document.addEventListener('DOMContentLoaded', () => {
             const index = parseInt(itemWrapper.dataset.index, 10);
             const inventoryItem = gameState.inventory[index];
             if (!inventoryItem) return;
+            
+            // Dynamically add the item's rarity class to the tooltip element itself
+            tooltipEl.classList.remove('common', 'uncommon', 'rare', 'epic', 'legendary');
+            tooltipEl.classList.add(inventoryItem.rarity);
+
             let slotToCompare = inventoryItem.type;
             if (slotToCompare === 'ring') {
                 if (gameState.equipment.ring1) { slotToCompare = 'ring1'; } else { slotToCompare = 'ring2'; }
@@ -342,8 +340,11 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         inventorySlotsEl.addEventListener('mouseout', (event) => { if (!inventorySlotsEl.contains(event.relatedTarget)) { if (tooltipEl) tooltipEl.classList.add('hidden'); } });
     }
+    // --- END OF FIX ---
     
     function createTooltipHTML(hoveredItem, equippedItem) {
+        const headerHTML = `<div class="item-header"><span class="${hoveredItem.rarity}">${hoveredItem.name}</span></div>`;
+        
         if (!equippedItem) {
             let statsHTML = '<ul>';
             for (const statKey in hoveredItem.stats) {
@@ -352,8 +353,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 statsHTML += `<li>+${hoveredItem.stats[statKey].toFixed(2)} ${statName}</li>`;
             }
             statsHTML += '</ul>';
-            return `<div class="item-header"><span>${hoveredItem.name}</span></div>${statsHTML}`;
+            return headerHTML + statsHTML;
         }
+
         const allStatKeys = new Set([...Object.keys(hoveredItem.stats), ...Object.keys(equippedItem.stats)]);
         let statsHTML = '<ul>';
         allStatKeys.forEach(statKey => {
@@ -367,8 +369,9 @@ document.addEventListener('DOMContentLoaded', () => {
             statsHTML += `<li>${statName}: ${hoveredValue.toFixed(2)}${diffSpan}</li>`;
         });
         statsHTML += '</ul>';
-        return `<div class="item-header"><span>${hoveredItem.name}</span></div>${statsHTML}`;
+        return headerHTML + statsHTML;
     }
+
 
     function autoSave() { saveIndicatorEl.classList.add('visible'); if (saveTimeout) clearTimeout(saveTimeout); saveTimeout = setTimeout(() => { saveIndicatorEl.classList.remove('visible'); }, 2000); localStorage.setItem('idleRPGSaveData', JSON.stringify(gameState)); }
     function resetGame() { if (confirm("Are you sure? This will delete your save permanently.")) { localStorage.removeItem('idleRPGSaveData'); window.location.reload(); } }
