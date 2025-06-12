@@ -41,7 +41,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let raidPanel = null;
     let raidPlayerId = `Player_${Math.random().toString(36).substr(2, 5)}`;
     // --- END OF RAID SECTION ---
-
+    // testiin
     // --- HELPER & UTILITY FUNCTIONS ---
     function logMessage(message, className = '') { 
         const p = document.createElement('p'); 
