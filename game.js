@@ -41,7 +41,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let raidPanel = null;
     let raidPlayerId = `Player_${Math.random().toString(36).substr(2, 5)}`;
     // --- END OF RAID SECTION ---
-    // testiin
+
     // --- HELPER & UTILITY FUNCTIONS ---
     function logMessage(message, className = '') { 
         const p = document.createElement('p'); 
@@ -73,7 +73,21 @@ document.addEventListener('DOMContentLoaded', () => {
     function gameLoop() { if (playerStats.totalDps > 0 && gameState.monster.hp > 0) { gameState.monster.hp -= playerStats.totalDps; if (gameState.monster.hp <= 0) { monsterDefeated(); } updateUI(); } }
     
     function monsterDefeated() { 
-        let goldGained = Math.ceil(Math.pow(1.22, gameState.currentFightingLevel) * (1 + (playerStats.bonusGold / 100)));
+        // --- THIS IS THE FIX: BALANCED GOLD SCALING ---
+        // This now uses the same "stair-step" logic as monster health.
+        const level = gameState.currentFightingLevel;
+        const tier = Math.floor((level - 1) / 10);
+        const difficultyResetFactor = 4;
+        const effectiveLevel = level - (tier * difficultyResetFactor);
+        
+        // This exponent is slightly higher than the monster health exponent (1.15)
+        // to ensure the player's income gently outpaces difficulty.
+        const goldExponent = 1.17; 
+        
+        // The base gold is slightly higher than base monster health to give a starting advantage.
+        const baseGold = 15;
+
+        let goldGained = Math.ceil(baseGold * Math.pow(goldExponent, effectiveLevel) * (1 + (playerStats.bonusGold / 100)));
         gameState.gold += goldGained;
         
         let xpGained = gameState.currentFightingLevel * 5;
@@ -115,9 +129,17 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         currentMonster = { name: monsterName, data: monsterDef };
 
-        let monsterHealth = Math.ceil(10 * Math.pow(1.32, level));
-        if (isBigBossLevel(level)) { monsterHealth *= 10; } 
-        else if (isBossLevel(level)) { monsterHealth *= 3; }
+        const baseExponent = 1.15;
+        const tier = Math.floor((level - 1) / 10);
+        const difficultyResetFactor = 4;
+        const effectiveLevel = level - (tier * difficultyResetFactor);
+        let monsterHealth = Math.ceil(10 * Math.pow(baseExponent, effectiveLevel));
+        
+        if (isBigBossLevel(level)) {
+            monsterHealth *= 10;
+        } else if (isBossLevel(level)) {
+            monsterHealth *= 5;
+        }
 
         monsterImageEl.src = currentMonster.data.image;
         gameState.monster.maxHp = monsterHealth;
@@ -133,8 +155,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const allItems = [...gameState.legacyItems, ...Object.values(gameState.equipment)]; 
         for(const item of allItems) { if(item) addStatsFromItem(item); }
         
-        const clickUpgradeBonus = gameState.upgrades.clickDamage * 0.5;
-        const dpsUpgradeBonus = gameState.upgrades.dps * 1;
+        const clickUpgradeBonus = gameState.upgrades.clickDamage * 1.25;
+        const dpsUpgradeBonus = gameState.upgrades.dps * 2.5;
         
         const strengthBonusClick = hero.attributes.strength * 0.5;
         const strengthBonusDpsPercent = hero.attributes.strength * 0.2;
@@ -147,7 +169,6 @@ document.addEventListener('DOMContentLoaded', () => {
         finalDps *= (1 + (strengthBonusDpsPercent + agilityBonusDpsPercent) / 100);
         playerStats.totalDps = finalDps;
 
-        // --- RAID: Update server with new stats ---
         if (socket.connected) {
             socket.emit('updatePlayerStats', { dps: playerStats.totalDps });
         }
@@ -266,10 +287,8 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
     
-    // --- THIS IS THE FIX ---
     function createItemHTML(item, isEquipped) {
         if (isEquipped) {
-            // Removed the 'title' attribute to prevent ugly browser tooltips on the equipment screen.
             return `<img src="${getItemIcon(item.type)}" class="item-icon">`;
         }
 
@@ -294,7 +313,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     <img src="${getItemIcon(item.type)}" class="item-bg-icon" alt="">
                 </div>`;
     }
-    // --- END OF FIX ---
 
 
     function getItemIcon(type) { const iconMap = { sword: 'images/icons/sword.png', shield: 'images/icons/shield.png', helmet: 'images/icons/helmet.png', necklace: 'images/icons/necklace.png', platebody: 'images/icons/platebody.png', platelegs: 'images/icons/platelegs.png', ring: 'images/icons/ring.png', belt: 'images/icons/belt.png' }; return iconMap[type] || 'images/icons/sword.png'; }
@@ -356,20 +374,21 @@ document.addEventListener('DOMContentLoaded', () => {
     function resetGame() { if (confirm("Are you sure? This will delete your save permanently.")) { localStorage.removeItem('idleRPGSaveData'); window.location.reload(); } }
     
     function initiatePrestige() { prestigeSelections = []; prestigeSelectionEl.classList.remove('hidden'); prestigeButton.classList.add('hidden'); const allItems = [...Object.values(gameState.equipment).filter(i => i), ...gameState.inventory]; prestigeInventorySlotsEl.innerHTML = ''; allItems.forEach(item => { const itemEl = document.createElement('div'); itemEl.innerHTML = createItemHTML(item, false); itemEl.onclick = () => { const itemCard = itemEl.querySelector('.item'); if (prestigeSelections.includes(item.id)) { prestigeSelections = prestigeSelections.filter(id => id !== item.id); itemCard.classList.remove('selected-for-prestige'); } else if (prestigeSelections.length < 3) { prestigeSelections.push(item.id); itemCard.classList.add('selected-for-prestige'); } }; prestigeInventorySlotsEl.appendChild(itemEl); }); }
+    
     function confirmPrestige() {
         if (prestigeSelections.length > 3) { alert("You can only select up to 3 items!"); return; }
         const allItems = [...Object.values(gameState.equipment).filter(i => i), ...gameState.inventory];
         const itemsToKeep = allItems.filter(item => prestigeSelections.includes(item.id));
-        const scrapToKeep = gameState.scrap;
         const oldLevel = gameState.maxLevel;
         const heroStatsToKeep = gameState.hero; 
         
         gameState = getDefaultGameState();
+        
         gameState.legacyItems = itemsToKeep;
-        gameState.scrap = scrapToKeep;
         gameState.hero = heroStatsToKeep;
         
-        logMessage(`PRESTIGE! Restarted from Lvl ${oldLevel}, keeping hero stats, ${itemsToKeep.length} items and ${scrapToKeep} Scrap.`);
+        logMessage(`PRESTIGE! Restarted from Lvl ${oldLevel}, keeping hero stats and ${itemsToKeep.length} items.`);
+        
         prestigeSelectionEl.classList.add('hidden');
         prestigeButton.classList.remove('hidden');
         recalculateStats();
@@ -606,4 +625,3 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- START THE GAME ---
     main();
 });
-//moromoroo
