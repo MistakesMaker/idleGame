@@ -28,7 +28,13 @@ button:hover { background: linear-gradient(145deg, #4aa9e8, #3a90c9); transform:
 button:active { transform: translateY(1px); box-shadow: 0 1px 2px rgba(0,0,0,0.3); }
 button:disabled { background: #7f8c8d; cursor: not-allowed; border-bottom: 2px solid #6c7a7b; transform: none; box-shadow: none; }
 
-/* --- MAP STYLES --- */
+.control-group { 
+    display: flex; 
+    align-items: center; 
+    gap: 8px;
+    margin: 0 10px; /* Add some margin for spacing */
+}
+
 #map-header {
     display: flex;
     justify-content: space-between;
@@ -41,6 +47,7 @@ button:disabled { background: #7f8c8d; cursor: not-allowed; border-bottom: 2px s
 #back-to-world-map-btn {
     padding: 5px 10px;
     font-size: 14px;
+    margin: 0;
 }
 
 #map-container {
@@ -125,7 +132,6 @@ button:disabled { background: #7f8c8d; cursor: not-allowed; border-bottom: 2px s
 @keyframes pulse-red { 0% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(231, 76, 60, 0); } 100% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0); } }
 
 
-/* --- MODAL STYLES --- */
 #modal-backdrop {
     position: fixed;
     top: 0;
@@ -159,9 +165,7 @@ button:disabled { background: #7f8c8d; cursor: not-allowed; border-bottom: 2px s
     border-bottom-color: #922b21;
 }
 
-/* -------------------- */
-
-#monster-area { margin-top: auto; } /* Push monster area to the bottom */
+#monster-area { margin-top: auto; }
 #monster-display { position: relative; width: 200px; height: 200px; margin: 20px auto; }
 #monster-image { width: 100%; height: 100%; cursor: pointer; transition: transform 0.1s ease; -webkit-user-drag: none; }
 .monster-hit { animation: monster-hit-anim 0.2s ease; }
@@ -249,7 +253,6 @@ button:disabled { background: #7f8c8d; cursor: not-allowed; border-bottom: 2px s
     color: #f1c40f; 
 }
 
-.dungeon-tabs .tab-button { font-size: 0.9em; padding: 8px; }
 #loot-view { padding: 10px; }
 #loot-table-display { display: grid; grid-template-columns: repeat(auto-fill, minmax(60px, 1fr)); gap: 10px; background-color: rgba(0,0,0,0.2); padding: 10px; border-radius: 5px; margin-top: 10px; }
 .loot-item-icon { width: 50px; height: 50px; background-color: rgba(0,0,0,0.4); border: 1px solid #4a637e; border-radius: 8px; padding: 5px; object-fit: contain; }

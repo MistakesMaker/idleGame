@@ -17,15 +17,20 @@
     <div class="game-container">
         <!-- Left Panel -->
         <div class="panel left-panel">
-            <!-- START OF MODIFICATION -->
             <div class="tabs">
-                 <button class="tab-button active">Map</button>
-                 <button class="tab-button">Combat</button>
+                 <button class="tab-button active" data-view="map-view">Map</button>
+                 <button class="tab-button" data-view="combat-view">Combat</button>
             </div>
 
             <div id="map-view" class="view active">
                 <div id="map-header">
                     <h2 id="map-title">World Map</h2>
+                    <!-- START OF NEW FEATURE -->
+                    <div class="control-group">
+                        <input type="checkbox" id="auto-progress-checkbox">
+                        <label for="auto-progress-checkbox">Auto-Progress</label>
+                    </div>
+                    <!-- END OF NEW FEATURE -->
                     <button id="back-to-world-map-btn" class="hidden">Back to World</button>
                 </div>
                 <div id="map-container">
@@ -44,16 +49,15 @@
                     </div>
                 </div>
             </div>
-             <!-- END OF MODIFICATION -->
         </div>
 
         <!-- Middle Panel -->
         <div class="panel middle-panel">
             <div class="tabs">
-                <button class="tab-button active">Hero</button>
-                <button class="tab-button">Equipment</button>
-                <button class="tab-button">Inventory</button>
-                <button class="tab-button">Loot</button> 
+                <button class="tab-button active" data-view="hero-view">Hero</button>
+                <button class="tab-button" data-view="equipment-view">Equipment</button>
+                <button class="tab-button" data-view="inventory-view">Inventory</button>
+                <button class="tab-button" data-view="loot-view">Loot</button> 
             </div>
 
             <div id="hero-view" class="view active">
@@ -184,7 +188,6 @@
     <div id="item-tooltip" class="hidden"></div>
     <div id="stat-tooltip" class="hidden"></div>
 
-    <!-- START OF NEW FEATURE: MODAL POPUP -->
     <div id="modal-backdrop" class="hidden">
         <div id="modal-content">
             <h3 id="modal-title">Sub-Zone</h3>
@@ -194,7 +197,6 @@
             <button id="modal-close-btn">Close</button>
         </div>
     </div>
-    <!-- END OF NEW FEATURE -->
 
     <!-- Scripts -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.min.js"></script>

@@ -11,9 +11,9 @@ document.addEventListener('DOMContentLoaded', () => {
         "green_meadows": {
             name: "Green Meadows",
             requiredLevel: 1,
-            mapImage: "images/map_meadows_zoomed.png", // Placeholder image
+            mapImage: "images/map_meadows_zoomed.png",
             coords: { top: '78%', left: '20%' },
-            icon: 'images/icons/sword.png', // Example icon
+            icon: 'images/icons/sword.png', 
             subZones: {
                 "starting_fields": { name: "Starting Fields", levelRange: [1, 9], monsters: ["Slime", "Goblin"], coords: {top: '60%', left: '30%'} },
                 "bat_cave": { name: "Bat Cave", levelRange: [10, 19], monsters: ["Bat"], coords: {top: '30%', left: '60%'} },
@@ -23,9 +23,9 @@ document.addEventListener('DOMContentLoaded', () => {
         "orc_volcano": {
             name: "Orc Volcano",
             requiredLevel: 21,
-            mapImage: "images/map_volcano_zoomed.png", // Placeholder image
+            mapImage: "images/map_volcano_zoomed.png",
             coords: { top: '30%', left: '38%' },
-            icon: 'images/icons/platebody.png', // Example icon
+            icon: 'images/icons/platebody.png',
             subZones: {
                 "ashfall_plains": { name: "Ashfall Plains", levelRange: [21, 29], monsters: ["Orc"], coords: {top: '70%', left: '30%'} },
                 "magma_flow": { name: "Magma Flow", levelRange: [30, 39], monsters: ["Orc"], coords: {top: '50%', left: '65%'} },
@@ -35,7 +35,7 @@ document.addEventListener('DOMContentLoaded', () => {
         "undead_desert": {
             name: "Undead Desert",
             requiredLevel: 41,
-            mapImage: "images/map_desert_zoomed.png", // Placeholder image
+            mapImage: "images/map_desert_zoomed.png",
             coords: { top: '70%', left: '75%' },
             icon: 'images/icons/shield.png',
             subZones: {
@@ -47,7 +47,7 @@ document.addEventListener('DOMContentLoaded', () => {
         "final_dungeon": {
             name: "Final Dungeon",
             requiredLevel: 61,
-            mapImage: "images/map_dungeon_zoomed.png", // Placeholder image
+            mapImage: "images/map_dungeon_zoomed.png",
             coords: { top: '22%', left: '78%' },
             icon: 'images/icons/helmet.png',
             subZones: {
@@ -84,7 +84,8 @@ document.addEventListener('DOMContentLoaded', () => {
         addStrengthBtn, addAgilityBtn, addLuckBtn, clickDamageStatEl, dpsStatEl, bonusGoldStatEl, 
         magicFindStatEl, lootMonsterNameEl, lootDropChanceEl, lootTableDisplayEl,
         statTooltipEl, prestigeCountStatEl, absorbedClickDmgStatEl, absorbedDpsStatEl, legacyItemsStatEl,
-        mapContainerEl, mapTitleEl, backToWorldMapBtnEl, modalBackdropEl, modalContentEl, modalTitleEl, modalBodyEl, modalCloseBtnEl;
+        mapContainerEl, mapTitleEl, backToWorldMapBtnEl, modalBackdropEl, modalContentEl, modalTitleEl, modalBodyEl, modalCloseBtnEl,
+        autoProgressCheckboxEl;
 
     // RAID SECTION
     const socket = io('https://idlegame-oqyq.onrender.com'); 
@@ -142,6 +143,7 @@ document.addEventListener('DOMContentLoaded', () => {
             activePresetIndex: 0,
             completedLevels: [],
             isFarming: true,
+            isAutoProgressing: false,
         };
     }
     
@@ -179,12 +181,19 @@ document.addEventListener('DOMContentLoaded', () => {
             dropLoot();
         }
         
-        if (gameState.isFarming) {
+        let nextLevel = gameState.currentFightingLevel + 1;
+        if (gameState.isAutoProgressing) {
+            if (nextLevel <= gameState.maxLevel + 1) { // Allow pushing one level beyond max
+                 gameState.currentFightingLevel = nextLevel;
+            }
+        } 
+        else if (gameState.isFarming) {
             const subZone = findSubZoneByLevel(level);
             if (subZone && level < subZone.levelRange[1]) {
-                gameState.currentFightingLevel++;
+                gameState.currentFightingLevel = nextLevel;
             }
         }
+
         if (gameState.currentFightingLevel > gameState.maxLevel) { 
             gameState.maxLevel = gameState.currentFightingLevel; 
         }
@@ -211,27 +220,30 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (!subZone) {
             console.error("No sub-zone found for level:", level);
-            return;
+            let monsterName = zoneData.green_meadows.subZones.starting_fields.monsters[0];
+            currentMonster = { name: monsterName, data: monsterBaseData[monsterName] };
+            gameState.currentFightingLevel = 1;
+        } else {
+            let monsterName = subZone.monsters[Math.floor(Math.random() * subZone.monsters.length)];
+            currentMonster = { name: monsterName, data: monsterBaseData[monsterName] };
         }
 
-        let monsterName = subZone.monsters[Math.floor(Math.random() * subZone.monsters.length)];
-        let monsterDef = monsterBaseData[monsterName];
-        currentMonster = { name: monsterName, data: monsterDef };
-
+        let monsterDef = currentMonster.data;
+        
         const baseExponent = 1.15;
         const tier = Math.floor((level - 1) / 10);
         const difficultyResetFactor = 4;
         const effectiveLevel = level - (tier * difficultyResetFactor);
         let monsterHealth = Math.ceil(10 * Math.pow(baseExponent, effectiveLevel));
         
-        if (subZone.isBoss) {
+        if (subZone && subZone.isBoss) {
             monsterHealth *= 5;
         }
 
         monsterImageEl.src = monsterDef.image;
         gameState.monster.maxHp = monsterHealth;
         gameState.monster.hp = monsterHealth;
-        monsterNameEl.textContent = monsterName;
+        monsterNameEl.textContent = currentMonster.name;
     }
     
     function recalculateStats() {
@@ -374,7 +386,6 @@ document.addEventListener('DOMContentLoaded', () => {
     function renderMap() {
         mapContainerEl.innerHTML = ''; 
 
-        // --- START OF FIX ---
         if (currentMap === 'world') {
             mapTitleEl.textContent = 'World Map';
             backToWorldMapBtnEl.classList.add('hidden');
@@ -409,7 +420,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 mapContainerEl.appendChild(node);
             }
         }
-        // --- END OF FIX ---
     }
 
     function createMapNode(name, iconSrc, coords, isUnlocked, isCompleted = false) {
@@ -459,6 +469,7 @@ document.addEventListener('DOMContentLoaded', () => {
         farmButton.onclick = () => {
             gameState.currentFightingLevel = subZone.levelRange[0];
             gameState.isFarming = true;
+            gameState.isAutoProgressing = autoProgressCheckboxEl.checked;
             logMessage(`Now farming ${subZone.name}.`);
             closeModal();
             generateMonster();
@@ -476,6 +487,7 @@ document.addEventListener('DOMContentLoaded', () => {
             fightBossButton.onclick = () => {
                 gameState.currentFightingLevel = bossLevel;
                 gameState.isFarming = false;
+                gameState.isAutoProgressing = false; 
                 logMessage(`Challenging the boss of ${subZone.name}!`);
                 closeModal();
                 generateMonster();
@@ -522,6 +534,7 @@ document.addEventListener('DOMContentLoaded', () => {
         legacyItemsStatEl.textContent = (gameState.legacyItems?.length || 0);
 
         currentLevelEl.textContent = gameState.currentFightingLevel;
+        autoProgressCheckboxEl.checked = gameState.isAutoProgressing;
         
         const healthPercent = (gameState.monster.hp / gameState.monster.maxHp) * 100;
         monsterHealthBarEl.style.width = `${healthPercent}%`;
@@ -921,6 +934,12 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
+        autoProgressCheckboxEl.addEventListener('change', () => {
+            gameState.isAutoProgressing = autoProgressCheckboxEl.checked;
+            logMessage(`Auto-progress ${gameState.isAutoProgressing ? 'enabled' : 'disabled'}.`);
+            autoSave();
+        });
+
         const raidBtn = document.getElementById('raid-btn');
         if (raidBtn) {
             raidBtn.addEventListener('click', () => {
@@ -1032,6 +1051,7 @@ document.addEventListener('DOMContentLoaded', () => {
         modalTitleEl = document.getElementById('modal-title');
         modalBodyEl = document.getElementById('modal-body');
         modalCloseBtnEl = document.getElementById('modal-close-btn');
+        autoProgressCheckboxEl = document.getElementById('auto-progress-checkbox');
 
         const savedData = localStorage.getItem('idleRPGSaveData');
         if (savedData) {
@@ -1050,6 +1070,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 activePresetIndex: loadedState.activePresetIndex || 0,
                 completedLevels: loadedState.completedLevels || [],
                 isFarming: loadedState.isFarming !== undefined ? loadedState.isFarming : true,
+                isAutoProgressing: loadedState.isAutoProgressing || false,
             };
 
             if(gameState.presets && gameState.presets[gameState.activePresetIndex]) {
