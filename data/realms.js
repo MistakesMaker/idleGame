@@ -43,7 +43,8 @@ export const REALMS = [
                 coords: { top: '22%', left: '78%' },
                 icon: 'images/icons/helmet.png', // Just the path string
                 subZones: {
-                    "gatehouse": { name: "The Gatehouse", levelRange: [61, 99], monsterPool: [MONSTERS.DUNGEON_GUARDIAN], coords: {top: '80%', left: '50%'} },
+                    // --- FIX: This pool should contain regular monsters, not the boss ---
+                    "gatehouse": { name: "The Gatehouse", levelRange: [61, 99], monsterPool: [MONSTERS.SKELETON, MONSTERS.ORC, MONSTERS.ZOMBIE], coords: {top: '80%', left: '50%'} },
                     "archdemon_lair": { name: "Archdemon's Lair", levelRange: [100, 100], monsterPool: [MONSTERS.ARCHDEMON_OVERLORD], coords: {top: '10%', left: '50%'}, isBoss: true }
                 }
             }

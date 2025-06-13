@@ -128,11 +128,10 @@ document.addEventListener('DOMContentLoaded', () => {
         
         if (isBossLevel(level) || isBigBossLevel(level)) {
              xpGained *= 5;
+             const currentRealm = REALMS[gameState.currentRealmIndex];
              const nextRealmIndex = gameState.currentRealmIndex + 1;
              if (REALMS[nextRealmIndex] && level + 1 >= REALMS[nextRealmIndex].requiredLevel) {
-                 gameState.currentRealmIndex = nextRealmIndex;
-                 currentMap = 'world';
-                 logMessage(`A new realm has been unlocked: <b>${getCurrentRealm().name}</b>!`, 'legendary');
+                 logMessage(`A new realm has been unlocked: <b>${REALMS[nextRealmIndex].name}</b>!`, 'legendary');
              }
         }
         gainXP(xpGained);
@@ -145,19 +144,16 @@ document.addEventListener('DOMContentLoaded', () => {
             dropLoot();
         }
         
-        let nextLevel = gameState.currentFightingLevel + 1;
+        // --- LOGIC FIX 2.0: Smarter Auto-Progression ---
         if (gameState.isAutoProgressing) {
-            if (findSubZoneByLevel(nextLevel) !== null) {
-                gameState.currentFightingLevel = nextLevel;
-            }
-        } 
-        else if (gameState.isFarming) {
-            const subZone = findSubZoneByLevel(level);
-            if (subZone && level < subZone.levelRange[1]) {
+            const nextLevel = level + 1;
+            const nextSubZone = findSubZoneByLevel(nextLevel);
+            // We can progress as long as there is a valid next sub-zone to fight in.
+            if (nextSubZone) {
                 gameState.currentFightingLevel = nextLevel;
             }
         }
-
+        
         if (gameState.currentFightingLevel > gameState.maxLevel) { 
             gameState.maxLevel = gameState.currentFightingLevel; 
         }
@@ -184,23 +180,19 @@ document.addEventListener('DOMContentLoaded', () => {
         const level = gameState.currentFightingLevel;
         let monsterData;
 
+        // Boss levels are determined by the level number itself, not the sub-zone
         if (isBigBossLevel(level)) {
             monsterData = MONSTERS.ARCHDEMON_OVERLORD;
         } else if (isBossLevel(level)) {
             monsterData = MONSTERS.DUNGEON_GUARDIAN;
         } else {
              const subZone = findSubZoneByLevel(level);
-             if (subZone) {
-                const monsterPool = subZone.monsterPool;
-                if (monsterPool && monsterPool.length > 0) {
-                    monsterData = monsterPool[Math.floor(Math.random() * monsterPool.length)];
-                } else {
-                    monsterData = MONSTERS.SLIME; // Fallback
-                }
+             if (subZone && subZone.monsterPool.length > 0) {
+                monsterData = subZone.monsterPool[Math.floor(Math.random() * subZone.monsterPool.length)];
              } else {
-                console.error("No sub-zone found for level:", level);
+                console.error("No sub-zone or monster pool found for level:", level, "Falling back to Slime.");
                 monsterData = MONSTERS.SLIME;
-                gameState.currentFightingLevel = 1;
+                // Don't reset level here, let the player handle it via the map.
              }
         }
 
