@@ -17,24 +17,24 @@
     <div class="game-container">
         <!-- Left Panel -->
         <div class="panel left-panel">
-            <h2>The Dungeon</h2>
-            <div class="tabs dungeon-tabs">
-                <button class="tab-button active">Monster</button>
-                <button class="tab-button">Loot</button>
+            <!-- START OF MODIFICATION -->
+            <div class="tabs">
+                 <button class="tab-button active">Map</button>
+                 <button class="tab-button">Combat</button>
             </div>
-            
-            <div id="monster-view" class="view active">
-                <div id="level-controls">
-                    <div class="control-group">
-                        <input type="checkbox" id="level-lock-checkbox">
-                        <label for="level-lock-checkbox">Lock Current Level</label>
-                    </div>
-                    <div class="control-group">
-                        <input type="number" id="level-select-input" min="1">
-                        <button id="go-to-level-btn">Go to Level</button>
-                    </div>
+
+            <div id="map-view" class="view active">
+                <div id="map-header">
+                    <h2 id="map-title">World Map</h2>
+                    <button id="back-to-world-map-btn" class="hidden">Back to World</button>
                 </div>
-                <div id="monster-area">
+                <div id="map-container">
+                    <!-- Map nodes will be dynamically inserted here by JS -->
+                </div>
+            </div>
+
+            <div id="combat-view" class="view">
+                 <div id="monster-area">
                     <div id="monster-info"><span id="monster-name">Slime</span> - <span>Lvl <span id="current-level">1</span></span></div>
                     <div id="monster-health-bar-container"><div id="monster-health-bar"></div></div>
                     <div id="monster-health-text">10 / 10</div>
@@ -44,17 +44,7 @@
                     </div>
                 </div>
             </div>
-
-            <div id="loot-view" class="view">
-                <h3 id="loot-monster-name">Monster Loot</h3>
-                <p>Drop Chance: <span id="loot-drop-chance">0%</span></p>
-                <h4>Possible Drops:</h4>
-                <div id="loot-table-display">
-                    <!-- Loot icons will be dynamically inserted here -->
-                </div>
-            </div>
-            
-            <div id="game-log"><p>Welcome! Your progress will be saved automatically.</p></div>
+             <!-- END OF MODIFICATION -->
         </div>
 
         <!-- Middle Panel -->
@@ -63,6 +53,7 @@
                 <button class="tab-button active">Hero</button>
                 <button class="tab-button">Equipment</button>
                 <button class="tab-button">Inventory</button>
+                <button class="tab-button">Loot</button> 
             </div>
 
             <div id="hero-view" class="view active">
@@ -101,7 +92,6 @@
             </div>
 
             <div id="equipment-view" class="view">
-                <!-- START OF NEW SECTION -->
                 <div id="equipment-view-content">
                     <div id="preset-controls">
                         <h4>Presets</h4>
@@ -117,7 +107,6 @@
                         <div id="slot-ring2" class="equipment-slot"></div>
                     </div>
                 </div>
-                <!-- END OF NEW SECTION -->
             </div>
             <div id="inventory-view" class="view">
                 <h3>Inventory</h3>
@@ -128,6 +117,14 @@
                     <button id="confirm-salvage-btn" class="hidden">Salvage Selected (<span id="salvage-count">0</span>)</button>
                 </div>
                 <div id="inventory-slots"><p>Defeat bosses for loot!</p></div>
+            </div>
+            <div id="loot-view" class="view">
+                <h3 id="loot-monster-name">Monster Loot</h3>
+                <p>Drop Chance: <span id="loot-drop-chance">0%</span></p>
+                <h4>Possible Drops:</h4>
+                <div id="loot-table-display">
+                    <!-- Loot icons will be dynamically inserted here -->
+                </div>
             </div>
         </div>
 
@@ -142,6 +139,11 @@
 
             <button id="raid-btn">Raid</button>
             <button id="reset-game-btn">Hard Reset</button>
+            
+            <div id="game-log-container">
+                <h4>Game Log</h4>
+                 <div id="game-log"><p>Welcome! Your progress will be saved automatically.</p></div>
+            </div>
 
             <div id="upgrades-area">
                 <h3>Gold Upgrades</h3>
@@ -181,6 +183,18 @@
     <div id="save-indicator" class="hidden">Game Saved!</div>
     <div id="item-tooltip" class="hidden"></div>
     <div id="stat-tooltip" class="hidden"></div>
+
+    <!-- START OF NEW FEATURE: MODAL POPUP -->
+    <div id="modal-backdrop" class="hidden">
+        <div id="modal-content">
+            <h3 id="modal-title">Sub-Zone</h3>
+            <div id="modal-body">
+                <!-- Modal content goes here -->
+            </div>
+            <button id="modal-close-btn">Close</button>
+        </div>
+    </div>
+    <!-- END OF NEW FEATURE -->
 
     <!-- Scripts -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.min.js"></script>
