@@ -35,7 +35,7 @@ document.addEventListener('DOMContentLoaded', () => {
         heroXpBarEl, heroXpTextEl, attributePointsEl, attrStrengthEl, attrAgilityEl, attrLuckEl, 
         addStrengthBtn, addAgilityBtn, addLuckBtn, clickDamageStatEl, dpsStatEl, bonusGoldStatEl, 
         magicFindStatEl, lootMonsterNameEl, lootDropChanceEl, lootTableDisplayEl,
-        statTooltipEl;
+        statTooltipEl, prestigeCountStatEl, absorbedClickDmgStatEl, absorbedDpsStatEl, legacyItemsStatEl;
 
     // --- START OF RAID SECTION ---
     const socket = io('https://idlegame-oqyq.onrender.com'); 
@@ -62,7 +62,10 @@ document.addEventListener('DOMContentLoaded', () => {
             gold: 0, scrap: 0, upgrades: { clickDamage: 0, dps: 0 }, maxLevel: 1, currentFightingLevel: 1,
             isLevelLocked: false, monster: { hp: 10, maxHp: 10 },
             equipment: { sword: null, shield: null, helmet: null, necklace: null, platebody: null, platelegs: null, ring1: null, ring2: null, belt: null, },
-            inventory: [], legacyItems: [],
+            inventory: [], 
+            legacyItems: [],
+            absorbedStats: { clickDamage: 0, dps: 0 },
+            prestigeCount: 0,
             hero: {
                 level: 1, xp: 0, attributePoints: 0,
                 attributes: { strength: 0, agility: 0, luck: 0 }
@@ -71,19 +74,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     function clickMonster() { if (gameState.monster.hp <= 0) return; gameState.monster.hp -= playerStats.totalClickDamage; monsterImageEl.classList.add('monster-hit'); setTimeout(() => monsterImageEl.classList.remove('monster-hit'), 200); showDamagePopup(playerStats.totalClickDamage); if (gameState.monster.hp <= 0) { monsterDefeated(); } updateUI(); }
-    
-    // --- THIS IS THE FIX (PART 1) ---
-    function gameLoop() { 
-        if (playerStats.totalDps > 0 && gameState.monster.hp > 0) { 
-            gameState.monster.hp -= playerStats.totalDps; 
-            showDpsPopup(playerStats.totalDps); // Call the new function to show DPS damage
-            if (gameState.monster.hp <= 0) { 
-                monsterDefeated(); 
-            } 
-            updateUI(); 
-        } 
-    }
-    // --- END OF FIX ---
+    function gameLoop() { if (playerStats.totalDps > 0 && gameState.monster.hp > 0) { gameState.monster.hp -= playerStats.totalDps; showDpsPopup(playerStats.totalDps); if (gameState.monster.hp <= 0) { monsterDefeated(); } updateUI(); } }
     
     function monsterDefeated() { 
         const level = gameState.currentFightingLevel;
@@ -154,8 +145,8 @@ document.addEventListener('DOMContentLoaded', () => {
     
     function recalculateStats() {
         const hero = gameState.hero;
-        playerStats.baseClickDamage = 1; 
-        playerStats.baseDps = 0;
+        playerStats.baseClickDamage = 1 + (gameState.absorbedStats?.clickDamage || 0);
+        playerStats.baseDps = 0 + (gameState.absorbedStats?.dps || 0);
         
         const allItems = [...gameState.legacyItems, ...Object.values(gameState.equipment)]; 
         for(const item of allItems) { if(item) addStatsFromItem(item); }
@@ -241,6 +232,12 @@ document.addEventListener('DOMContentLoaded', () => {
         dpsStatEl.textContent = playerStats.totalDps.toFixed(1);
         bonusGoldStatEl.textContent = playerStats.bonusGold.toFixed(1);
         magicFindStatEl.textContent = playerStats.magicFind.toFixed(1);
+        
+        prestigeCountStatEl.textContent = gameState.prestigeCount || 0;
+        absorbedClickDmgStatEl.textContent = (gameState.absorbedStats?.clickDamage || 0).toFixed(2);
+        absorbedDpsStatEl.textContent = (gameState.absorbedStats?.dps || 0).toFixed(2);
+        legacyItemsStatEl.textContent = (gameState.legacyItems?.length || 0);
+
         currentLevelEl.textContent = gameState.currentFightingLevel; levelLockCheckbox.checked = gameState.isLevelLocked; levelSelectInput.max = gameState.maxLevel;
         monsterHealthTextEl.textContent = `${Math.ceil(Math.max(0, gameState.monster.hp))} / ${gameState.monster.maxHp}`;
         const healthPercent = (gameState.monster.hp / gameState.monster.maxHp) * 100; monsterHealthBarEl.style.width = `${healthPercent}%`;
@@ -324,19 +321,15 @@ document.addEventListener('DOMContentLoaded', () => {
     function showDamagePopup(damage) { const popup = document.createElement('div'); popup.textContent = `-${Math.floor(damage)}`; popup.className = 'damage-popup'; popup.style.left = `${40 + Math.random() * 20}%`; popup.style.top = `${40 + Math.random() * 20}%`; popupContainerEl.appendChild(popup); setTimeout(() => popup.remove(), 1000); }
     function showGoldPopup(gold) { const popup = document.createElement('div'); popup.innerHTML = `+${Math.floor(gold)} <i class="fas fa-coins"></i>`; popup.className = 'gold-popup'; popup.style.left = `${40 + Math.random() * 20}%`; popup.style.top = `${50}%`; popupContainerEl.appendChild(popup); setTimeout(() => popup.remove(), 1500); }
     
-    // --- THIS IS THE FIX (PART 2) ---
     function showDpsPopup(damage) { 
         const popup = document.createElement('div'); 
         popup.textContent = `-${Math.floor(damage)}`; 
-        popup.className = 'dps-popup'; // Use a new class for styling
-        // Randomize position to prevent perfect overlap
+        popup.className = 'dps-popup';
         popup.style.left = `${30 + Math.random() * 40}%`;
         popup.style.top = `${45 + Math.random() * 20}%`; 
         popupContainerEl.appendChild(popup); 
-        // Shorter lifespan so they fade out quicker than click damage
         setTimeout(() => popup.remove(), 800); 
     }
-    // --- END OF FIX ---
 
     function toggleLevelLock() { gameState.isLevelLocked = levelLockCheckbox.checked; logMessage(`Level lock ${gameState.isLevelLocked ? 'enabled' : 'disabled'}.`); }
     function goToLevel() { const desiredLevel = parseInt(levelSelectInput.value, 10); if (isNaN(desiredLevel) || desiredLevel <= 0) { alert("Please enter a valid level > 0."); return; } if (desiredLevel > gameState.maxLevel) { alert(`Your max level is ${gameState.maxLevel}.`); levelSelectInput.value = gameState.maxLevel; return; } gameState.currentFightingLevel = desiredLevel; logMessage(`Traveling to level ${desiredLevel}...`); generateMonster(); updateUI(); }
@@ -462,17 +455,44 @@ document.addEventListener('DOMContentLoaded', () => {
     
     function confirmPrestige() {
         if (prestigeSelections.length > 3) { alert("You can only select up to 3 items!"); return; }
+        
+        const absorbed = { clickDamage: 0, dps: 0 };
+        for (const item of Object.values(gameState.equipment)) {
+            if (item) {
+                absorbed.clickDamage += item.stats.clickDamage || 0;
+                absorbed.dps += item.stats.dps || 0;
+            }
+        }
+        logMessage(`Absorbed <b>+${absorbed.clickDamage.toFixed(2)}</b> Click Damage and <b>+${absorbed.dps.toFixed(2)}</b> DPS from your gear!`, 'epic');
+        
         const allItems = [...Object.values(gameState.equipment).filter(i => i), ...gameState.inventory];
-        const itemsToKeep = allItems.filter(item => prestigeSelections.includes(item.id));
+        const newLegacyItems = allItems.filter(item => prestigeSelections.includes(item.id));
+        const oldLegacyItems = gameState.legacyItems || [];
+        
         const oldLevel = gameState.maxLevel;
-        const heroStatsToKeep = gameState.hero; 
+        const heroToKeep = {
+            level: gameState.hero.level,
+            xp: gameState.hero.xp,
+            attributePoints: (gameState.hero.level - 1) * 5,
+            attributes: { strength: 0, agility: 0, luck: 0 }
+        };
+        logMessage(`Your attributes have been reset, and <b>${heroToKeep.attributePoints}</b> points have been refunded.`, 'uncommon');
+
+        const oldAbsorbedStats = gameState.absorbedStats || { clickDamage: 0, dps: 0 };
+        const oldPrestigeCount = gameState.prestigeCount || 0;
+        const baseState = getDefaultGameState();
+        gameState = {
+            ...baseState,
+            absorbedStats: {
+                clickDamage: oldAbsorbedStats.clickDamage + absorbed.clickDamage,
+                dps: oldAbsorbedStats.dps + absorbed.dps
+            },
+            legacyItems: [...oldLegacyItems, ...newLegacyItems],
+            prestigeCount: oldPrestigeCount + 1,
+            hero: heroToKeep
+        };
         
-        gameState = getDefaultGameState();
-        
-        gameState.legacyItems = itemsToKeep;
-        gameState.hero = heroStatsToKeep;
-        
-        logMessage(`PRESTIGE! Restarted from Lvl ${oldLevel}, keeping hero stats and ${itemsToKeep.length} items.`);
+        logMessage(`PRESTIGE! Restarted from Lvl ${oldLevel}, keeping hero progress, ${newLegacyItems.length} new legacy items, and all absorbed stats.`);
         
         prestigeSelectionEl.classList.add('hidden');
         prestigeButton.classList.remove('hidden');
@@ -631,7 +651,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // --- MAIN INITIALIZATION FUNCTION ---
     function main() {
-        // --- Assign DOM elements to variables ---
+        // --- THIS IS THE FIX ---
         saveIndicatorEl = document.getElementById('save-indicator');
         goldStatEl = document.getElementById('gold-stat');
         scrapStatEl = document.getElementById('scrap-stat');
@@ -671,6 +691,11 @@ document.addEventListener('DOMContentLoaded', () => {
         lootMonsterNameEl = document.getElementById('loot-monster-name');
         lootDropChanceEl = document.getElementById('loot-drop-chance');
         lootTableDisplayEl = document.getElementById('loot-table-display');
+        prestigeCountStatEl = document.getElementById('prestige-count-stat');
+        absorbedClickDmgStatEl = document.getElementById('absorbed-click-dmg-stat');
+        absorbedDpsStatEl = document.getElementById('absorbed-dps-stat');
+        legacyItemsStatEl = document.getElementById('legacy-items-stat');
+        // --- END OF FIX ---
 
         // Load game state from localStorage
         const savedData = localStorage.getItem('idleRPGSaveData');
@@ -680,9 +705,14 @@ document.addEventListener('DOMContentLoaded', () => {
             gameState = {...baseState, ...loadedState};
             gameState.hero = { ...baseState.hero, ...(loadedState.hero || {}) };
             gameState.hero.attributes = { ...baseState.hero.attributes, ...(loadedState.hero?.attributes || {}) };
-            gameState.upgrades = {...baseState.upgrades, ...loadedState.upgrades};
-            gameState.equipment = {...baseState.equipment, ...loadedState.equipment};
-            if (gameState.level) { gameState.maxLevel = gameState.level; gameState.currentFightingLevel = gameState.level; delete gameState.level; }
+            gameState.upgrades = {...baseState.upgrades, ...(loadedState.upgrades || {})};
+            gameState.equipment = {...baseState.equipment, ...(loadedState.equipment || {})};
+            gameState.absorbedStats = {...baseState.absorbedStats, ...(loadedState.absorbedStats || {}) };
+            if (gameState.level) { 
+                gameState.maxLevel = gameState.level; 
+                gameState.currentFightingLevel = gameState.level; 
+                delete gameState.level; 
+            }
         } else {
             gameState = getDefaultGameState();
         }

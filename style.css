@@ -42,18 +42,15 @@ button:disabled { background: #7f8c8d; cursor: not-allowed; border-bottom: 2px s
 #popup-container { position: absolute; top: 0; left: 0; right: 0; bottom: 0; pointer-events: none; }
 .damage-popup { position: absolute; font-size: 24px; font-weight: bold; color: #f1c40f; text-shadow: 2px 2px 2px #000; animation: float-up 1s ease-out forwards; user-select: none; }
 .gold-popup { position: absolute; font-size: 20px; font-weight: bold; color: #ffd700; animation: float-up 1.5s ease-out forwards; user-select: none; }
-
-/* --- THIS IS THE FIX --- */
 .dps-popup { 
     position: absolute; 
-    font-size: 20px; /* Slightly smaller than click damage */
+    font-size: 20px;
     font-weight: bold; 
-    color: #ffffff; /* White to distinguish from click damage */
+    color: #ffffff;
     text-shadow: 2px 2px 2px #000; 
-    animation: float-up 0.8s ease-out forwards; /* Fades a bit faster */
+    animation: float-up 0.8s ease-out forwards;
     user-select: none; 
 }
-/* --- END OF FIX --- */
 
 @keyframes float-up { 0% { transform: translateY(0); opacity: 1; } 100% { transform: translateY(-100px); opacity: 0; } }
 
@@ -93,6 +90,23 @@ button:disabled { background: #7f8c8d; cursor: not-allowed; border-bottom: 2px s
 @keyframes pulse-green { 0% { box-shadow: 0 0 0 0 rgba(46, 204, 113, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(46, 204, 113, 0); } 100% { box-shadow: 0 0 0 0 rgba(46, 204, 113, 0); } }
 #derived-stats-area p { margin: 8px 0; font-size: 1.1em; }
 #derived-stats-area i { margin-right: 8px; color: #f1c40f; }
+
+/* --- START OF NEW SECTION --- */
+#prestige-stats-area {
+    background-color: rgba(0,0,0,0.2); 
+    border-radius: 5px; 
+    padding: 15px; 
+    margin-top: 10px;
+}
+#prestige-stats-area p { 
+    margin: 8px 0; 
+    font-size: 1.1em; 
+}
+#prestige-stats-area i { 
+    margin-right: 8px; 
+    color: #f1c40f; 
+}
+/* --- END OF NEW SECTION --- */
 
 .dungeon-tabs .tab-button { font-size: 0.9em; padding: 8px; }
 #loot-view { padding: 10px; text-align: center; }
