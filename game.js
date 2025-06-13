@@ -102,7 +102,7 @@ document.addEventListener('DOMContentLoaded', () => {
             activePresetIndex: 0,
             completedLevels: [],
             isFarming: true,
-            isAutoProgressing: false,
+            isAutoProgressing: true, // <-- SET TO TRUE BY DEFAULT
             currentRealmIndex: 0
         };
     }
@@ -363,28 +363,61 @@ document.addEventListener('DOMContentLoaded', () => {
     
     function buyLootCrate() {
         const cost = 50;
-        if (gameState.scrap >= cost) {
-            gameState.scrap -= cost;
-            logMessage(`Bought a loot crate for ${cost} Scrap!`);
-
-            // --- BUG FIX: Select a random item base to generate ---
-            const itemKeys = Object.keys(ITEMS);
-            const randomItemKey = itemKeys[Math.floor(Math.random() * itemKeys.length)];
-            const itemBase = ITEMS[randomItemKey];
-            
-            // Generate a random rarity (but not common)
-            const rarityRoll = Math.floor(Math.random() * (rarities.length - 1)) + 1; // 1 to 4
-            const rarity = rarities[rarityRoll];
-
-            const item = generateItem(rarity, gameState.currentFightingLevel, itemBase);
-            gameState.inventory.push(item);
-
-            logMessage(`The crate contained: <span class="${item.rarity}" style="font-weight:bold;">${item.name}</span>`);
-            updateUI();
-            autoSave();
-        } else {
+        if (gameState.scrap < cost) {
             logMessage("Not enough Scrap!");
+            return;
         }
+
+        // 1. Get the current realm's zones.
+        const currentRealmData = REALMS[gameState.currentRealmIndex];
+        if (!currentRealmData) return;
+
+        // 2. Collect all monsters from sub-zones in the current realm.
+        const realmMonsters = new Set();
+        for (const zoneId in currentRealmData.zones) {
+            const zone = currentRealmData.zones[zoneId];
+            for (const subZoneId in zone.subZones) {
+                const subZone = zone.subZones[subZoneId];
+                // 3. Only include monsters from levels the player has completed.
+                if (gameState.completedLevels.some(lvl => lvl >= subZone.levelRange[0] && lvl <= subZone.levelRange[1])) {
+                    subZone.monsterPool.forEach(monster => realmMonsters.add(monster));
+                }
+            }
+        }
+        
+        // 4. Build a pool of possible items from those monsters, filtering out uniques.
+        const availableItems = [];
+        realmMonsters.forEach(monster => {
+            if (monster.lootTable) {
+                monster.lootTable.forEach(lootEntry => {
+                    if (!lootEntry.item.isUnique) {
+                        availableItems.push(lootEntry.item);
+                    }
+                });
+            }
+        });
+
+        if (availableItems.length === 0) {
+            logMessage("No available items in loot crate! Defeat more monsters in this realm to unlock their drops.");
+            return;
+        }
+
+        gameState.scrap -= cost;
+        logMessage(`Bought a loot crate for ${cost} Scrap!`);
+
+        // 5. Pick a random (non-unique) item from the unlocked pool.
+        const itemBase = availableItems[Math.floor(Math.random() * availableItems.length)];
+        
+        // 6. Generate a random rarity (but not common).
+        const rarityRoll = Math.floor(Math.random() * (rarities.length - 1)) + 1; // 1 (uncommon) to 4 (legendary)
+        const rarity = rarities[rarityRoll];
+
+        const item = generateItem(rarity, gameState.maxLevel, itemBase);
+        gameState.inventory.push(item);
+
+        logMessage(`The crate contained: <span class="${item.rarity}" style="font-weight:bold;">${item.name}</span>`);
+        updateUI();
+        autoSave();
     }
 
     function toggleSalvageMode() { salvageMode.active = !salvageMode.active; const salvageBtn = document.getElementById('salvage-mode-btn'); const confirmBtn = document.getElementById('confirm-salvage-btn'); const selectAllBtn = document.getElementById('select-all-salvage-btn'); if (salvageMode.active) { salvageBtn.textContent = 'Cancel Salvage'; salvageBtn.classList.add('active'); confirmBtn.classList.remove('hidden'); selectAllBtn.classList.remove('hidden'); } else { salvageBtn.textContent = 'Select to Salvage'; salvageBtn.classList.remove('active'); confirmBtn.classList.add('hidden'); selectAllBtn.classList.add('hidden'); salvageMode.selections = []; } document.body.classList.toggle('salvage-mode-active', salvageMode.active); document.getElementById('salvage-count').textContent = '0'; updateUI(); }
@@ -1257,14 +1290,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 activePresetIndex: loadedState.activePresetIndex || 0,
                 completedLevels: loadedState.completedLevels || [],
                 isFarming: loadedState.isFarming !== undefined ? loadedState.isFarming : true,
-                isAutoProgressing: loadedState.isAutoProgressing || false,
+                isAutoProgressing: loadedState.isAutoProgressing, // Load the saved setting
                 currentRealmIndex: loadedState.currentRealmIndex || 0,
             };
 
+            // This ensures that if a new save is created, it uses the default, but if an old save exists without the property, it defaults to true.
+            if (gameState.isAutoProgressing === undefined) {
+                gameState.isAutoProgressing = true;
+            }
+
             // REMOVED THE BUGGY PRESET LOADING BLOCK
-            // if(gameState.presets && gameState.presets[gameState.activePresetIndex]) {
-            //     gameState.equipment = { ...gameState.presets[gameState.activePresetIndex].equipment };
-            // }
 
             if (loadedState.level && loadedState.maxLevel === undefined) {
                 gameState.maxLevel = loadedState.level;

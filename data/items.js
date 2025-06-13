@@ -3,18 +3,8 @@ import { STATS } from './stat_pools.js';
 /*
 * ITEM DEFINITION GUIDE
 *
-* Each item is a "Unique-Base Item" with a specific identity.
-*
-* name: The in-game name of the item.
-* type: The equipment slot this item uses. Must match a slot name (e.g., 'sword', 'helmet').
-* icon: The path to the item's image.
-* possibleStats: An array of stats that can appear on this item.
-*   - The number of stats an item gets is determined by its rarity (common, epic, etc.).
-*   - If an item has only one stat in this array, it will always roll with that stat.
-*   - For each stat:
-*     - key: The internal stat key from stat_pools.js (e.g., STATS.DPS.key).
-*     - min: The lowest possible value this stat can roll (at the lowest end of a 'common' item).
-*     - max: The highest possible value this stat can roll (at the highest end of a 'legendary' item).
+* isUnique: (Optional) If true, this item is considered a "unique" or "boss" item.
+*           This can be used to exclude it from certain loot pools, like loot crates.
 */
 
 export const ITEMS = {
@@ -22,7 +12,7 @@ export const ITEMS = {
     RUSTY_SWORD: {
         name: "Rusty Sword",
         type: 'sword',
-        icon: 'images/icons/sword.png', // You can create new icons later
+        icon: 'images/icons/sword.png', 
         possibleStats: [
             { key: STATS.CLICK_DAMAGE.key, min: 1, max: 15 }
         ]
@@ -31,6 +21,7 @@ export const ITEMS = {
         name: "Gladiator's Longsword",
         type: 'sword',
         icon: 'images/icons/sword.png',
+        isUnique: true, // This is a special boss/unique item
         possibleStats: [
             { key: STATS.CLICK_DAMAGE.key, min: 20, max: 100 },
             { key: STATS.DPS.key, min: 50, max: 250 }
@@ -88,6 +79,7 @@ export const ITEMS = {
         name: "Amulet of Power",
         type: 'necklace',
         icon: 'images/icons/necklace.png',
+        isUnique: true, // This is also a special boss/unique item
         possibleStats: [
             { key: STATS.CLICK_DAMAGE.key, min: 15, max: 75 },
             { key: STATS.DPS.key, min: 30, max: 150 }
