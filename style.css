@@ -32,8 +32,33 @@ button:disabled { background: #7f8c8d; cursor: not-allowed; border-bottom: 2px s
     display: flex; 
     align-items: center; 
     gap: 8px;
-    margin: 0 10px; /* Add some margin for spacing */
+    margin: 0 10px;
 }
+
+/* --- START OF NEW REALM TAB STYLES --- */
+#realm-tabs-container {
+    display: flex;
+    border-bottom: 2px solid #4a637e;
+    margin-bottom: 10px;
+}
+.realm-tab-btn {
+    flex-grow: 1;
+    padding: 8px;
+    margin: 0;
+    border-radius: 5px 5px 0 0;
+    border-bottom: none;
+    background: #34495e;
+    font-size: 0.9em;
+}
+.realm-tab-btn.active {
+    background: linear-gradient(145deg, #4a637e, #34495e);
+    color: #f1c40f;
+}
+.realm-tab-btn:disabled {
+    color: #95a5a6;
+}
+/* --- END OF NEW REALM TAB STYLES --- */
+
 
 #map-header {
     display: flex;
@@ -53,7 +78,7 @@ button:disabled { background: #7f8c8d; cursor: not-allowed; border-bottom: 2px s
 #map-container {
     width: 100%;
     aspect-ratio: 16 / 9;
-    background-image: url('images/world_map.png'); /* Default world map */
+    background-image: url('images/world_map.png');
     background-size: cover;
     background-position: center;
     position: relative;
@@ -96,7 +121,7 @@ button:disabled { background: #7f8c8d; cursor: not-allowed; border-bottom: 2px s
      box-shadow: none;
 }
 .map-node-icon.completed {
-    border-color: #2ecc71; /* Green border for completed */
+    border-color: #2ecc71;
     box-shadow: 0 0 15px #2ecc71;
 }
 .map-node-lock-icon, .map-node-completed-icon {
@@ -125,7 +150,7 @@ button:disabled { background: #7f8c8d; cursor: not-allowed; border-bottom: 2px s
     white-space: nowrap;
 }
 .map-node.active-zone .map-node-icon {
-    border-color: #e74c3c; /* Red border for current fighting zone */
+    border-color: #e74c3c;
     animation: pulse-red 2s infinite;
 }
 

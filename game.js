@@ -7,56 +7,76 @@ document.addEventListener('DOMContentLoaded', () => {
     const rarities = ['common', 'uncommon', 'rare', 'epic', 'legendary'];
     const statPools = { sword: [{key: 'clickDamage', name: 'Click Dmg'}, {key: 'dps', name: 'DPS'}], shield: [{key: 'dps', name: 'DPS'}], helmet: [{key: 'goldGain', name: '% Gold Gain'}], necklace: [{key: 'goldGain', name: '% Gold Gain'}], platebody: [{key: 'dps', name: 'DPS'}], platelegs: [{key: 'dps', name: 'DPS'}], ring: [{key: 'clickDamage', name: 'Click Dmg'}, {key: 'goldGain', name: '% Gold Gain'}], belt: [{key: 'dps', name: 'DPS'}], };
     
-    const zoneData = {
-        "green_meadows": {
-            name: "Green Meadows",
+    const realmData = [
+        {
+            name: "The Overworld",
+            mapImage: "images/world_map.png",
             requiredLevel: 1,
-            mapImage: "images/map_meadows_zoomed.png",
-            coords: { top: '78%', left: '20%' },
-            icon: 'images/icons/sword.png', 
-            subZones: {
-                "starting_fields": { name: "Starting Fields", levelRange: [1, 9], monsters: ["Slime", "Goblin"], coords: {top: '60%', left: '30%'} },
-                "bat_cave": { name: "Bat Cave", levelRange: [10, 19], monsters: ["Bat"], coords: {top: '30%', left: '60%'} },
-                "meadows_boss": { name: "Guardian's Post", levelRange: [20, 20], monsters: ["Dungeon Guardian"], coords: {top: '75%', left: '70%'}, isBoss: true }
+            zones: {
+                "green_meadows": {
+                    name: "Green Meadows",
+                    mapImage: "images/map_meadows_zoomed.png",
+                    coords: { top: '78%', left: '20%' },
+                    icon: 'images/icons/sword.png', 
+                    subZones: {
+                        "starting_fields": { name: "Starting Fields", levelRange: [1, 9], monsters: ["Slime", "Goblin"], coords: {top: '60%', left: '30%'} },
+                        "bat_cave": { name: "Bat Cave", levelRange: [10, 19], monsters: ["Bat"], coords: {top: '30%', left: '60%'} },
+                        "meadows_boss": { name: "Guardian's Post", levelRange: [20, 20], monsters: ["Dungeon Guardian"], coords: {top: '75%', left: '70%'}, isBoss: true }
+                    }
+                },
+                "orc_volcano": {
+                    name: "Orc Volcano",
+                    mapImage: "images/map_volcano_zoomed.png",
+                    coords: { top: '30%', left: '38%' },
+                    icon: 'images/icons/platebody.png',
+                    subZones: {
+                        "ashfall_plains": { name: "Ashfall Plains", levelRange: [21, 29], monsters: ["Orc"], coords: {top: '70%', left: '30%'} },
+                        "magma_flow": { name: "Magma Flow", levelRange: [30, 39], monsters: ["Orc"], coords: {top: '50%', left: '65%'} },
+                        "volcano_peak": { name: "Volcano Peak", levelRange: [40, 40], monsters: ["Dungeon Guardian"], coords: {top: '20%', left: '50%'}, isBoss: true }
+                    }
+                },
+                "undead_desert": {
+                    name: "Undead Desert",
+                    mapImage: "images/map_desert_zoomed.png",
+                    coords: { top: '70%', left: '75%' },
+                    icon: 'images/icons/shield.png',
+                    subZones: {
+                         "lost_tombs": { name: "Lost Tombs", levelRange: [41, 49], monsters: ["Skeleton"], coords: {top: '70%', left: '30%'} },
+                         "cursed_ruins": { name: "Cursed Ruins", levelRange: [50, 59], monsters: ["Zombie"], coords: {top: '50%', left: '65%'} },
+                         "sand_pit": { name: "The Sand Pit", levelRange: [60, 60], monsters: ["Dungeon Guardian"], coords: {top: '20%', left: '50%'}, isBoss: true }
+                    }
+                },
+                "final_dungeon": {
+                    name: "Final Dungeon",
+                    mapImage: "images/map_dungeon_zoomed.png",
+                    coords: { top: '22%', left: '78%' },
+                    icon: 'images/icons/helmet.png',
+                    subZones: {
+                        "gatehouse": { name: "The Gatehouse", levelRange: [61, 79], monsters: ["Dungeon Guardian"], coords: {top: '80%', left: '50%'} },
+                        "throne_room": { name: "Throne Room", levelRange: [80, 99], monsters: ["Dungeon Guardian"], coords: {top: '40%', left: '50%'} },
+                        "archdemon_lair": { name: "Archdemon's Lair", levelRange: [100, 100], monsters: ["Archdemon Overlord"], coords: {top: '10%', left: '50%'}, isBoss: true }
+                    }
+                }
             }
         },
-        "orc_volcano": {
-            name: "Orc Volcano",
-            requiredLevel: 21,
-            mapImage: "images/map_volcano_zoomed.png",
-            coords: { top: '30%', left: '38%' },
-            icon: 'images/icons/platebody.png',
-            subZones: {
-                "ashfall_plains": { name: "Ashfall Plains", levelRange: [21, 29], monsters: ["Orc"], coords: {top: '70%', left: '30%'} },
-                "magma_flow": { name: "Magma Flow", levelRange: [30, 39], monsters: ["Orc"], coords: {top: '50%', left: '65%'} },
-                "volcano_peak": { name: "Volcano Peak", levelRange: [40, 40], monsters: ["Dungeon Guardian"], coords: {top: '20%', left: '50%'}, isBoss: true }
+        {
+            name: "The Underdark",
+            mapImage: "images/underground_world_map.png", 
+            requiredLevel: 101,
+            zones: {
+                 "crystal_caves": {
+                    name: "Crystal Caverns",
+                    mapImage: "images/map_caves_zoomed.png",
+                    coords: { top: '70%', left: '25%' },
+                    icon: 'images/icons/ring.png',
+                    subZones: {
+                        "glimmering_path": { name: "Glimmering Path", levelRange: [101, 119], monsters: ["Bat", "Skeleton"], coords: {top: '60%', left: '30%'} },
+                        "crystal_heart": { name: "Crystal Heart", levelRange: [120, 120], monsters: ["Dungeon Guardian"], coords: {top: '75%', left: '70%'}, isBoss: true }
+                    }
+                }
             }
-        },
-        "undead_desert": {
-            name: "Undead Desert",
-            requiredLevel: 41,
-            mapImage: "images/map_desert_zoomed.png",
-            coords: { top: '70%', left: '75%' },
-            icon: 'images/icons/shield.png',
-            subZones: {
-                 "lost_tombs": { name: "Lost Tombs", levelRange: [41, 49], monsters: ["Skeleton"], coords: {top: '70%', left: '30%'} },
-                 "cursed_ruins": { name: "Cursed Ruins", levelRange: [50, 59], monsters: ["Zombie"], coords: {top: '50%', left: '65%'} },
-                 "sand_pit": { name: "The Sand Pit", levelRange: [60, 60], monsters: ["Dungeon Guardian"], coords: {top: '20%', left: '50%'}, isBoss: true }
-            }
-        },
-        "final_dungeon": {
-            name: "Final Dungeon",
-            requiredLevel: 61,
-            mapImage: "images/map_dungeon_zoomed.png",
-            coords: { top: '22%', left: '78%' },
-            icon: 'images/icons/helmet.png',
-            subZones: {
-                "gatehouse": { name: "The Gatehouse", levelRange: [61, 79], monsters: ["Dungeon Guardian"], coords: {top: '80%', left: '50%'} },
-                "throne_room": { name: "Throne Room", levelRange: [80, 99], monsters: ["Dungeon Guardian"], coords: {top: '40%', left: '50%'} },
-                "archdemon_lair": { name: "Archdemon's Lair", levelRange: [100, 100], monsters: ["Archdemon Overlord"], coords: {top: '10%', left: '50%'}, isBoss: true }
-            }
-        },
-    };
+        }
+    ];
     
     const monsterBaseData = {
         "Slime":    { image: 'images/slime.png', dropTypes: ['ring', 'belt'], dropChance: 1.0 },
@@ -85,7 +105,7 @@ document.addEventListener('DOMContentLoaded', () => {
         magicFindStatEl, lootMonsterNameEl, lootDropChanceEl, lootTableDisplayEl,
         statTooltipEl, prestigeCountStatEl, absorbedClickDmgStatEl, absorbedDpsStatEl, legacyItemsStatEl,
         mapContainerEl, mapTitleEl, backToWorldMapBtnEl, modalBackdropEl, modalContentEl, modalTitleEl, modalBodyEl, modalCloseBtnEl,
-        autoProgressCheckboxEl;
+        autoProgressCheckboxEl, realmTabsContainerEl;
 
     // RAID SECTION
     const socket = io('https://idlegame-oqyq.onrender.com'); 
@@ -119,6 +139,10 @@ document.addEventListener('DOMContentLoaded', () => {
         return scaled.toFixed(2) + suffix;
     }
 
+    function getCurrentRealm() {
+        return realmData[gameState.currentRealmIndex];
+    }
+
     // --- CORE GAME LOGIC ---
     const defaultEquipmentState = { sword: null, shield: null, helmet: null, necklace: null, platebody: null, platelegs: null, ring1: null, ring2: null, belt: null };
 
@@ -144,6 +168,7 @@ document.addEventListener('DOMContentLoaded', () => {
             completedLevels: [],
             isFarming: true,
             isAutoProgressing: false,
+            currentRealmIndex: 0
         };
     }
     
@@ -169,6 +194,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const currentSubZone = findSubZoneByLevel(level);
         if (currentSubZone && currentSubZone.isBoss) {
              xpGained *= 5;
+             const nextRealmIndex = gameState.currentRealmIndex + 1;
+             if (realmData[nextRealmIndex] && level + 1 >= realmData[nextRealmIndex].requiredLevel) {
+                 gameState.currentRealmIndex = nextRealmIndex;
+                 currentMap = 'world';
+                 logMessage(`A new realm has been unlocked: <b>${getCurrentRealm().name}</b>!`, 'legendary');
+             }
         }
         gainXP(xpGained);
 
@@ -183,8 +214,8 @@ document.addEventListener('DOMContentLoaded', () => {
         
         let nextLevel = gameState.currentFightingLevel + 1;
         if (gameState.isAutoProgressing) {
-            if (nextLevel <= gameState.maxLevel + 1) { // Allow pushing one level beyond max
-                 gameState.currentFightingLevel = nextLevel;
+            if (findSubZoneByLevel(nextLevel) !== null) {
+                gameState.currentFightingLevel = nextLevel;
             }
         } 
         else if (gameState.isFarming) {
@@ -203,11 +234,13 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function findSubZoneByLevel(level) {
-        for (const zoneId in zoneData) {
-            for (const subZoneId in zoneData[zoneId].subZones) {
-                const subZone = zoneData[zoneId].subZones[subZoneId];
-                if (level >= subZone.levelRange[0] && level <= subZone.levelRange[1]) {
-                    return subZone;
+        for (const realm of realmData) {
+            for (const zoneId in realm.zones) {
+                for (const subZoneId in realm.zones[zoneId].subZones) {
+                    const subZone = realm.zones[zoneId].subZones[subZoneId];
+                    if (level >= subZone.levelRange[0] && level <= subZone.levelRange[1]) {
+                        return subZone;
+                    }
                 }
             }
         }
@@ -220,7 +253,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (!subZone) {
             console.error("No sub-zone found for level:", level);
-            let monsterName = zoneData.green_meadows.subZones.starting_fields.monsters[0];
+            let monsterName = "Slime";
             currentMonster = { name: monsterName, data: monsterBaseData[monsterName] };
             gameState.currentFightingLevel = 1;
         } else {
@@ -385,15 +418,16 @@ document.addEventListener('DOMContentLoaded', () => {
     
     function renderMap() {
         mapContainerEl.innerHTML = ''; 
+        const realm = getCurrentRealm();
 
         if (currentMap === 'world') {
-            mapTitleEl.textContent = 'World Map';
+            mapTitleEl.textContent = realm.name;
             backToWorldMapBtnEl.classList.add('hidden');
-            mapContainerEl.style.backgroundImage = "url('images/world_map.png')";
+            mapContainerEl.style.backgroundImage = `url('${realm.mapImage}')`;
 
-            for (const zoneId in zoneData) {
-                const zone = zoneData[zoneId];
-                const isUnlocked = gameState.maxLevel >= zone.requiredLevel;
+            for (const zoneId in realm.zones) {
+                const zone = realm.zones[zoneId];
+                const isUnlocked = gameState.maxLevel >= findFirstLevelOfZone(zone);
                 const node = createMapNode(zone.name, zone.icon, zone.coords, isUnlocked);
 
                 if (isUnlocked) {
@@ -402,7 +436,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 mapContainerEl.appendChild(node);
             }
         } else {
-            const zone = zoneData[currentMap];
+            const zone = realm.zones[currentMap];
+            if (!zone) { console.error("Invalid zone ID:", currentMap); showWorldMap(); return; }
             mapTitleEl.textContent = zone.name;
             backToWorldMapBtnEl.classList.remove('hidden');
             mapContainerEl.style.backgroundImage = `url('${zone.mapImage}')`;
@@ -420,6 +455,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 mapContainerEl.appendChild(node);
             }
         }
+    }
+
+    function findFirstLevelOfZone(zone) {
+        let firstLevel = Infinity;
+        for(const subZoneId in zone.subZones) {
+            if(zone.subZones[subZoneId].levelRange[0] < firstLevel) {
+                firstLevel = zone.subZones[subZoneId].levelRange[0];
+            }
+        }
+        return firstLevel;
     }
 
     function createMapNode(name, iconSrc, coords, isUnlocked, isCompleted = false) {
@@ -503,6 +548,27 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function closeModal() {
         modalBackdropEl.classList.add('hidden');
+    }
+
+    function renderRealmTabs() {
+        realmTabsContainerEl.innerHTML = '';
+        realmData.forEach((realm, index) => {
+            const isUnlocked = gameState.maxLevel >= realm.requiredLevel;
+            const tab = document.createElement('button');
+            tab.className = 'realm-tab-btn';
+            tab.textContent = realm.name;
+            tab.disabled = !isUnlocked;
+            if (index === gameState.currentRealmIndex) {
+                tab.classList.add('active');
+            }
+            tab.onclick = () => {
+                gameState.currentRealmIndex = index;
+                currentMap = 'world';
+                renderMap();
+                renderRealmTabs();
+            };
+            realmTabsContainerEl.appendChild(tab);
+        });
     }
 
     function updateUI() {
@@ -597,6 +663,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         renderMap();
+        renderRealmTabs();
     }
     
     function createItemHTML(item, isEquipped) {
@@ -609,7 +676,7 @@ document.addEventListener('DOMContentLoaded', () => {
         let statsHTML = '<ul>';
         for (const stat in item.stats) {
             const statInfo = statPools[item.type].find(s => s.key === stat);
-            const statName = statInfo ? statInfo.name : stat;
+            const statName = statInfo ? statInfo.name : statKey;
             statsHTML += `<li>+${formatNumber(item.stats[stat])} ${statName}</li>`;
         }
         statsHTML += '</ul>';
@@ -1052,6 +1119,7 @@ document.addEventListener('DOMContentLoaded', () => {
         modalBodyEl = document.getElementById('modal-body');
         modalCloseBtnEl = document.getElementById('modal-close-btn');
         autoProgressCheckboxEl = document.getElementById('auto-progress-checkbox');
+        realmTabsContainerEl = document.getElementById('realm-tabs-container');
 
         const savedData = localStorage.getItem('idleRPGSaveData');
         if (savedData) {
@@ -1071,6 +1139,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 completedLevels: loadedState.completedLevels || [],
                 isFarming: loadedState.isFarming !== undefined ? loadedState.isFarming : true,
                 isAutoProgressing: loadedState.isAutoProgressing || false,
+                currentRealmIndex: loadedState.currentRealmIndex || 0,
             };
 
             if(gameState.presets && gameState.presets[gameState.activePresetIndex]) {
