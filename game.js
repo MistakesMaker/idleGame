@@ -90,7 +90,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (isBossLevel(gameState.currentFightingLevel)) { xpGained *= 5; }
         gainXP(xpGained);
 
-        logMessage(`You defeated the monster and gained ${Math.floor(goldGained)} gold and ${xpGained} XP.`);
+        // --- THIS IS THE FIX ---
+        logMessage(`You defeated the ${currentMonster.name} and gained ${Math.floor(goldGained)} gold and ${xpGained} XP.`);
+        // --- END OF FIX ---
         showGoldPopup(goldGained); 
         
         const dropRoll = Math.random() * 100;
@@ -158,8 +160,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const clickUpgradeBonus = gameState.upgrades.clickDamage * 1.25;
         const dpsUpgradeBonus = gameState.upgrades.dps * 2.5;
         
-        // --- START OF FIX: ATTRIBUTE REBALANCE ---
-        // Get all bonuses from attributes
         const strengthBonusClickFlat = hero.attributes.strength * 0.5;
         const strengthBonusClickPercent = hero.attributes.strength * 0.2;
         const agilityBonusDpsPercent = hero.attributes.agility * 0.3;
@@ -175,7 +175,6 @@ document.addEventListener('DOMContentLoaded', () => {
         let finalDps = playerStats.baseDps + dpsUpgradeBonus;
         finalDps *= (1 + (agilityBonusDpsPercent / 100));
         playerStats.totalDps = finalDps;
-        // --- END OF FIX ---
 
         if (socket.connected) {
             socket.emit('updatePlayerStats', { dps: playerStats.totalDps });
@@ -201,6 +200,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const type = forcedType || itemTypes[Math.floor(Math.random() * itemTypes.length)];
         const rarityIndex = rarities.indexOf(rarity); const item = { id: Date.now() + Math.random(), name: `${rarity.charAt(0).toUpperCase() + rarity.slice(1)} ${type.charAt(0).toUpperCase() + type.slice(1)}`, type: type, rarity: rarity, stats: {}, locked: false }; const levelModifier = 1 + (itemLevel / 15); let statValue = (Math.random() * 2.5 + 1) * (rarityIndex + 1) * levelModifier; const possibleStats = statPools[type]; const statToAssign = possibleStats[Math.floor(Math.random() * possibleStats.length)]; if (statToAssign.key === 'dps' || statToAssign.key === 'clickDamage') { statValue *= 2; } item.stats[statToAssign.key] = parseFloat(statValue.toFixed(2)); item.name = `${rarity.charAt(0).toUpperCase() + rarity.slice(1)} ${type.charAt(0).toUpperCase() + type.slice(1)} of ${statToAssign.name.replace('% ', '')}`; return item;
     }
+
     function dropLoot() {
         const dropTypes = currentMonster.data.dropTypes;
         const itemTypeToDrop = dropTypes[Math.floor(Math.random() * dropTypes.length)];
@@ -211,7 +211,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         const item = generateItem(rarity, gameState.currentFightingLevel, itemTypeToDrop);
         gameState.inventory.push(item);
-        logMessage(`The boss dropped an item! <span class="${item.rarity}" style="font-weight:bold;">${item.name}</span>`);
+        logMessage(`The ${currentMonster.name} dropped an item! <span class="${item.rarity}" style="font-weight:bold;">${item.name}</span>`);
     }
     
     function equipItem(inventoryIndex) { const item = gameState.inventory[inventoryIndex]; if (!item) return; let targetSlot = item.type; if (item.type === 'ring') { if (!gameState.equipment.ring1) targetSlot = 'ring1'; else if (!gameState.equipment.ring2) targetSlot = 'ring2'; else targetSlot = 'ring1'; } const currentEquipped = gameState.equipment[targetSlot]; if (currentEquipped) { gameState.inventory.push(currentEquipped); } gameState.equipment[targetSlot] = item; gameState.inventory.splice(inventoryIndex, 1); recalculateStats(); updateUI(); autoSave(); }
@@ -406,7 +406,6 @@ document.addEventListener('DOMContentLoaded', () => {
         return headerHTML + statsHTML;
     }
 
-    // --- START OF FIX: UPDATED TOOLTIP ---
     const statTooltipContent = {
         strength: {
             title: 'Strength',
@@ -432,7 +431,6 @@ document.addEventListener('DOMContentLoaded', () => {
             ]
         }
     };
-    // --- END OF FIX ---
 
     function setupStatTooltipListeners() {
         const attributesArea = document.getElementById('attributes-area');
