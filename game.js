@@ -56,31 +56,21 @@ document.addEventListener('DOMContentLoaded', () => {
     function isBossLevel(level) { return level % 10 === 0; }
     function isBigBossLevel(level) { return level % 100 === 0; }
     
-    // --- START OF NEW FEATURE: NUMBER FORMATTING ---
     const numberAbbreviations = ['K', 'M', 'B', 'T', 'Qa', 'Qi', 'Sx', 'Sp', 'Oc', 'No', 'Dc'];
 
     function formatNumber(num) {
         if (num < 1000) {
-            // For numbers less than 1000, show them as integers.
             return Math.floor(num).toString();
         }
-
-        // Determine the tier (K, M, B, etc.)
         const tier = Math.floor(Math.log10(Math.abs(num)) / 3);
-
-        // If the number is too large for our list, use exponential notation
         if (tier === 0 || tier > numberAbbreviations.length) {
             return num.toExponential(2);
         }
-
         const suffix = numberAbbreviations[tier - 1];
         const scale = Math.pow(10, tier * 3);
         const scaled = num / scale;
-
-        // Return the formatted number with 2 decimal places and the suffix
         return scaled.toFixed(2) + suffix;
     }
-    // --- END OF NEW FEATURE ---
 
     // --- CORE GAME LOGIC ---
     const defaultEquipmentState = { sword: null, shield: null, helmet: null, necklace: null, platebody: null, platelegs: null, ring1: null, ring2: null, belt: null };
@@ -310,7 +300,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     function updateUI() {
-        // --- START OF FIX: APPLY NUMBER FORMATTING ---
         const xpToNextLevel = getXpForNextLevel(gameState.hero.level);
         goldStatEl.textContent = formatNumber(gameState.gold);
         scrapStatEl.textContent = formatNumber(gameState.scrap);
@@ -324,7 +313,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const dpsCost = getUpgradeCost('dps');
         upgradeClickCostEl.textContent = formatNumber(clickCost);
         upgradeDpsCostEl.textContent = formatNumber(dpsCost);
-        // --- END OF FIX ---
         
         heroLevelEl.textContent = gameState.hero.level;
         heroXpBarEl.style.width = `${(gameState.hero.xp / xpToNextLevel) * 100}%`;
@@ -413,7 +401,6 @@ document.addEventListener('DOMContentLoaded', () => {
         for (const stat in item.stats) {
             const statInfo = statPools[item.type].find(s => s.key === stat);
             const statName = statInfo ? statInfo.name : stat;
-            // --- FIX: Apply number formatting to item stats too ---
             statsHTML += `<li>+${formatNumber(item.stats[stat])} ${statName}</li>`;
         }
         statsHTML += '</ul>';
@@ -481,7 +468,6 @@ document.addEventListener('DOMContentLoaded', () => {
             for (const statKey in hoveredItem.stats) {
                 const statInfo = statPools[hoveredItem.type]?.find(s => s.key === statKey);
                 const statName = statInfo ? statInfo.name : statKey;
-                // --- FIX: Apply number formatting to tooltips ---
                 statsHTML += `<li>+${formatNumber(hoveredItem.stats[statKey])} ${statName}</li>`;
             }
             statsHTML += '</ul>';
@@ -596,16 +582,23 @@ document.addEventListener('DOMContentLoaded', () => {
         const oldAbsorbedStats = gameState.absorbedStats || { clickDamage: 0, dps: 0 };
         const oldPrestigeCount = gameState.prestigeCount || 0;
         const baseState = getDefaultGameState();
+        
+        // --- START OF FIX: EXPLICIT PRESET WIPE ---
         gameState = {
-            ...baseState,
+            ...baseState, // This gets most of the defaults
+            // Explicitly carry over what should be kept
             absorbedStats: {
                 clickDamage: oldAbsorbedStats.clickDamage + absorbed.clickDamage,
                 dps: oldAbsorbedStats.dps + absorbed.dps
             },
             legacyItems: [...oldLegacyItems, ...newLegacyItems],
             prestigeCount: oldPrestigeCount + 1,
-            hero: heroToKeep
+            hero: heroToKeep,
+            // Explicitly reset what should be wiped to make it clear and safe
+            presets: baseState.presets,
+            activePresetIndex: baseState.activePresetIndex
         };
+        // --- END OF FIX ---
         
         logMessage(`PRESTIGE! Restarted from Lvl ${oldLevel}, keeping hero progress, ${newLegacyItems.length} new legacy items, and all absorbed stats.`);
         
