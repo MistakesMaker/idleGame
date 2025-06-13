@@ -1,99 +1,16 @@
+import { REALMS } from './data/realms.js';
+import { MONSTERS } from './data/monsters.js';
+import { ITEMS } from './data/items.js';
+import { STATS } from './data/stat_pools.js';
+
 document.addEventListener('DOMContentLoaded', () => {
 
     // --- GAME STATE AND CONFIGURATION ---
     let gameState = {};
     let currentMap = 'world';
-    const itemTypes = ['sword', 'shield', 'helmet', 'necklace', 'platebody', 'platelegs', 'ring', 'belt'];
     const rarities = ['common', 'uncommon', 'rare', 'epic', 'legendary'];
-    const statPools = { sword: [{key: 'clickDamage', name: 'Click Dmg'}, {key: 'dps', name: 'DPS'}], shield: [{key: 'dps', name: 'DPS'}], helmet: [{key: 'goldGain', name: '% Gold Gain'}], necklace: [{key: 'goldGain', name: '% Gold Gain'}], platebody: [{key: 'dps', name: 'DPS'}], platelegs: [{key: 'dps', name: 'DPS'}], ring: [{key: 'clickDamage', name: 'Click Dmg'}, {key: 'goldGain', name: '% Gold Gain'}], belt: [{key: 'dps', name: 'DPS'}], };
     
-    // --- START OF FIX: Added missing coordinates ---
-    const realmData = [
-        {
-            name: "The Overworld",
-            mapImage: "images/world_map.png",
-            requiredLevel: 1,
-            zones: {
-                "green_meadows": {
-                    name: "Green Meadows", mapImage: "images/map_meadows_zoomed.png",
-                    coords: { top: '78%', left: '20%' }, icon: 'images/icons/sword.png', 
-                    subZones: {
-                        "starting_fields": { name: "Starting Fields", levelRange: [1, 19], monsters: ["Slime", "Goblin", "Bat"], coords: {top: '60%', left: '30%'} },
-                        "meadows_boss_area": { name: "Guardian's Post", levelRange: [20, 20], monsters: ["Dungeon Guardian"], coords: {top: '75%', left: '70%'} }
-                    }
-                },
-                "orc_volcano": {
-                    name: "Orc Volcano", mapImage: "images/map_volcano_zoomed.png",
-                    coords: { top: '30%', left: '38%' }, icon: 'images/icons/platebody.png',
-                    subZones: {
-                        "ashfall_plains": { name: "Ashfall Plains", levelRange: [21, 39], monsters: ["Orc"], coords: {top: '70%', left: '30%'} },
-                        "volcano_peak": { name: "Volcano Peak", levelRange: [40, 40], monsters: ["Dungeon Guardian"], coords: {top: '20%', left: '50%'} }
-                    }
-                },
-                "undead_desert": {
-                    name: "Undead Desert", mapImage: "images/map_desert_zoomed.png",
-                    coords: { top: '70%', left: '75%' }, icon: 'images/icons/shield.png',
-                    subZones: {
-                         "lost_tombs": { name: "Lost Tombs", levelRange: [41, 59], monsters: ["Skeleton", "Zombie"], coords: {top: '70%', left: '30%'} },
-                         "sand_pit": { name: "The Sand Pit", levelRange: [60, 60], monsters: ["Dungeon Guardian"], coords: {top: '20%', left: '50%'} }
-                    }
-                },
-                "final_dungeon": {
-                    name: "Final Dungeon", mapImage: "images/map_dungeon_zoomed.png",
-                    coords: { top: '22%', left: '78%' }, icon: 'images/icons/helmet.png',
-                    subZones: {
-                        "gatehouse": { name: "The Gatehouse", levelRange: [61, 99], monsters: ["Dungeon Guardian"], coords: {top: '80%', left: '50%'} },
-                        "archdemon_lair": { name: "Archdemon's Lair", levelRange: [100, 100], monsters: ["Archdemon Overlord"], coords: {top: '10%', left: '50%'} }
-                    }
-                }
-            }
-        },
-        {
-            name: "The Underdark",
-            mapImage: "images/underground_world_map.png", 
-            requiredLevel: 101,
-            zones: {
-                 "crystal_caves": {
-                    name: "Crystal Caverns", mapImage: "images/map_caves_zoomed.png",
-                    coords: { top: '70%', left: '25%' }, icon: 'images/icons/ring.png',
-                    subZones: {
-                        "glimmering_path": { name: "Glimmering Path", levelRange: [101, 119], monsters: ["Bat", "Skeleton"], coords: {top: '60%', left: '30%'} },
-                        "crystal_heart": { name: "Crystal Heart", levelRange: [120, 120], monsters: ["Dungeon Guardian"], coords: {top: '75%', left: '70%'} }
-                    }
-                },
-                "fungal_forest": {
-                    name: "Fungal Forest", mapImage: "images/map_fungal_zoomed.png",
-                    coords: { top: '40%', left: '50%' }, icon: 'images/icons/necklace.png',
-                    subZones: {
-                        "spore_meadows": { name: "Spore Meadows", levelRange: [121, 159], monsters: ["Slime", "Bat", "Zombie"], coords: {top: '60%', left: '30%'} },
-                        "great_fungus": { name: "The Great Fungus", levelRange: [160, 160], monsters: ["Dungeon Guardian"], coords: {top: '20%', left: '50%'} }
-                    }
-                },
-                "drow_city": {
-                    name: "Drow City", mapImage: "images/map_drow_zoomed.png",
-                    coords: { top: '25%', left: '75%' }, icon: 'images/icons/belt.png',
-                    subZones: {
-                        "outer_spires": { name: "Outer Spires", levelRange: [161, 199], monsters: ["Skeleton", "Orc", "Dungeon Guardian"], coords: {top: '70%', left: '30%'} },
-                        "spider_queen_lair": { name: "Spider Queen's Lair", levelRange: [200, 200], monsters: ["Archdemon Overlord"], coords: {top: '20%', left: '50%'} }
-                    }
-                }
-            }
-        }
-    ];
-    // --- END OF FIX ---
-    
-    const monsterBaseData = {
-        "Slime":    { image: 'images/slime.png', dropTypes: ['ring', 'belt'], dropChance: 1.0 },
-        "Goblin":   { image: 'images/slime.png', dropTypes: ['sword', 'belt'], dropChance: 1.0 },
-        "Bat":      { image: 'images/slime.png', dropTypes: ['ring', 'necklace'], dropChance: 1.0 },
-        "Skeleton": { image: 'images/slime.png', dropTypes: ['shield', 'helmet'], dropChance: 1.5 },
-        "Zombie":   { image: 'images/slime.png', dropTypes: ['sword', 'platelegs'], dropChance: 1.5 },
-        "Orc":      { image: 'images/slime.png', dropTypes: ['sword', 'platebody'], dropChance: 2.0 },
-        "Dungeon Guardian": { image: 'images/boss.png', dropTypes: ['sword', 'shield', 'helmet', 'platebody', 'platelegs'], dropChance: 100 },
-        "Archdemon Overlord": { image: 'images/bigboss.png', dropTypes: ['sword', 'shield', 'helmet', 'platebody', 'platelegs', 'ring', 'necklace', 'belt'], dropChance: 100 }
-    };
-
-    let currentMonster = { name: "Slime", data: monsterBaseData["Slime"]};
+    let currentMonster = { name: "Slime", data: MONSTERS.SLIME};
     let playerStats = { baseClickDamage: 1, baseDps: 0, totalClickDamage: 1, totalDps: 0 };
     let salvageMode = { active: false, selections: [] };
     let prestigeSelections = [];
@@ -147,9 +64,9 @@ document.addEventListener('DOMContentLoaded', () => {
     function isBigBossLevel(level) { return level > 0 && level % 100 === 0; }
 
     function getCurrentRealm() {
-        let realmIndex = realmData.findIndex(realm => gameState.maxLevel >= realm.requiredLevel && (!realmData[realmData.indexOf(realm)+1] || gameState.maxLevel < realmData[realmData.indexOf(realm)+1].requiredLevel) );
+        let realmIndex = REALMS.findIndex(realm => gameState.maxLevel >= realm.requiredLevel && (!REALMS[REALMS.indexOf(realm)+1] || gameState.maxLevel < REALMS[REALMS.indexOf(realm)+1].requiredLevel) );
         if(realmIndex === -1) realmIndex = 0;
-        return realmData[realmIndex];
+        return REALMS[realmIndex];
     }
 
     // --- CORE GAME LOGIC ---
@@ -203,7 +120,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (isBossLevel(level) || isBigBossLevel(level)) {
              xpGained *= 5;
              const nextRealmIndex = gameState.currentRealmIndex + 1;
-             if (realmData[nextRealmIndex] && level + 1 >= realmData[nextRealmIndex].requiredLevel) {
+             if (REALMS[nextRealmIndex] && level + 1 >= REALMS[nextRealmIndex].requiredLevel) {
                  gameState.currentRealmIndex = nextRealmIndex;
                  currentMap = 'world';
                  logMessage(`A new realm has been unlocked: <b>${getCurrentRealm().name}</b>!`, 'legendary');
@@ -215,8 +132,7 @@ document.addEventListener('DOMContentLoaded', () => {
         showGoldPopup(goldGained); 
         
         const dropRoll = Math.random() * 100;
-        const monsterDef = monsterBaseData[currentMonster.name];
-        if (monsterDef && dropRoll < monsterDef.dropChance) {
+        if (dropRoll < currentMonster.data.dropChance) {
             dropLoot();
         }
         
@@ -242,7 +158,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function findSubZoneByLevel(level) {
-        for (const realm of realmData) {
+        for (const realm of REALMS) {
             for (const zoneId in realm.zones) {
                 for (const subZoneId in realm.zones[zoneId].subZones) {
                     const subZone = realm.zones[zoneId].subZones[subZoneId];
@@ -257,25 +173,24 @@ document.addEventListener('DOMContentLoaded', () => {
     
     function generateMonster() {
         const level = gameState.currentFightingLevel;
-        let monsterName;
+        let monsterData;
 
         if (isBigBossLevel(level)) {
-            monsterName = "Archdemon Overlord";
+            monsterData = MONSTERS.ARCHDEMON_OVERLORD;
         } else if (isBossLevel(level)) {
-            monsterName = "Dungeon Guardian";
+            monsterData = MONSTERS.DUNGEON_GUARDIAN;
         } else {
              const subZone = findSubZoneByLevel(level);
              if (subZone) {
-                monsterName = subZone.monsters[Math.floor(Math.random() * subZone.monsters.length)];
+                monsterData = subZone.monsterPool[Math.floor(Math.random() * subZone.monsterPool.length)];
              } else {
                 console.error("No sub-zone found for level:", level);
-                monsterName = "Slime";
+                monsterData = MONSTERS.SLIME;
                 gameState.currentFightingLevel = 1;
              }
         }
 
-        currentMonster = { name: monsterName, data: monsterBaseData[monsterName] };
-        let monsterDef = currentMonster.data;
+        currentMonster = { name: monsterData.name, data: monsterData };
         
         const baseExponent = 1.15;
         const tier = Math.floor((level - 1) / 10);
@@ -289,10 +204,10 @@ document.addEventListener('DOMContentLoaded', () => {
             monsterHealth *= 5;
         }
 
-        monsterImageEl.src = monsterDef.image;
+        monsterImageEl.src = currentMonster.data.image;
         gameState.monster.maxHp = monsterHealth;
         gameState.monster.hp = monsterHealth;
-        monsterNameEl.textContent = monsterName;
+        monsterNameEl.textContent = currentMonster.name;
     }
     
     function recalculateStats() {
@@ -324,7 +239,7 @@ document.addEventListener('DOMContentLoaded', () => {
             socket.emit('updatePlayerStats', { dps: playerStats.totalDps });
         }
     }
-    function addStatsFromItem(item) { for (const stat in item.stats) { const value = item.stats[stat]; if (stat === 'clickDamage') playerStats.baseClickDamage += value; if (stat === 'dps') playerStats.baseDps += value; } }
+    function addStatsFromItem(item) { for (const stat in item.stats) { const value = item.stats[stat]; if (stat === STATS.CLICK_DAMAGE.key) playerStats.baseClickDamage += value; if (stat === STATS.DPS.key) playerStats.baseDps += value; } }
     
     function getXpForNextLevel(level) { return Math.floor(100 * Math.pow(level, 1.5)); }
     function gainXP(amount) {
@@ -341,15 +256,30 @@ document.addEventListener('DOMContentLoaded', () => {
     function spendAttributePoint(attribute) { if (gameState.hero.attributePoints > 0) { gameState.hero.attributePoints--; gameState.hero.attributes[attribute]++; recalculateStats(); updateUI(); autoSave(); } }
 
     function generateItem(rarity, itemLevel, forcedType) {
-        const type = forcedType || itemTypes[Math.floor(Math.random() * itemTypes.length)];
-        const rarityIndex = rarities.indexOf(rarity); const item = { id: Date.now() + Math.random(), name: `${rarity.charAt(0).toUpperCase() + rarity.slice(1)} ${type.charAt(0).toUpperCase() + type.slice(1)}`, type: type, rarity: rarity, stats: {}, locked: false }; const levelModifier = 1 + (itemLevel / 15); let statValue = (Math.random() * 2.5 + 1) * (rarityIndex + 1) * levelModifier; const possibleStats = statPools[type]; const statToAssign = possibleStats[Math.floor(Math.random() * possibleStats.length)]; if (statToAssign.key === 'dps' || statToAssign.key === 'clickDamage') { statValue *= 2; } item.stats[statToAssign.key] = parseFloat(statValue.toFixed(2)); item.name = `${rarity.charAt(0).toUpperCase() + rarity.slice(1)} ${type.charAt(0).toUpperCase() + type.slice(1)} of ${statToAssign.name.replace('% ', '')}`; return item;
+        const itemTypeData = forcedType || Object.values(ITEMS)[Math.floor(Math.random() * Object.values(ITEMS).length)];
+        const rarityIndex = rarities.indexOf(rarity);
+        const item = { 
+            id: Date.now() + Math.random(), 
+            name: `${rarity.charAt(0).toUpperCase() + rarity.slice(1)} ${itemTypeData.name}`, 
+            type: itemTypeData.name.toLowerCase(), 
+            rarity: rarity, 
+            stats: {}, 
+            locked: false 
+        };
+        const levelModifier = 1 + (itemLevel / 15);
+        let statValue = (Math.random() * 2.5 + 1) * (rarityIndex + 1) * levelModifier;
+        const possibleStats = itemTypeData.possibleStats;
+        const statToAssign = possibleStats[Math.floor(Math.random() * possibleStats.length)];
+        if (statToAssign.key === 'dps' || statToAssign.key === 'clickDamage') { statValue *= 2; }
+        item.stats[statToAssign.key] = parseFloat(statValue.toFixed(2));
+        item.name = `${rarity.charAt(0).toUpperCase() + rarity.slice(1)} ${itemTypeData.name} of ${statToAssign.name.replace('% ', '')}`;
+        return item;
     }
 
     function dropLoot() {
-        const monsterDef = monsterBaseData[currentMonster.name];
-        if (!monsterDef) return;
-        const dropTypes = monsterDef.dropTypes;
-        const itemTypeToDrop = dropTypes[Math.floor(Math.random() * dropTypes.length)];
+        const monsterDef = currentMonster.data;
+        if (!monsterDef || !monsterDef.lootTable) return;
+        const itemTypeToDrop = monsterDef.lootTable[Math.floor(Math.random() * monsterDef.lootTable.length)];
         
         let roll = Math.random() * 100; roll -= playerStats.magicFind;
         let rarity;
@@ -462,7 +392,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const isUnlocked = gameState.maxLevel >= subZone.levelRange[0];
                 const isCompleted = gameState.completedLevels.includes(subZone.levelRange[1]);
                 
-                const node = createMapNode(subZone.name, getItemIcon('sword'), subZone.coords, isUnlocked, isCompleted);
+                const node = createMapNode(subZone.name, ITEMS.SWORD.icon, subZone.coords, isUnlocked, isCompleted);
                 
                 if (isUnlocked) {
                     node.onclick = () => showSubZoneModal(subZone);
@@ -541,16 +471,17 @@ document.addEventListener('DOMContentLoaded', () => {
         const finalLevel = subZone.levelRange[1];
         let nextLevel = Math.min(highestCompleted + 1, finalLevel);
 
-        // If the subzone is a single-level boss zone, don't show "Continue" or "Restart"
-        if(startLevel !== finalLevel) {
+        const isSingleLevelBoss = startLevel === finalLevel;
+
+        if(!isSingleLevelBoss) {
             const continueButton = document.createElement('button');
-            continueButton.textContent = (highestCompleted === 0) ? `Start at Lvl ${startLevel}` : `Continue at Lvl ${nextLevel}`;
+            continueButton.textContent = (highestCompleted < startLevel) ? `Start at Lvl ${startLevel}` : `Continue at Lvl ${nextLevel}`;
             continueButton.onclick = () => {
                 startCombat(nextLevel, true);
             };
             modalBodyEl.appendChild(continueButton);
 
-            if (highestCompleted > 0 && highestCompleted < finalLevel) {
+            if (highestCompleted >= startLevel && highestCompleted < finalLevel) {
                 const restartButton = document.createElement('button');
                 restartButton.textContent = `Restart at Lvl ${startLevel}`;
                 restartButton.onclick = () => {
@@ -560,15 +491,23 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
         
-        if (isBossLevel(finalLevel) || isBigBossLevel(finalLevel)) {
-             if (gameState.completedLevels.includes(finalLevel)) {
+        const bossLevel = finalLevel;
+        if (isBossLevel(bossLevel) || isBigBossLevel(bossLevel)) {
+             if (gameState.completedLevels.includes(bossLevel)) {
                 const fightBossButton = document.createElement('button');
-                fightBossButton.textContent = `Re-fight Boss (Lvl ${finalLevel})`;
+                fightBossButton.textContent = `Re-fight Boss (Lvl ${bossLevel})`;
                 fightBossButton.onclick = () => {
-                    startCombat(finalLevel, false);
+                    startCombat(bossLevel, false);
                 };
                 modalBodyEl.appendChild(fightBossButton);
-            }
+             } else if (isSingleLevelBoss) {
+                 const fightBossButton = document.createElement('button');
+                 fightBossButton.textContent = `Fight Boss (Lvl ${bossLevel})`;
+                 fightBossButton.onclick = () => {
+                     startCombat(bossLevel, false);
+                 };
+                 modalBodyEl.appendChild(fightBossButton);
+             }
         }
         
         modalBackdropEl.classList.remove('hidden');
@@ -593,7 +532,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function renderRealmTabs() {
         realmTabsContainerEl.innerHTML = '';
-        realmData.forEach((realm, index) => {
+        REALMS.forEach((realm, index) => {
             const isUnlocked = gameState.maxLevel >= realm.requiredLevel;
             const tab = document.createElement('button');
             tab.className = 'realm-tab-btn';
@@ -689,15 +628,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
         prestigeButton.disabled = gameState.maxLevel < 100;
         
-        const monsterDef = monsterBaseData[currentMonster.name];
+        const monsterDef = MONSTERS[currentMonster.name.toUpperCase().replace(/\s/g, '_')];
         if (monsterDef) {
             lootMonsterNameEl.textContent = currentMonster.name;
             lootDropChanceEl.textContent = `${monsterDef.dropChance}% ${monsterDef.dropChance === 100 ? '(Boss)' : ''}`;
             lootTableDisplayEl.innerHTML = '';
-            monsterDef.dropTypes.forEach(type => {
+            monsterDef.lootTable.forEach(itemData => {
                 const icon = document.createElement('img');
-                icon.src = getItemIcon(type);
-                icon.title = type.charAt(0).toUpperCase() + type.slice(1);
+                icon.src = itemData.icon;
+                icon.title = itemData.name;
                 icon.className = 'loot-item-icon';
                 lootTableDisplayEl.appendChild(icon);
             });
@@ -715,10 +654,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const lockHTML = `<i class="fas ${item.locked ? 'fa-lock' : 'fa-lock-open'} lock-icon"></i>`;
         
         let statsHTML = '<ul>';
-        for (const stat in item.stats) {
-            const statInfo = statPools[item.type].find(s => s.key === stat);
+        for (const statKey in item.stats) {
+            const statInfo = Object.values(STATS).find(s => s.key === statKey);
             const statName = statInfo ? statInfo.name : statKey;
-            statsHTML += `<li>+${formatNumber(item.stats[stat])} ${statName}</li>`;
+            statsHTML += `<li>+${formatNumber(item.stats[statKey])} ${statName}</li>`;
         }
         statsHTML += '</ul>';
 
@@ -735,7 +674,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
 
-    function getItemIcon(type) { const iconMap = { sword: 'images/icons/sword.png', shield: 'images/icons/shield.png', helmet: 'images/icons/helmet.png', necklace: 'images/icons/necklace.png', platebody: 'images/icons/platebody.png', platelegs: 'images/icons/platelegs.png', ring: 'images/icons/ring.png', belt: 'images/icons/belt.png' }; return iconMap[type] || 'images/icons/sword.png'; }
+    function getItemIcon(type) {
+        const itemData = Object.values(ITEMS).find(item => item.name.toLowerCase() === type);
+        return itemData ? itemData.icon : 'images/icons/sword.png';
+    }
     function showDamagePopup(damage) { const popup = document.createElement('div'); popup.textContent = `-${formatNumber(damage)}`; popup.className = 'damage-popup'; popup.style.left = `${40 + Math.random() * 20}%`; popup.style.top = `${40 + Math.random() * 20}%`; popupContainerEl.appendChild(popup); setTimeout(() => popup.remove(), 1000); }
     function showGoldPopup(gold) { const popup = document.createElement('div'); popup.innerHTML = `+${formatNumber(gold)} <i class="fas fa-coins"></i>`; popup.className = 'gold-popup'; popup.style.left = `${40 + Math.random() * 20}%`; popup.style.top = `${50}%`; popupContainerEl.appendChild(popup); setTimeout(() => popup.remove(), 1500); }
     
@@ -806,7 +748,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!equippedItem) {
             let statsHTML = '<ul>';
             for (const statKey in hoveredItem.stats) {
-                const statInfo = statPools[hoveredItem.type]?.find(s => s.key === statKey);
+                const statInfo = Object.values(STATS).find(s => s.key === statKey);
                 const statName = statInfo ? statInfo.name : statKey;
                 statsHTML += `<li>+${formatNumber(hoveredItem.stats[statKey])} ${statName}</li>`;
             }
@@ -820,7 +762,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const hoveredValue = hoveredItem.stats[statKey] || 0;
             const equippedValue = equippedItem.stats[statKey] || 0;
             const difference = hoveredValue - equippedValue;
-            const statInfo = statPools[hoveredItem.type]?.find(s => s.key === statKey) || statPools[equippedItem.type]?.find(s => s.key === statKey);
+            const statInfo = Object.values(STATS).find(s => s.key === statKey);
             const statName = statInfo ? statInfo.name : statKey;
             let diffSpan = '';
             if (Math.abs(difference) > 0.001) { const diffClass = difference > 0 ? 'stat-better' : 'stat-worse'; const sign = difference > 0 ? '+' : ''; diffSpan = ` <span class="${diffClass}">(${sign}${formatNumber(difference)})</span>`; }

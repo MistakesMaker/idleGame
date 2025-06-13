@@ -1,9 +1,10 @@
 // --- Server Setup ---
-const express = require('express');
-const http = require('http');
-const path = require('path');
-const socketIo = require('socket.io');
-const cors = require('cors');
+import express from 'express';
+import http from 'http';
+import path from 'path';
+import { Server } from 'socket.io';
+import cors from 'cors';
+import { fileURLToPath } from 'url';
 
 const app = express();
 
@@ -13,7 +14,7 @@ app.use(cors({
 
 const server = http.createServer(app);
 
-const io = socketIo(server, {
+const io = new Server(server, {
   cors: {
     origin: "https://idlegame-oqyq.onrender.com",
     methods: ["GET", "POST"]
@@ -21,6 +22,8 @@ const io = socketIo(server, {
 });
 
 // --- Serve Static Files ---
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 const publicPath = path.join(__dirname);
 app.use(express.static(publicPath));
 app.get('/', (req, res) => {
@@ -51,7 +54,6 @@ io.on('connection', (socket) => {
     });
 
     socket.on('attackRaidBoss', (attackData) => {
-        // --- THE FIX IS HERE ---
         if (raidState.boss.currentHp > 0 && raidState.players[socket.id] && attackData && typeof attackData.damage === 'number') {
             raidState.boss.currentHp -= attackData.damage;
             if (raidState.boss.currentHp < 0) { raidState.boss.currentHp = 0; }
@@ -74,7 +76,6 @@ setInterval(() => {
             totalDps += raidState.players[playerId].dps || 0;
         }
 
-        // --- THE FIX IS HERE ---
         if (raidState.boss.currentHp > 0) {
             raidState.boss.currentHp -= totalDps;
             if (raidState.boss.currentHp <= 0) {
@@ -92,7 +93,6 @@ setInterval(() => {
 
 function resetRaidBoss() {
     console.log("Resetting raid boss...");
-    // --- THE FIX IS HERE ---
     raidState.boss.currentHp = raidState.boss.maxHp;
     io.to('raid_room').emit('raidUpdate', raidState);
 }
