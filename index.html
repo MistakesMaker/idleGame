@@ -77,7 +77,6 @@
 
                 <h4>Attributes (<span id="attribute-points">0</span> points available)</h4>
                 <div id="attributes-area">
-                    <!-- START OF MODIFIED SECTION -->
                     <div class="attribute-row" data-attribute="strength">
                         <span>Strength: <span id="attr-strength">0</span></span>
                         <button class="attribute-btn" id="add-strength-btn" disabled>+</button>
@@ -90,7 +89,6 @@
                         <span>Luck: <span id="attr-luck">0</span></span>
                         <button class="attribute-btn" id="add-luck-btn" disabled>+</button>
                     </div>
-                    <!-- END OF MODIFIED SECTION -->
                 </div>
                 
                 <h4>Derived Stats</h4>
@@ -103,13 +101,23 @@
             </div>
 
             <div id="equipment-view" class="view">
-                <div id="equipment-paperdoll">
-                    <div id="slot-helmet" class="equipment-slot"></div><div id="slot-necklace" class="equipment-slot"></div>
-                    <div id="slot-platebody" class="equipment-slot"></div><div id="slot-platelegs" class="equipment-slot"></div>
-                    <div id="slot-belt" class="equipment-slot"></div><div id="slot-sword" class="equipment-slot"></div>
-                    <div id="slot-shield" class="equipment-slot"></div><div id="slot-ring1" class="equipment-slot"></div>
-                    <div id="slot-ring2" class="equipment-slot"></div>
+                <!-- START OF NEW SECTION -->
+                <div id="equipment-view-content">
+                    <div id="preset-controls">
+                        <h4>Presets</h4>
+                        <button id="preset-btn-0" class="preset-btn">Preset 1</button>
+                        <button id="preset-btn-1" class="preset-btn">Preset 2</button>
+                        <button id="preset-btn-2" class="preset-btn">Preset 3</button>
+                    </div>
+                    <div id="equipment-paperdoll">
+                        <div id="slot-helmet" class="equipment-slot"></div><div id="slot-necklace" class="equipment-slot"></div>
+                        <div id="slot-platebody" class="equipment-slot"></div><div id="slot-platelegs" class="equipment-slot"></div>
+                        <div id="slot-belt" class="equipment-slot"></div><div id="slot-sword" class="equipment-slot"></div>
+                        <div id="slot-shield" class="equipment-slot"></div><div id="slot-ring1" class="equipment-slot"></div>
+                        <div id="slot-ring2" class="equipment-slot"></div>
+                    </div>
                 </div>
+                <!-- END OF NEW SECTION -->
             </div>
             <div id="inventory-view" class="view">
                 <h3>Inventory</h3>
@@ -151,7 +159,6 @@
                 <h3>Prestige</h3>
                 <p>Reach Max Level 100 to unlock Prestige.</p>
                 
-                <!-- START OF FIX -->
                 <div id="prestige-stats-area">
                     <h4>Prestige Bonuses</h4>
                      <p><i class="fas fa-award"></i> Prestige Count: <span id="prestige-count-stat">0</span></p>
@@ -159,7 +166,6 @@
                      <p><i class="fas fa-sword"></i> Absorbed DPS: <span id="absorbed-dps-stat">0</span></p>
                      <p><i class="fas fa-gem"></i> Legacy Items: <span id="legacy-items-stat">0</span></p>
                 </div>
-                <!-- END OF FIX -->
 
                 <button id="prestige-button" disabled>Prestige Now</button>
                 <div id="prestige-selection" class="hidden">
@@ -174,9 +180,7 @@
     <div id="raid-container"></div>
     <div id="save-indicator" class="hidden">Game Saved!</div>
     <div id="item-tooltip" class="hidden"></div>
-    <!-- START OF NEW SECTION -->
     <div id="stat-tooltip" class="hidden"></div>
-    <!-- END OF NEW SECTION -->
 
     <!-- Scripts -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.min.js"></script>

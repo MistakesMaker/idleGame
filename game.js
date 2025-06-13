@@ -57,11 +57,14 @@ document.addEventListener('DOMContentLoaded', () => {
     function isBigBossLevel(level) { return level % 100 === 0; }
     
     // --- CORE GAME LOGIC ---
+    // --- THIS IS THE FIX: Define the default equipment state once to prevent recursion ---
+    const defaultEquipmentState = { sword: null, shield: null, helmet: null, necklace: null, platebody: null, platelegs: null, ring1: null, ring2: null, belt: null };
+
     function getDefaultGameState() {
         return {
             gold: 0, scrap: 0, upgrades: { clickDamage: 0, dps: 0 }, maxLevel: 1, currentFightingLevel: 1,
             isLevelLocked: false, monster: { hp: 10, maxHp: 10 },
-            equipment: { sword: null, shield: null, helmet: null, necklace: null, platebody: null, platelegs: null, ring1: null, ring2: null, belt: null, },
+            equipment: { ...defaultEquipmentState }, // Use the constant
             inventory: [], 
             legacyItems: [],
             absorbedStats: { clickDamage: 0, dps: 0 },
@@ -69,7 +72,13 @@ document.addEventListener('DOMContentLoaded', () => {
             hero: {
                 level: 1, xp: 0, attributePoints: 0,
                 attributes: { strength: 0, agility: 0, luck: 0 }
-            }
+            },
+            presets: [
+                { name: "Preset 1", equipment: { ...defaultEquipmentState } }, // Use the constant
+                { name: "Preset 2", equipment: { ...defaultEquipmentState } }, // Use the constant
+                { name: "Preset 3", equipment: { ...defaultEquipmentState } }, // Use the constant
+            ],
+            activePresetIndex: 0
         };
     }
     
@@ -90,9 +99,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (isBossLevel(gameState.currentFightingLevel)) { xpGained *= 5; }
         gainXP(xpGained);
 
-        // --- THIS IS THE FIX ---
         logMessage(`You defeated the ${currentMonster.name} and gained ${Math.floor(goldGained)} gold and ${xpGained} XP.`);
-        // --- END OF FIX ---
         showGoldPopup(goldGained); 
         
         const dropRoll = Math.random() * 100;
@@ -227,6 +234,60 @@ document.addEventListener('DOMContentLoaded', () => {
     function salvageSelectedItems() { if (salvageMode.selections.length === 0) { logMessage("No items selected for salvage."); return; } let totalScrapGained = 0; const selectedCount = salvageMode.selections.length; salvageMode.selections.sort((a, b) => b - a); salvageMode.selections.forEach(index => { const item = gameState.inventory[index]; if (item) { const rarityIndex = rarities.indexOf(item.rarity); const scrapGained = Math.ceil(Math.pow(4, rarityIndex)); totalScrapGained += scrapGained; gameState.inventory.splice(index, 1); } }); gameState.scrap += totalScrapGained; logMessage(`Salvaged ${selectedCount} items for a total of ${totalScrapGained} Scrap.`, 'uncommon'); toggleSalvageMode(); autoSave(); }
     function toggleItemLock(inventoryIndex) { const item = gameState.inventory[inventoryIndex]; if (item) { item.locked = !item.locked; logMessage(`Item ${item.name} ${item.locked ? 'locked' : 'unlocked'}.`); } updateUI(); autoSave(); }
     
+    function activatePreset(presetIndex) {
+        gameState.presets[gameState.activePresetIndex].equipment = { ...gameState.equipment };
+        const newPresetEquipment = gameState.presets[presetIndex].equipment;
+        const itemsToUnequip = { ...gameState.equipment };
+        
+        for (const slot in gameState.equipment) {
+            gameState.equipment[slot] = null;
+        }
+
+        for (const slot in itemsToUnequip) {
+            if (itemsToUnequip[slot]) {
+                gameState.inventory.push(itemsToUnequip[slot]);
+            }
+        }
+        
+        const newInventory = [];
+        const presetEquipmentCopy = { ...newPresetEquipment };
+
+        gameState.inventory.forEach(invItem => {
+            let equipped = false;
+            for (const slot in presetEquipmentCopy) {
+                const presetItem = presetEquipmentCopy[slot];
+                if (presetItem && invItem && presetItem.id === invItem.id) {
+                    gameState.equipment[slot] = invItem;
+                    delete presetEquipmentCopy[slot]; 
+                    equipped = true;
+                    break; 
+                }
+            }
+            if (!equipped) {
+                newInventory.push(invItem);
+            }
+        });
+        
+        gameState.inventory = newInventory;
+        gameState.activePresetIndex = presetIndex;
+        logMessage(`Activated preset: <b>${gameState.presets[presetIndex].name}</b>`);
+        
+        recalculateStats();
+        updateUI();
+        autoSave();
+    }
+    
+    function renamePreset(presetIndex) {
+        const currentName = gameState.presets[presetIndex].name;
+        const newName = prompt("Enter a new name for the preset:", currentName);
+        if (newName && newName.trim() !== "") {
+            gameState.presets[presetIndex].name = newName.trim();
+            logMessage(`Renamed preset to: <b>${newName.trim()}</b>`);
+            updateUI();
+            autoSave();
+        }
+    }
+    
     function updateUI() {
         goldStatEl.textContent = Math.floor(gameState.gold);
         scrapStatEl.textContent = gameState.scrap;
@@ -293,6 +354,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 const placeholder = document.createElement('img'); placeholder.src = getItemIcon(slotName.replace(/\d/g, '')); placeholder.className = 'placeholder-icon'; slotEl.appendChild(placeholder);
             }
         }
+
+        document.querySelectorAll('.preset-btn').forEach((btn, index) => {
+            btn.textContent = gameState.presets[index].name;
+            btn.classList.toggle('active', index === gameState.activePresetIndex);
+        });
+
         prestigeButton.disabled = gameState.maxLevel < 100;
         lootMonsterNameEl.textContent = currentMonster.name;
         lootDropChanceEl.textContent = `${currentMonster.data.dropChance}% ${currentMonster.data.dropChance === 100 ? '(Boss)' : ''}`;
@@ -634,6 +701,11 @@ document.addEventListener('DOMContentLoaded', () => {
         prestigeButton.addEventListener('click', initiatePrestige);
         document.getElementById('confirm-prestige-btn').addEventListener('click', confirmPrestige);
         
+        document.querySelectorAll('.preset-btn').forEach((btn, index) => {
+            btn.addEventListener('click', () => activatePreset(index));
+            btn.addEventListener('dblclick', () => renamePreset(index));
+        });
+        
         document.querySelectorAll('.tabs').forEach(tabContainer => {
             const tabs = tabContainer.querySelectorAll('.tab-button');
             const parentPanel = tabContainer.parentElement;
@@ -732,8 +804,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 upgrades: { ...baseState.upgrades, ...(loadedState.upgrades || {}) },
                 equipment: { ...baseState.equipment, ...(loadedState.equipment || {}) },
                 absorbedStats: { ...baseState.absorbedStats, ...(loadedState.absorbedStats || {}) },
-                monster: { ...baseState.monster, ...(loadedState.monster || {}) }
+                monster: { ...baseState.monster, ...(loadedState.monster || {}) },
+                presets: loadedState.presets || baseState.presets,
+                activePresetIndex: loadedState.activePresetIndex || 0
             };
+
+            if(gameState.presets && gameState.presets[gameState.activePresetIndex]) {
+                gameState.equipment = { ...gameState.presets[gameState.activePresetIndex].equipment };
+            }
 
             if (loadedState.level && loadedState.maxLevel === undefined) {
                 gameState.maxLevel = loadedState.level;

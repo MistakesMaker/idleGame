@@ -91,7 +91,6 @@ button:disabled { background: #7f8c8d; cursor: not-allowed; border-bottom: 2px s
 #derived-stats-area p { margin: 8px 0; font-size: 1.1em; }
 #derived-stats-area i { margin-right: 8px; color: #f1c40f; }
 
-/* --- START OF NEW SECTION --- */
 #prestige-stats-area {
     background-color: rgba(0,0,0,0.2); 
     border-radius: 5px; 
@@ -106,7 +105,6 @@ button:disabled { background: #7f8c8d; cursor: not-allowed; border-bottom: 2px s
     margin-right: 8px; 
     color: #f1c40f; 
 }
-/* --- END OF NEW SECTION --- */
 
 .dungeon-tabs .tab-button { font-size: 0.9em; padding: 8px; }
 #loot-view { padding: 10px; text-align: center; }
@@ -265,3 +263,45 @@ body.salvage-mode-active #inventory-slots .item:not(.locked-item) { cursor: poin
     padding: 0;
     margin: 0;
 }
+
+/* --- START OF FIX: PRESET LAYOUT --- */
+#equipment-view-content {
+    display: flex;
+    flex-direction: row; /* Main axis is horizontal */
+    gap: 20px;
+}
+
+#preset-controls {
+    flex: 0 0 120px;
+    display: flex;
+    flex-direction: column; /* Buttons are arranged vertically */
+    gap: 10px;
+}
+
+/* This overrides the general button margin to be vertical */
+#preset-controls h4 {
+    margin-bottom: 10px;
+}
+
+.preset-btn {
+    width: 100%;
+    text-align: center;
+    padding: 12px 5px;
+    margin: 0; /* Remove horizontal margin from general button style */
+    background: linear-gradient(145deg, #34495e, #2c3e50);
+    border-bottom-color: #213243;
+}
+
+.preset-btn.active {
+    background: linear-gradient(145deg, #e67e22, #f1c40f);
+    border-bottom-color: #d35400;
+    box-shadow: 0 0 8px #f1c40f;
+}
+
+#equipment-paperdoll {
+    flex-grow: 1;
+    height: auto;
+    max-width: none;
+    aspect-ratio: 400 / 600;
+}
+/* --- END OF FIX --- */
