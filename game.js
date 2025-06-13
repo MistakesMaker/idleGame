@@ -100,7 +100,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         if (!gameState.isLevelLocked) { gameState.currentFightingLevel++; if (gameState.currentFightingLevel > gameState.maxLevel) { gameState.maxLevel = gameState.currentFightingLevel; } } 
         
-        autoSave(); // --- FIX: Save on monster defeat ---
+        autoSave();
         setTimeout(() => { generateMonster(); updateUI(); }, 300); 
     }
     
@@ -147,25 +147,35 @@ document.addEventListener('DOMContentLoaded', () => {
     
     function recalculateStats() {
         const hero = gameState.hero;
+        // Reset base stats from absorbed prestige stats and items
         playerStats.baseClickDamage = 1 + (gameState.absorbedStats?.clickDamage || 0);
         playerStats.baseDps = 0 + (gameState.absorbedStats?.dps || 0);
         
         const allItems = [...(gameState.legacyItems || []), ...Object.values(gameState.equipment)]; 
         for(const item of allItems) { if(item) addStatsFromItem(item); }
         
+        // Get flat bonuses from gold upgrades
         const clickUpgradeBonus = gameState.upgrades.clickDamage * 1.25;
         const dpsUpgradeBonus = gameState.upgrades.dps * 2.5;
         
-        const strengthBonusClick = hero.attributes.strength * 0.5;
-        const strengthBonusDpsPercent = hero.attributes.strength * 0.2;
+        // --- START OF FIX: ATTRIBUTE REBALANCE ---
+        // Get all bonuses from attributes
+        const strengthBonusClickFlat = hero.attributes.strength * 0.5;
+        const strengthBonusClickPercent = hero.attributes.strength * 0.2;
         const agilityBonusDpsPercent = hero.attributes.agility * 0.3;
         playerStats.bonusGold = hero.attributes.luck * 0.5;
         playerStats.magicFind = hero.attributes.luck * 0.2;
         
-        playerStats.totalClickDamage = playerStats.baseClickDamage + clickUpgradeBonus + strengthBonusClick;
+        // Calculate final Click Damage (Strength only)
+        let finalClickDamage = playerStats.baseClickDamage + clickUpgradeBonus + strengthBonusClickFlat;
+        finalClickDamage *= (1 + (strengthBonusClickPercent / 100));
+        playerStats.totalClickDamage = finalClickDamage;
+
+        // Calculate final DPS (Agility only)
         let finalDps = playerStats.baseDps + dpsUpgradeBonus;
-        finalDps *= (1 + (strengthBonusDpsPercent + agilityBonusDpsPercent) / 100);
+        finalDps *= (1 + (agilityBonusDpsPercent / 100));
         playerStats.totalDps = finalDps;
+        // --- END OF FIX ---
 
         if (socket.connected) {
             socket.emit('updatePlayerStats', { dps: playerStats.totalDps });
@@ -396,20 +406,21 @@ document.addEventListener('DOMContentLoaded', () => {
         return headerHTML + statsHTML;
     }
 
+    // --- START OF FIX: UPDATED TOOLTIP ---
     const statTooltipContent = {
         strength: {
             title: 'Strength',
             description: 'Increases your raw power. Each point provides:',
             effects: [
                 '<b>+0.5</b> Flat Click Damage',
-                '<b>+0.2%</b> DPS'
+                '<b>+0.2%</b> Total Click Damage'
             ]
         },
         agility: {
             title: 'Agility',
             description: 'Improves your hero\'s combat prowess. Each point provides:',
             effects: [
-                '<b>+0.3%</b> DPS'
+                '<b>+0.3%</b> Total DPS'
             ]
         },
         luck: {
@@ -421,6 +432,7 @@ document.addEventListener('DOMContentLoaded', () => {
             ]
         }
     };
+    // --- END OF FIX ---
 
     function setupStatTooltipListeners() {
         const attributesArea = document.getElementById('attributes-area');
@@ -751,7 +763,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
         setupRaidListeners();
         
-        // This interval is now just a fallback, in case the browser crashes.
         setInterval(autoSave, 30000); 
         setInterval(gameLoop, 1000);
     }
