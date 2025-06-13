@@ -56,15 +56,40 @@ document.addEventListener('DOMContentLoaded', () => {
     function isBossLevel(level) { return level % 10 === 0; }
     function isBigBossLevel(level) { return level % 100 === 0; }
     
+    // --- START OF NEW FEATURE: NUMBER FORMATTING ---
+    const numberAbbreviations = ['K', 'M', 'B', 'T', 'Qa', 'Qi', 'Sx', 'Sp', 'Oc', 'No', 'Dc'];
+
+    function formatNumber(num) {
+        if (num < 1000) {
+            // For numbers less than 1000, show them as integers.
+            return Math.floor(num).toString();
+        }
+
+        // Determine the tier (K, M, B, etc.)
+        const tier = Math.floor(Math.log10(Math.abs(num)) / 3);
+
+        // If the number is too large for our list, use exponential notation
+        if (tier === 0 || tier > numberAbbreviations.length) {
+            return num.toExponential(2);
+        }
+
+        const suffix = numberAbbreviations[tier - 1];
+        const scale = Math.pow(10, tier * 3);
+        const scaled = num / scale;
+
+        // Return the formatted number with 2 decimal places and the suffix
+        return scaled.toFixed(2) + suffix;
+    }
+    // --- END OF NEW FEATURE ---
+
     // --- CORE GAME LOGIC ---
-    // --- THIS IS THE FIX: Define the default equipment state once to prevent recursion ---
     const defaultEquipmentState = { sword: null, shield: null, helmet: null, necklace: null, platebody: null, platelegs: null, ring1: null, ring2: null, belt: null };
 
     function getDefaultGameState() {
         return {
             gold: 0, scrap: 0, upgrades: { clickDamage: 0, dps: 0 }, maxLevel: 1, currentFightingLevel: 1,
             isLevelLocked: false, monster: { hp: 10, maxHp: 10 },
-            equipment: { ...defaultEquipmentState }, // Use the constant
+            equipment: { ...defaultEquipmentState },
             inventory: [], 
             legacyItems: [],
             absorbedStats: { clickDamage: 0, dps: 0 },
@@ -74,9 +99,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 attributes: { strength: 0, agility: 0, luck: 0 }
             },
             presets: [
-                { name: "Preset 1", equipment: { ...defaultEquipmentState } }, // Use the constant
-                { name: "Preset 2", equipment: { ...defaultEquipmentState } }, // Use the constant
-                { name: "Preset 3", equipment: { ...defaultEquipmentState } }, // Use the constant
+                { name: "Preset 1", equipment: { ...defaultEquipmentState } },
+                { name: "Preset 2", equipment: { ...defaultEquipmentState } },
+                { name: "Preset 3", equipment: { ...defaultEquipmentState } },
             ],
             activePresetIndex: 0
         };
@@ -99,7 +124,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (isBossLevel(gameState.currentFightingLevel)) { xpGained *= 5; }
         gainXP(xpGained);
 
-        logMessage(`You defeated the ${currentMonster.name} and gained ${Math.floor(goldGained)} gold and ${xpGained} XP.`);
+        logMessage(`You defeated the ${currentMonster.name} and gained ${formatNumber(goldGained)} gold and ${formatNumber(xpGained)} XP.`);
         showGoldPopup(goldGained); 
         
         const dropRoll = Math.random() * 100;
@@ -156,14 +181,12 @@ document.addEventListener('DOMContentLoaded', () => {
     
     function recalculateStats() {
         const hero = gameState.hero;
-        // Reset base stats from absorbed prestige stats and items
         playerStats.baseClickDamage = 1 + (gameState.absorbedStats?.clickDamage || 0);
         playerStats.baseDps = 0 + (gameState.absorbedStats?.dps || 0);
         
         const allItems = [...(gameState.legacyItems || []), ...Object.values(gameState.equipment)]; 
         for(const item of allItems) { if(item) addStatsFromItem(item); }
         
-        // Get flat bonuses from gold upgrades
         const clickUpgradeBonus = gameState.upgrades.clickDamage * 1.25;
         const dpsUpgradeBonus = gameState.upgrades.dps * 2.5;
         
@@ -173,12 +196,10 @@ document.addEventListener('DOMContentLoaded', () => {
         playerStats.bonusGold = hero.attributes.luck * 0.5;
         playerStats.magicFind = hero.attributes.luck * 0.2;
         
-        // Calculate final Click Damage (Strength only)
         let finalClickDamage = playerStats.baseClickDamage + clickUpgradeBonus + strengthBonusClickFlat;
         finalClickDamage *= (1 + (strengthBonusClickPercent / 100));
         playerStats.totalClickDamage = finalClickDamage;
 
-        // Calculate final DPS (Agility only)
         let finalDps = playerStats.baseDps + dpsUpgradeBonus;
         finalDps *= (1 + (agilityBonusDpsPercent / 100));
         playerStats.totalDps = finalDps;
@@ -289,11 +310,23 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     function updateUI() {
-        goldStatEl.textContent = Math.floor(gameState.gold);
-        scrapStatEl.textContent = gameState.scrap;
+        // --- START OF FIX: APPLY NUMBER FORMATTING ---
         const xpToNextLevel = getXpForNextLevel(gameState.hero.level);
+        goldStatEl.textContent = formatNumber(gameState.gold);
+        scrapStatEl.textContent = formatNumber(gameState.scrap);
+        heroXpTextEl.textContent = `${formatNumber(gameState.hero.xp)} / ${formatNumber(xpToNextLevel)}`;
+        clickDamageStatEl.textContent = formatNumber(playerStats.totalClickDamage);
+        dpsStatEl.textContent = formatNumber(playerStats.totalDps);
+        absorbedClickDmgStatEl.textContent = formatNumber(gameState.absorbedStats?.clickDamage || 0);
+        absorbedDpsStatEl.textContent = formatNumber(gameState.absorbedStats?.dps || 0);
+        monsterHealthTextEl.textContent = `${formatNumber(Math.ceil(Math.max(0, gameState.monster.hp)))} / ${formatNumber(gameState.monster.maxHp)}`;
+        const clickCost = getUpgradeCost('clickDamage');
+        const dpsCost = getUpgradeCost('dps');
+        upgradeClickCostEl.textContent = formatNumber(clickCost);
+        upgradeDpsCostEl.textContent = formatNumber(dpsCost);
+        // --- END OF FIX ---
+        
         heroLevelEl.textContent = gameState.hero.level;
-        heroXpTextEl.textContent = `${Math.floor(gameState.hero.xp)} / ${xpToNextLevel}`;
         heroXpBarEl.style.width = `${(gameState.hero.xp / xpToNextLevel) * 100}%`;
         attributePointsEl.textContent = gameState.hero.attributePoints;
         attrStrengthEl.textContent = gameState.hero.attributes.strength;
@@ -301,14 +334,9 @@ document.addEventListener('DOMContentLoaded', () => {
         attrLuckEl.textContent = gameState.hero.attributes.luck;
         const havePoints = gameState.hero.attributePoints > 0;
         addStrengthBtn.disabled = !havePoints; addAgilityBtn.disabled = !havePoints; addLuckBtn.disabled = !havePoints;
-        clickDamageStatEl.textContent = playerStats.totalClickDamage.toFixed(1);
-        dpsStatEl.textContent = playerStats.totalDps.toFixed(1);
         bonusGoldStatEl.textContent = playerStats.bonusGold.toFixed(1);
         magicFindStatEl.textContent = playerStats.magicFind.toFixed(1);
-        
         prestigeCountStatEl.textContent = gameState.prestigeCount || 0;
-        absorbedClickDmgStatEl.textContent = (gameState.absorbedStats?.clickDamage || 0).toFixed(2);
-        absorbedDpsStatEl.textContent = (gameState.absorbedStats?.dps || 0).toFixed(2);
         legacyItemsStatEl.textContent = (gameState.legacyItems?.length || 0);
 
         currentLevelEl.textContent = gameState.currentFightingLevel; levelLockCheckbox.checked = gameState.isLevelLocked; levelSelectInput.max = gameState.maxLevel;
@@ -317,15 +345,16 @@ document.addEventListener('DOMContentLoaded', () => {
             levelSelectInput.value = gameState.currentFightingLevel;
         }
 
-        monsterHealthTextEl.textContent = `${Math.ceil(Math.max(0, gameState.monster.hp))} / ${gameState.monster.maxHp}`;
-        const healthPercent = (gameState.monster.hp / gameState.monster.maxHp) * 100; monsterHealthBarEl.style.width = `${healthPercent}%`;
+        const healthPercent = (gameState.monster.hp / gameState.monster.maxHp) * 100;
+        monsterHealthBarEl.style.width = `${healthPercent}%`;
         if (healthPercent < 30) monsterHealthBarEl.style.background = 'linear-gradient(to right, #e74c3c, #c0392b)'; else if (healthPercent < 60) monsterHealthBarEl.style.background = 'linear-gradient(to right, #f39c12, #e67e22)'; else monsterHealthBarEl.style.background = 'linear-gradient(to right, #2ecc71, #27ae60)';
-        const clickCost = getUpgradeCost('clickDamage'); const dpsCost = getUpgradeCost('dps');
-        upgradeClickCostEl.textContent = clickCost; upgradeDpsCostEl.textContent = dpsCost;
-        upgradeClickLevelEl.textContent = `Lvl ${gameState.upgrades.clickDamage}`; upgradeDpsLevelEl.textContent = `Lvl ${gameState.upgrades.dps}`;
+        
+        upgradeClickLevelEl.textContent = `Lvl ${gameState.upgrades.clickDamage}`;
+        upgradeDpsLevelEl.textContent = `Lvl ${gameState.upgrades.dps}`;
         document.getElementById('upgrade-click-damage').classList.toggle('disabled', gameState.gold < clickCost);
         document.getElementById('upgrade-dps').classList.toggle('disabled', gameState.gold < dpsCost);
         document.getElementById('buy-loot-crate-btn').disabled = gameState.scrap < 50;
+
         inventorySlotsEl.innerHTML = '';
         if (gameState.inventory.length > 0) {
             gameState.inventory.forEach((item, index) => {
@@ -384,7 +413,8 @@ document.addEventListener('DOMContentLoaded', () => {
         for (const stat in item.stats) {
             const statInfo = statPools[item.type].find(s => s.key === stat);
             const statName = statInfo ? statInfo.name : stat;
-            statsHTML += `<li>+${item.stats[stat].toFixed(2)} ${statName}</li>`;
+            // --- FIX: Apply number formatting to item stats too ---
+            statsHTML += `<li>+${formatNumber(item.stats[stat])} ${statName}</li>`;
         }
         statsHTML += '</ul>';
 
@@ -402,12 +432,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
     function getItemIcon(type) { const iconMap = { sword: 'images/icons/sword.png', shield: 'images/icons/shield.png', helmet: 'images/icons/helmet.png', necklace: 'images/icons/necklace.png', platebody: 'images/icons/platebody.png', platelegs: 'images/icons/platelegs.png', ring: 'images/icons/ring.png', belt: 'images/icons/belt.png' }; return iconMap[type] || 'images/icons/sword.png'; }
-    function showDamagePopup(damage) { const popup = document.createElement('div'); popup.textContent = `-${Math.floor(damage)}`; popup.className = 'damage-popup'; popup.style.left = `${40 + Math.random() * 20}%`; popup.style.top = `${40 + Math.random() * 20}%`; popupContainerEl.appendChild(popup); setTimeout(() => popup.remove(), 1000); }
-    function showGoldPopup(gold) { const popup = document.createElement('div'); popup.innerHTML = `+${Math.floor(gold)} <i class="fas fa-coins"></i>`; popup.className = 'gold-popup'; popup.style.left = `${40 + Math.random() * 20}%`; popup.style.top = `${50}%`; popupContainerEl.appendChild(popup); setTimeout(() => popup.remove(), 1500); }
+    function showDamagePopup(damage) { const popup = document.createElement('div'); popup.textContent = `-${formatNumber(damage)}`; popup.className = 'damage-popup'; popup.style.left = `${40 + Math.random() * 20}%`; popup.style.top = `${40 + Math.random() * 20}%`; popupContainerEl.appendChild(popup); setTimeout(() => popup.remove(), 1000); }
+    function showGoldPopup(gold) { const popup = document.createElement('div'); popup.innerHTML = `+${formatNumber(gold)} <i class="fas fa-coins"></i>`; popup.className = 'gold-popup'; popup.style.left = `${40 + Math.random() * 20}%`; popup.style.top = `${50}%`; popupContainerEl.appendChild(popup); setTimeout(() => popup.remove(), 1500); }
     
     function showDpsPopup(damage) { 
         const popup = document.createElement('div'); 
-        popup.textContent = `-${Math.floor(damage)}`; 
+        popup.textContent = `-${formatNumber(damage)}`; 
         popup.className = 'dps-popup';
         popup.style.left = `${30 + Math.random() * 40}%`;
         popup.style.top = `${45 + Math.random() * 20}%`; 
@@ -451,7 +481,8 @@ document.addEventListener('DOMContentLoaded', () => {
             for (const statKey in hoveredItem.stats) {
                 const statInfo = statPools[hoveredItem.type]?.find(s => s.key === statKey);
                 const statName = statInfo ? statInfo.name : statKey;
-                statsHTML += `<li>+${hoveredItem.stats[statKey].toFixed(2)} ${statName}</li>`;
+                // --- FIX: Apply number formatting to tooltips ---
+                statsHTML += `<li>+${formatNumber(hoveredItem.stats[statKey])} ${statName}</li>`;
             }
             statsHTML += '</ul>';
             return headerHTML + statsHTML;
@@ -466,8 +497,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const statInfo = statPools[hoveredItem.type]?.find(s => s.key === statKey) || statPools[equippedItem.type]?.find(s => s.key === statKey);
             const statName = statInfo ? statInfo.name : statKey;
             let diffSpan = '';
-            if (Math.abs(difference) > 0.001) { const diffClass = difference > 0 ? 'stat-better' : 'stat-worse'; const sign = difference > 0 ? '+' : ''; diffSpan = ` <span class="${diffClass}">(${sign}${difference.toFixed(2)})</span>`; }
-            statsHTML += `<li>${statName}: ${hoveredValue.toFixed(2)}${diffSpan}</li>`;
+            if (Math.abs(difference) > 0.001) { const diffClass = difference > 0 ? 'stat-better' : 'stat-worse'; const sign = difference > 0 ? '+' : ''; diffSpan = ` <span class="${diffClass}">(${sign}${formatNumber(difference)})</span>`; }
+            statsHTML += `<li>${statName}: ${formatNumber(hoveredValue)}${diffSpan}</li>`;
         });
         statsHTML += '</ul>';
         return headerHTML + statsHTML;
@@ -630,7 +661,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const boss = raidState.boss;
         document.getElementById('raid-boss-name').textContent = boss.name;
-        document.getElementById('raid-boss-health-text').textContent = `${Math.ceil(boss.currentHp)} / ${boss.maxHp}`;
+        document.getElementById('raid-boss-health-text').textContent = `${formatNumber(Math.ceil(boss.currentHp))} / ${formatNumber(boss.maxHp)}`;
         
         const healthPercent = (boss.currentHp / boss.maxHp) * 100;
         document.getElementById('raid-boss-health-bar').style.width = `${healthPercent}%`;
@@ -639,7 +670,7 @@ document.addEventListener('DOMContentLoaded', () => {
         playerListEl.innerHTML = '';
         Object.values(raidState.players).forEach(player => {
             const li = document.createElement('li');
-            li.textContent = `${player.id} - ${player.dps.toFixed(1)} DPS`;
+            li.textContent = `${player.id} - ${formatNumber(player.dps)} DPS`;
             playerListEl.appendChild(li);
         });
     }
@@ -662,7 +693,7 @@ document.addEventListener('DOMContentLoaded', () => {
             logMessage(`RAID OVER: ${data.message}`, 'legendary');
             const scrapReward = 500;
             gameState.scrap += scrapReward;
-            logMessage(`You received ${scrapReward} Scrap for participating!`, 'epic');
+            logMessage(`You received ${formatNumber(scrapReward)} Scrap for participating!`, 'epic');
             updateUI();
             destroyRaidPanel();
         });
