@@ -34,7 +34,8 @@ document.addEventListener('DOMContentLoaded', () => {
         monsterImageEl, popupContainerEl, levelLockCheckbox, levelSelectInput, tooltipEl, heroLevelEl, 
         heroXpBarEl, heroXpTextEl, attributePointsEl, attrStrengthEl, attrAgilityEl, attrLuckEl, 
         addStrengthBtn, addAgilityBtn, addLuckBtn, clickDamageStatEl, dpsStatEl, bonusGoldStatEl, 
-        magicFindStatEl, lootMonsterNameEl, lootDropChanceEl, lootTableDisplayEl;
+        magicFindStatEl, lootMonsterNameEl, lootDropChanceEl, lootTableDisplayEl,
+        statTooltipEl; // New reference for the stat tooltip
 
     // --- START OF RAID SECTION ---
     const socket = io('https://idlegame-oqyq.onrender.com'); // IMPORTANT: Use your server URL
@@ -314,7 +315,6 @@ document.addEventListener('DOMContentLoaded', () => {
     function toggleLevelLock() { gameState.isLevelLocked = levelLockCheckbox.checked; logMessage(`Level lock ${gameState.isLevelLocked ? 'enabled' : 'disabled'}.`); }
     function goToLevel() { const desiredLevel = parseInt(levelSelectInput.value, 10); if (isNaN(desiredLevel) || desiredLevel <= 0) { alert("Please enter a valid level > 0."); return; } if (desiredLevel > gameState.maxLevel) { alert(`Your max level is ${gameState.maxLevel}.`); levelSelectInput.value = gameState.maxLevel; return; } gameState.currentFightingLevel = desiredLevel; logMessage(`Traveling to level ${desiredLevel}...`); generateMonster(); updateUI(); }
     
-    // --- THIS IS THE FIX ---
     function setupTooltipListeners() {
         inventorySlotsEl.addEventListener('mouseover', (event) => {
             const itemWrapper = event.target.closest('.item-wrapper');
@@ -323,7 +323,6 @@ document.addEventListener('DOMContentLoaded', () => {
             const inventoryItem = gameState.inventory[index];
             if (!inventoryItem) return;
             
-            // Dynamically add the item's rarity class to the tooltip element itself
             tooltipEl.classList.remove('common', 'uncommon', 'rare', 'epic', 'legendary');
             tooltipEl.classList.add(inventoryItem.rarity);
 
@@ -340,7 +339,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         inventorySlotsEl.addEventListener('mouseout', (event) => { if (!inventorySlotsEl.contains(event.relatedTarget)) { if (tooltipEl) tooltipEl.classList.add('hidden'); } });
     }
-    // --- END OF FIX ---
     
     function createTooltipHTML(hoveredItem, equippedItem) {
         const headerHTML = `<div class="item-header"><span class="${hoveredItem.rarity}">${hoveredItem.name}</span></div>`;
@@ -372,6 +370,67 @@ document.addEventListener('DOMContentLoaded', () => {
         return headerHTML + statsHTML;
     }
 
+    const statTooltipContent = {
+        strength: {
+            title: 'Strength',
+            description: 'Increases your raw power. Each point provides:',
+            effects: [
+                '<b>+0.5</b> Flat Click Damage',
+                '<b>+0.2%</b> DPS'
+            ]
+        },
+        agility: {
+            title: 'Agility',
+            description: 'Improves your hero\'s combat prowess. Each point provides:',
+            effects: [
+                '<b>+0.3%</b> DPS'
+            ]
+        },
+        luck: {
+            title: 'Luck',
+            description: 'Increases your fortune in the dungeon. Each point provides:',
+            effects: [
+                '<b>+0.5%</b> Gold Gain',
+                '<b>+0.2%</b> Magic Find (better item rarity)'
+            ]
+        }
+    };
+
+    function setupStatTooltipListeners() {
+        const attributesArea = document.getElementById('attributes-area');
+        attributesArea.addEventListener('mouseover', (event) => {
+            const row = event.target.closest('.attribute-row');
+            if (!row || !statTooltipEl) return;
+
+            const attribute = row.dataset.attribute;
+            const content = statTooltipContent[attribute];
+            if (!content) return;
+
+            let html = `<h4>${content.title}</h4><p>${content.description}</p><ul>`;
+            content.effects.forEach(effect => {
+                html += `<li>- ${effect}</li>`;
+            });
+            html += '</ul>';
+            statTooltipEl.innerHTML = html;
+            
+            // --- THIS IS THE FIX ---
+            // Get the position of the stat name span, not the whole row.
+            const nameSpan = row.querySelector('span');
+            const rect = nameSpan.getBoundingClientRect();
+            // --- END OF FIX ---
+
+            statTooltipEl.style.left = `${rect.right + 10}px`;
+            statTooltipEl.style.top = `${rect.top}px`;
+            statTooltipEl.classList.remove('hidden');
+        });
+
+        attributesArea.addEventListener('mouseout', (event) => {
+            if (!attributesArea.contains(event.relatedTarget)) {
+                if (statTooltipEl) statTooltipEl.classList.add('hidden');
+            }
+        });
+    }
+
 
     function autoSave() { saveIndicatorEl.classList.add('visible'); if (saveTimeout) clearTimeout(saveTimeout); saveTimeout = setTimeout(() => { saveIndicatorEl.classList.remove('visible'); }, 2000); localStorage.setItem('idleRPGSaveData', JSON.stringify(gameState)); }
     function resetGame() { if (confirm("Are you sure? This will delete your save permanently.")) { localStorage.removeItem('idleRPGSaveData'); window.location.reload(); } }
@@ -401,7 +460,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // --- START OF RAID FUNCTIONS ---
     function createRaidPanel() {
-        if (document.getElementById('raid-panel')) return; // Panel already exists
+        if (document.getElementById('raid-panel')) return;
 
         const raidContainer = document.getElementById('raid-container');
         raidContainer.innerHTML = `
@@ -474,7 +533,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
         socket.on('raidOver', (data) => {
             logMessage(`RAID OVER: ${data.message}`, 'legendary');
-            // Give a reward
             const scrapReward = 500;
             gameState.scrap += scrapReward;
             logMessage(`You received ${scrapReward} Scrap for participating!`, 'epic');
@@ -545,6 +603,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         
         setupTooltipListeners();
+        setupStatTooltipListeners(); 
     }
     
     // --- MAIN INITIALIZATION FUNCTION ---
@@ -571,6 +630,7 @@ document.addEventListener('DOMContentLoaded', () => {
         levelLockCheckbox = document.getElementById('level-lock-checkbox');
         levelSelectInput = document.getElementById('level-select-input');
         tooltipEl = document.getElementById('item-tooltip');
+        statTooltipEl = document.getElementById('stat-tooltip'); 
         heroLevelEl = document.getElementById('hero-level');
         heroXpBarEl = document.getElementById('hero-xp-bar');
         heroXpTextEl = document.getElementById('hero-xp-text');
@@ -604,12 +664,10 @@ document.addEventListener('DOMContentLoaded', () => {
             gameState = getDefaultGameState();
         }
         
-        // Now that elements are referenced and state is loaded, run setup.
         setupEventListeners();
         recalculateStats();
         generateMonster();
         
-        // Log messages and render the UI for the first time.
         if (!savedData) {
              logMessage("Welcome! Your progress will be saved automatically.");
         } else {
@@ -617,10 +675,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         updateUI();
 
-        // --- RAID: Initialize raid listeners ---
         setupRaidListeners();
         
-        // Start the game loops
         setInterval(autoSave, 30000);
         setInterval(gameLoop, 1000);
     }

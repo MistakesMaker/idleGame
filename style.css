@@ -74,7 +74,7 @@ button:disabled { background: #7f8c8d; cursor: not-allowed; border-bottom: 2px s
 #hero-xp-bar { height: 100%; background: linear-gradient(to right, #9b59b6, #8e44ad); transition: width 0.5s ease-in-out; }
 #hero-xp-text { position: absolute; top: 0; left: 0; right: 0; line-height: 25px; font-size: 14px; color: white; text-shadow: 1px 1px 2px #000; }
 #attributes-area, #derived-stats-area { background-color: rgba(0,0,0,0.2); border-radius: 5px; padding: 15px; margin-top: 10px; }
-.attribute-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; font-size: 1.1em; }
+.attribute-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; font-size: 1.1em; cursor: help; }
 .attribute-btn { padding: 5px 12px; font-size: 1.2em; line-height: 1; margin: 0; }
 .attribute-btn:not(:disabled) { background: linear-gradient(145deg, #27ae60, #2ecc71); border-bottom-color: #229954; animation: pulse-green 2s infinite; }
 @keyframes pulse-green { 0% { box-shadow: 0 0 0 0 rgba(46, 204, 113, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(46, 204, 113, 0); } 100% { box-shadow: 0 0 0 0 rgba(46, 204, 113, 0); } }
@@ -160,22 +160,17 @@ button:disabled { background: #7f8c8d; cursor: not-allowed; border-bottom: 2px s
 .uncommon { border: 2px solid #2ecc71; box-shadow: 0 0 5px #2ecc71; }
 .rare { border: 2px solid #3498db; box-shadow: 0 0 8px #3498db; }
 .epic { border: 2px solid #9b59b6; box-shadow: 0 0 12px #9b59b6; }
-
-/* --- THIS IS THE FIX --- */
 .legendary { 
     border: 2px solid #f39c12; 
     box-shadow: 0 0 15px #f39c12; 
-    /* Added ease-in-out for a smooth breathing effect */
     animation: legendary-glow 2s ease-in-out infinite alternate; 
 }
 
 @keyframes legendary-glow { from { box-shadow: 0 0 5px #f39c12; } to { box-shadow: 0 0 20px #f0b75a; } }
-/* --- END OF FIX --- */
-
 .selected-for-prestige { border: 3px dashed #f1c40f !important; transform: scale(1.05); }
 .hidden { display: none !important; }
 #prestige-button:not(:disabled) { animation: pulse 2s infinite; background: linear-gradient(145deg, #f1c40f, #e67e22); border-bottom: 2px solid #d35400; }
-@keyframes pulse { 0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(241, 196, 15, 0.7); } 70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(241, 196, 15, 0); } 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(241, 196, 15, 0); } }
+@keyframes pulse { 0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(241, 196, 15, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(241, 196, 15, 0); } 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(241, 196, 15, 0); } }
 
 #upgrades-area { margin-top: 20px; padding-top: 15px; border-top: 1px solid #4a637e; }
 .upgrade-button { background: linear-gradient(145deg, #2c3e50, #34495e); border: 1px solid #7f8c8d; padding: 10px; margin-bottom: 10px; border-radius: 5px; cursor: pointer; text-align: center; transition: all 0.2s ease; }
@@ -215,3 +210,33 @@ body.salvage-mode-active #inventory-slots .item:not(.locked-item) { cursor: poin
 #item-tooltip ul { list-style: none; padding: 0; margin: 0; font-size: 0.9em; }
 #item-tooltip .stat-better { color: #2ecc71; font-weight: bold; }
 #item-tooltip .stat-worse { color: #e74c3c; font-weight: bold; }
+
+/* --- START OF NEW SECTION --- */
+#stat-tooltip {
+    position: fixed;
+    width: auto;
+    min-width: 240px;
+    background-color: rgba(10, 15, 20, 0.95);
+    border: 1px solid #7f8c8d; /* Neutral border color */
+    border-radius: 8px;
+    box-shadow: 0 6px 12px rgba(0,0,0,0.5);
+    padding: 15px;
+    z-index: 9999;
+    pointer-events: none;
+    backdrop-filter: blur(5px);
+    font-size: 0.95em;
+    line-height: 1.5;
+}
+
+#stat-tooltip h4 {
+    margin: 0 0 10px 0;
+    padding-bottom: 5px;
+    border-bottom: 1px solid #4a637e;
+}
+
+#stat-tooltip ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+/* --- END OF NEW SECTION --- */
