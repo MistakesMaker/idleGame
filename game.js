@@ -1,3 +1,4 @@
+/* global io */
 import { REALMS } from './data/realms.js';
 import { MONSTERS } from './data/monsters.js';
 import { ITEMS } from './data/items.js';
@@ -16,17 +17,25 @@ document.addEventListener('DOMContentLoaded', () => {
     let prestigeSelections = [];
     let saveTimeout;
     
-    // DOM ELEMENT REFERENCES
-    let saveIndicatorEl, goldStatEl, scrapStatEl, upgradeClickCostEl, upgradeDpsCostEl, upgradeClickLevelEl, 
-        upgradeDpsLevelEl, monsterNameEl, currentLevelEl, monsterHealthBarEl, monsterHealthTextEl, 
-        inventorySlotsEl, gameLogEl, prestigeButton, prestigeSelectionEl, prestigeInventorySlotsEl, 
-        monsterImageEl, popupContainerEl, tooltipEl, heroLevelEl, 
-        heroXpBarEl, heroXpTextEl, attributePointsEl, attrStrengthEl, attrAgilityEl, attrLuckEl, 
-        addStrengthBtn, addAgilityBtn, addLuckBtn, clickDamageStatEl, dpsStatEl, bonusGoldStatEl, 
-        magicFindStatEl, lootMonsterNameEl, lootDropChanceEl, lootTableDisplayEl,
-        statTooltipEl, prestigeCountStatEl, absorbedClickDmgStatEl, absorbedDpsStatEl, legacyItemsStatEl,
-        mapContainerEl, mapTitleEl, backToWorldMapBtnEl, modalBackdropEl, modalContentEl, modalTitleEl, modalBodyEl, modalCloseBtnEl,
-        autoProgressCheckboxEl, realmTabsContainerEl;
+    // --- JSDoc annotations for DOM Elements ---
+    /** @type {HTMLElement} */ let saveIndicatorEl;
+    /** @type {HTMLElement} */ let goldStatEl, scrapStatEl, upgradeClickCostEl, upgradeDpsCostEl, upgradeClickLevelEl;
+    /** @type {HTMLElement} */ let upgradeDpsLevelEl, monsterNameEl, currentLevelEl, monsterHealthBarEl, monsterHealthTextEl;
+    /** @type {HTMLElement} */ let inventorySlotsEl, gameLogEl, prestigeSelectionEl, prestigeInventorySlotsEl;
+    /** @type {HTMLButtonElement} */ let prestigeButton;
+    /** @type {HTMLImageElement} */ let monsterImageEl;
+    /** @type {HTMLElement} */ let popupContainerEl, tooltipEl, heroLevelEl; 
+    /** @type {HTMLElement} */ let heroXpBarEl, heroXpTextEl, attributePointsEl, attrStrengthEl, attrAgilityEl, attrLuckEl;
+    /** @type {HTMLButtonElement} */ let addStrengthBtn, addAgilityBtn, addLuckBtn;
+    /** @type {HTMLElement} */ let clickDamageStatEl, dpsStatEl, bonusGoldStatEl, magicFindStatEl, lootMonsterNameEl, lootDropChanceEl, lootTableDisplayEl;
+    /** @type {HTMLElement} */ let statTooltipEl, prestigeCountStatEl, absorbedClickDmgStatEl, absorbedDpsStatEl, legacyItemsStatEl;
+    /** @type {HTMLElement} */ let mapContainerEl, mapTitleEl;
+    /** @type {HTMLButtonElement} */ let backToWorldMapBtnEl;
+    /** @type {HTMLElement} */ let modalBackdropEl, modalContentEl, modalTitleEl, modalBodyEl;
+    /** @type {HTMLButtonElement} */ let modalCloseBtnEl;
+    /** @type {HTMLInputElement} */ let autoProgressCheckboxEl;
+    /** @type {HTMLElement} */ let realmTabsContainerEl;
+
 
     // RAID SECTION
     const socket = io('https://idlegame-oqyq.onrender.com'); 
@@ -182,7 +191,12 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
              const subZone = findSubZoneByLevel(level);
              if (subZone) {
-                monsterData = subZone.monsterPool[Math.floor(Math.random() * subZone.monsterPool.length)];
+                const monsterPool = subZone.monsterPool;
+                if (monsterPool && monsterPool.length > 0) {
+                    monsterData = monsterPool[Math.floor(Math.random() * monsterPool.length)];
+                } else {
+                    monsterData = MONSTERS.SLIME; // Fallback
+                }
              } else {
                 console.error("No sub-zone found for level:", level);
                 monsterData = MONSTERS.SLIME;
@@ -255,41 +269,88 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     function spendAttributePoint(attribute) { if (gameState.hero.attributePoints > 0) { gameState.hero.attributePoints--; gameState.hero.attributes[attribute]++; recalculateStats(); updateUI(); autoSave(); } }
 
-    function generateItem(rarity, itemLevel, forcedType) {
-        const itemTypeData = forcedType || Object.values(ITEMS)[Math.floor(Math.random() * Object.values(ITEMS).length)];
+    function generateItem(rarity, itemLevel, itemBase) {
         const rarityIndex = rarities.indexOf(rarity);
+        
         const item = { 
             id: Date.now() + Math.random(), 
-            name: `${rarity.charAt(0).toUpperCase() + rarity.slice(1)} ${itemTypeData.name}`, 
-            type: itemTypeData.name.toLowerCase(), 
+            name: `${rarity.charAt(0).toUpperCase() + rarity.slice(1)} ${itemBase.name}`, 
+            type: itemBase.type.toLowerCase(), 
             rarity: rarity, 
             stats: {}, 
             locked: false 
         };
-        const levelModifier = 1 + (itemLevel / 15);
-        let statValue = (Math.random() * 2.5 + 1) * (rarityIndex + 1) * levelModifier;
-        const possibleStats = itemTypeData.possibleStats;
-        const statToAssign = possibleStats[Math.floor(Math.random() * possibleStats.length)];
-        if (statToAssign.key === 'dps' || statToAssign.key === 'clickDamage') { statValue *= 2; }
-        item.stats[statToAssign.key] = parseFloat(statValue.toFixed(2));
-        item.name = `${rarity.charAt(0).toUpperCase() + rarity.slice(1)} ${itemTypeData.name} of ${statToAssign.name.replace('% ', '')}`;
+
+        // --- Determine the number of stats to add ---
+        const rarityStatsCount = rarityIndex + 1; // common=1, uncommon=2, etc.
+        const maxPossibleStats = itemBase.possibleStats.length;
+        const numStatsToGenerate = Math.min(rarityStatsCount, maxPossibleStats);
+
+        // --- Randomly pick stats from the item's pool ---
+        const availableStats = [...itemBase.possibleStats];
+        const chosenStats = [];
+        for (let i = 0; i < numStatsToGenerate; i++) {
+            if (availableStats.length === 0) break;
+            const statIndex = Math.floor(Math.random() * availableStats.length);
+            chosenStats.push(availableStats.splice(statIndex, 1)[0]);
+        }
+
+        // --- Calculate stat values based on rarity tier ---
+        const tier_min_percent = rarityIndex / rarities.length;       // e.g., for Epic (index 3/5), this is 0.6
+        const tier_max_percent = (rarityIndex + 1) / rarities.length; // e.g., for Epic (index 3/5), this is 0.8
+        
+        chosenStats.forEach(statInfo => {
+            const stat_range = statInfo.max - statInfo.min;
+            
+            // This ensures the roll is *within* the slice for this rarity
+            // e.g., an Epic roll will always be between 60% and 80% of the item's total stat potential.
+            const random_roll_in_tier = Math.random();
+            const final_percent = tier_min_percent + (random_roll_in_tier * (tier_max_percent - tier_min_percent));
+
+            const final_stat_value = statInfo.min + (stat_range * final_percent);
+            item.stats[statInfo.key] = parseFloat(final_stat_value.toFixed(2));
+        });
+
         return item;
     }
 
     function dropLoot() {
         const monsterDef = currentMonster.data;
-        if (!monsterDef || !monsterDef.lootTable) return;
-        const itemTypeToDrop = monsterDef.lootTable[Math.floor(Math.random() * monsterDef.lootTable.length)];
+        if (!monsterDef || !monsterDef.lootTable || monsterDef.lootTable.length === 0) return;
+
+        // --- Weighted Loot Table Logic ---
+        const totalWeight = monsterDef.lootTable.reduce((sum, entry) => sum + entry.weight, 0);
+        let roll = Math.random() * totalWeight;
+
+        let itemBaseToDrop;
+        for (const entry of monsterDef.lootTable) {
+            if (roll < entry.weight) {
+                itemBaseToDrop = entry.item;
+                break;
+            }
+            roll -= entry.weight;
+        }
+
+        if (!itemBaseToDrop) {
+            console.error("Loot drop failed to select an item. Check loot tables for monster:", currentMonster.name);
+            return;
+        }
+
+        // --- Rarity Generation Logic ---
+        let rarityRoll = Math.random() * 100;
+        rarityRoll -= playerStats.magicFind; // Apply magic find
         
-        let roll = Math.random() * 100; roll -= playerStats.magicFind;
         let rarity;
-        
         const isBoss = isBossLevel(gameState.currentFightingLevel) || isBigBossLevel(gameState.currentFightingLevel);
 
-        if (isBoss && roll < 5) rarity = 'legendary'; 
-        else if (roll < 5) rarity = 'legendary'; else if (roll < 20) rarity = 'epic'; else if (roll < 50) rarity = 'rare'; else if (roll < 85) rarity = 'uncommon'; else rarity = 'common';
+        if (isBoss && rarityRoll < 5) rarity = 'legendary'; 
+        else if (rarityRoll < 5) rarity = 'legendary'; 
+        else if (rarityRoll < 20) rarity = 'epic'; 
+        else if (rarityRoll < 50) rarity = 'rare'; 
+        else if (rarityRoll < 85) rarity = 'uncommon'; 
+        else rarity = 'common';
         
-        const item = generateItem(rarity, gameState.currentFightingLevel, itemTypeToDrop);
+        const item = generateItem(rarity, gameState.currentFightingLevel, itemBaseToDrop);
         gameState.inventory.push(item);
         logMessage(`The ${currentMonster.name} dropped an item! <span class="${item.rarity}" style="font-weight:bold;">${item.name}</span>`);
     }
@@ -299,10 +360,36 @@ document.addEventListener('DOMContentLoaded', () => {
     
     function getUpgradeCost(upgradeType) { const level = gameState.upgrades[upgradeType]; if (upgradeType === 'clickDamage') { return Math.floor(10 * Math.pow(1.15, level)); } if (upgradeType === 'dps') { return Math.floor(25 * Math.pow(1.18, level)); } }
     function buyUpgrade(upgradeType) { const cost = getUpgradeCost(upgradeType); if (gameState.gold >= cost) { gameState.gold -= cost; gameState.upgrades[upgradeType]++; recalculateStats(); updateUI(); logMessage(`Upgraded ${upgradeType} to level ${gameState.upgrades[upgradeType]}!`); autoSave(); } else { logMessage("Not enough gold!"); } }
-    function buyLootCrate() { const cost = 50; if (gameState.scrap >= cost) { gameState.scrap -= cost; logMessage(`Bought a loot crate for ${cost} Scrap!`); const rarityRoll = Math.random() * (rarities.length - 1) + 1; const rarity = rarities[Math.floor(rarityRoll)]; const item = generateItem(rarity, gameState.currentFightingLevel); gameState.inventory.push(item); logMessage(`The crate contained: <span class="${item.rarity}" style="font-weight:bold;">${item.name}</span>`); updateUI(); autoSave(); } else { logMessage("Not enough Scrap!"); } }
+    
+    function buyLootCrate() {
+        const cost = 50;
+        if (gameState.scrap >= cost) {
+            gameState.scrap -= cost;
+            logMessage(`Bought a loot crate for ${cost} Scrap!`);
+
+            // --- BUG FIX: Select a random item base to generate ---
+            const itemKeys = Object.keys(ITEMS);
+            const randomItemKey = itemKeys[Math.floor(Math.random() * itemKeys.length)];
+            const itemBase = ITEMS[randomItemKey];
+            
+            // Generate a random rarity (but not common)
+            const rarityRoll = Math.floor(Math.random() * (rarities.length - 1)) + 1; // 1 to 4
+            const rarity = rarities[rarityRoll];
+
+            const item = generateItem(rarity, gameState.currentFightingLevel, itemBase);
+            gameState.inventory.push(item);
+
+            logMessage(`The crate contained: <span class="${item.rarity}" style="font-weight:bold;">${item.name}</span>`);
+            updateUI();
+            autoSave();
+        } else {
+            logMessage("Not enough Scrap!");
+        }
+    }
+
     function toggleSalvageMode() { salvageMode.active = !salvageMode.active; const salvageBtn = document.getElementById('salvage-mode-btn'); const confirmBtn = document.getElementById('confirm-salvage-btn'); const selectAllBtn = document.getElementById('select-all-salvage-btn'); if (salvageMode.active) { salvageBtn.textContent = 'Cancel Salvage'; salvageBtn.classList.add('active'); confirmBtn.classList.remove('hidden'); selectAllBtn.classList.remove('hidden'); } else { salvageBtn.textContent = 'Select to Salvage'; salvageBtn.classList.remove('active'); confirmBtn.classList.add('hidden'); selectAllBtn.classList.add('hidden'); salvageMode.selections = []; } document.body.classList.toggle('salvage-mode-active', salvageMode.active); document.getElementById('salvage-count').textContent = '0'; updateUI(); }
-    function selectItemForSalvage(item, index) { if (item.locked) { logMessage("This item is locked and cannot be salvaged.", 'rare'); return; } const selectionIndex = salvageMode.selections.indexOf(index); if (selectionIndex > -1) { salvageMode.selections.splice(selectionIndex, 1); } else { salvageMode.selections.push(index); } document.getElementById('salvage-count').textContent = salvageMode.selections.length; updateUI(); }
-    function selectAllForSalvage() { salvageMode.selections = []; gameState.inventory.forEach((item, index) => { if (!item.locked) { salvageMode.selections.push(index); } }); document.getElementById('salvage-count').textContent = salvageMode.selections.length; updateUI(); }
+    function selectItemForSalvage(item, index) { if (item.locked) { logMessage("This item is locked and cannot be salvaged.", 'rare'); return; } const selectionIndex = salvageMode.selections.indexOf(index); if (selectionIndex > -1) { salvageMode.selections.splice(selectionIndex, 1); } else { salvageMode.selections.push(index); } document.getElementById('salvage-count').textContent = salvageMode.selections.length.toString(); updateUI(); }
+    function selectAllForSalvage() { salvageMode.selections = []; gameState.inventory.forEach((item, index) => { if (!item.locked) { salvageMode.selections.push(index); } }); document.getElementById('salvage-count').textContent = salvageMode.selections.length.toString(); updateUI(); }
     function handleInventoryClick(item, index) { if (salvageMode.active) { selectItemForSalvage(item, index); } else { equipItem(index); } }
     function salvageSelectedItems() { if (salvageMode.selections.length === 0) { logMessage("No items selected for salvage."); return; } let totalScrapGained = 0; const selectedCount = salvageMode.selections.length; salvageMode.selections.sort((a, b) => b - a); salvageMode.selections.forEach(index => { const item = gameState.inventory[index]; if (item) { const rarityIndex = rarities.indexOf(item.rarity); const scrapGained = Math.ceil(Math.pow(4, rarityIndex)); totalScrapGained += scrapGained; gameState.inventory.splice(index, 1); } }); gameState.scrap += totalScrapGained; logMessage(`Salvaged ${selectedCount} items for a total of ${totalScrapGained} Scrap.`, 'uncommon'); toggleSalvageMode(); autoSave(); }
     function toggleItemLock(inventoryIndex) { const item = gameState.inventory[inventoryIndex]; if (item) { item.locked = !item.locked; logMessage(`Item ${item.name} ${item.locked ? 'locked' : 'unlocked'}.`); } updateUI(); autoSave(); }
@@ -363,7 +450,16 @@ document.addEventListener('DOMContentLoaded', () => {
     
     function renderMap() {
         mapContainerEl.innerHTML = ''; 
-        const realm = getCurrentRealm();
+        // --- FIX: Use the selected realm index, not the highest possible one ---
+        const realm = REALMS[gameState.currentRealmIndex];
+        if (!realm) {
+            console.error(`Invalid realm index: ${gameState.currentRealmIndex}`);
+            // Fallback to the first realm if the saved index is bad
+            gameState.currentRealmIndex = 0;
+            renderMap();
+            return;
+        }
+
 
         if (currentMap === 'world') {
             mapTitleEl.textContent = realm.name;
@@ -392,7 +488,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 const isUnlocked = gameState.maxLevel >= subZone.levelRange[0];
                 const isCompleted = gameState.completedLevels.includes(subZone.levelRange[1]);
                 
-                const node = createMapNode(subZone.name, ITEMS.SWORD.icon, subZone.coords, isUnlocked, isCompleted);
+                // Since ITEMS.SWORD doesn't exist, let's use a fallback icon
+                const icon = 'images/icons/sword.png';
+                const node = createMapNode(subZone.name, icon, subZone.coords, isUnlocked, isCompleted);
                 
                 if (isUnlocked) {
                     node.onclick = () => showSubZoneModal(subZone);
@@ -523,7 +621,10 @@ document.addEventListener('DOMContentLoaded', () => {
         generateMonster();
         updateUI();
         autoSave();
-        document.querySelector('.tab-button[data-view="combat-view"]').click();
+        const combatTab = document.querySelector('.tab-button[data-view="combat-view"]');
+        if (combatTab instanceof HTMLElement) {
+            combatTab.click();
+        }
     }
 
     function closeModal() {
@@ -566,20 +667,20 @@ document.addEventListener('DOMContentLoaded', () => {
         upgradeClickCostEl.textContent = formatNumber(clickCost);
         upgradeDpsCostEl.textContent = formatNumber(dpsCost);
         
-        heroLevelEl.textContent = gameState.hero.level;
+        heroLevelEl.textContent = gameState.hero.level.toString();
         heroXpBarEl.style.width = `${(gameState.hero.xp / xpToNextLevel) * 100}%`;
-        attributePointsEl.textContent = gameState.hero.attributePoints;
-        attrStrengthEl.textContent = gameState.hero.attributes.strength;
-        attrAgilityEl.textContent = gameState.hero.attributes.agility;
-        attrLuckEl.textContent = gameState.hero.attributes.luck;
+        attributePointsEl.textContent = gameState.hero.attributePoints.toString();
+        attrStrengthEl.textContent = gameState.hero.attributes.strength.toString();
+        attrAgilityEl.textContent = gameState.hero.attributes.agility.toString();
+        attrLuckEl.textContent = gameState.hero.attributes.luck.toString();
         const havePoints = gameState.hero.attributePoints > 0;
         addStrengthBtn.disabled = !havePoints; addAgilityBtn.disabled = !havePoints; addLuckBtn.disabled = !havePoints;
         bonusGoldStatEl.textContent = playerStats.bonusGold.toFixed(1);
         magicFindStatEl.textContent = playerStats.magicFind.toFixed(1);
-        prestigeCountStatEl.textContent = gameState.prestigeCount || 0;
-        legacyItemsStatEl.textContent = (gameState.legacyItems?.length || 0);
+        prestigeCountStatEl.textContent = (gameState.prestigeCount || 0).toString();
+        legacyItemsStatEl.textContent = (gameState.legacyItems?.length || 0).toString();
 
-        currentLevelEl.textContent = gameState.currentFightingLevel;
+        currentLevelEl.textContent = gameState.currentFightingLevel.toString();
         autoProgressCheckboxEl.checked = gameState.isAutoProgressing;
         
         const healthPercent = (gameState.monster.hp / gameState.monster.maxHp) * 100;
@@ -590,14 +691,14 @@ document.addEventListener('DOMContentLoaded', () => {
         upgradeDpsLevelEl.textContent = `Lvl ${gameState.upgrades.dps}`;
         document.getElementById('upgrade-click-damage').classList.toggle('disabled', gameState.gold < clickCost);
         document.getElementById('upgrade-dps').classList.toggle('disabled', gameState.gold < dpsCost);
-        document.getElementById('buy-loot-crate-btn').disabled = gameState.scrap < 50;
+        (/** @type {HTMLButtonElement} */ (document.getElementById('buy-loot-crate-btn'))).disabled = gameState.scrap < 50;
 
         inventorySlotsEl.innerHTML = '';
         if (gameState.inventory.length > 0) {
             gameState.inventory.forEach((item, index) => {
                 const itemWrapper = document.createElement('div');
                 itemWrapper.className = 'item-wrapper';
-                itemWrapper.dataset.index = index;
+                itemWrapper.dataset.index = index.toString();
                 itemWrapper.innerHTML = createItemHTML(item, false);
 
                 if (salvageMode.active && salvageMode.selections.includes(index)) {
@@ -613,11 +714,19 @@ document.addEventListener('DOMContentLoaded', () => {
             inventorySlotsEl.innerHTML = `<p style="text-align:center; width:100%;">No items.</p>`;
         }
         for (const slotName in gameState.equipment) {
-            const slotEl = document.getElementById(`slot-${slotName}`); const item = gameState.equipment[slotName]; slotEl.innerHTML = '';
+            const slotEl = document.getElementById(`slot-${slotName}`);
+            const item = gameState.equipment[slotName];
+            slotEl.innerHTML = '';
             if (item) {
-                const itemDiv = document.createElement('div'); itemDiv.innerHTML = createItemHTML(item, true); itemDiv.onclick = (e) => { e.stopPropagation(); unequipItem(slotName); }; slotEl.appendChild(itemDiv);
+                const itemDiv = document.createElement('div');
+                itemDiv.innerHTML = createItemHTML(item, true);
+                itemDiv.onclick = (e) => { e.stopPropagation(); unequipItem(slotName); };
+                slotEl.appendChild(itemDiv);
             } else {
-                const placeholder = document.createElement('img'); placeholder.src = getItemIcon(slotName.replace(/\d/g, '')); placeholder.className = 'placeholder-icon'; slotEl.appendChild(placeholder);
+                const placeholder = document.createElement('img');
+                placeholder.src = getItemIcon(slotName.replace(/\d/g, ''));
+                placeholder.className = 'placeholder-icon';
+                slotEl.appendChild(placeholder);
             }
         }
 
@@ -628,15 +737,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
         prestigeButton.disabled = gameState.maxLevel < 100;
         
-        const monsterDef = MONSTERS[currentMonster.name.toUpperCase().replace(/\s/g, '_')];
+        const monsterDef = currentMonster.data;
         if (monsterDef) {
             lootMonsterNameEl.textContent = currentMonster.name;
             lootDropChanceEl.textContent = `${monsterDef.dropChance}% ${monsterDef.dropChance === 100 ? '(Boss)' : ''}`;
             lootTableDisplayEl.innerHTML = '';
-            monsterDef.lootTable.forEach(itemData => {
+            monsterDef.lootTable.forEach(entry => {
                 const icon = document.createElement('img');
-                icon.src = itemData.icon;
-                icon.title = itemData.name;
+                icon.src = entry.item.icon;
+                icon.title = entry.item.name;
                 icon.className = 'loot-item-icon';
                 lootTableDisplayEl.appendChild(icon);
             });
@@ -675,8 +784,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
     function getItemIcon(type) {
-        const itemData = Object.values(ITEMS).find(item => item.name.toLowerCase() === type);
-        return itemData ? itemData.icon : 'images/icons/sword.png';
+        // Since we have specific items, we can't easily find a generic "sword" icon.
+        // This is a simple fallback. A better system might use the icon of the first item of that type.
+        switch(type) {
+            case 'sword': return 'images/icons/sword.png';
+            case 'shield': return 'images/icons/shield.png';
+            case 'helmet': return 'images/icons/helmet.png';
+            case 'necklace': return 'images/icons/necklace.png';
+            case 'platebody': return 'images/icons/platebody.png';
+            case 'platelegs': return 'images/icons/platelegs.png';
+            case 'ring': return 'images/icons/ring.png';
+            case 'belt': return 'images/icons/belt.png';
+            default: return 'images/icons/sword.png';
+        }
     }
     function showDamagePopup(damage) { const popup = document.createElement('div'); popup.textContent = `-${formatNumber(damage)}`; popup.className = 'damage-popup'; popup.style.left = `${40 + Math.random() * 20}%`; popup.style.top = `${40 + Math.random() * 20}%`; popupContainerEl.appendChild(popup); setTimeout(() => popup.remove(), 1000); }
     function showGoldPopup(gold) { const popup = document.createElement('div'); popup.innerHTML = `+${formatNumber(gold)} <i class="fas fa-coins"></i>`; popup.className = 'gold-popup'; popup.style.left = `${40 + Math.random() * 20}%`; popup.style.top = `${50}%`; popupContainerEl.appendChild(popup); setTimeout(() => popup.remove(), 1500); }
@@ -693,8 +813,11 @@ document.addEventListener('DOMContentLoaded', () => {
     
     function setupTooltipListeners() {
         inventorySlotsEl.addEventListener('mouseover', (event) => {
-            const itemWrapper = event.target.closest('.item-wrapper');
-            if (!itemWrapper || !tooltipEl) return;
+            const target = event.target;
+            if (!(target instanceof Element)) return;
+            
+            const itemWrapper = target.closest('.item-wrapper');
+            if (!(itemWrapper instanceof HTMLElement)) return;
             const index = parseInt(itemWrapper.dataset.index, 10);
             const inventoryItem = gameState.inventory[index];
             if (!inventoryItem) return;
@@ -713,12 +836,19 @@ document.addEventListener('DOMContentLoaded', () => {
             tooltipEl.innerHTML = createTooltipHTML(inventoryItem, equippedItem);
             tooltipEl.classList.remove('hidden');
         });
-        inventorySlotsEl.addEventListener('mouseout', (event) => { if (!inventorySlotsEl.contains(event.relatedTarget)) { if (tooltipEl) tooltipEl.classList.add('hidden'); } });
+        inventorySlotsEl.addEventListener('mouseout', (event) => {
+             if (event.relatedTarget instanceof Node && !inventorySlotsEl.contains(event.relatedTarget)) {
+                if (tooltipEl) tooltipEl.classList.add('hidden');
+            }
+        });
     
         const equipmentSlots = document.getElementById('equipment-paperdoll');
         equipmentSlots.addEventListener('mouseover', (event) => {
-            const slotEl = event.target.closest('.equipment-slot');
-            if (!slotEl || !tooltipEl) return;
+            const target = event.target;
+            if (!(target instanceof Element)) return;
+
+            const slotEl = target.closest('.equipment-slot');
+            if (!slotEl) return;
 
             const slotName = slotEl.id.replace('slot-', '');
             const equippedItem = gameState.equipment[slotName];
@@ -736,7 +866,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         equipmentSlots.addEventListener('mouseout', (event) => {
-            if (!equipmentSlots.contains(event.relatedTarget)) {
+            if (event.relatedTarget instanceof Node && !equipmentSlots.contains(event.relatedTarget)) {
                 if (tooltipEl) tooltipEl.classList.add('hidden');
             }
         });
@@ -801,8 +931,11 @@ document.addEventListener('DOMContentLoaded', () => {
     function setupStatTooltipListeners() {
         const attributesArea = document.getElementById('attributes-area');
         attributesArea.addEventListener('mouseover', (event) => {
-            const row = event.target.closest('.attribute-row');
-            if (!row || !statTooltipEl) return;
+            const target = event.target;
+            if (!(target instanceof Element)) return;
+
+            const row = target.closest('.attribute-row');
+            if (!(row instanceof HTMLElement)) return;
 
             const attribute = row.dataset.attribute;
             const content = statTooltipContent[attribute];
@@ -824,7 +957,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         attributesArea.addEventListener('mouseout', (event) => {
-            if (!attributesArea.contains(event.relatedTarget)) {
+            if (event.relatedTarget instanceof Node && !attributesArea.contains(event.relatedTarget)) {
                 if (statTooltipEl) statTooltipEl.classList.add('hidden');
             }
         });
@@ -933,7 +1066,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('raid-boss-health-text').textContent = `${formatNumber(Math.ceil(boss.currentHp))} / ${formatNumber(boss.maxHp)}`;
         
         const healthPercent = (boss.currentHp / boss.maxHp) * 100;
-        document.getElementById('raid-boss-health-bar').style.width = `${healthPercent}%`;
+        (/** @type {HTMLElement} */ (document.getElementById('raid-boss-health-bar'))).style.width = `${healthPercent}%`;
 
         const playerListEl = raidPanel.querySelector('#raid-player-list ul');
         playerListEl.innerHTML = '';
@@ -1020,7 +1153,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.querySelectorAll('.tabs').forEach(tabContainer => {
             const tabs = tabContainer.querySelectorAll('.tab-button');
             const parentPanel = tabContainer.parentElement;
-            tabs.forEach(tab => {
+            tabs.forEach(/** @param {HTMLElement} tab */(tab) => {
                 const viewId = tab.dataset.view || tab.textContent.toLowerCase() + '-view';
                 tab.dataset.view = viewId;
 
@@ -1036,11 +1169,14 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         
         inventorySlotsEl.addEventListener('click', (event) => {
-            const wrapper = event.target.closest('.item-wrapper');
-            if (!wrapper) return;
+            const target = event.target;
+            if (!(target instanceof Element)) return;
+            
+            const wrapper = target.closest('.item-wrapper');
+            if (!(wrapper instanceof HTMLElement)) return;
             const index = parseInt(wrapper.dataset.index, 10);
             const item = gameState.inventory[index];
-            if (event.target.classList.contains('lock-icon')) {
+            if (target.classList.contains('lock-icon')) {
                 toggleItemLock(index);
             } else {
                 handleInventoryClick(item, index);
@@ -1052,57 +1188,57 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     function main() {
-        saveIndicatorEl = document.getElementById('save-indicator');
-        goldStatEl = document.getElementById('gold-stat');
-        scrapStatEl = document.getElementById('scrap-stat');
-        upgradeClickCostEl = document.getElementById('upgrade-click-cost');
-        upgradeDpsCostEl = document.getElementById('upgrade-dps-cost');
-        upgradeClickLevelEl = document.getElementById('upgrade-click-level');
-        upgradeDpsLevelEl = document.getElementById('upgrade-dps-level');
-        monsterNameEl = document.getElementById('monster-name');
-        currentLevelEl = document.getElementById('current-level');
-        monsterHealthBarEl = document.getElementById('monster-health-bar');
-        monsterHealthTextEl = document.getElementById('monster-health-text');
-        inventorySlotsEl = document.getElementById('inventory-slots');
-        gameLogEl = document.getElementById('game-log');
-        prestigeButton = document.getElementById('prestige-button');
-        prestigeSelectionEl = document.getElementById('prestige-selection');
-        prestigeInventorySlotsEl = document.getElementById('prestige-inventory-slots');
-        monsterImageEl = document.getElementById('monster-image');
-        popupContainerEl = document.getElementById('popup-container');
-        tooltipEl = document.getElementById('item-tooltip');
-        statTooltipEl = document.getElementById('stat-tooltip'); 
-        heroLevelEl = document.getElementById('hero-level');
-        heroXpBarEl = document.getElementById('hero-xp-bar');
-        heroXpTextEl = document.getElementById('hero-xp-text');
-        attributePointsEl = document.getElementById('attribute-points');
-        attrStrengthEl = document.getElementById('attr-strength');
-        attrAgilityEl = document.getElementById('attr-agility');
-        attrLuckEl = document.getElementById('attr-luck');
-        addStrengthBtn = document.getElementById('add-strength-btn');
-        addAgilityBtn = document.getElementById('add-agility-btn');
-        addLuckBtn = document.getElementById('add-luck-btn');
-        clickDamageStatEl = document.getElementById('click-damage-stat');
-        dpsStatEl = document.getElementById('dps-stat');
-        bonusGoldStatEl = document.getElementById('bonus-gold-stat');
-        magicFindStatEl = document.getElementById('magic-find-stat');
-        lootMonsterNameEl = document.getElementById('loot-monster-name');
-        lootDropChanceEl = document.getElementById('loot-drop-chance');
-        lootTableDisplayEl = document.getElementById('loot-table-display');
-        prestigeCountStatEl = document.getElementById('prestige-count-stat');
-        absorbedClickDmgStatEl = document.getElementById('absorbed-click-dmg-stat');
-        absorbedDpsStatEl = document.getElementById('absorbed-dps-stat');
-        legacyItemsStatEl = document.getElementById('legacy-items-stat');
-        mapContainerEl = document.getElementById('map-container');
-        mapTitleEl = document.getElementById('map-title');
-        backToWorldMapBtnEl = document.getElementById('back-to-world-map-btn');
-        modalBackdropEl = document.getElementById('modal-backdrop');
-        modalContentEl = document.getElementById('modal-content');
-        modalTitleEl = document.getElementById('modal-title');
-        modalBodyEl = document.getElementById('modal-body');
-        modalCloseBtnEl = document.getElementById('modal-close-btn');
-        autoProgressCheckboxEl = document.getElementById('auto-progress-checkbox');
-        realmTabsContainerEl = document.getElementById('realm-tabs-container');
+        saveIndicatorEl = /** @type {HTMLElement} */ (document.getElementById('save-indicator'));
+        goldStatEl = /** @type {HTMLElement} */ (document.getElementById('gold-stat'));
+        scrapStatEl = /** @type {HTMLElement} */ (document.getElementById('scrap-stat'));
+        upgradeClickCostEl = /** @type {HTMLElement} */ (document.getElementById('upgrade-click-cost'));
+        upgradeDpsCostEl = /** @type {HTMLElement} */ (document.getElementById('upgrade-dps-cost'));
+        upgradeClickLevelEl = /** @type {HTMLElement} */ (document.getElementById('upgrade-click-level'));
+        upgradeDpsLevelEl = /** @type {HTMLElement} */ (document.getElementById('upgrade-dps-level'));
+        monsterNameEl = /** @type {HTMLElement} */ (document.getElementById('monster-name'));
+        currentLevelEl = /** @type {HTMLElement} */ (document.getElementById('current-level'));
+        monsterHealthBarEl = /** @type {HTMLElement} */ (document.getElementById('monster-health-bar'));
+        monsterHealthTextEl = /** @type {HTMLElement} */ (document.getElementById('monster-health-text'));
+        inventorySlotsEl = /** @type {HTMLElement} */ (document.getElementById('inventory-slots'));
+        gameLogEl = /** @type {HTMLElement} */ (document.getElementById('game-log'));
+        prestigeButton = /** @type {HTMLButtonElement} */ (document.getElementById('prestige-button'));
+        prestigeSelectionEl = /** @type {HTMLElement} */ (document.getElementById('prestige-selection'));
+        prestigeInventorySlotsEl = /** @type {HTMLElement} */ (document.getElementById('prestige-inventory-slots'));
+        monsterImageEl = /** @type {HTMLImageElement} */ (document.getElementById('monster-image'));
+        popupContainerEl = /** @type {HTMLElement} */ (document.getElementById('popup-container'));
+        tooltipEl = /** @type {HTMLElement} */ (document.getElementById('item-tooltip'));
+        statTooltipEl = /** @type {HTMLElement} */ (document.getElementById('stat-tooltip')); 
+        heroLevelEl = /** @type {HTMLElement} */ (document.getElementById('hero-level'));
+        heroXpBarEl = /** @type {HTMLElement} */ (document.getElementById('hero-xp-bar'));
+        heroXpTextEl = /** @type {HTMLElement} */ (document.getElementById('hero-xp-text'));
+        attributePointsEl = /** @type {HTMLElement} */ (document.getElementById('attribute-points'));
+        attrStrengthEl = /** @type {HTMLElement} */ (document.getElementById('attr-strength'));
+        attrAgilityEl = /** @type {HTMLElement} */ (document.getElementById('attr-agility'));
+        attrLuckEl = /** @type {HTMLElement} */ (document.getElementById('attr-luck'));
+        addStrengthBtn = /** @type {HTMLButtonElement} */ (document.getElementById('add-strength-btn'));
+        addAgilityBtn = /** @type {HTMLButtonElement} */ (document.getElementById('add-agility-btn'));
+        addLuckBtn = /** @type {HTMLButtonElement} */ (document.getElementById('add-luck-btn'));
+        clickDamageStatEl = /** @type {HTMLElement} */ (document.getElementById('click-damage-stat'));
+        dpsStatEl = /** @type {HTMLElement} */ (document.getElementById('dps-stat'));
+        bonusGoldStatEl = /** @type {HTMLElement} */ (document.getElementById('bonus-gold-stat'));
+        magicFindStatEl = /** @type {HTMLElement} */ (document.getElementById('magic-find-stat'));
+        lootMonsterNameEl = /** @type {HTMLElement} */ (document.getElementById('loot-monster-name'));
+        lootDropChanceEl = /** @type {HTMLElement} */ (document.getElementById('loot-drop-chance'));
+        lootTableDisplayEl = /** @type {HTMLElement} */ (document.getElementById('loot-table-display'));
+        prestigeCountStatEl = /** @type {HTMLElement} */ (document.getElementById('prestige-count-stat'));
+        absorbedClickDmgStatEl = /** @type {HTMLElement} */ (document.getElementById('absorbed-click-dmg-stat'));
+        absorbedDpsStatEl = /** @type {HTMLElement} */ (document.getElementById('absorbed-dps-stat'));
+        legacyItemsStatEl = /** @type {HTMLElement} */ (document.getElementById('legacy-items-stat'));
+        mapContainerEl = /** @type {HTMLElement} */ (document.getElementById('map-container'));
+        mapTitleEl = /** @type {HTMLElement} */ (document.getElementById('map-title'));
+        backToWorldMapBtnEl = /** @type {HTMLButtonElement} */ (document.getElementById('back-to-world-map-btn'));
+        modalBackdropEl = /** @type {HTMLElement} */ (document.getElementById('modal-backdrop'));
+        modalContentEl = /** @type {HTMLElement} */ (document.getElementById('modal-content'));
+        modalTitleEl = /** @type {HTMLElement} */ (document.getElementById('modal-title'));
+        modalBodyEl = /** @type {HTMLElement} */ (document.getElementById('modal-body'));
+        modalCloseBtnEl = /** @type {HTMLButtonElement} */ (document.getElementById('modal-close-btn'));
+        autoProgressCheckboxEl = /** @type {HTMLInputElement} */ (document.getElementById('auto-progress-checkbox'));
+        realmTabsContainerEl = /** @type {HTMLElement} */ (document.getElementById('realm-tabs-container'));
 
         const savedData = localStorage.getItem('idleRPGSaveData');
         if (savedData) {
@@ -1125,9 +1261,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 currentRealmIndex: loadedState.currentRealmIndex || 0,
             };
 
-            if(gameState.presets && gameState.presets[gameState.activePresetIndex]) {
-                gameState.equipment = { ...gameState.presets[gameState.activePresetIndex].equipment };
-            }
+            // REMOVED THE BUGGY PRESET LOADING BLOCK
+            // if(gameState.presets && gameState.presets[gameState.activePresetIndex]) {
+            //     gameState.equipment = { ...gameState.presets[gameState.activePresetIndex].equipment };
+            // }
 
             if (loadedState.level && loadedState.maxLevel === undefined) {
                 gameState.maxLevel = loadedState.level;

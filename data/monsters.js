@@ -1,52 +1,94 @@
 import { ITEMS } from './items.js';
 
+/*
+* MONSTER LOOT TABLE GUIDE
+*
+* lootTable: An array of possible drops for a monster.
+*   - When a monster is defeated, it first rolls its `dropChance`.
+*   - If successful, it then processes this `lootTable` to pick one item.
+*
+* Each entry in the lootTable is an object with two properties:
+*   - item: A reference to a specific item from data/items.js (e.g., ITEMS.RUSTY_SWORD).
+*   - weight: A number representing how common this drop is. Higher numbers are more common.
+*
+* The system adds up all weights and picks a random number in that range to select a drop.
+* Example: weight 1 and weight 99. Total weight is 100.
+*   - Item 1 has a 1/100 (1%) chance to drop.
+*   - Item 2 has a 99/100 (99%) chance to drop.
+*/
+
 export const MONSTERS = {
     SLIME: {
         name: 'Slime',
         image: 'images/slime.png',
-        dropChance: 1.0,
-        lootTable: [ITEMS.RING, ITEMS.BELT]
+        dropChance: 2.0, // Increased chance slightly for more early game loot
+        lootTable: [
+            { item: ITEMS.RUSTY_SWORD, weight: 1 },
+            { item: ITEMS.LEATHER_CAP, weight: 1 }
+        ]
     },
     GOBLIN: {
         name: 'Goblin',
         image: 'images/slime.png',
-        dropChance: 1.0,
-        lootTable: [ITEMS.SWORD, ITEMS.BELT]
+        dropChance: 2.0,
+        lootTable: [
+            { item: ITEMS.WOODEN_SHIELD, weight: 1 },
+            { item: ITEMS.MIGHTY_BELT, weight: 1 }
+        ]
     },
     BAT: {
         name: 'Bat',
         image: 'images/slime.png',
-        dropChance: 1.0,
-        lootTable: [ITEMS.RING, ITEMS.NECKLACE]
+        dropChance: 2.0,
+        lootTable: [
+            { item: ITEMS.RING_OF_WEALTH, weight: 1 }
+        ]
     },
     SKELETON: {
         name: 'Skeleton',
         image: 'images/slime.png',
-        dropChance: 1.5,
-        lootTable: [ITEMS.SHIELD, ITEMS.HELMET]
+        dropChance: 2.5,
+        lootTable: [
+            { item: ITEMS.KNIGHTS_PLATELEGS, weight: 2 },
+            { item: ITEMS.WOODEN_SHIELD, weight: 1 }
+        ]
     },
     ZOMBIE: {
         name: 'Zombie',
         image: 'images/slime.png',
-        dropChance: 1.5,
-        lootTable: [ITEMS.SWORD, ITEMS.PLATELEGS]
+        dropChance: 2.5,
+        lootTable: [
+            { item: ITEMS.APPRENTICE_ROBE, weight: 2 },
+            { item: ITEMS.MIGHTY_BELT, weight: 1 }
+        ]
     },
     ORC: {
         name: 'Orc',
         image: 'images/slime.png',
-        dropChance: 2.0,
-        lootTable: [ITEMS.SWORD, ITEMS.PLATEBODY]
+        dropChance: 3.0,
+        lootTable: [
+            { item: ITEMS.GLADIATORS_LONGSWORD, weight: 1 },
+            { item: ITEMS.MIGHTY_BELT, weight: 2 }
+        ]
     },
     DUNGEON_GUARDIAN: {
         name: 'Dungeon Guardian',
         image: 'images/boss.png',
         dropChance: 100,
-        lootTable: [ITEMS.SWORD, ITEMS.SHIELD, ITEMS.HELMET, ITEMS.PLATEBODY, ITEMS.PLATELEGS]
+        lootTable: [
+            { item: ITEMS.GLADIATORS_LONGSWORD, weight: 10 },
+            { item: ITEMS.AMULET_OF_POWER, weight: 5 },
+            { item: ITEMS.KNIGHTS_PLATELEGS, weight: 20 },
+            { item: ITEMS.RING_OF_WEALTH, weight: 20 }
+        ]
     },
     ARCHDEMON_OVERLORD: {
         name: 'Archdemon Overlord',
         image: 'images/bigboss.png',
         dropChance: 100,
-        lootTable: [ITEMS.SWORD, ITEMS.SHIELD, ITEMS.HELMET, ITEMS.PLATEBODY, ITEMS.PLATELEGS, ITEMS.RING, ITEMS.NECKLACE, ITEMS.BELT]
+        lootTable: [
+            { item: ITEMS.GLADIATORS_LONGSWORD, weight: 25 },
+            { item: ITEMS.AMULET_OF_POWER, weight: 25 },
+        ]
     }
 };

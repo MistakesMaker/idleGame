@@ -5,6 +5,11 @@
     "target": "ESNext",
     "checkJs": true
   },
+  "include": [
+    "**/*.js",
+    "**/*.ts",
+    "types/**/*.d.ts"
+  ],
   "exclude": [
     "node_modules"
   ]
