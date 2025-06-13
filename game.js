@@ -99,6 +99,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         
         if (!gameState.isLevelLocked) { gameState.currentFightingLevel++; if (gameState.currentFightingLevel > gameState.maxLevel) { gameState.maxLevel = gameState.currentFightingLevel; } } 
+        
+        autoSave(); // --- FIX: Save on monster defeat ---
         setTimeout(() => { generateMonster(); updateUI(); }, 300); 
     }
     
@@ -148,7 +150,7 @@ document.addEventListener('DOMContentLoaded', () => {
         playerStats.baseClickDamage = 1 + (gameState.absorbedStats?.clickDamage || 0);
         playerStats.baseDps = 0 + (gameState.absorbedStats?.dps || 0);
         
-        const allItems = [...gameState.legacyItems, ...Object.values(gameState.equipment)]; 
+        const allItems = [...(gameState.legacyItems || []), ...Object.values(gameState.equipment)]; 
         for(const item of allItems) { if(item) addStatsFromItem(item); }
         
         const clickUpgradeBonus = gameState.upgrades.clickDamage * 1.25;
@@ -183,7 +185,7 @@ document.addEventListener('DOMContentLoaded', () => {
             xpToNextLevel = getXpForNextLevel(gameState.hero.level);
         }
     }
-    function spendAttributePoint(attribute) { if (gameState.hero.attributePoints > 0) { gameState.hero.attributePoints--; gameState.hero.attributes[attribute]++; recalculateStats(); updateUI(); } }
+    function spendAttributePoint(attribute) { if (gameState.hero.attributePoints > 0) { gameState.hero.attributePoints--; gameState.hero.attributes[attribute]++; recalculateStats(); updateUI(); autoSave(); } }
 
     function generateItem(rarity, itemLevel, forcedType) {
         const type = forcedType || itemTypes[Math.floor(Math.random() * itemTypes.length)];
@@ -202,18 +204,18 @@ document.addEventListener('DOMContentLoaded', () => {
         logMessage(`The boss dropped an item! <span class="${item.rarity}" style="font-weight:bold;">${item.name}</span>`);
     }
     
-    function equipItem(inventoryIndex) { const item = gameState.inventory[inventoryIndex]; if (!item) return; let targetSlot = item.type; if (item.type === 'ring') { if (!gameState.equipment.ring1) targetSlot = 'ring1'; else if (!gameState.equipment.ring2) targetSlot = 'ring2'; else targetSlot = 'ring1'; } const currentEquipped = gameState.equipment[targetSlot]; if (currentEquipped) { gameState.inventory.push(currentEquipped); } gameState.equipment[targetSlot] = item; gameState.inventory.splice(inventoryIndex, 1); recalculateStats(); updateUI(); }
-    function unequipItem(slotName) { const item = gameState.equipment[slotName]; if (!item) return; gameState.inventory.push(item); gameState.equipment[slotName] = null; recalculateStats(); updateUI(); }
+    function equipItem(inventoryIndex) { const item = gameState.inventory[inventoryIndex]; if (!item) return; let targetSlot = item.type; if (item.type === 'ring') { if (!gameState.equipment.ring1) targetSlot = 'ring1'; else if (!gameState.equipment.ring2) targetSlot = 'ring2'; else targetSlot = 'ring1'; } const currentEquipped = gameState.equipment[targetSlot]; if (currentEquipped) { gameState.inventory.push(currentEquipped); } gameState.equipment[targetSlot] = item; gameState.inventory.splice(inventoryIndex, 1); recalculateStats(); updateUI(); autoSave(); }
+    function unequipItem(slotName) { const item = gameState.equipment[slotName]; if (!item) return; gameState.inventory.push(item); gameState.equipment[slotName] = null; recalculateStats(); updateUI(); autoSave(); }
     
     function getUpgradeCost(upgradeType) { const level = gameState.upgrades[upgradeType]; if (upgradeType === 'clickDamage') { return Math.floor(10 * Math.pow(1.15, level)); } if (upgradeType === 'dps') { return Math.floor(25 * Math.pow(1.18, level)); } }
-    function buyUpgrade(upgradeType) { const cost = getUpgradeCost(upgradeType); if (gameState.gold >= cost) { gameState.gold -= cost; gameState.upgrades[upgradeType]++; recalculateStats(); updateUI(); logMessage(`Upgraded ${upgradeType} to level ${gameState.upgrades[upgradeType]}!`); } else { logMessage("Not enough gold!"); } }
-    function buyLootCrate() { const cost = 50; if (gameState.scrap >= cost) { gameState.scrap -= cost; logMessage(`Bought a loot crate for ${cost} Scrap!`); const rarityRoll = Math.random() * (rarities.length - 1) + 1; const rarity = rarities[Math.floor(rarityRoll)]; const item = generateItem(rarity, gameState.currentFightingLevel); gameState.inventory.push(item); logMessage(`The crate contained: <span class="${item.rarity}" style="font-weight:bold;">${item.name}</span>`); updateUI(); } else { logMessage("Not enough Scrap!"); } }
+    function buyUpgrade(upgradeType) { const cost = getUpgradeCost(upgradeType); if (gameState.gold >= cost) { gameState.gold -= cost; gameState.upgrades[upgradeType]++; recalculateStats(); updateUI(); logMessage(`Upgraded ${upgradeType} to level ${gameState.upgrades[upgradeType]}!`); autoSave(); } else { logMessage("Not enough gold!"); } }
+    function buyLootCrate() { const cost = 50; if (gameState.scrap >= cost) { gameState.scrap -= cost; logMessage(`Bought a loot crate for ${cost} Scrap!`); const rarityRoll = Math.random() * (rarities.length - 1) + 1; const rarity = rarities[Math.floor(rarityRoll)]; const item = generateItem(rarity, gameState.currentFightingLevel); gameState.inventory.push(item); logMessage(`The crate contained: <span class="${item.rarity}" style="font-weight:bold;">${item.name}</span>`); updateUI(); autoSave(); } else { logMessage("Not enough Scrap!"); } }
     function toggleSalvageMode() { salvageMode.active = !salvageMode.active; const salvageBtn = document.getElementById('salvage-mode-btn'); const confirmBtn = document.getElementById('confirm-salvage-btn'); const selectAllBtn = document.getElementById('select-all-salvage-btn'); if (salvageMode.active) { salvageBtn.textContent = 'Cancel Salvage'; salvageBtn.classList.add('active'); confirmBtn.classList.remove('hidden'); selectAllBtn.classList.remove('hidden'); } else { salvageBtn.textContent = 'Select to Salvage'; salvageBtn.classList.remove('active'); confirmBtn.classList.add('hidden'); selectAllBtn.classList.add('hidden'); salvageMode.selections = []; } document.body.classList.toggle('salvage-mode-active', salvageMode.active); document.getElementById('salvage-count').textContent = '0'; updateUI(); }
     function selectItemForSalvage(item, index) { if (item.locked) { logMessage("This item is locked and cannot be salvaged.", 'rare'); return; } const selectionIndex = salvageMode.selections.indexOf(index); if (selectionIndex > -1) { salvageMode.selections.splice(selectionIndex, 1); } else { salvageMode.selections.push(index); } document.getElementById('salvage-count').textContent = salvageMode.selections.length; updateUI(); }
     function selectAllForSalvage() { salvageMode.selections = []; gameState.inventory.forEach((item, index) => { if (!item.locked) { salvageMode.selections.push(index); } }); document.getElementById('salvage-count').textContent = salvageMode.selections.length; updateUI(); }
     function handleInventoryClick(item, index) { if (salvageMode.active) { selectItemForSalvage(item, index); } else { equipItem(index); } }
-    function salvageSelectedItems() { if (salvageMode.selections.length === 0) { logMessage("No items selected for salvage."); return; } let totalScrapGained = 0; const selectedCount = salvageMode.selections.length; salvageMode.selections.sort((a, b) => b - a); salvageMode.selections.forEach(index => { const item = gameState.inventory[index]; if (item) { const rarityIndex = rarities.indexOf(item.rarity); const scrapGained = Math.ceil(Math.pow(4, rarityIndex)); totalScrapGained += scrapGained; gameState.inventory.splice(index, 1); } }); gameState.scrap += totalScrapGained; logMessage(`Salvaged ${selectedCount} items for a total of ${totalScrapGained} Scrap.`, 'uncommon'); toggleSalvageMode(); }
-    function toggleItemLock(inventoryIndex) { const item = gameState.inventory[inventoryIndex]; if (item) { item.locked = !item.locked; logMessage(`Item ${item.name} ${item.locked ? 'locked' : 'unlocked'}.`); } updateUI(); }
+    function salvageSelectedItems() { if (salvageMode.selections.length === 0) { logMessage("No items selected for salvage."); return; } let totalScrapGained = 0; const selectedCount = salvageMode.selections.length; salvageMode.selections.sort((a, b) => b - a); salvageMode.selections.forEach(index => { const item = gameState.inventory[index]; if (item) { const rarityIndex = rarities.indexOf(item.rarity); const scrapGained = Math.ceil(Math.pow(4, rarityIndex)); totalScrapGained += scrapGained; gameState.inventory.splice(index, 1); } }); gameState.scrap += totalScrapGained; logMessage(`Salvaged ${selectedCount} items for a total of ${totalScrapGained} Scrap.`, 'uncommon'); toggleSalvageMode(); autoSave(); }
+    function toggleItemLock(inventoryIndex) { const item = gameState.inventory[inventoryIndex]; if (item) { item.locked = !item.locked; logMessage(`Item ${item.name} ${item.locked ? 'locked' : 'unlocked'}.`); } updateUI(); autoSave(); }
     
     function updateUI() {
         goldStatEl.textContent = Math.floor(gameState.gold);
@@ -239,6 +241,11 @@ document.addEventListener('DOMContentLoaded', () => {
         legacyItemsStatEl.textContent = (gameState.legacyItems?.length || 0);
 
         currentLevelEl.textContent = gameState.currentFightingLevel; levelLockCheckbox.checked = gameState.isLevelLocked; levelSelectInput.max = gameState.maxLevel;
+        
+        if (document.activeElement !== levelSelectInput) {
+            levelSelectInput.value = gameState.currentFightingLevel;
+        }
+
         monsterHealthTextEl.textContent = `${Math.ceil(Math.max(0, gameState.monster.hp))} / ${gameState.monster.maxHp}`;
         const healthPercent = (gameState.monster.hp / gameState.monster.maxHp) * 100; monsterHealthBarEl.style.width = `${healthPercent}%`;
         if (healthPercent < 30) monsterHealthBarEl.style.background = 'linear-gradient(to right, #e74c3c, #c0392b)'; else if (healthPercent < 60) monsterHealthBarEl.style.background = 'linear-gradient(to right, #f39c12, #e67e22)'; else monsterHealthBarEl.style.background = 'linear-gradient(to right, #2ecc71, #27ae60)';
@@ -331,8 +338,8 @@ document.addEventListener('DOMContentLoaded', () => {
         setTimeout(() => popup.remove(), 800); 
     }
 
-    function toggleLevelLock() { gameState.isLevelLocked = levelLockCheckbox.checked; logMessage(`Level lock ${gameState.isLevelLocked ? 'enabled' : 'disabled'}.`); }
-    function goToLevel() { const desiredLevel = parseInt(levelSelectInput.value, 10); if (isNaN(desiredLevel) || desiredLevel <= 0) { alert("Please enter a valid level > 0."); return; } if (desiredLevel > gameState.maxLevel) { alert(`Your max level is ${gameState.maxLevel}.`); levelSelectInput.value = gameState.maxLevel; return; } gameState.currentFightingLevel = desiredLevel; logMessage(`Traveling to level ${desiredLevel}...`); generateMonster(); updateUI(); }
+    function toggleLevelLock() { gameState.isLevelLocked = levelLockCheckbox.checked; logMessage(`Level lock ${gameState.isLevelLocked ? 'enabled' : 'disabled'}.`); autoSave(); }
+    function goToLevel() { const desiredLevel = parseInt(levelSelectInput.value, 10); if (isNaN(desiredLevel) || desiredLevel <= 0) { alert("Please enter a valid level > 0."); return; } if (desiredLevel > gameState.maxLevel) { alert(`Your max level is ${gameState.maxLevel}.`); levelSelectInput.value = gameState.maxLevel; return; } gameState.currentFightingLevel = desiredLevel; logMessage(`Traveling to level ${desiredLevel}...`); generateMonster(); updateUI(); autoSave(); }
     
     function setupTooltipListeners() {
         inventorySlotsEl.addEventListener('mouseover', (event) => {
@@ -651,7 +658,6 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // --- MAIN INITIALIZATION FUNCTION ---
     function main() {
-        // --- THIS IS THE FIX ---
         saveIndicatorEl = document.getElementById('save-indicator');
         goldStatEl = document.getElementById('gold-stat');
         scrapStatEl = document.getElementById('scrap-stat');
@@ -695,23 +701,38 @@ document.addEventListener('DOMContentLoaded', () => {
         absorbedClickDmgStatEl = document.getElementById('absorbed-click-dmg-stat');
         absorbedDpsStatEl = document.getElementById('absorbed-dps-stat');
         legacyItemsStatEl = document.getElementById('legacy-items-stat');
-        // --- END OF FIX ---
 
         // Load game state from localStorage
         const savedData = localStorage.getItem('idleRPGSaveData');
         if (savedData) {
             const loadedState = JSON.parse(savedData);
-            let baseState = getDefaultGameState();
-            gameState = {...baseState, ...loadedState};
-            gameState.hero = { ...baseState.hero, ...(loadedState.hero || {}) };
-            gameState.hero.attributes = { ...baseState.hero.attributes, ...(loadedState.hero?.attributes || {}) };
-            gameState.upgrades = {...baseState.upgrades, ...(loadedState.upgrades || {})};
-            gameState.equipment = {...baseState.equipment, ...(loadedState.equipment || {})};
-            gameState.absorbedStats = {...baseState.absorbedStats, ...(loadedState.absorbedStats || {}) };
-            if (gameState.level) { 
-                gameState.maxLevel = gameState.level; 
-                gameState.currentFightingLevel = gameState.level; 
-                delete gameState.level; 
+            const baseState = getDefaultGameState();
+            gameState = {
+                ...baseState,
+                ...loadedState,
+    
+                hero: {
+                    ...baseState.hero,
+                    ...(loadedState.hero || {}),
+                    attributes: {
+                        ...baseState.hero.attributes,
+                        ...(loadedState.hero?.attributes || {})
+                    }
+                },
+                upgrades: { ...baseState.upgrades, ...(loadedState.upgrades || {}) },
+                equipment: { ...baseState.equipment, ...(loadedState.equipment || {}) },
+                absorbedStats: { ...baseState.absorbedStats, ...(loadedState.absorbedStats || {}) },
+                monster: { ...baseState.monster, ...(loadedState.monster || {}) }
+            };
+
+            if (loadedState.level && loadedState.maxLevel === undefined) {
+                gameState.maxLevel = loadedState.level;
+                if (loadedState.currentFightingLevel === undefined) {
+                    gameState.currentFightingLevel = loadedState.level;
+                }
+            }
+            if (gameState.level) {
+                delete gameState.level;
             }
         } else {
             gameState = getDefaultGameState();
@@ -730,7 +751,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         setupRaidListeners();
         
-        setInterval(autoSave, 30000);
+        // This interval is now just a fallback, in case the browser crashes.
+        setInterval(autoSave, 30000); 
         setInterval(gameLoop, 1000);
     }
     
