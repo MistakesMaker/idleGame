@@ -458,6 +458,34 @@ document.addEventListener('DOMContentLoaded', () => {
             tooltipEl.classList.remove('hidden');
         });
         inventorySlotsEl.addEventListener('mouseout', (event) => { if (!inventorySlotsEl.contains(event.relatedTarget)) { if (tooltipEl) tooltipEl.classList.add('hidden'); } });
+    
+        // --- START OF NEW FEATURE: EQUIPPED ITEM TOOLTIPS ---
+        const equipmentSlots = document.getElementById('equipment-paperdoll');
+        equipmentSlots.addEventListener('mouseover', (event) => {
+            const slotEl = event.target.closest('.equipment-slot');
+            if (!slotEl || !tooltipEl) return;
+
+            const slotName = slotEl.id.replace('slot-', '');
+            const equippedItem = gameState.equipment[slotName];
+
+            if (!equippedItem) return;
+
+            tooltipEl.classList.remove('common', 'uncommon', 'rare', 'epic', 'legendary');
+            tooltipEl.classList.add(equippedItem.rarity);
+
+            const rect = slotEl.getBoundingClientRect();
+            tooltipEl.style.left = `${rect.right + 10}px`;
+            tooltipEl.style.top = `${rect.top}px`;
+            tooltipEl.innerHTML = createTooltipHTML(equippedItem, null); // Pass null for equipped to get simple stat display
+            tooltipEl.classList.remove('hidden');
+        });
+
+        equipmentSlots.addEventListener('mouseout', (event) => {
+            if (!equipmentSlots.contains(event.relatedTarget)) {
+                if (tooltipEl) tooltipEl.classList.add('hidden');
+            }
+        });
+        // --- END OF NEW FEATURE ---
     }
     
     function createTooltipHTML(hoveredItem, equippedItem) {
@@ -583,10 +611,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const oldPrestigeCount = gameState.prestigeCount || 0;
         const baseState = getDefaultGameState();
         
-        // --- START OF FIX: EXPLICIT PRESET WIPE ---
         gameState = {
-            ...baseState, // This gets most of the defaults
-            // Explicitly carry over what should be kept
+            ...baseState,
             absorbedStats: {
                 clickDamage: oldAbsorbedStats.clickDamage + absorbed.clickDamage,
                 dps: oldAbsorbedStats.dps + absorbed.dps
@@ -594,11 +620,9 @@ document.addEventListener('DOMContentLoaded', () => {
             legacyItems: [...oldLegacyItems, ...newLegacyItems],
             prestigeCount: oldPrestigeCount + 1,
             hero: heroToKeep,
-            // Explicitly reset what should be wiped to make it clear and safe
             presets: baseState.presets,
             activePresetIndex: baseState.activePresetIndex
         };
-        // --- END OF FIX ---
         
         logMessage(`PRESTIGE! Restarted from Lvl ${oldLevel}, keeping hero progress, ${newLegacyItems.length} new legacy items, and all absorbed stats.`);
         
