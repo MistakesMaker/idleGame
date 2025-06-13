@@ -42,6 +42,19 @@ button:disabled { background: #7f8c8d; cursor: not-allowed; border-bottom: 2px s
 #popup-container { position: absolute; top: 0; left: 0; right: 0; bottom: 0; pointer-events: none; }
 .damage-popup { position: absolute; font-size: 24px; font-weight: bold; color: #f1c40f; text-shadow: 2px 2px 2px #000; animation: float-up 1s ease-out forwards; user-select: none; }
 .gold-popup { position: absolute; font-size: 20px; font-weight: bold; color: #ffd700; animation: float-up 1.5s ease-out forwards; user-select: none; }
+
+/* --- THIS IS THE FIX --- */
+.dps-popup { 
+    position: absolute; 
+    font-size: 20px; /* Slightly smaller than click damage */
+    font-weight: bold; 
+    color: #ffffff; /* White to distinguish from click damage */
+    text-shadow: 2px 2px 2px #000; 
+    animation: float-up 0.8s ease-out forwards; /* Fades a bit faster */
+    user-select: none; 
+}
+/* --- END OF FIX --- */
+
 @keyframes float-up { 0% { transform: translateY(0); opacity: 1; } 100% { transform: translateY(-100px); opacity: 0; } }
 
 .tabs { display: flex; border-bottom: 2px solid #4a637e; margin-bottom: 15px; }
@@ -170,7 +183,7 @@ button:disabled { background: #7f8c8d; cursor: not-allowed; border-bottom: 2px s
 .selected-for-prestige { border: 3px dashed #f1c40f !important; transform: scale(1.05); }
 .hidden { display: none !important; }
 #prestige-button:not(:disabled) { animation: pulse 2s infinite; background: linear-gradient(145deg, #f1c40f, #e67e22); border-bottom: 2px solid #d35400; }
-@keyframes pulse { 0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(241, 196, 15, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(241, 196, 15, 0); } 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(241, 196, 15, 0); } }
+@keyframes pulse { 0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(241, 196, 15, 0.7); } 70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(241, 196, 15, 0); } 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(241, 196, 15, 0); } }
 
 #upgrades-area { margin-top: 20px; padding-top: 15px; border-top: 1px solid #4a637e; }
 .upgrade-button { background: linear-gradient(145deg, #2c3e50, #34495e); border: 1px solid #7f8c8d; padding: 10px; margin-bottom: 10px; border-radius: 5px; cursor: pointer; text-align: center; transition: all 0.2s ease; }
@@ -211,13 +224,12 @@ body.salvage-mode-active #inventory-slots .item:not(.locked-item) { cursor: poin
 #item-tooltip .stat-better { color: #2ecc71; font-weight: bold; }
 #item-tooltip .stat-worse { color: #e74c3c; font-weight: bold; }
 
-/* --- START OF NEW SECTION --- */
 #stat-tooltip {
     position: fixed;
     width: auto;
     min-width: 240px;
     background-color: rgba(10, 15, 20, 0.95);
-    border: 1px solid #7f8c8d; /* Neutral border color */
+    border: 1px solid #7f8c8d;
     border-radius: 8px;
     box-shadow: 0 6px 12px rgba(0,0,0,0.5);
     padding: 15px;
@@ -239,4 +251,3 @@ body.salvage-mode-active #inventory-slots .item:not(.locked-item) { cursor: poin
     padding: 0;
     margin: 0;
 }
-/* --- END OF NEW SECTION --- */

@@ -35,10 +35,10 @@ document.addEventListener('DOMContentLoaded', () => {
         heroXpBarEl, heroXpTextEl, attributePointsEl, attrStrengthEl, attrAgilityEl, attrLuckEl, 
         addStrengthBtn, addAgilityBtn, addLuckBtn, clickDamageStatEl, dpsStatEl, bonusGoldStatEl, 
         magicFindStatEl, lootMonsterNameEl, lootDropChanceEl, lootTableDisplayEl,
-        statTooltipEl; // New reference for the stat tooltip
+        statTooltipEl;
 
     // --- START OF RAID SECTION ---
-    const socket = io('https://idlegame-oqyq.onrender.com'); // IMPORTANT: Use your server URL
+    const socket = io('https://idlegame-oqyq.onrender.com'); 
     let raidPanel = null;
     let raidPlayerId = `Player_${Math.random().toString(36).substr(2, 5)}`;
     // --- END OF RAID SECTION ---
@@ -71,7 +71,19 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     function clickMonster() { if (gameState.monster.hp <= 0) return; gameState.monster.hp -= playerStats.totalClickDamage; monsterImageEl.classList.add('monster-hit'); setTimeout(() => monsterImageEl.classList.remove('monster-hit'), 200); showDamagePopup(playerStats.totalClickDamage); if (gameState.monster.hp <= 0) { monsterDefeated(); } updateUI(); }
-    function gameLoop() { if (playerStats.totalDps > 0 && gameState.monster.hp > 0) { gameState.monster.hp -= playerStats.totalDps; if (gameState.monster.hp <= 0) { monsterDefeated(); } updateUI(); } }
+    
+    // --- THIS IS THE FIX (PART 1) ---
+    function gameLoop() { 
+        if (playerStats.totalDps > 0 && gameState.monster.hp > 0) { 
+            gameState.monster.hp -= playerStats.totalDps; 
+            showDpsPopup(playerStats.totalDps); // Call the new function to show DPS damage
+            if (gameState.monster.hp <= 0) { 
+                monsterDefeated(); 
+            } 
+            updateUI(); 
+        } 
+    }
+    // --- END OF FIX ---
     
     function monsterDefeated() { 
         const level = gameState.currentFightingLevel;
@@ -311,6 +323,20 @@ document.addEventListener('DOMContentLoaded', () => {
     function getItemIcon(type) { const iconMap = { sword: 'images/icons/sword.png', shield: 'images/icons/shield.png', helmet: 'images/icons/helmet.png', necklace: 'images/icons/necklace.png', platebody: 'images/icons/platebody.png', platelegs: 'images/icons/platelegs.png', ring: 'images/icons/ring.png', belt: 'images/icons/belt.png' }; return iconMap[type] || 'images/icons/sword.png'; }
     function showDamagePopup(damage) { const popup = document.createElement('div'); popup.textContent = `-${Math.floor(damage)}`; popup.className = 'damage-popup'; popup.style.left = `${40 + Math.random() * 20}%`; popup.style.top = `${40 + Math.random() * 20}%`; popupContainerEl.appendChild(popup); setTimeout(() => popup.remove(), 1000); }
     function showGoldPopup(gold) { const popup = document.createElement('div'); popup.innerHTML = `+${Math.floor(gold)} <i class="fas fa-coins"></i>`; popup.className = 'gold-popup'; popup.style.left = `${40 + Math.random() * 20}%`; popup.style.top = `${50}%`; popupContainerEl.appendChild(popup); setTimeout(() => popup.remove(), 1500); }
+    
+    // --- THIS IS THE FIX (PART 2) ---
+    function showDpsPopup(damage) { 
+        const popup = document.createElement('div'); 
+        popup.textContent = `-${Math.floor(damage)}`; 
+        popup.className = 'dps-popup'; // Use a new class for styling
+        // Randomize position to prevent perfect overlap
+        popup.style.left = `${30 + Math.random() * 40}%`;
+        popup.style.top = `${45 + Math.random() * 20}%`; 
+        popupContainerEl.appendChild(popup); 
+        // Shorter lifespan so they fade out quicker than click damage
+        setTimeout(() => popup.remove(), 800); 
+    }
+    // --- END OF FIX ---
 
     function toggleLevelLock() { gameState.isLevelLocked = levelLockCheckbox.checked; logMessage(`Level lock ${gameState.isLevelLocked ? 'enabled' : 'disabled'}.`); }
     function goToLevel() { const desiredLevel = parseInt(levelSelectInput.value, 10); if (isNaN(desiredLevel) || desiredLevel <= 0) { alert("Please enter a valid level > 0."); return; } if (desiredLevel > gameState.maxLevel) { alert(`Your max level is ${gameState.maxLevel}.`); levelSelectInput.value = gameState.maxLevel; return; } gameState.currentFightingLevel = desiredLevel; logMessage(`Traveling to level ${desiredLevel}...`); generateMonster(); updateUI(); }
@@ -413,11 +439,8 @@ document.addEventListener('DOMContentLoaded', () => {
             html += '</ul>';
             statTooltipEl.innerHTML = html;
             
-            // --- THIS IS THE FIX ---
-            // Get the position of the stat name span, not the whole row.
             const nameSpan = row.querySelector('span');
             const rect = nameSpan.getBoundingClientRect();
-            // --- END OF FIX ---
 
             statTooltipEl.style.left = `${rect.right + 10}px`;
             statTooltipEl.style.top = `${rect.top}px`;
