@@ -23,11 +23,9 @@
             </div>
 
             <div id="map-view" class="view active">
-                <!-- START OF NEW FEATURE -->
                 <div id="realm-tabs-container">
                     <!-- Realm tabs will be dynamically inserted here -->
                 </div>
-                <!-- END OF NEW FEATURE -->
                 <div id="map-header">
                     <h2 id="map-title">World Map</h2>
                     <div class="control-group">
@@ -51,6 +49,12 @@
                         <div id="popup-container"></div>
                     </div>
                 </div>
+                <!-- START OF FIX: Moved Game Log back to the left panel -->
+                <div id="game-log-container">
+                    <h4>Game Log</h4>
+                     <div id="game-log"><p>Welcome! Your progress will be saved automatically.</p></div>
+                </div>
+                <!-- END OF FIX -->
             </div>
         </div>
 
@@ -146,11 +150,6 @@
 
             <button id="raid-btn">Raid</button>
             <button id="reset-game-btn">Hard Reset</button>
-            
-            <div id="game-log-container">
-                <h4>Game Log</h4>
-                 <div id="game-log"><p>Welcome! Your progress will be saved automatically.</p></div>
-            </div>
 
             <div id="upgrades-area">
                 <h3>Gold Upgrades</h3>

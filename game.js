@@ -7,6 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const rarities = ['common', 'uncommon', 'rare', 'epic', 'legendary'];
     const statPools = { sword: [{key: 'clickDamage', name: 'Click Dmg'}, {key: 'dps', name: 'DPS'}], shield: [{key: 'dps', name: 'DPS'}], helmet: [{key: 'goldGain', name: '% Gold Gain'}], necklace: [{key: 'goldGain', name: '% Gold Gain'}], platebody: [{key: 'dps', name: 'DPS'}], platelegs: [{key: 'dps', name: 'DPS'}], ring: [{key: 'clickDamage', name: 'Click Dmg'}, {key: 'goldGain', name: '% Gold Gain'}], belt: [{key: 'dps', name: 'DPS'}], };
     
+    // --- START OF FIX: Added missing coordinates ---
     const realmData = [
         {
             name: "The Overworld",
@@ -17,36 +18,32 @@ document.addEventListener('DOMContentLoaded', () => {
                     name: "Green Meadows", mapImage: "images/map_meadows_zoomed.png",
                     coords: { top: '78%', left: '20%' }, icon: 'images/icons/sword.png', 
                     subZones: {
-                        "starting_fields": { name: "Starting Fields", levelRange: [1, 9], monsters: ["Slime", "Goblin"], coords: {top: '60%', left: '30%'} },
-                        "bat_cave": { name: "Bat Cave", levelRange: [10, 19], monsters: ["Bat"], coords: {top: '30%', left: '60%'} },
-                        "meadows_boss": { name: "Guardian's Post", levelRange: [20, 20], monsters: ["Dungeon Guardian"], coords: {top: '75%', left: '70%'}, isBoss: true }
+                        "starting_fields": { name: "Starting Fields", levelRange: [1, 19], monsters: ["Slime", "Goblin", "Bat"], coords: {top: '60%', left: '30%'} },
+                        "meadows_boss_area": { name: "Guardian's Post", levelRange: [20, 20], monsters: ["Dungeon Guardian"], coords: {top: '75%', left: '70%'} }
                     }
                 },
                 "orc_volcano": {
                     name: "Orc Volcano", mapImage: "images/map_volcano_zoomed.png",
                     coords: { top: '30%', left: '38%' }, icon: 'images/icons/platebody.png',
                     subZones: {
-                        "ashfall_plains": { name: "Ashfall Plains", levelRange: [21, 29], monsters: ["Orc"], coords: {top: '70%', left: '30%'} },
-                        "magma_flow": { name: "Magma Flow", levelRange: [30, 39], monsters: ["Orc"], coords: {top: '50%', left: '65%'} },
-                        "volcano_peak": { name: "Volcano Peak", levelRange: [40, 40], monsters: ["Dungeon Guardian"], coords: {top: '20%', left: '50%'}, isBoss: true }
+                        "ashfall_plains": { name: "Ashfall Plains", levelRange: [21, 39], monsters: ["Orc"], coords: {top: '70%', left: '30%'} },
+                        "volcano_peak": { name: "Volcano Peak", levelRange: [40, 40], monsters: ["Dungeon Guardian"], coords: {top: '20%', left: '50%'} }
                     }
                 },
                 "undead_desert": {
                     name: "Undead Desert", mapImage: "images/map_desert_zoomed.png",
                     coords: { top: '70%', left: '75%' }, icon: 'images/icons/shield.png',
                     subZones: {
-                         "lost_tombs": { name: "Lost Tombs", levelRange: [41, 49], monsters: ["Skeleton"], coords: {top: '70%', left: '30%'} },
-                         "cursed_ruins": { name: "Cursed Ruins", levelRange: [50, 59], monsters: ["Zombie"], coords: {top: '50%', left: '65%'} },
-                         "sand_pit": { name: "The Sand Pit", levelRange: [60, 60], monsters: ["Dungeon Guardian"], coords: {top: '20%', left: '50%'}, isBoss: true }
+                         "lost_tombs": { name: "Lost Tombs", levelRange: [41, 59], monsters: ["Skeleton", "Zombie"], coords: {top: '70%', left: '30%'} },
+                         "sand_pit": { name: "The Sand Pit", levelRange: [60, 60], monsters: ["Dungeon Guardian"], coords: {top: '20%', left: '50%'} }
                     }
                 },
                 "final_dungeon": {
                     name: "Final Dungeon", mapImage: "images/map_dungeon_zoomed.png",
                     coords: { top: '22%', left: '78%' }, icon: 'images/icons/helmet.png',
                     subZones: {
-                        "gatehouse": { name: "The Gatehouse", levelRange: [61, 79], monsters: ["Dungeon Guardian"], coords: {top: '80%', left: '50%'} },
-                        "throne_room": { name: "Throne Room", levelRange: [80, 99], monsters: ["Dungeon Guardian"], coords: {top: '40%', left: '50%'} },
-                        "archdemon_lair": { name: "Archdemon's Lair", levelRange: [100, 100], monsters: ["Archdemon Overlord"], coords: {top: '10%', left: '50%'}, isBoss: true }
+                        "gatehouse": { name: "The Gatehouse", levelRange: [61, 99], monsters: ["Dungeon Guardian"], coords: {top: '80%', left: '50%'} },
+                        "archdemon_lair": { name: "Archdemon's Lair", levelRange: [100, 100], monsters: ["Archdemon Overlord"], coords: {top: '10%', left: '50%'} }
                     }
                 }
             }
@@ -61,30 +58,29 @@ document.addEventListener('DOMContentLoaded', () => {
                     coords: { top: '70%', left: '25%' }, icon: 'images/icons/ring.png',
                     subZones: {
                         "glimmering_path": { name: "Glimmering Path", levelRange: [101, 119], monsters: ["Bat", "Skeleton"], coords: {top: '60%', left: '30%'} },
-                        "crystal_heart": { name: "Crystal Heart", levelRange: [120, 120], monsters: ["Dungeon Guardian"], coords: {top: '75%', left: '70%'}, isBoss: true }
+                        "crystal_heart": { name: "Crystal Heart", levelRange: [120, 120], monsters: ["Dungeon Guardian"], coords: {top: '75%', left: '70%'} }
                     }
                 },
                 "fungal_forest": {
                     name: "Fungal Forest", mapImage: "images/map_fungal_zoomed.png",
                     coords: { top: '40%', left: '50%' }, icon: 'images/icons/necklace.png',
                     subZones: {
-                        "spore_meadows": { name: "Spore Meadows", levelRange: [121, 139], monsters: ["Slime", "Bat"], coords: {top: '60%', left: '30%'} },
-                        "myconid_colony": { name: "Myconid Colony", levelRange: [140, 159], monsters: ["Goblin", "Zombie"], coords: {top: '40%', left: '65%'} },
-                        "great_fungus": { name: "The Great Fungus", levelRange: [160, 160], monsters: ["Dungeon Guardian"], coords: {top: '20%', left: '50%'}, isBoss: true }
+                        "spore_meadows": { name: "Spore Meadows", levelRange: [121, 159], monsters: ["Slime", "Bat", "Zombie"], coords: {top: '60%', left: '30%'} },
+                        "great_fungus": { name: "The Great Fungus", levelRange: [160, 160], monsters: ["Dungeon Guardian"], coords: {top: '20%', left: '50%'} }
                     }
                 },
                 "drow_city": {
                     name: "Drow City", mapImage: "images/map_drow_zoomed.png",
                     coords: { top: '25%', left: '75%' }, icon: 'images/icons/belt.png',
                     subZones: {
-                        "outer_spires": { name: "Outer Spires", levelRange: [161, 179], monsters: ["Skeleton", "Orc"], coords: {top: '70%', left: '30%'} },
-                        "noble_district": { name: "Noble District", levelRange: [180, 199], monsters: ["Dungeon Guardian"], coords: {top: '50%', left: '65%'} },
-                        "spider_queen_lair": { name: "Spider Queen's Lair", levelRange: [200, 200], monsters: ["Archdemon Overlord"], coords: {top: '20%', left: '50%'}, isBoss: true }
+                        "outer_spires": { name: "Outer Spires", levelRange: [161, 199], monsters: ["Skeleton", "Orc", "Dungeon Guardian"], coords: {top: '70%', left: '30%'} },
+                        "spider_queen_lair": { name: "Spider Queen's Lair", levelRange: [200, 200], monsters: ["Archdemon Overlord"], coords: {top: '20%', left: '50%'} }
                     }
                 }
             }
         }
     ];
+    // --- END OF FIX ---
     
     const monsterBaseData = {
         "Slime":    { image: 'images/slime.png', dropTypes: ['ring', 'belt'], dropChance: 1.0 },
@@ -147,8 +143,13 @@ document.addEventListener('DOMContentLoaded', () => {
         return scaled.toFixed(2) + suffix;
     }
 
+    function isBossLevel(level) { return level > 0 && level % 10 === 0 && level % 100 !== 0; }
+    function isBigBossLevel(level) { return level > 0 && level % 100 === 0; }
+
     function getCurrentRealm() {
-        return realmData[gameState.currentRealmIndex];
+        let realmIndex = realmData.findIndex(realm => gameState.maxLevel >= realm.requiredLevel && (!realmData[realmData.indexOf(realm)+1] || gameState.maxLevel < realmData[realmData.indexOf(realm)+1].requiredLevel) );
+        if(realmIndex === -1) realmIndex = 0;
+        return realmData[realmIndex];
     }
 
     // --- CORE GAME LOGIC ---
@@ -199,8 +200,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         let xpGained = gameState.currentFightingLevel * 5;
         
-        const currentSubZone = findSubZoneByLevel(level);
-        if (currentSubZone && currentSubZone.isBoss) {
+        if (isBossLevel(level) || isBigBossLevel(level)) {
              xpGained *= 5;
              const nextRealmIndex = gameState.currentRealmIndex + 1;
              if (realmData[nextRealmIndex] && level + 1 >= realmData[nextRealmIndex].requiredLevel) {
@@ -257,18 +257,24 @@ document.addEventListener('DOMContentLoaded', () => {
     
     function generateMonster() {
         const level = gameState.currentFightingLevel;
-        const subZone = findSubZoneByLevel(level);
+        let monsterName;
 
-        if (!subZone) {
-            console.error("No sub-zone found for level:", level);
-            let monsterName = "Slime";
-            currentMonster = { name: monsterName, data: monsterBaseData[monsterName] };
-            gameState.currentFightingLevel = 1; // Fallback
+        if (isBigBossLevel(level)) {
+            monsterName = "Archdemon Overlord";
+        } else if (isBossLevel(level)) {
+            monsterName = "Dungeon Guardian";
         } else {
-            let monsterName = subZone.monsters[Math.floor(Math.random() * subZone.monsters.length)];
-            currentMonster = { name: monsterName, data: monsterBaseData[monsterName] };
+             const subZone = findSubZoneByLevel(level);
+             if (subZone) {
+                monsterName = subZone.monsters[Math.floor(Math.random() * subZone.monsters.length)];
+             } else {
+                console.error("No sub-zone found for level:", level);
+                monsterName = "Slime";
+                gameState.currentFightingLevel = 1;
+             }
         }
 
+        currentMonster = { name: monsterName, data: monsterBaseData[monsterName] };
         let monsterDef = currentMonster.data;
         
         const baseExponent = 1.15;
@@ -277,16 +283,16 @@ document.addEventListener('DOMContentLoaded', () => {
         const effectiveLevel = level - (tier * difficultyResetFactor);
         let monsterHealth = Math.ceil(10 * Math.pow(baseExponent, effectiveLevel));
         
-        // --- START OF FIX: Use isBoss flag for health bonus ---
-        if (subZone && subZone.isBoss) {
+        if (isBigBossLevel(level)) {
+            monsterHealth *= 10;
+        } else if (isBossLevel(level)) {
             monsterHealth *= 5;
         }
-        // --- END OF FIX ---
 
         monsterImageEl.src = monsterDef.image;
         gameState.monster.maxHp = monsterHealth;
         gameState.monster.hp = monsterHealth;
-        monsterNameEl.textContent = currentMonster.name;
+        monsterNameEl.textContent = monsterName;
     }
     
     function recalculateStats() {
@@ -348,8 +354,7 @@ document.addEventListener('DOMContentLoaded', () => {
         let roll = Math.random() * 100; roll -= playerStats.magicFind;
         let rarity;
         
-        const subZone = findSubZoneByLevel(gameState.currentFightingLevel);
-        const isBoss = subZone && subZone.isBoss;
+        const isBoss = isBossLevel(gameState.currentFightingLevel) || isBigBossLevel(gameState.currentFightingLevel);
 
         if (isBoss && roll < 5) rarity = 'legendary'; 
         else if (roll < 5) rarity = 'legendary'; else if (roll < 20) rarity = 'epic'; else if (roll < 50) rarity = 'rare'; else if (roll < 85) rarity = 'uncommon'; else rarity = 'common';
@@ -515,45 +520,71 @@ document.addEventListener('DOMContentLoaded', () => {
         renderMap();
     }
 
+    function getHighestCompletedLevelInSubZone(subZone) {
+        let highest = 0;
+        for (const level of gameState.completedLevels) {
+            if (level >= subZone.levelRange[0] && level <= subZone.levelRange[1]) {
+                if (level > highest) {
+                    highest = level;
+                }
+            }
+        }
+        return highest;
+    }
+
     function showSubZoneModal(subZone) {
         modalTitleEl.textContent = subZone.name;
         modalBodyEl.innerHTML = ''; 
-        
-        const farmButton = document.createElement('button');
-        farmButton.textContent = "Farm this Area";
-        farmButton.onclick = () => {
-            gameState.currentFightingLevel = subZone.levelRange[0];
-            gameState.isFarming = true;
-            gameState.isAutoProgressing = autoProgressCheckboxEl.checked;
-            logMessage(`Now farming ${subZone.name}.`);
-            closeModal();
-            generateMonster();
-            updateUI();
-            autoSave();
-            document.querySelector('.tab-button[data-view="combat-view"]').click();
-        };
-        modalBodyEl.appendChild(farmButton);
 
-        if (subZone.isBoss) {
-            const bossLevel = subZone.levelRange[0];
-            const fightBossButton = document.createElement('button');
-            fightBossButton.textContent = `Fight Boss (Lvl ${bossLevel})`;
-            fightBossButton.disabled = !gameState.completedLevels.includes(bossLevel);
-            fightBossButton.onclick = () => {
-                gameState.currentFightingLevel = bossLevel;
-                gameState.isFarming = false;
-                gameState.isAutoProgressing = false; 
-                logMessage(`Challenging the boss of ${subZone.name}!`);
-                closeModal();
-                generateMonster();
-                updateUI();
-                autoSave();
-                document.querySelector('.tab-button[data-view="combat-view"]').click();
+        const highestCompleted = getHighestCompletedLevelInSubZone(subZone);
+        const startLevel = subZone.levelRange[0];
+        const finalLevel = subZone.levelRange[1];
+        let nextLevel = Math.min(highestCompleted + 1, finalLevel);
+
+        // If the subzone is a single-level boss zone, don't show "Continue" or "Restart"
+        if(startLevel !== finalLevel) {
+            const continueButton = document.createElement('button');
+            continueButton.textContent = (highestCompleted === 0) ? `Start at Lvl ${startLevel}` : `Continue at Lvl ${nextLevel}`;
+            continueButton.onclick = () => {
+                startCombat(nextLevel, true);
             };
-            modalBodyEl.appendChild(fightBossButton);
+            modalBodyEl.appendChild(continueButton);
+
+            if (highestCompleted > 0 && highestCompleted < finalLevel) {
+                const restartButton = document.createElement('button');
+                restartButton.textContent = `Restart at Lvl ${startLevel}`;
+                restartButton.onclick = () => {
+                    startCombat(startLevel, true);
+                };
+                modalBodyEl.appendChild(restartButton);
+            }
+        }
+        
+        if (isBossLevel(finalLevel) || isBigBossLevel(finalLevel)) {
+             if (gameState.completedLevels.includes(finalLevel)) {
+                const fightBossButton = document.createElement('button');
+                fightBossButton.textContent = `Re-fight Boss (Lvl ${finalLevel})`;
+                fightBossButton.onclick = () => {
+                    startCombat(finalLevel, false);
+                };
+                modalBodyEl.appendChild(fightBossButton);
+            }
         }
         
         modalBackdropEl.classList.remove('hidden');
+    }
+    
+    function startCombat(level, isFarming) {
+        gameState.currentFightingLevel = level;
+        gameState.isFarming = isFarming;
+        gameState.isAutoProgressing = isFarming ? autoProgressCheckboxEl.checked : false;
+        
+        logMessage(`Traveling to level ${level}.`);
+        closeModal();
+        generateMonster();
+        updateUI();
+        autoSave();
+        document.querySelector('.tab-button[data-view="combat-view"]').click();
     }
 
     function closeModal() {
@@ -686,7 +717,7 @@ document.addEventListener('DOMContentLoaded', () => {
         let statsHTML = '<ul>';
         for (const stat in item.stats) {
             const statInfo = statPools[item.type].find(s => s.key === stat);
-            const statName = statInfo ? statInfo.name : stat;
+            const statName = statInfo ? statInfo.name : statKey;
             statsHTML += `<li>+${formatNumber(item.stats[stat])} ${statName}</li>`;
         }
         statsHTML += '</ul>';
