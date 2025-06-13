@@ -2,7 +2,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- GAME STATE AND CONFIGURATION ---
     let gameState = {};
-    let currentMap = 'world'; // 'world' or a zoneId like 'green_meadows'
+    let currentMap = 'world';
     const itemTypes = ['sword', 'shield', 'helmet', 'necklace', 'platebody', 'platelegs', 'ring', 'belt'];
     const rarities = ['common', 'uncommon', 'rare', 'epic', 'legendary'];
     const statPools = { sword: [{key: 'clickDamage', name: 'Click Dmg'}, {key: 'dps', name: 'DPS'}], shield: [{key: 'dps', name: 'DPS'}], helmet: [{key: 'goldGain', name: '% Gold Gain'}], necklace: [{key: 'goldGain', name: '% Gold Gain'}], platebody: [{key: 'dps', name: 'DPS'}], platelegs: [{key: 'dps', name: 'DPS'}], ring: [{key: 'clickDamage', name: 'Click Dmg'}, {key: 'goldGain', name: '% Gold Gain'}], belt: [{key: 'dps', name: 'DPS'}], };
@@ -14,10 +14,8 @@ document.addEventListener('DOMContentLoaded', () => {
             requiredLevel: 1,
             zones: {
                 "green_meadows": {
-                    name: "Green Meadows",
-                    mapImage: "images/map_meadows_zoomed.png",
-                    coords: { top: '78%', left: '20%' },
-                    icon: 'images/icons/sword.png', 
+                    name: "Green Meadows", mapImage: "images/map_meadows_zoomed.png",
+                    coords: { top: '78%', left: '20%' }, icon: 'images/icons/sword.png', 
                     subZones: {
                         "starting_fields": { name: "Starting Fields", levelRange: [1, 9], monsters: ["Slime", "Goblin"], coords: {top: '60%', left: '30%'} },
                         "bat_cave": { name: "Bat Cave", levelRange: [10, 19], monsters: ["Bat"], coords: {top: '30%', left: '60%'} },
@@ -25,10 +23,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 },
                 "orc_volcano": {
-                    name: "Orc Volcano",
-                    mapImage: "images/map_volcano_zoomed.png",
-                    coords: { top: '30%', left: '38%' },
-                    icon: 'images/icons/platebody.png',
+                    name: "Orc Volcano", mapImage: "images/map_volcano_zoomed.png",
+                    coords: { top: '30%', left: '38%' }, icon: 'images/icons/platebody.png',
                     subZones: {
                         "ashfall_plains": { name: "Ashfall Plains", levelRange: [21, 29], monsters: ["Orc"], coords: {top: '70%', left: '30%'} },
                         "magma_flow": { name: "Magma Flow", levelRange: [30, 39], monsters: ["Orc"], coords: {top: '50%', left: '65%'} },
@@ -36,10 +32,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 },
                 "undead_desert": {
-                    name: "Undead Desert",
-                    mapImage: "images/map_desert_zoomed.png",
-                    coords: { top: '70%', left: '75%' },
-                    icon: 'images/icons/shield.png',
+                    name: "Undead Desert", mapImage: "images/map_desert_zoomed.png",
+                    coords: { top: '70%', left: '75%' }, icon: 'images/icons/shield.png',
                     subZones: {
                          "lost_tombs": { name: "Lost Tombs", levelRange: [41, 49], monsters: ["Skeleton"], coords: {top: '70%', left: '30%'} },
                          "cursed_ruins": { name: "Cursed Ruins", levelRange: [50, 59], monsters: ["Zombie"], coords: {top: '50%', left: '65%'} },
@@ -47,10 +41,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 },
                 "final_dungeon": {
-                    name: "Final Dungeon",
-                    mapImage: "images/map_dungeon_zoomed.png",
-                    coords: { top: '22%', left: '78%' },
-                    icon: 'images/icons/helmet.png',
+                    name: "Final Dungeon", mapImage: "images/map_dungeon_zoomed.png",
+                    coords: { top: '22%', left: '78%' }, icon: 'images/icons/helmet.png',
                     subZones: {
                         "gatehouse": { name: "The Gatehouse", levelRange: [61, 79], monsters: ["Dungeon Guardian"], coords: {top: '80%', left: '50%'} },
                         "throne_room": { name: "Throne Room", levelRange: [80, 99], monsters: ["Dungeon Guardian"], coords: {top: '40%', left: '50%'} },
@@ -65,13 +57,29 @@ document.addEventListener('DOMContentLoaded', () => {
             requiredLevel: 101,
             zones: {
                  "crystal_caves": {
-                    name: "Crystal Caverns",
-                    mapImage: "images/map_caves_zoomed.png",
-                    coords: { top: '70%', left: '25%' },
-                    icon: 'images/icons/ring.png',
+                    name: "Crystal Caverns", mapImage: "images/map_caves_zoomed.png",
+                    coords: { top: '70%', left: '25%' }, icon: 'images/icons/ring.png',
                     subZones: {
                         "glimmering_path": { name: "Glimmering Path", levelRange: [101, 119], monsters: ["Bat", "Skeleton"], coords: {top: '60%', left: '30%'} },
                         "crystal_heart": { name: "Crystal Heart", levelRange: [120, 120], monsters: ["Dungeon Guardian"], coords: {top: '75%', left: '70%'}, isBoss: true }
+                    }
+                },
+                "fungal_forest": {
+                    name: "Fungal Forest", mapImage: "images/map_fungal_zoomed.png",
+                    coords: { top: '40%', left: '50%' }, icon: 'images/icons/necklace.png',
+                    subZones: {
+                        "spore_meadows": { name: "Spore Meadows", levelRange: [121, 139], monsters: ["Slime", "Bat"], coords: {top: '60%', left: '30%'} },
+                        "myconid_colony": { name: "Myconid Colony", levelRange: [140, 159], monsters: ["Goblin", "Zombie"], coords: {top: '40%', left: '65%'} },
+                        "great_fungus": { name: "The Great Fungus", levelRange: [160, 160], monsters: ["Dungeon Guardian"], coords: {top: '20%', left: '50%'}, isBoss: true }
+                    }
+                },
+                "drow_city": {
+                    name: "Drow City", mapImage: "images/map_drow_zoomed.png",
+                    coords: { top: '25%', left: '75%' }, icon: 'images/icons/belt.png',
+                    subZones: {
+                        "outer_spires": { name: "Outer Spires", levelRange: [161, 179], monsters: ["Skeleton", "Orc"], coords: {top: '70%', left: '30%'} },
+                        "noble_district": { name: "Noble District", levelRange: [180, 199], monsters: ["Dungeon Guardian"], coords: {top: '50%', left: '65%'} },
+                        "spider_queen_lair": { name: "Spider Queen's Lair", levelRange: [200, 200], monsters: ["Archdemon Overlord"], coords: {top: '20%', left: '50%'}, isBoss: true }
                     }
                 }
             }
@@ -255,7 +263,7 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error("No sub-zone found for level:", level);
             let monsterName = "Slime";
             currentMonster = { name: monsterName, data: monsterBaseData[monsterName] };
-            gameState.currentFightingLevel = 1;
+            gameState.currentFightingLevel = 1; // Fallback
         } else {
             let monsterName = subZone.monsters[Math.floor(Math.random() * subZone.monsters.length)];
             currentMonster = { name: monsterName, data: monsterBaseData[monsterName] };
@@ -269,9 +277,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const effectiveLevel = level - (tier * difficultyResetFactor);
         let monsterHealth = Math.ceil(10 * Math.pow(baseExponent, effectiveLevel));
         
+        // --- START OF FIX: Use isBoss flag for health bonus ---
         if (subZone && subZone.isBoss) {
             monsterHealth *= 5;
         }
+        // --- END OF FIX ---
 
         monsterImageEl.src = monsterDef.image;
         gameState.monster.maxHp = monsterHealth;
@@ -676,7 +686,7 @@ document.addEventListener('DOMContentLoaded', () => {
         let statsHTML = '<ul>';
         for (const stat in item.stats) {
             const statInfo = statPools[item.type].find(s => s.key === stat);
-            const statName = statInfo ? statInfo.name : statKey;
+            const statName = statInfo ? statInfo.name : stat;
             statsHTML += `<li>+${formatNumber(item.stats[stat])} ${statName}</li>`;
         }
         statsHTML += '</ul>';
