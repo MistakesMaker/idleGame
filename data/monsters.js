@@ -19,13 +19,15 @@ import { GEMS } from './gems.js';
 */
 
 export const MONSTERS = {
+
+    //Overworld basic monsters
     SLIME: {
         name: 'Slime',
         image: 'images/slime.png',
         dropChance: 2.0,
         lootTable: [
             { item: ITEMS.RUSTY_SWORD, weight: 1 },
-            { item: ITEMS.LEATHER_CAP, weight: 1 }
+            { item: ITEMS.LEATHER_CAP, weight: 1 },
         ]
     },
     GOBLIN: {
