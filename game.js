@@ -317,16 +317,20 @@ document.addEventListener('DOMContentLoaded', () => {
             const salvageBtn = document.getElementById('salvage-mode-btn');
             const confirmBtn = document.getElementById('confirm-salvage-btn');
             const selectAllBtn = document.getElementById('select-all-salvage-btn');
+            const raritySalvageContainer = document.getElementById('salvage-by-rarity-controls');
+
             if (salvageMode.active) {
                 salvageBtn.textContent = 'Cancel Salvage';
                 salvageBtn.classList.add('active');
                 confirmBtn.classList.remove('hidden');
                 selectAllBtn.classList.remove('hidden');
+                raritySalvageContainer.classList.remove('hidden');
             } else {
                 salvageBtn.textContent = 'Select to Salvage';
                 salvageBtn.classList.remove('active');
                 confirmBtn.classList.add('hidden');
                 selectAllBtn.classList.add('hidden');
+                raritySalvageContainer.classList.add('hidden');
                 salvageMode.selections = [];
             }
             document.body.classList.toggle('salvage-mode-active', salvageMode.active);
@@ -353,10 +357,27 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('salvage-mode-btn').classList.remove('active');
             document.getElementById('confirm-salvage-btn').classList.add('hidden');
             document.getElementById('select-all-salvage-btn').classList.add('hidden');
+            document.getElementById('salvage-by-rarity-controls').classList.add('hidden');
             document.body.classList.remove('salvage-mode-active');
             salvageMode.selections = [];
             updateAll();
             autoSave();
+        });
+
+        document.getElementById('salvage-by-rarity-controls').addEventListener('click', (e) => {
+            const target = e.target;
+            if (!(target instanceof HTMLElement) || !target.dataset.rarity) return;
+
+            const rarity = target.dataset.rarity;
+            const result = player.salvageByRarity(gameState, rarity);
+
+            if (result.count > 0) {
+                logMessage(elements.gameLogEl, `Salvaged ${result.count} ${rarity} items for ${formatNumber(result.scrapGained)} Scrap.`, 'uncommon');
+                updateAll();
+                autoSave();
+            } else {
+                logMessage(elements.gameLogEl, `No unlocked ${rarity} items to salvage.`);
+            }
         });
 
         elements.inventorySlotsEl.addEventListener('click', (event) => {
@@ -506,10 +527,9 @@ document.addEventListener('DOMContentLoaded', () => {
         setupPrestigeListeners();
     }
     
-    // ... (All other functions like createTooltipHTML, setupRaidListeners, etc. are unchanged) ...
+    // --- FIX: Change these from assignments back to regular function declarations ---
     function createTooltipHTML(hoveredItem, equippedItem) {
         const headerHTML = `<div class="item-header"><span class="${hoveredItem.rarity}">${hoveredItem.name}</span></div>`;
-        
         if (!equippedItem) {
             let statsHTML = '<ul>';
             for (const statKey in hoveredItem.stats) {
@@ -520,7 +540,6 @@ document.addEventListener('DOMContentLoaded', () => {
             statsHTML += '</ul>';
             return headerHTML + statsHTML;
         }
-
         const allStatKeys = new Set([...Object.keys(hoveredItem.stats), ...Object.keys(equippedItem.stats)]);
         let statsHTML = '<ul>';
         allStatKeys.forEach(statKey => {
@@ -542,14 +561,11 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!(event.target instanceof Element)) return;
             const itemWrapper = event.target.closest('.item-wrapper');
             if (!(itemWrapper instanceof HTMLElement) || !itemWrapper.dataset.index) return;
-
             const index = parseInt(itemWrapper.dataset.index, 10);
             const inventoryItem = gameState.inventory[index];
             if (!inventoryItem) return;
-            
             elements.tooltipEl.className = 'hidden';
             elements.tooltipEl.classList.add(inventoryItem.rarity);
-
             let slotToCompare = inventoryItem.type;
             if (slotToCompare === 'ring') {
                 if (!gameState.equipment.ring1) slotToCompare = 'ring1'; 
@@ -563,19 +579,15 @@ document.addEventListener('DOMContentLoaded', () => {
             elements.tooltipEl.innerHTML = createTooltipHTML(inventoryItem, equippedItem);
             elements.tooltipEl.classList.remove('hidden');
         });
-
         elements.inventorySlotsEl.addEventListener('mouseout', () => elements.tooltipEl.classList.add('hidden'));
-    
         const equipmentSlots = document.getElementById('equipment-paperdoll');
         equipmentSlots.addEventListener('mouseover', (event) => {
             if (!(event.target instanceof Element)) return;
             const slotEl = event.target.closest('.equipment-slot');
             if (!(slotEl instanceof HTMLElement)) return;
-
             const slotName = slotEl.id.replace('slot-', '');
             const equippedItem = gameState.equipment[slotName];
             if (!equippedItem) return;
-
             elements.tooltipEl.className = 'hidden';
             elements.tooltipEl.classList.add(equippedItem.rarity);
             const rect = slotEl.getBoundingClientRect();
@@ -593,22 +605,18 @@ document.addEventListener('DOMContentLoaded', () => {
             agility: { title: 'Agility', description: 'Improves your hero\'s combat prowess. Each point provides:', effects: ['<b>+0.3%</b> Total DPS'] },
             luck: { title: 'Luck', description: 'Increases your fortune in the dungeon. Each point provides:', effects: ['<b>+0.5%</b> Gold Gain', '<b>+0.2%</b> Magic Find (better item rarity)'] }
         };
-
         const attributesArea = document.getElementById('attributes-area');
         attributesArea.addEventListener('mouseover', (event) => {
             if (!(event.target instanceof Element)) return;
             const row = event.target.closest('.attribute-row');
             if (!(row instanceof HTMLElement) || !row.dataset.attribute) return;
-            
             const attributeKey = row.dataset.attribute;
             const content = statTooltipContent[attributeKey];
             if (!content) return;
-
             let html = `<h4>${content.title}</h4><p>${content.description}</p><ul>`;
             content.effects.forEach(effect => { html += `<li>- ${effect}</li>`; });
             html += '</ul>';
             elements.statTooltipEl.innerHTML = html;
-            
             const nameSpan = row.querySelector('span');
             if (!nameSpan) return;
             const rect = nameSpan.getBoundingClientRect();
@@ -616,7 +624,6 @@ document.addEventListener('DOMContentLoaded', () => {
             elements.statTooltipEl.style.top = `${rect.top}px`;
             elements.statTooltipEl.classList.remove('hidden');
         });
-
         attributesArea.addEventListener('mouseout', () => elements.statTooltipEl.classList.add('hidden'));
     }
 
@@ -624,18 +631,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (document.getElementById('raid-panel')) return;
         const raidContainer = document.getElementById('raid-container');
         if (!raidContainer) return;
-        raidContainer.innerHTML = `
-            <div id="raid-panel">
-                <div id="raid-boss-info">
-                    <h2 id="raid-boss-name">Loading...</h2>
-                    <div id="raid-boss-health-bar-container"><div id="raid-boss-health-bar"></div></div>
-                    <p id="raid-boss-health-text">0 / 0</p>
-                </div>
-                <div id="raid-main-content">
-                    <div id="raid-attack-area"><button id="raid-attack-button">ATTACK!</button></div>
-                    <div id="raid-player-list"><h3>Participants</h3><ul></ul></div>
-                </div>
-            </div>`;
+        raidContainer.innerHTML = `<div id="raid-panel"><div id="raid-boss-info"><h2 id="raid-boss-name">Loading...</h2><div id="raid-boss-health-bar-container"><div id="raid-boss-health-bar"></div></div><p id="raid-boss-health-text">0 / 0</p></div><div id="raid-main-content"><div id="raid-attack-area"><button id="raid-attack-button">ATTACK!</button></div><div id="raid-player-list"><h3>Participants</h3><ul></ul></div></div></div>`;
         raidPanel = document.getElementById('raid-panel');
         const attackButton = document.getElementById('raid-attack-button');
         if (attackButton) {
@@ -726,10 +722,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 elements.prestigeInventorySlotsEl.appendChild(itemEl);
             });
         });
-
         document.getElementById('confirm-prestige-btn').addEventListener('click', () => {
             if (prestigeSelections.length > 3) { alert("You can only select up to 3 items!"); return; }
-
             const absorbed = { clickDamage: 0, dps: 0 };
             for (const item of Object.values(gameState.equipment)) {
                 if (item) {
@@ -738,11 +732,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
             logMessage(elements.gameLogEl, `Absorbed <b>+${absorbed.clickDamage.toFixed(2)}</b> Click Damage and <b>+${absorbed.dps.toFixed(2)}</b> DPS from your gear!`, 'epic');
-
             const allItems = [...Object.values(gameState.equipment).filter(i => i), ...gameState.inventory];
             const newLegacyItems = allItems.filter(item => prestigeSelections.includes(item.id));
             const oldLegacyItems = gameState.legacyItems || [];
-            
             const oldLevel = gameState.maxLevel;
             const heroToKeep = {
                 level: gameState.hero.level,
@@ -751,11 +743,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 attributes: { strength: 0, agility: 0, luck: 0 }
             };
             logMessage(elements.gameLogEl, `Your attributes have been reset, and <b>${heroToKeep.attributePoints}</b> points have been refunded.`, 'uncommon');
-
             const oldAbsorbedStats = gameState.absorbedStats || { clickDamage: 0, dps: 0 };
             const oldPrestigeCount = gameState.prestigeCount || 0;
             const baseState = getDefaultGameState();
-            
             gameState = {
                 ...baseState,
                 absorbedStats: {
@@ -768,9 +758,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 presets: baseState.presets,
                 activePresetIndex: baseState.activePresetIndex
             };
-            
             logMessage(elements.gameLogEl, `PRESTIGE! Restarted from Lvl ${oldLevel}, keeping hero progress, ${newLegacyItems.length} new legacy items, and all absorbed stats.`);
-            
             elements.prestigeSelectionEl.classList.add('hidden');
             elements.prestigeButton.classList.remove('hidden');
             recalculateStats();

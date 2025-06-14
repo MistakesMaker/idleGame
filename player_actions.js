@@ -14,12 +14,10 @@ export function equipItem(gameState, inventoryIndex) {
     if (!item) return;
 
     let targetSlot = item.type;
-    // Ring logic is now handled in the event listener to allow player choice
     if (item.type === 'ring') {
         if (!gameState.equipment.ring1) targetSlot = 'ring1';
         else if (!gameState.equipment.ring2) targetSlot = 'ring2';
         else {
-            // If both rings are full, we don't auto-equip. The UI will prompt the user.
             return;
         }
     }
@@ -203,6 +201,36 @@ export function salvageSelectedItems(gameState, salvageMode) {
     gameState.scrap += totalScrapGained;
     return { count: selectedCount, scrapGained: totalScrapGained };
 }
+
+/**
+ * Salvages all non-locked items of a specific rarity.
+ * @param {object} gameState - The main game state object.
+ * @param {string} rarityToSalvage - The rarity to salvage (e.g., 'common').
+ * @returns {{count: number, scrapGained: number}} The result of the salvage operation.
+ */
+export function salvageByRarity(gameState, rarityToSalvage) {
+    let scrapGained = 0;
+    let itemsSalvagedCount = 0;
+    const itemsToKeep = [];
+
+    gameState.inventory.forEach(item => {
+        if (item.rarity === rarityToSalvage && !item.locked) {
+            const rarityIndex = rarities.indexOf(item.rarity);
+            scrapGained += Math.ceil(Math.pow(4, rarityIndex));
+            itemsSalvagedCount++;
+        } else {
+            itemsToKeep.push(item);
+        }
+    });
+
+    if (itemsSalvagedCount > 0) {
+        gameState.inventory = itemsToKeep;
+        gameState.scrap += scrapGained;
+    }
+
+    return { count: itemsSalvagedCount, scrapGained };
+}
+
 
 /**
  * Toggles the lock state of an inventory item.

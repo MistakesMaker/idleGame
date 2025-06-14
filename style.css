@@ -369,7 +369,7 @@ button:disabled { background: #7f8c8d; cursor: not-allowed; border-bottom: 2px s
 @keyframes pulse { 0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(241, 196, 15, 0.7); } 70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(241, 196, 15, 0); } 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(241, 196, 15, 0); } }
 
 #upgrades-area { margin-top: 20px; padding-top: 15px; border-top: 1px solid #4a637e; }
-.upgrade-button { background: linear-gradient(145deg, #2c3e50, #34495e); border: 1px solid #7f8c8d; padding: 10px; margin-bottom: 10px; border-radius: 5px; cursor: pointer; text-align: center; transition: all 0.2s ease; position: relative; padding-right: 60px; /* Make space for the max button */ }
+.upgrade-button { background: linear-gradient(145deg, #2c3e50, #34495e); border: 1px solid #7f8c8d; padding: 10px; margin-bottom: 10px; border-radius: 5px; cursor: pointer; text-align: center; transition: all 0.2s ease; position: relative; padding-right: 60px; }
 .upgrade-button:hover { border-color: #f1c40f; transform: scale(1.02); }
 .upgrade-button.disabled { background: #566573; color: #95a5a6; cursor: not-allowed; border-color: #566573; }
 .upgrade-button.disabled:hover { transform: none; }
@@ -403,6 +403,33 @@ body.salvage-mode-active #inventory-slots .item:not(.locked-item) { cursor: poin
 #salvage-mode-btn.active { background: #c0392b; border-bottom-color: #922b21; }
 #confirm-salvage-btn { background: linear-gradient(145deg, #27ae60, #2ecc71); border-bottom-color: #229954; }
 .selected-for-salvage { border: 3px dashed #e74c3c !important; transform: translateY(-2px) scale(1.03) !important; }
+
+/* ADD THESE NEW RULES */
+#salvage-by-rarity-controls {
+    border-top: 1px solid #4a637e;
+    padding-top: 15px;
+    margin-top: 15px;
+}
+
+.salvage-rarity-btn {
+    padding: 8px 12px;
+    font-size: 14px;
+}
+
+.salvage-rarity-btn[data-rarity="common"] {
+    background: #bdc3c7;
+    border-bottom-color: #a1a6a9;
+    color: #1a1a1a;
+}
+.salvage-rarity-btn[data-rarity="uncommon"] {
+    background: #2ecc71;
+    border-bottom-color: #25a25a;
+}
+.salvage-rarity-btn[data-rarity="rare"] {
+    background: #3498db;
+    border-bottom-color: #2980b9;
+}
+
 
 #save-indicator { position: fixed; bottom: 20px; right: 20px; background-color: #2ecc71; color: white; padding: 10px 20px; border-radius: 5px; box-shadow: 0 4px 8px rgba(0,0,0,0.3); z-index: 2000; opacity: 0; transition: opacity 0.5s ease-in-out; pointer-events: none; }
 #save-indicator.visible { opacity: 1; }
