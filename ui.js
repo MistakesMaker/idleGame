@@ -152,7 +152,6 @@ export function updateUI(elements, gameState, playerStats, currentMonster, salva
         btn.classList.toggle('active', index === gameState.activePresetIndex);
     });
     (/** @type {HTMLButtonElement} */ (prestigeButton)).disabled = gameState.maxLevel < 100;
-
     const monsterDef = currentMonster.data;
     if (monsterDef) {
         lootMonsterNameEl.textContent = currentMonster.name;
@@ -179,11 +178,6 @@ export function updateUI(elements, gameState, playerStats, currentMonster, salva
     }
 }
 
-/**
- * Creates the HTML for a tooltip showing an item's potential stats (its blueprint).
- * @param {object} itemBase - The base item definition from items.js.
- * @returns {string} The inner HTML for the tooltip.
- */
 export function createLootTableTooltipHTML(itemBase) {
     let statsHTML = '<ul>';
     itemBase.possibleStats.forEach(statInfo => {
@@ -191,7 +185,7 @@ export function createLootTableTooltipHTML(itemBase) {
         statsHTML += `<li>+ ${statName}: ${statInfo.min} - ${statInfo.max}</li>`;
     });
     statsHTML += '</ul>';
-
+    // --- FIX: The "Hold Shift" hint was confusing here. It's for comparing equipped items, not loot table items. ---
     return `<div class="item-header"><span>${itemBase.name}</span></div>
             <div class="possible-stats-header">
                 Possible Stats:
@@ -200,13 +194,60 @@ export function createLootTableTooltipHTML(itemBase) {
             ${statsHTML}`;
 }
 
-/**
- * Creates the HTML for a tooltip comparing a potential drop with an equipped item.
- * @param {object} potentialItem - The base item definition from items.js.
- * @param {object|null} equippedItem - The currently equipped item object, or null.
- * @returns {string} The inner HTML for the tooltip.
- */
-export function createLootComparisonTooltipHTML(potentialItem, equippedItem) {
+export function createLootComparisonTooltipHTML(potentialItem, equippedItem, equippedItem2 = null) {
+    // --- New logic for ring comparison ---
+    if (potentialItem.type === 'ring' && (equippedItem || equippedItem2)) {
+        let potentialStatsHTML = '<ul>';
+        potentialItem.possibleStats.forEach(statInfo => {
+            const statName = Object.values(STATS).find(s => s.key === statInfo.key)?.name || statInfo.key;
+            potentialStatsHTML += `<li>+ ${statName}: ${statInfo.min} - ${statInfo.max}</li>`;
+        });
+        potentialStatsHTML += '</ul>';
+
+        let equipped1StatsHTML = '<ul>';
+        if (equippedItem) {
+            for (const statKey in equippedItem.stats) {
+                const statInfo = Object.values(STATS).find(s => s.key === statKey);
+                const statName = statInfo ? statInfo.name : statKey;
+                equipped1StatsHTML += `<li>+${formatNumber(equippedItem.stats[statKey])} ${statName}</li>`;
+            }
+        } else {
+            equipped1StatsHTML += `<li>Nothing equipped</li>`;
+        }
+        equipped1StatsHTML += '</ul>';
+
+        let equipped2StatsHTML = '<ul>';
+        if (equippedItem2) {
+             for (const statKey in equippedItem2.stats) {
+                const statInfo = Object.values(STATS).find(s => s.key === statKey);
+                const statName = statInfo ? statInfo.name : statKey;
+                equipped2StatsHTML += `<li>+${formatNumber(equippedItem2.stats[statKey])} ${statName}</li>`;
+            }
+        } else {
+            equipped2StatsHTML += `<li>Nothing equipped</li>`;
+        }
+        equipped2StatsHTML += '</ul>';
+
+
+        return `<div class="item-header"><span>${potentialItem.name}</span></div>
+                <div class="tooltip-comparison-section">
+                    <h5>Potential Drop</h5>
+                    ${potentialStatsHTML}
+                </div>
+                <div class="tooltip-ring-comparison">
+                     <div>
+                        <h5>vs. ${equippedItem ? equippedItem.name : "Empty Slot"}</h5>
+                        ${equipped1StatsHTML}
+                    </div>
+                    <div>
+                        <h5>vs. ${equippedItem2 ? equippedItem2.name : "Empty Slot"}</h5>
+                        ${equipped2StatsHTML}
+                    </div>
+                </div>
+                `;
+    }
+
+    // --- Original logic for non-ring items ---
     let equippedStatsHTML = '<ul>';
     if (equippedItem) {
         for (const statKey in equippedItem.stats) {
@@ -225,7 +266,7 @@ export function createLootComparisonTooltipHTML(potentialItem, equippedItem) {
         potentialStatsHTML += `<li>+ ${statName}: ${statInfo.min} - ${statInfo.max}</li>`;
     });
     potentialStatsHTML += '</ul>';
-
+    
     return `<div class="item-header"><span>${potentialItem.name}</span></div>
             <div class="tooltip-comparison-section">
                 <h5>Equipped: ${equippedItem ? equippedItem.name : 'None'}</h5>
@@ -237,6 +278,7 @@ export function createLootComparisonTooltipHTML(potentialItem, equippedItem) {
             </div>`;
 }
 
+
 export function createItemHTML(item, isEquipped) {
     if (isEquipped) {
         return `<img src="${getItemIcon(item.type)}" class="item-icon">`;
@@ -246,7 +288,8 @@ export function createItemHTML(item, isEquipped) {
     for (const statKey in item.stats) {
         const statInfo = Object.values(STATS).find(s => s.key === statKey);
         const statName = statInfo ? statInfo.name : statKey;
-        statsHTML += `<li>+${formatNumber(item.stats[statKey])} ${statName}</li>`;
+        const statValue = statInfo.type === 'percent' ? `${item.stats[statKey]}%` : formatNumber(item.stats[statKey]);
+        statsHTML += `<li>+${statValue} ${statName}</li>`;
     }
     statsHTML += '</ul>';
     const lockedClass = item.locked ? 'locked-item' : '';

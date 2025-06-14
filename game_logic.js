@@ -1,7 +1,7 @@
 // --- START OF FILE game_logic.js ---
 
 import { MONSTERS } from './data/monsters.js';
-import { rarities } from './game.js'; // We'll export rarities from game.js
+import { rarities } from './game.js';
 import { isBossLevel, isBigBossLevel, findSubZoneByLevel, formatNumber } from './utils.js';
 
 /**
@@ -16,6 +16,7 @@ export function generateItem(rarity, itemLevel, itemBase) {
 
     const item = {
         id: Date.now() + Math.random(),
+        baseId: itemBase.id, // --- THIS IS THE NEW LINE ---
         name: `${rarity.charAt(0).toUpperCase() + rarity.slice(1)} ${itemBase.name}`,
         type: itemBase.type.toLowerCase(),
         rarity: rarity,
@@ -51,10 +52,6 @@ export function generateItem(rarity, itemLevel, itemBase) {
 
 /**
  * Determines and generates loot from the current monster.
- * @param {object} currentMonster - The currently defeated monster.
- * @param {object} gameState - The main game state object.
- * @param {object} playerStats - The calculated player stats.
- * @returns {object|null} The dropped item or null if no drop.
  */
 export function dropLoot(currentMonster, gameState, playerStats) {
     const monsterDef = currentMonster.data;
@@ -94,10 +91,6 @@ export function dropLoot(currentMonster, gameState, playerStats) {
 
 /**
  * Handles the logic when a monster is defeated.
- * @param {object} gameState - The main game state object.
- * @param {object} playerStats - The calculated player stats.
- * @param {object} currentMonster - The defeated monster.
- * @returns {{goldGained: number, xpGained: number, droppedItem: object|null, logMessages: string[]}}
  */
 export function monsterDefeated(gameState, playerStats, currentMonster) {
     const level = gameState.currentFightingLevel;
@@ -149,8 +142,6 @@ export function monsterDefeated(gameState, playerStats, currentMonster) {
 
 /**
  * Generates a new monster based on the current fighting level.
- * @param {number} level - The current fighting level.
- * @returns {{newMonster: object, newMonsterState: object}} The new monster's definition and its initial state.
  */
 export function generateMonster(level) {
     let monsterData;
@@ -186,4 +177,3 @@ export function generateMonster(level) {
     
     return { newMonster, newMonsterState };
 }
-// --- END OF FILE game_logic.js ---

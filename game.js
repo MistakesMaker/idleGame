@@ -10,17 +10,12 @@ import * as ui from './ui.js';
 import * as player from './player_actions.js';
 import * as logic from './game_logic.js';
 
-// This is exported for modules that need it. It MUST be at the top level.
 export const rarities = ['common', 'uncommon', 'rare', 'epic', 'legendary'];
 
-// --- JSDoc Type Definitions ---
-/**
- * @typedef {Object<string, HTMLElement|HTMLButtonElement|HTMLInputElement|HTMLImageElement>} DOMElements
- */
+/** @typedef {Object<string, HTMLElement|HTMLButtonElement|HTMLInputElement|HTMLImageElement>} DOMElements */
 
 document.addEventListener('DOMContentLoaded', () => {
 
-    // --- GAME STATE AND CONFIGURATION ---
     let gameState = {};
     let currentMap = 'world';
     let currentMonster = { name: "Slime", data: MONSTERS.SLIME };
@@ -30,16 +25,15 @@ document.addEventListener('DOMContentLoaded', () => {
     let saveTimeout;
     let isShiftPressed = false;
     let lastMousePosition = { x: 0, y: 0 };
+    let pendingRingEquip = null;
 
     /** @type {DOMElements} */
     let elements = {};
 
-    // RAID SECTION
     const socket = io('https://idlegame-oqyq.onrender.com');
     let raidPanel = null;
     let raidPlayerId = `Player_${Math.random().toString(36).substr(2, 5)}`;
-
-    // --- CORE GAME LOGIC ---
+    
     const defaultEquipmentState = { sword: null, shield: null, helmet: null, necklace: null, platebody: null, platelegs: null, ring1: null, ring2: null, belt: null };
 
     function getDefaultGameState() {
@@ -283,7 +277,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (e.key === 'Shift' && !isShiftPressed) {
                 isShiftPressed = true;
                 const elementUnderMouse = document.elementFromPoint(lastMousePosition.x, lastMousePosition.y);
-                if (elementUnderMouse?.closest('.loot-table-entry')) {
+                if (elementUnderMouse) {
                     elementUnderMouse.dispatchEvent(new MouseEvent('mouseover', { bubbles: true }));
                 }
             }
@@ -292,7 +286,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (e.key === 'Shift') {
                 isShiftPressed = false;
                 const elementUnderMouse = document.elementFromPoint(lastMousePosition.x, lastMousePosition.y);
-                if (elementUnderMouse?.closest('.loot-table-entry')) {
+                 if (elementUnderMouse) {
                     elementUnderMouse.dispatchEvent(new MouseEvent('mouseover', { bubbles: true }));
                 }
             }
@@ -302,7 +296,7 @@ document.addEventListener('DOMContentLoaded', () => {
             lastMousePosition.x = e.clientX;
             lastMousePosition.y = e.clientY;
         });
-
+        
         elements.monsterImageEl.addEventListener('click', clickMonster);
         document.getElementById('buy-loot-crate-btn').addEventListener('click', () => {
             const result = player.buyLootCrate(gameState, logic.generateItem);
@@ -379,9 +373,16 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!(target instanceof Element)) return;
             const wrapper = target.closest('.item-wrapper');
             if (!(wrapper instanceof HTMLElement) || !wrapper.dataset.index) return;
+            
+            if (pendingRingEquip) {
+                pendingRingEquip = null;
+                document.querySelectorAll('.ring-equip-pending').forEach(el => el.classList.remove('ring-equip-pending'));
+            }
+
             const index = parseInt(wrapper.dataset.index, 10);
             const item = gameState.inventory[index];
             if (!item) return;
+
             if (target.classList.contains('lock-icon')) {
                 const message = player.toggleItemLock(gameState, index);
                 if (message) logMessage(elements.gameLogEl, message);
@@ -395,8 +396,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
                 document.getElementById('salvage-count').textContent = salvageMode.selections.length.toString();
             } else {
-                player.equipItem(gameState, index);
-                recalculateStats();
+                const result = player.equipItem(gameState, index);
+                if (result.isPendingRing) {
+                    pendingRingEquip = result.item;
+                    logMessage(elements.gameLogEl, `Choose a ring slot to equip ${pendingRingEquip.name}.`, 'uncommon');
+                    document.getElementById('slot-ring1')?.classList.add('ring-equip-pending');
+                    document.getElementById('slot-ring2')?.classList.add('ring-equip-pending');
+                } else {
+                    recalculateStats();
+                }
             }
             updateAll();
             autoSave();
@@ -405,12 +413,21 @@ document.addEventListener('DOMContentLoaded', () => {
             const target = event.target;
             if (!(target instanceof Element)) return;
             const slotElement = target.closest('[data-slot-name]');
-            if (slotElement instanceof HTMLElement && slotElement.dataset.slotName) {
-                player.unequipItem(gameState, slotElement.dataset.slotName);
-                recalculateStats();
-                updateAll();
-                autoSave();
+            if (!(slotElement instanceof HTMLElement) || !slotElement.dataset.slotName) return;
+
+            const slotName = slotElement.dataset.slotName;
+
+            if (pendingRingEquip && (slotName === 'ring1' || slotName === 'ring2')) {
+                player.equipRing(gameState, pendingRingEquip, slotName);
+                pendingRingEquip = null;
+                document.querySelectorAll('.ring-equip-pending').forEach(el => el.classList.remove('ring-equip-pending'));
+            } else {
+                player.unequipItem(gameState, slotName);
             }
+
+            recalculateStats();
+            updateAll();
+            autoSave();
         });
         document.getElementById('reset-game-btn').addEventListener('click', resetGame);
         elements.backToWorldMapBtnEl.addEventListener('click', () => { currentMap = 'world'; renderMap(); });
@@ -511,8 +528,86 @@ document.addEventListener('DOMContentLoaded', () => {
         setupPrestigeListeners();
     }
     
-    function createTooltipHTML(hoveredItem, equippedItem) {
-        const headerHTML = `<div class="item-header"><span class="${hoveredItem.rarity}">${hoveredItem.name}</span></div>`;
+    /**
+     * Creates tooltip HTML comparing an item to its potential stat rolls (blueprint).
+     * @param {object} item - The item instance with actual stats.
+     * @param {object} itemBase - The base item definition from items.js.
+     * @returns {string} The HTML content for the tooltip.
+     */
+    function createBlueprintComparisonTooltipHTML(item, itemBase) {
+        const headerHTML = `<div class="item-header"><span>${item.name}</span></div>
+                            <div class="possible-stats-header">Stat Roll Comparison</div>`;
+        let statsHTML = '<ul>';
+
+        for (const statInfo of itemBase.possibleStats) {
+            const statKey = statInfo.key;
+            const statName = Object.values(STATS).find(s => s.key === statKey)?.name || statKey;
+            const min = statInfo.min;
+            const max = statInfo.max;
+
+            if (item.stats.hasOwnProperty(statKey)) {
+                const currentValue = item.stats[statKey];
+                statsHTML += `<li>${statName}: ${formatNumber(currentValue)} (Range: ${formatNumber(min)} - ${formatNumber(max)})</li>`;
+            } else {
+                statsHTML += `<li>${statName}: <span class="tooltip-shift-hint">Not Rolled</span> (Range: ${formatNumber(min)} - ${formatNumber(max)})</li>`;
+            }
+        }
+        statsHTML += '</ul>';
+        return headerHTML + statsHTML;
+    }
+
+    /**
+     * Creates tooltip HTML comparing a hovered item to one or two equipped items.
+     * @param {object} hoveredItem - The item being hovered over.
+     * @param {object|null} equippedItem - The primary equipped item to compare against.
+     * @param {object|null} [equippedItem2=null] - The secondary equipped item (for rings).
+     * @returns {string} The HTML content for the tooltip.
+     */
+    function createTooltipHTML(hoveredItem, equippedItem, equippedItem2 = null) {
+        const headerHTML = `<div class="item-header"><span>${hoveredItem.name}</span></div>`;
+        
+        if (hoveredItem.type === 'ring' && (equippedItem || equippedItem2)) {
+            let ring1HTML = '<ul>';
+            let ring2HTML = '<ul>';
+            const allStatKeys = new Set([...Object.keys(hoveredItem.stats)]);
+            if(equippedItem) Object.keys(equippedItem.stats).forEach(k => allStatKeys.add(k));
+            if(equippedItem2) Object.keys(equippedItem2.stats).forEach(k => allStatKeys.add(k));
+
+            allStatKeys.forEach(statKey => {
+                const statInfo = Object.values(STATS).find(s => s.key === statKey);
+                const statName = statInfo ? statInfo.name : statKey;
+                const hoveredValue = hoveredItem.stats[statKey] || 0;
+                
+                if (equippedItem) {
+                    const diff1 = hoveredValue - (equippedItem.stats[statKey] || 0);
+                    const diffClass1 = diff1 > 0 ? 'stat-better' : 'stat-worse';
+                    const sign1 = diff1 > 0 ? '+' : '';
+                    const diffSpan1 = Math.abs(diff1) > 0.001 ? ` <span class="${diffClass1}">(${sign1}${formatNumber(diff1)})</span>` : '';
+                    ring1HTML += `<li>${statName}: ${formatNumber(hoveredValue)}${diffSpan1}</li>`;
+                }
+                if(equippedItem2) {
+                    const diff2 = hoveredValue - (equippedItem2.stats[statKey] || 0);
+                    const diffClass2 = diff2 > 0 ? 'stat-better' : 'stat-worse';
+                    const sign2 = diff2 > 0 ? '+' : '';
+                    const diffSpan2 = Math.abs(diff2) > 0.001 ? ` <span class="${diffClass2}">(${sign2}${formatNumber(diff2)})</span>` : '';
+                    ring2HTML += `<li>${statName}: ${formatNumber(hoveredValue)}${diffSpan2}</li>`;
+                }
+            });
+            ring1HTML += '</ul>';
+            ring2HTML += '</ul>';
+            return `${headerHTML}
+                    <div class="tooltip-ring-comparison">
+                        <div>
+                            <h5>vs. ${equippedItem ? equippedItem.name : "Empty Slot"}</h5>
+                            ${equippedItem ? ring1HTML : '<ul><li>-</li></ul>'}
+                        </div>
+                        <div>
+                            <h5>vs. ${equippedItem2 ? equippedItem2.name : "Empty Slot"}</h5>
+                            ${equippedItem2 ? ring2HTML : '<ul><li>-</li></ul>'}
+                        </div>
+                    </div>`;
+        }
+        
         if (!equippedItem) {
             let statsHTML = '<ul>';
             for (const statKey in hoveredItem.stats) {
@@ -523,6 +618,7 @@ document.addEventListener('DOMContentLoaded', () => {
             statsHTML += '</ul>';
             return headerHTML + statsHTML;
         }
+
         const allStatKeys = new Set([...Object.keys(hoveredItem.stats), ...Object.keys(equippedItem.stats)]);
         let statsHTML = '<ul>';
         allStatKeys.forEach(statKey => {
@@ -540,44 +636,55 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function setupTooltipListeners() {
+        const showTooltip = (item, element) => {
+            if (!item) return;
+
+            // --- Fallback for legacy items without a baseId ---
+            if (!item.baseId) {
+                const baseName = item.name.split(' ').slice(1).join(' ');
+                const foundKey = Object.keys(ITEMS).find(key => ITEMS[key].name === baseName);
+                if (foundKey) item.baseId = foundKey;
+            }
+
+            elements.tooltipEl.className = 'hidden';
+            elements.tooltipEl.classList.add(item.rarity);
+
+            if (isShiftPressed && item.baseId) {
+                const itemBase = ITEMS[item.baseId];
+                if (itemBase) {
+                    elements.tooltipEl.innerHTML = createBlueprintComparisonTooltipHTML(item, itemBase);
+                }
+            } else {
+                if (item.type === 'ring') {
+                    elements.tooltipEl.innerHTML = createTooltipHTML(item, gameState.equipment.ring1, gameState.equipment.ring2);
+                } else {
+                    const equippedItem = gameState.equipment[item.type];
+                    elements.tooltipEl.innerHTML = createTooltipHTML(item, equippedItem);
+                }
+            }
+
+            const rect = element.getBoundingClientRect();
+            elements.tooltipEl.style.left = `${rect.right + 10}px`;
+            elements.tooltipEl.style.top = `${rect.top}px`;
+            elements.tooltipEl.classList.remove('hidden');
+        };
+
         elements.inventorySlotsEl.addEventListener('mouseover', (event) => {
             if (!(event.target instanceof Element)) return;
             const itemWrapper = event.target.closest('.item-wrapper');
             if (!(itemWrapper instanceof HTMLElement) || !itemWrapper.dataset.index) return;
             const index = parseInt(itemWrapper.dataset.index, 10);
-            const inventoryItem = gameState.inventory[index];
-            if (!inventoryItem) return;
-            elements.tooltipEl.className = 'hidden';
-            elements.tooltipEl.classList.add(inventoryItem.rarity);
-            let slotToCompare = inventoryItem.type;
-            if (slotToCompare === 'ring') {
-                if (!gameState.equipment.ring1) slotToCompare = 'ring1'; 
-                else if (!gameState.equipment.ring2) slotToCompare = 'ring2';
-                else slotToCompare = 'ring1';
-            }
-            const equippedItem = gameState.equipment[slotToCompare];
-            const rect = itemWrapper.getBoundingClientRect();
-            elements.tooltipEl.style.left = `${rect.right + 10}px`;
-            elements.tooltipEl.style.top = `${rect.top}px`;
-            elements.tooltipEl.innerHTML = createTooltipHTML(inventoryItem, equippedItem);
-            elements.tooltipEl.classList.remove('hidden');
+            showTooltip(gameState.inventory[index], itemWrapper);
         });
         elements.inventorySlotsEl.addEventListener('mouseout', () => elements.tooltipEl.classList.add('hidden'));
+    
         const equipmentSlots = document.getElementById('equipment-paperdoll');
         equipmentSlots.addEventListener('mouseover', (event) => {
             if (!(event.target instanceof Element)) return;
             const slotEl = event.target.closest('.equipment-slot');
             if (!(slotEl instanceof HTMLElement)) return;
             const slotName = slotEl.id.replace('slot-', '');
-            const equippedItem = gameState.equipment[slotName];
-            if (!equippedItem) return;
-            elements.tooltipEl.className = 'hidden';
-            elements.tooltipEl.classList.add(equippedItem.rarity);
-            const rect = slotEl.getBoundingClientRect();
-            elements.tooltipEl.style.left = `${rect.right + 10}px`;
-            elements.tooltipEl.style.top = `${rect.top}px`;
-            elements.tooltipEl.innerHTML = createTooltipHTML(equippedItem, null); 
-            elements.tooltipEl.classList.remove('hidden');
+            showTooltip(gameState.equipment[slotName], slotEl);
         });
         equipmentSlots.addEventListener('mouseout', () => elements.tooltipEl.classList.add('hidden'));
     }
@@ -620,13 +727,16 @@ document.addEventListener('DOMContentLoaded', () => {
             const itemBase = currentMonster.data.lootTable[lootIndex]?.item;
             if (!itemBase) return;
             elements.tooltipEl.className = 'hidden';
+            
+            // For loot table, Shift shows a comparison against equipped, regular hover shows the blueprint.
             if (isShiftPressed) {
                 let slotToCompare = itemBase.type;
                 if (slotToCompare === 'ring') {
-                    slotToCompare = 'ring1'; 
+                     elements.tooltipEl.innerHTML = ui.createLootComparisonTooltipHTML(itemBase, gameState.equipment.ring1, gameState.equipment.ring2);
+                } else {
+                    const equippedItem = gameState.equipment[slotToCompare];
+                    elements.tooltipEl.innerHTML = ui.createLootComparisonTooltipHTML(itemBase, equippedItem);
                 }
-                const equippedItem = gameState.equipment[slotToCompare];
-                elements.tooltipEl.innerHTML = ui.createLootComparisonTooltipHTML(itemBase, equippedItem);
             } else {
                 elements.tooltipEl.innerHTML = ui.createLootTableTooltipHTML(itemBase);
             }
@@ -787,17 +897,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (savedData) {
             const loadedState = JSON.parse(savedData);
             const baseState = getDefaultGameState();
-            gameState = {
-                ...baseState, ...loadedState,
-                hero: { ...baseState.hero, ...(loadedState.hero || {}), attributes: { ...baseState.hero.attributes, ...(loadedState.hero?.attributes || {}) } },
-                upgrades: { ...baseState.upgrades, ...(loadedState.upgrades || {}) },
-                equipment: { ...baseState.equipment, ...(loadedState.equipment || {}) },
-                absorbedStats: { ...baseState.absorbedStats, ...(loadedState.absorbedStats || {}) },
-                monster: { ...baseState.monster, ...(loadedState.monster || {}) },
-                presets: loadedState.presets || baseState.presets,
-                isAutoProgressing: loadedState.isAutoProgressing !== undefined ? loadedState.isAutoProgressing : true,
-                currentRealmIndex: loadedState.currentRealmIndex || 0,
-            };
+            gameState = { ...baseState, ...loadedState, hero: { ...baseState.hero, ...(loadedState.hero || {}), attributes: { ...baseState.hero.attributes, ...(loadedState.hero?.attributes || {}) } }, upgrades: { ...baseState.upgrades, ...(loadedState.upgrades || {}) }, equipment: { ...baseState.equipment, ...(loadedState.equipment || {}) }, absorbedStats: { ...baseState.absorbedStats, ...(loadedState.absorbedStats || {}) }, monster: { ...baseState.monster, ...(loadedState.monster || {}) }, presets: loadedState.presets || baseState.presets, isAutoProgressing: loadedState.isAutoProgressing !== undefined ? loadedState.isAutoProgressing : true, currentRealmIndex: loadedState.currentRealmIndex || 0, };
         } else {
             gameState = getDefaultGameState();
         }

@@ -588,3 +588,21 @@ body.salvage-mode-active #inventory-slots .item:not(.locked-item) { cursor: poin
     max-width: none;
     aspect-ratio: 400 / 600;
 }
+
+/* ADD THESE NEW RULES */
+.equipment-slot.ring-equip-pending {
+    border-color: #f1c40f;
+    box-shadow: 0 0 15px #f1c40f;
+    animation: pulse 2s infinite;
+}
+
+#item-tooltip .tooltip-ring-comparison {
+    display: flex;
+    gap: 15px;
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid #4a637e;
+}
+#item-tooltip .tooltip-ring-comparison > div {
+    flex: 1;
+}

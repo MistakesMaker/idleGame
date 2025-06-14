@@ -8,17 +8,19 @@ import { getXpForNextLevel, getUpgradeCost } from './utils.js';
  * Equips an item from the inventory.
  * @param {object} gameState - The main game state object.
  * @param {number} inventoryIndex - The index of the item in the inventory.
+ * @returns {{isPendingRing: boolean, item: object|null}} Returns true if the equip is pending user choice for a ring slot.
  */
 export function equipItem(gameState, inventoryIndex) {
     const item = gameState.inventory[inventoryIndex];
-    if (!item) return;
+    if (!item) return { isPendingRing: false, item: null };
 
     let targetSlot = item.type;
     if (item.type === 'ring') {
         if (!gameState.equipment.ring1) targetSlot = 'ring1';
         else if (!gameState.equipment.ring2) targetSlot = 'ring2';
         else {
-            return;
+            // If both rings are full, we don't auto-equip. Signal that it's pending.
+            return { isPendingRing: true, item: item };
         }
     }
 
@@ -28,12 +30,31 @@ export function equipItem(gameState, inventoryIndex) {
     }
     gameState.equipment[targetSlot] = item;
     gameState.inventory.splice(inventoryIndex, 1);
+    return { isPendingRing: false, item: null };
 }
 
 /**
- * Unequips an item from an equipment slot back to the inventory.
+ * Equips a pending ring to a specific slot.
  * @param {object} gameState - The main game state object.
- * @param {string} slotName - The name of the equipment slot.
+ * @param {object} pendingRing - The ring item waiting to be equipped.
+ * @param {string} targetSlot - The specific ring slot ('ring1' or 'ring2').
+ */
+export function equipRing(gameState, pendingRing, targetSlot) {
+    // Find and remove the pending ring from inventory
+    const inventoryIndex = gameState.inventory.findIndex(invItem => invItem.id === pendingRing.id);
+    if (inventoryIndex === -1) return; // Ring not found in inventory anymore
+
+    const currentEquipped = gameState.equipment[targetSlot];
+    if (currentEquipped) {
+        gameState.inventory.push(currentEquipped);
+    }
+    gameState.equipment[targetSlot] = pendingRing;
+    gameState.inventory.splice(inventoryIndex, 1);
+}
+
+
+/**
+ * Unequips an item from an equipment slot back to the inventory.
  */
 export function unequipItem(gameState, slotName) {
     const item = gameState.equipment[slotName];
@@ -44,8 +65,6 @@ export function unequipItem(gameState, slotName) {
 
 /**
  * Spends an attribute point on a given attribute.
- * @param {object} gameState - The main game state object.
- * @param {string} attribute - The attribute to increase ('strength', 'agility', 'luck').
  */
 export function spendAttributePoint(gameState, attribute) {
     if (gameState.hero.attributePoints > 0) {
@@ -56,9 +75,6 @@ export function spendAttributePoint(gameState, attribute) {
 
 /**
  * Adds experience to the hero, handling level-ups.
- * @param {object} gameState - The main game state object.
- * @param {number} amount - The amount of XP to gain.
- * @returns {Array<string>} An array of log messages for level-ups.
  */
 export function gainXP(gameState, amount) {
     const levelUpLogs = [];
@@ -77,10 +93,6 @@ export function gainXP(gameState, amount) {
 
 /**
  * Buys a single gold upgrade.
- * @param {object} gameState - The main game state object.
- * @param {string} upgradeType - The type of upgrade ('clickDamage' or 'dps').
- * @param {number} cost - The calculated cost of the upgrade.
- * @returns {{success: boolean, message: string}} Result of the purchase.
  */
 export function buyUpgrade(gameState, upgradeType, cost) {
     if (gameState.gold >= cost) {
@@ -94,9 +106,6 @@ export function buyUpgrade(gameState, upgradeType, cost) {
 
 /**
  * Buys the maximum possible levels for a gold upgrade.
- * @param {object} gameState - The main game state object.
- * @param {string} upgradeType - The type of upgrade ('clickDamage' or 'dps').
- * @returns {{levelsBought: number}} The number of levels successfully purchased.
  */
 export function buyMaxUpgrade(gameState, upgradeType) {
     let gold = gameState.gold;
@@ -124,9 +133,6 @@ export function buyMaxUpgrade(gameState, upgradeType) {
 
 /**
  * Buys a loot crate with scrap.
- * @param {object} gameState - The main game state object.
- * @param {function} generateItemFn - The generateItem function from game_logic.
- * @returns {{success: boolean, message: string, item: object|null}} Result of the purchase.
  */
 export function buyLootCrate(gameState, generateItemFn) {
     const cost = 50;
@@ -177,15 +183,11 @@ export function buyLootCrate(gameState, generateItemFn) {
 
 /**
  * Salvages selected items for scrap.
- * @param {object} gameState - The main game state object.
- * @param {object} salvageMode - The salvage mode state object.
- * @returns {{count: number, scrapGained: number}} The result of the salvage operation.
  */
 export function salvageSelectedItems(gameState, salvageMode) {
     if (salvageMode.selections.length === 0) {
         return { count: 0, scrapGained: 0 };
     }
-
     let totalScrapGained = 0;
     const selectedCount = salvageMode.selections.length;
     salvageMode.selections.sort((a, b) => b - a);
@@ -204,15 +206,11 @@ export function salvageSelectedItems(gameState, salvageMode) {
 
 /**
  * Salvages all non-locked items of a specific rarity.
- * @param {object} gameState - The main game state object.
- * @param {string} rarityToSalvage - The rarity to salvage (e.g., 'common').
- * @returns {{count: number, scrapGained: number}} The result of the salvage operation.
  */
 export function salvageByRarity(gameState, rarityToSalvage) {
     let scrapGained = 0;
     let itemsSalvagedCount = 0;
     const itemsToKeep = [];
-
     gameState.inventory.forEach(item => {
         if (item.rarity === rarityToSalvage && !item.locked) {
             const rarityIndex = rarities.indexOf(item.rarity);
@@ -222,21 +220,16 @@ export function salvageByRarity(gameState, rarityToSalvage) {
             itemsToKeep.push(item);
         }
     });
-
     if (itemsSalvagedCount > 0) {
         gameState.inventory = itemsToKeep;
         gameState.scrap += scrapGained;
     }
-
     return { count: itemsSalvagedCount, scrapGained };
 }
 
 
 /**
  * Toggles the lock state of an inventory item.
- * @param {object} gameState - The main game state object.
- * @param {number} inventoryIndex - The index of the item.
- * @returns {string} A log message.
  */
 export function toggleItemLock(gameState, inventoryIndex) {
     const item = gameState.inventory[inventoryIndex];
@@ -249,27 +242,21 @@ export function toggleItemLock(gameState, inventoryIndex) {
 
 /**
  * Activates a given equipment preset.
- * @param {object} gameState - The main game state object.
- * @param {number} presetIndex - The index of the preset to activate.
  */
 export function activatePreset(gameState, presetIndex) {
     gameState.presets[gameState.activePresetIndex].equipment = { ...gameState.equipment };
     const newPresetEquipment = gameState.presets[presetIndex].equipment;
     const itemsToUnequip = { ...gameState.equipment };
-
     for (const slot in gameState.equipment) {
         gameState.equipment[slot] = null;
     }
-
     for (const slot in itemsToUnequip) {
         if (itemsToUnequip[slot]) {
             gameState.inventory.push(itemsToUnequip[slot]);
         }
     }
-
     const newInventory = [];
     const presetEquipmentCopy = { ...newPresetEquipment };
-
     gameState.inventory.forEach(invItem => {
         let equipped = false;
         for (const slot in presetEquipmentCopy) {
@@ -285,8 +272,6 @@ export function activatePreset(gameState, presetIndex) {
             newInventory.push(invItem);
         }
     });
-
     gameState.inventory = newInventory;
     gameState.activePresetIndex = presetIndex;
 }
-// --- END OF FILE player_actions.js ---
