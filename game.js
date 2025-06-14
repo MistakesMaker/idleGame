@@ -272,6 +272,20 @@ document.addEventListener('DOMContentLoaded', () => {
         elements.modalBackdropEl.classList.remove('hidden');
     }
 
+    function showRingSelectionModal(pendingRing) {
+        const { ringSelectionModalBackdrop, ringSelectionSlot1, ringSelectionSlot2 } = elements;
+        
+        ringSelectionSlot1.innerHTML = ui.createItemHTML(gameState.equipment.ring1, false);
+        ringSelectionSlot2.innerHTML = ui.createItemHTML(gameState.equipment.ring2, false);
+
+        ringSelectionModalBackdrop.classList.remove('hidden');
+    }
+
+    function hideRingSelectionModal() {
+        elements.ringSelectionModalBackdrop.classList.add('hidden');
+        pendingRingEquip = null;
+    }
+
     function setupEventListeners() {
         window.addEventListener('keydown', (e) => {
             if (e.key === 'Shift' && !isShiftPressed) {
@@ -374,11 +388,6 @@ document.addEventListener('DOMContentLoaded', () => {
             const wrapper = target.closest('.item-wrapper');
             if (!(wrapper instanceof HTMLElement) || !wrapper.dataset.index) return;
             
-            if (pendingRingEquip) {
-                pendingRingEquip = null;
-                document.querySelectorAll('.ring-equip-pending').forEach(el => el.classList.remove('ring-equip-pending'));
-            }
-
             const index = parseInt(wrapper.dataset.index, 10);
             const item = gameState.inventory[index];
             if (!item) return;
@@ -386,6 +395,8 @@ document.addEventListener('DOMContentLoaded', () => {
             if (target.classList.contains('lock-icon')) {
                 const message = player.toggleItemLock(gameState, index);
                 if (message) logMessage(elements.gameLogEl, message);
+                updateAll();
+                autoSave();
             } else if (salvageMode.active) {
                 if (item.locked) { logMessage(elements.gameLogEl, "This item is locked and cannot be salvaged.", 'rare'); return; }
                 const selectionIndex = salvageMode.selections.indexOf(index);
@@ -395,40 +406,59 @@ document.addEventListener('DOMContentLoaded', () => {
                     salvageMode.selections.push(index);
                 }
                 document.getElementById('salvage-count').textContent = salvageMode.selections.length.toString();
+                updateAll();
             } else {
                 const result = player.equipItem(gameState, index);
                 if (result.isPendingRing) {
                     pendingRingEquip = result.item;
-                    logMessage(elements.gameLogEl, `Choose a ring slot to equip ${pendingRingEquip.name}.`, 'uncommon');
-                    document.getElementById('slot-ring1')?.classList.add('ring-equip-pending');
-                    document.getElementById('slot-ring2')?.classList.add('ring-equip-pending');
+                    showRingSelectionModal(pendingRingEquip);
                 } else {
                     recalculateStats();
+                    updateAll();
+                    autoSave();
                 }
             }
-            updateAll();
-            autoSave();
         });
+        
         document.getElementById('equipment-paperdoll').addEventListener('click', (event) => {
             const target = event.target;
             if (!(target instanceof Element)) return;
-            const slotElement = target.closest('[data-slot-name]');
-            if (!(slotElement instanceof HTMLElement) || !slotElement.dataset.slotName) return;
-
-            const slotName = slotElement.dataset.slotName;
-
-            if (pendingRingEquip && (slotName === 'ring1' || slotName === 'ring2')) {
-                player.equipRing(gameState, pendingRingEquip, slotName);
-                pendingRingEquip = null;
-                document.querySelectorAll('.ring-equip-pending').forEach(el => el.classList.remove('ring-equip-pending'));
-            } else {
-                player.unequipItem(gameState, slotName);
-            }
-
+            const slotElement = target.closest('.equipment-slot');
+            if (!slotElement) return;
+            const slotName = slotElement.id.replace('slot-', '');
+            player.unequipItem(gameState, slotName);
             recalculateStats();
             updateAll();
             autoSave();
         });
+
+        // Event listeners for the new ring selection modal
+        elements.ringSelectionSlot1.addEventListener('click', () => {
+            if (pendingRingEquip) {
+                player.equipRing(gameState, pendingRingEquip, 'ring1');
+                recalculateStats();
+                updateAll();
+                autoSave();
+                hideRingSelectionModal();
+            }
+        });
+        elements.ringSelectionSlot2.addEventListener('click', () => {
+            if (pendingRingEquip) {
+                player.equipRing(gameState, pendingRingEquip, 'ring2');
+                recalculateStats();
+                updateAll();
+                autoSave();
+                hideRingSelectionModal();
+            }
+        });
+        elements.ringSelectionCancelBtn.addEventListener('click', hideRingSelectionModal);
+        elements.ringSelectionModalBackdrop.addEventListener('click', (e) => {
+            if (e.target === elements.ringSelectionModalBackdrop) {
+                hideRingSelectionModal();
+            }
+        });
+
+
         document.getElementById('reset-game-btn').addEventListener('click', resetGame);
         elements.backToWorldMapBtnEl.addEventListener('click', () => { currentMap = 'world'; renderMap(); });
         elements.modalCloseBtnEl.addEventListener('click', () => elements.modalBackdropEl.classList.add('hidden'));
@@ -892,7 +922,16 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function main() {
-        elements = ui.initDOMElements();
+        // We need to add the new modal elements to our `elements` object
+        const baseElements = ui.initDOMElements();
+        elements = {
+            ...baseElements,
+            ringSelectionModalBackdrop: document.getElementById('ring-selection-modal-backdrop'),
+            ringSelectionSlot1: document.getElementById('ring-selection-slot1'),
+            ringSelectionSlot2: document.getElementById('ring-selection-slot2'),
+            ringSelectionCancelBtn: document.getElementById('ring-selection-cancel-btn')
+        };
+        
         const savedData = localStorage.getItem('idleRPGSaveData');
         if (savedData) {
             const loadedState = JSON.parse(savedData);

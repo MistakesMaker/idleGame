@@ -207,6 +207,22 @@
         </div>
     </div>
 
+    <!-- ADD THIS NEW MODAL FOR RING SELECTION -->
+    <div id="ring-selection-modal-backdrop" class="hidden">
+        <div id="ring-selection-modal">
+            <h3 id="ring-selection-title">Replace Which Ring?</h3>
+            <div id="ring-selection-options">
+                <div id="ring-selection-slot1" class="ring-selection-option" data-slot="ring1">
+                    <!-- Content for ring 1 will be inserted here by JS -->
+                </div>
+                <div id="ring-selection-slot2" class="ring-selection-option" data-slot="ring2">
+                    <!-- Content for ring 2 will be inserted here by JS -->
+                </div>
+            </div>
+            <button id="ring-selection-cancel-btn">Cancel</button>
+        </div>
+    </div>
+
     <!-- Scripts -->
     <script src="/socket.io/socket.io.js"></script>
     <script type="module" src="game.js"></script>
