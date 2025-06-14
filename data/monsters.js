@@ -23,7 +23,7 @@ export const MONSTERS = {
     //Overworld basic monsters
     SLIME: {
         name: 'Slime',
-        image: 'images/slime.png',
+        image: 'images/monsters/slime.png',
         dropChance: 2.0,
         lootTable: [
             { item: ITEMS.RUSTY_SWORD, weight: 1 },
@@ -41,7 +41,7 @@ export const MONSTERS = {
     },
     BAT: {
         name: 'Bat',
-        image: 'images/slime.png',
+        image: 'images/monsters/bat.png',
         dropChance: 2.0,
         lootTable: [
             { item: ITEMS.RING_OF_WEALTH, weight: 1 }
