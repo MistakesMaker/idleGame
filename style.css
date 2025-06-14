@@ -369,12 +369,31 @@ button:disabled { background: #7f8c8d; cursor: not-allowed; border-bottom: 2px s
 @keyframes pulse { 0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(241, 196, 15, 0.7); } 70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(241, 196, 15, 0); } 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(241, 196, 15, 0); } }
 
 #upgrades-area { margin-top: 20px; padding-top: 15px; border-top: 1px solid #4a637e; }
-.upgrade-button { background: linear-gradient(145deg, #2c3e50, #34495e); border: 1px solid #7f8c8d; padding: 10px; margin-bottom: 10px; border-radius: 5px; cursor: pointer; text-align: center; transition: all 0.2s ease; }
+.upgrade-button { background: linear-gradient(145deg, #2c3e50, #34495e); border: 1px solid #7f8c8d; padding: 10px; margin-bottom: 10px; border-radius: 5px; cursor: pointer; text-align: center; transition: all 0.2s ease; position: relative; padding-right: 60px; /* Make space for the max button */ }
 .upgrade-button:hover { border-color: #f1c40f; transform: scale(1.02); }
 .upgrade-button.disabled { background: #566573; color: #95a5a6; cursor: not-allowed; border-color: #566573; }
 .upgrade-button.disabled:hover { transform: none; }
+.upgrade-button.disabled .buy-max-btn { background-color: #95a5a6; cursor: not-allowed; }
 .upgrade-button p { margin: 0 0 5px 0; font-weight: bold; }
 .inventory-actions { display: flex; flex-wrap: wrap; justify-content: space-around; margin-bottom: 15px; }
+
+.buy-max-btn {
+    position: absolute;
+    top: 50%;
+    right: 10px;
+    transform: translateY(-50%);
+    background-color: #f1c40f;
+    color: #1a1a1a;
+    padding: 8px 12px;
+    border-radius: 5px;
+    font-weight: bold;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+.buy-max-btn:hover {
+    background-color: #f39c12;
+}
 
 .item.locked-item { background: linear-gradient(160deg, #445466, #2d3844); }
 .lock-icon { position: absolute; top: 5px; right: 5px; font-size: 1.1em; color: #bdc3c7; text-shadow: 1px 1px 2px #000; padding: 5px; z-index: 10; transition: all 0.2s ease; }

@@ -267,7 +267,6 @@ document.addEventListener('DOMContentLoaded', () => {
             updateAll();
             autoSave();
             
-            // --- UI/UX TWEAK: Switch to the combat tab after selecting a level ---
             const combatTab = document.querySelector('.tab-button[data-view="combat-view"]');
             if (combatTab instanceof HTMLElement) combatTab.click();
         }
@@ -349,7 +348,6 @@ document.addEventListener('DOMContentLoaded', () => {
             } else {
                  logMessage(elements.gameLogEl, "No items selected for salvage.");
             }
-            // Deactivate salvage mode UI
             salvageMode.active = false;
             document.getElementById('salvage-mode-btn').textContent = 'Select to Salvage';
             document.getElementById('salvage-mode-btn').classList.remove('active');
@@ -420,17 +418,44 @@ document.addEventListener('DOMContentLoaded', () => {
         elements.addAgilityBtn.addEventListener('click', () => { player.spendAttributePoint(gameState, 'agility'); recalculateStats(); updateAll(); autoSave(); });
         elements.addLuckBtn.addEventListener('click', () => { player.spendAttributePoint(gameState, 'luck'); recalculateStats(); updateAll(); autoSave(); });
 
-        document.getElementById('upgrade-click-damage').addEventListener('click', () => {
-            const cost = getUpgradeCost('clickDamage', gameState.upgrades.clickDamage);
-            const result = player.buyUpgrade(gameState, 'clickDamage', cost);
-            logMessage(elements.gameLogEl, result.message);
-            if (result.success) { recalculateStats(); updateAll(); autoSave(); }
+        document.getElementById('upgrade-click-damage').addEventListener('click', (e) => {
+            if (!(e.target instanceof Element)) return;
+            if (e.target.classList.contains('buy-max-btn')) {
+                const result = player.buyMaxUpgrade(gameState, 'clickDamage');
+                if (result.levelsBought > 0) {
+                    logMessage(elements.gameLogEl, `Bought ${result.levelsBought} Click Damage levels!`);
+                    recalculateStats();
+                    updateAll();
+                    autoSave();
+                } else {
+                    logMessage(elements.gameLogEl, "Not enough gold for even one level!");
+                }
+            } else {
+                const cost = getUpgradeCost('clickDamage', gameState.upgrades.clickDamage);
+                const result = player.buyUpgrade(gameState, 'clickDamage', cost);
+                logMessage(elements.gameLogEl, result.message);
+                if (result.success) { recalculateStats(); updateAll(); autoSave(); }
+            }
         });
-        document.getElementById('upgrade-dps').addEventListener('click', () => {
-            const cost = getUpgradeCost('dps', gameState.upgrades.dps);
-            const result = player.buyUpgrade(gameState, 'dps', cost);
-            logMessage(elements.gameLogEl, result.message);
-            if (result.success) { recalculateStats(); updateAll(); autoSave(); }
+
+        document.getElementById('upgrade-dps').addEventListener('click', (e) => {
+            if (!(e.target instanceof Element)) return;
+            if (e.target.classList.contains('buy-max-btn')) {
+                const result = player.buyMaxUpgrade(gameState, 'dps');
+                if (result.levelsBought > 0) {
+                    logMessage(elements.gameLogEl, `Bought ${result.levelsBought} DPS levels!`);
+                    recalculateStats();
+                    updateAll();
+                    autoSave();
+                } else {
+                    logMessage(elements.gameLogEl, "Not enough gold for even one level!");
+                }
+            } else {
+                const cost = getUpgradeCost('dps', gameState.upgrades.dps);
+                const result = player.buyUpgrade(gameState, 'dps', cost);
+                logMessage(elements.gameLogEl, result.message);
+                if (result.success) { recalculateStats(); updateAll(); autoSave(); }
+            }
         });
 
         document.querySelectorAll('.preset-btn').forEach((btn, index) => {
@@ -481,7 +506,7 @@ document.addEventListener('DOMContentLoaded', () => {
         setupPrestigeListeners();
     }
     
-    // --- Complex Listeners (kept in main file for access to shared state) ---
+    // ... (All other functions like createTooltipHTML, setupRaidListeners, etc. are unchanged) ...
     function createTooltipHTML(hoveredItem, equippedItem) {
         const headerHTML = `<div class="item-header"><span class="${hoveredItem.rarity}">${hoveredItem.name}</span></div>`;
         

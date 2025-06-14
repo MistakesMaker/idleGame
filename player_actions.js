@@ -1,8 +1,8 @@
 // --- START OF FILE player_actions.js ---
 
-import { rarities } from './game.js'; // We'll export rarities from game.js
+import { rarities } from './game.js';
 import { REALMS } from './data/realms.js';
-import { getXpForNextLevel } from './utils.js';
+import { getXpForNextLevel, getUpgradeCost } from './utils.js';
 
 /**
  * Equips an item from the inventory.
@@ -14,10 +14,14 @@ export function equipItem(gameState, inventoryIndex) {
     if (!item) return;
 
     let targetSlot = item.type;
+    // Ring logic is now handled in the event listener to allow player choice
     if (item.type === 'ring') {
         if (!gameState.equipment.ring1) targetSlot = 'ring1';
         else if (!gameState.equipment.ring2) targetSlot = 'ring2';
-        else targetSlot = 'ring1'; // Default to replacing ring1
+        else {
+            // If both rings are full, we don't auto-equip. The UI will prompt the user.
+            return;
+        }
     }
 
     const currentEquipped = gameState.equipment[targetSlot];
@@ -74,7 +78,7 @@ export function gainXP(gameState, amount) {
 }
 
 /**
- * Buys a gold upgrade.
+ * Buys a single gold upgrade.
  * @param {object} gameState - The main game state object.
  * @param {string} upgradeType - The type of upgrade ('clickDamage' or 'dps').
  * @param {number} cost - The calculated cost of the upgrade.
@@ -88,6 +92,36 @@ export function buyUpgrade(gameState, upgradeType, cost) {
     } else {
         return { success: false, message: "Not enough gold!" };
     }
+}
+
+/**
+ * Buys the maximum possible levels for a gold upgrade.
+ * @param {object} gameState - The main game state object.
+ * @param {string} upgradeType - The type of upgrade ('clickDamage' or 'dps').
+ * @returns {{levelsBought: number}} The number of levels successfully purchased.
+ */
+export function buyMaxUpgrade(gameState, upgradeType) {
+    let gold = gameState.gold;
+    let currentLevel = gameState.upgrades[upgradeType];
+    let levelsBought = 0;
+    
+    while (true) {
+        const cost = getUpgradeCost(upgradeType, currentLevel);
+        if (gold >= cost) {
+            gold -= cost;
+            currentLevel++;
+            levelsBought++;
+        } else {
+            break; 
+        }
+    }
+
+    if (levelsBought > 0) {
+        gameState.gold = gold;
+        gameState.upgrades[upgradeType] = currentLevel;
+    }
+
+    return { levelsBought };
 }
 
 /**
