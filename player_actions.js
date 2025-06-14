@@ -307,7 +307,6 @@ export function combineGems(gameState, craftingGems) {
                     newStats[statKey] = (newStats[statKey] || 0) + parentGem.stats[statKey];
                 }
             }
-            // --- FIX: Correctly combine synergy values ---
             if (parentGem.synergy) {
                 if (!newSynergy) {
                     newSynergy = { ...parentGem.synergy }; // Copy the first synergy
@@ -318,12 +317,13 @@ export function combineGems(gameState, craftingGems) {
             }
         });
 
+        // --- FIX: Dynamic name and icon generation ---
         const newGem = {
             id: Date.now() + Math.random(),
             baseId: `FUSED_T${newTier}`,
-            name: `T${newTier} Gem`,
+            name: `T${newTier} Fused Gem`,
             tier: newTier,
-            icon: 'images/gems/hybrid_gem_t2.png',
+            icon: `images/gems/fused_t${newTier}.png`,
             stats: newStats,
             synergy: newSynergy
         };
