@@ -323,7 +323,7 @@ export function combineGems(gameState, craftingGems) {
             baseId: `FUSED_T${newTier}`,
             name: `T${newTier} Gem`,
             tier: newTier,
-            icon: 'images/gems/hybrid_gem.png',
+            icon: 'images/gems/hybrid_gem_t2.png',
             stats: newStats,
             synergy: newSynergy
         };
