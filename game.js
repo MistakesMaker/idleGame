@@ -58,7 +58,8 @@ document.addEventListener('DOMContentLoaded', () => {
             completedLevels: [],
             isFarming: true,
             isAutoProgressing: true,
-            currentRealmIndex: 0
+            currentRealmIndex: 0,
+            lastSaveTimestamp: null // Add for offline progress
         };
     }
 
@@ -158,10 +159,13 @@ document.addEventListener('DOMContentLoaded', () => {
     function autoSave() {
         elements.saveIndicatorEl.classList.add('visible');
         if (saveTimeout) clearTimeout(saveTimeout);
+        
+        gameState.lastSaveTimestamp = Date.now(); // Update timestamp on save
+        localStorage.setItem('idleRPGSaveData', JSON.stringify(gameState));
+
         saveTimeout = setTimeout(() => {
             elements.saveIndicatorEl.classList.remove('visible');
         }, 2000);
-        localStorage.setItem('idleRPGSaveData', JSON.stringify(gameState));
     }
 
     function resetGame() {
@@ -284,6 +288,79 @@ document.addEventListener('DOMContentLoaded', () => {
     function hideRingSelectionModal() {
         elements.ringSelectionModalBackdrop.classList.add('hidden');
         pendingRingEquip = null;
+    }
+
+    function calculateOfflineProgress() {
+        if (!gameState.lastSaveTimestamp) return;
+
+        const offlineDurationSeconds = (Date.now() - gameState.lastSaveTimestamp) / 1000;
+        if (offlineDurationSeconds < 10) return;
+
+        recalculateStats();
+
+        if (playerStats.totalDps <= 0) return;
+
+        const level = gameState.currentFightingLevel;
+        
+        const { newMonster, newMonsterState } = logic.generateMonster(level);
+        const monsterHp = newMonsterState.maxHp;
+        const monsterDropChance = newMonster.data.dropChance;
+        
+        const timeToKill = monsterHp / playerStats.totalDps;
+        const killsPerSecond = 1 / timeToKill;
+
+        const tier = Math.floor((level - 1) / 10);
+        const difficultyResetFactor = 4;
+        const effectiveLevel = level - (tier * difficultyResetFactor);
+        const goldExponent = 1.17;
+        const baseGold = 15;
+        let goldPerKill = Math.ceil(baseGold * Math.pow(goldExponent, effectiveLevel) * (1 + (playerStats.bonusGold / 100)));
+        let xpPerKill = level * 5;
+        if (isBigBossLevel(level) || isBossLevel(level)) {
+            xpPerKill *= 5;
+            goldPerKill *= 5;
+        }
+
+        const goldPerSecond = goldPerKill * killsPerSecond;
+        const xpPerSecond = xpPerKill * killsPerSecond;
+
+        const AVERAGE_SCRAP_VALUE = 2;
+        const dropsPerSecond = (monsterDropChance / 100) * killsPerSecond;
+        const scrapPerSecond = dropsPerSecond * AVERAGE_SCRAP_VALUE;
+
+        const totalGoldGained = Math.floor(goldPerSecond * offlineDurationSeconds);
+        const totalXPGained = Math.floor(xpPerSecond * offlineDurationSeconds);
+        const totalScrapGained = Math.floor(scrapPerSecond * offlineDurationSeconds);
+
+        if (totalGoldGained === 0 && totalXPGained === 0 && totalScrapGained === 0) return;
+
+        const startingLevel = gameState.hero.level;
+        gameState.gold += totalGoldGained;
+        gameState.scrap += totalScrapGained;
+        player.gainXP(gameState, totalXPGained); // Apply XP and let it handle level-ups
+        const finalLevel = gameState.hero.level;
+
+        recalculateStats();
+
+        const hours = Math.floor(offlineDurationSeconds / 3600);
+        const minutes = Math.floor((offlineDurationSeconds % 3600) / 60);
+        elements.offlineTime.textContent = `${hours} hours and ${minutes} minutes`;
+        elements.offlineGold.textContent = formatNumber(totalGoldGained);
+        elements.offlineXp.textContent = formatNumber(totalXPGained);
+        elements.offlineScrap.textContent = formatNumber(totalScrapGained);
+        
+        // --- NEW: Clear previous level-up messages and add a summary ---
+        const existingLevelUps = elements.offlineRewards.querySelectorAll('.level-up-summary');
+        existingLevelUps.forEach(el => el.remove());
+
+        if (finalLevel > startingLevel) {
+            const p = document.createElement('p');
+            p.innerHTML = `Leveled Up! (Level ${startingLevel} → Level ${finalLevel})`;
+            p.className = 'legendary level-up-summary'; // Added a class for potential styling
+            elements.offlineRewards.appendChild(p);
+        }
+
+        elements.offlineProgressModalBackdrop.classList.remove('hidden');
     }
 
     function setupEventListeners() {
@@ -432,7 +509,6 @@ document.addEventListener('DOMContentLoaded', () => {
             autoSave();
         });
 
-        // Event listeners for the new ring selection modal
         elements.ringSelectionSlot1.addEventListener('click', () => {
             if (pendingRingEquip) {
                 player.equipRing(gameState, pendingRingEquip, 'ring1');
@@ -458,6 +534,9 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
+        elements.offlineProgressCloseBtn.addEventListener('click', () => {
+            elements.offlineProgressModalBackdrop.classList.add('hidden');
+        });
 
         document.getElementById('reset-game-btn').addEventListener('click', resetGame);
         elements.backToWorldMapBtnEl.addEventListener('click', () => { currentMap = 'world'; renderMap(); });
@@ -558,12 +637,6 @@ document.addEventListener('DOMContentLoaded', () => {
         setupPrestigeListeners();
     }
     
-    /**
-     * Creates tooltip HTML comparing an item to its potential stat rolls (blueprint).
-     * @param {object} item - The item instance with actual stats.
-     * @param {object} itemBase - The base item definition from items.js.
-     * @returns {string} The HTML content for the tooltip.
-     */
     function createBlueprintComparisonTooltipHTML(item, itemBase) {
         const headerHTML = `<div class="item-header"><span>${item.name}</span></div>
                             <div class="possible-stats-header">Stat Roll Comparison</div>`;
@@ -586,13 +659,6 @@ document.addEventListener('DOMContentLoaded', () => {
         return headerHTML + statsHTML;
     }
 
-    /**
-     * Creates tooltip HTML comparing a hovered item to one or two equipped items.
-     * @param {object} hoveredItem - The item being hovered over.
-     * @param {object|null} equippedItem - The primary equipped item to compare against.
-     * @param {object|null} [equippedItem2=null] - The secondary equipped item (for rings).
-     * @returns {string} The HTML content for the tooltip.
-     */
     function createTooltipHTML(hoveredItem, equippedItem, equippedItem2 = null) {
         const headerHTML = `<div class="item-header"><span>${hoveredItem.name}</span></div>`;
         
@@ -669,7 +735,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const showTooltip = (item, element) => {
             if (!item) return;
 
-            // --- Fallback for legacy items without a baseId ---
             if (!item.baseId) {
                 const baseName = item.name.split(' ').slice(1).join(' ');
                 const foundKey = Object.keys(ITEMS).find(key => ITEMS[key].name === baseName);
@@ -758,7 +823,6 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!itemBase) return;
             elements.tooltipEl.className = 'hidden';
             
-            // For loot table, Shift shows a comparison against equipped, regular hover shows the blueprint.
             if (isShiftPressed) {
                 let slotToCompare = itemBase.type;
                 if (slotToCompare === 'ring') {
@@ -922,29 +986,50 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function main() {
-        // We need to add the new modal elements to our `elements` object
         const baseElements = ui.initDOMElements();
         elements = {
             ...baseElements,
             ringSelectionModalBackdrop: document.getElementById('ring-selection-modal-backdrop'),
             ringSelectionSlot1: document.getElementById('ring-selection-slot1'),
             ringSelectionSlot2: document.getElementById('ring-selection-slot2'),
-            ringSelectionCancelBtn: document.getElementById('ring-selection-cancel-btn')
+            ringSelectionCancelBtn: document.getElementById('ring-selection-cancel-btn'),
+            offlineProgressModalBackdrop: document.getElementById('offline-progress-modal-backdrop'),
+            offlineProgressCloseBtn: document.getElementById('offline-progress-close-btn'),
+            offlineTime: document.getElementById('offline-time'),
+            offlineGold: document.getElementById('offline-gold'),
+            offlineXp: document.getElementById('offline-xp'),
+            offlineScrap: document.getElementById('offline-scrap'),
+            offlineRewards: document.getElementById('offline-rewards'),
         };
         
         const savedData = localStorage.getItem('idleRPGSaveData');
         if (savedData) {
             const loadedState = JSON.parse(savedData);
             const baseState = getDefaultGameState();
-            gameState = { ...baseState, ...loadedState, hero: { ...baseState.hero, ...(loadedState.hero || {}), attributes: { ...baseState.hero.attributes, ...(loadedState.hero?.attributes || {}) } }, upgrades: { ...baseState.upgrades, ...(loadedState.upgrades || {}) }, equipment: { ...baseState.equipment, ...(loadedState.equipment || {}) }, absorbedStats: { ...baseState.absorbedStats, ...(loadedState.absorbedStats || {}) }, monster: { ...baseState.monster, ...(loadedState.monster || {}) }, presets: loadedState.presets || baseState.presets, isAutoProgressing: loadedState.isAutoProgressing !== undefined ? loadedState.isAutoProgressing : true, currentRealmIndex: loadedState.currentRealmIndex || 0, };
+            gameState = { 
+                ...baseState, 
+                ...loadedState, 
+                hero: { ...baseState.hero, ...(loadedState.hero || {}), attributes: { ...baseState.hero.attributes, ...(loadedState.hero?.attributes || {}) } }, 
+                upgrades: { ...baseState.upgrades, ...(loadedState.upgrades || {}) }, 
+                equipment: { ...baseState.equipment, ...(loadedState.equipment || {}) }, 
+                absorbedStats: { ...baseState.absorbedStats, ...(loadedState.absorbedStats || {}) }, 
+                monster: { ...baseState.monster, ...(loadedState.monster || {}) }, 
+                presets: loadedState.presets || baseState.presets, 
+                isAutoProgressing: loadedState.isAutoProgressing !== undefined ? loadedState.isAutoProgressing : true, 
+                currentRealmIndex: loadedState.currentRealmIndex || 0,
+            };
+            calculateOfflineProgress();
         } else {
             gameState = getDefaultGameState();
         }
+        
         setupEventListeners();
         recalculateStats();
         startNewMonster();
         logMessage(elements.gameLogEl, savedData ? "Saved game loaded!" : "Welcome! Your progress will be saved automatically.");
         updateAll();
+        
+        autoSave(); 
         setInterval(autoSave, 30000);
         setInterval(gameLoop, 1000);
     }
