@@ -115,4 +115,24 @@ export function findFirstLevelOfZone(zone) {
     }
     return firstLevel;
 }
-// --- END OF FILE utils.js ---
+
+/**
+ * Calculates the total stats of an item, including its gems.
+ * @param {object} item The item object.
+ * @returns {Object<string, number>} An object containing the combined stats.
+ */
+export function getCombinedItemStats(item) {
+    if (!item) return {};
+    const combinedStats = { ...(item.stats || {}) };
+
+    if (item.sockets) {
+        for (const gem of item.sockets) {
+            if (gem && gem.stats) {
+                for (const statKey in gem.stats) {
+                    combinedStats[statKey] = (combinedStats[statKey] || 0) + gem.stats[statKey];
+                }
+            }
+        }
+    }
+    return combinedStats;
+}

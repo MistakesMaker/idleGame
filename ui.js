@@ -1,7 +1,7 @@
 // --- START OF FILE ui.js ---
 
 import { STATS } from './data/stat_pools.js';
-import { getXpForNextLevel, getUpgradeCost, formatNumber, findSubZoneByLevel } from './utils.js';
+import { getXpForNextLevel, getUpgradeCost, formatNumber, findSubZoneByLevel, getCombinedItemStats } from './utils.js';
 import { ITEMS } from './data/items.js';
 
 /**
@@ -157,7 +157,8 @@ export function updateUI(elements, gameState, playerStats, currentMonster, salva
         gameState.gems.forEach((gem) => {
             const gemDiv = document.createElement('div');
             gemDiv.innerHTML = createGemHTML(gem);
-            gemSlotsEl.appendChild(gemDiv.firstChild); // Append the actual gem element, not the wrapper
+            const firstChild = gemDiv.firstChild;
+            if(firstChild) gemSlotsEl.appendChild(firstChild);
         });
     } else {
         gemSlotsEl.innerHTML = '<p>No gems yet. Find them as rare drops!</p>';
@@ -206,7 +207,6 @@ export function updateUI(elements, gameState, playerStats, currentMonster, salva
 
 export function createGemTooltipHTML(gem) {
     const name = gem.name || `T${gem.tier} Gem`;
-    // Add the tier to the name for fused gems
     const displayName = gem.tier > 1 ? `T${gem.tier} Fused Gem` : name;
     const headerHTML = `<div class="item-header gem-tooltip"><span>${displayName}</span></div>`;
     let statsHTML = '<ul>';
@@ -267,10 +267,10 @@ export function createLootComparisonTooltipHTML(potentialItem, equippedItem, equ
 
         let equipped1StatsHTML = '<ul>';
         if (equippedItem) {
-            for (const statKey in equippedItem.stats) {
+            for (const statKey in getCombinedItemStats(equippedItem)) {
                 const statInfo = Object.values(STATS).find(s => s.key === statKey);
                 const statName = statInfo ? statInfo.name : statKey;
-                equipped1StatsHTML += `<li>+${formatNumber(equippedItem.stats[statKey])} ${statName}</li>`;
+                equipped1StatsHTML += `<li>+${formatNumber(getCombinedItemStats(equippedItem)[statKey])} ${statName}</li>`;
             }
         } else {
             equipped1StatsHTML += `<li>Nothing equipped</li>`;
@@ -279,10 +279,10 @@ export function createLootComparisonTooltipHTML(potentialItem, equippedItem, equ
 
         let equipped2StatsHTML = '<ul>';
         if (equippedItem2) {
-             for (const statKey in equippedItem2.stats) {
+             for (const statKey in getCombinedItemStats(equippedItem2)) {
                 const statInfo = Object.values(STATS).find(s => s.key === statKey);
                 const statName = statInfo ? statInfo.name : statKey;
-                equipped2StatsHTML += `<li>+${formatNumber(equippedItem2.stats[statKey])} ${statName}</li>`;
+                equipped2StatsHTML += `<li>+${formatNumber(getCombinedItemStats(equippedItem2)[statKey])} ${statName}</li>`;
             }
         } else {
             equipped2StatsHTML += `<li>Nothing equipped</li>`;
@@ -307,11 +307,12 @@ export function createLootComparisonTooltipHTML(potentialItem, equippedItem, equ
     }
 
     let equippedStatsHTML = '<ul>';
+    const combinedEquippedStats = getCombinedItemStats(equippedItem);
     if (equippedItem) {
-        for (const statKey in equippedItem.stats) {
+        for (const statKey in combinedEquippedStats) {
             const statInfo = Object.values(STATS).find(s => s.key === statKey);
             const statName = statInfo ? statInfo.name : statKey;
-            equippedStatsHTML += `<li>+${formatNumber(equippedItem.stats[statKey])} ${statName}</li>`;
+            equippedStatsHTML += `<li>+${formatNumber(combinedEquippedStats[statKey])} ${statName}</li>`;
         }
     } else {
         equippedStatsHTML += `<li>Nothing equipped</li>`;
@@ -356,14 +357,21 @@ export function createItemHTML(item, isEquipped) {
     }
 
     const lockHTML = `<i class="fas ${item.locked ? 'fa-lock' : 'fa-lock-open'} lock-icon"></i>`;
+    
+    // --- THIS IS THE CRITICAL FIX ---
+    const combinedStats = getCombinedItemStats(item);
     let statsHTML = '<ul>';
-    for (const statKey in item.stats) {
+    for (const statKey in combinedStats) {
         const statInfo = Object.values(STATS).find(s => s.key === statKey);
         const statName = statInfo ? statInfo.name : statKey;
-        const statValue = statInfo.type === 'percent' ? `${item.stats[statKey]}%` : formatNumber(item.stats[statKey]);
+        // Check for 'percent' type to format correctly
+        const value = combinedStats[statKey];
+        const statValue = statInfo && statInfo.type === 'percent' ? `${value.toFixed(1)}%` : formatNumber(value);
         statsHTML += `<li>+${statValue} ${statName}</li>`;
     }
     statsHTML += '</ul>';
+    // --- END OF FIX ---
+    
     const lockedClass = item.locked ? 'locked-item' : '';
     
     return `<div class="item ${item.rarity} ${lockedClass}">
@@ -378,9 +386,11 @@ export function createItemHTML(item, isEquipped) {
 }
 
 export function createGemHTML(gem) {
-    return `<div class="gem" data-gem-id="${gem.id}">
-                <img src="${gem.icon}" alt="${gem.name}">
-           </div>`;
+    const gemEl = document.createElement('div');
+    gemEl.className = 'gem';
+    gemEl.dataset.gemId = String(gem.id);
+    gemEl.innerHTML = `<img src="${gem.icon}" alt="${gem.name}">`;
+    return gemEl.outerHTML;
 }
 
 

@@ -317,7 +317,7 @@ export function combineGems(gameState, craftingGems) {
             }
         });
 
-        // --- FIX: Dynamic name and icon generation ---
+        // --- FIX: Add baseId and make name/icon dynamic for fused gems ---
         const newGem = {
             id: Date.now() + Math.random(),
             baseId: `FUSED_T${newTier}`,

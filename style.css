@@ -721,37 +721,45 @@ body.salvage-mode-active #inventory-slots .item:not(.locked-item) { cursor: poin
 }
 
 
-/* --- GEM AND SOCKET STYLES --- */
-
+/* --- START OF CSS FIX --- */
 .item-sockets {
     display: flex;
-    gap: 4px;
+    gap: 5px;
     margin-top: 8px;
     position: relative;
     z-index: 2;
+    padding-left: 5px; /* Give a little space from the edge */
 }
 
 .item-sockets.equipped-sockets {
     position: absolute;
     bottom: 5px;
-    left: 5px;
-    right: 5px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100%;
     justify-content: center;
+    padding-left: 0;
 }
 
 .socket {
-    width: 16px;
-    height: 16px;
+    width: 22px;
+    height: 22px;
     border-radius: 50%;
     border: 1px solid #7f8c8d;
     background-color: rgba(0,0,0,0.5);
     box-shadow: inset 0 0 3px #000;
+    /* Add flex properties to center the content (the gem) */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-shrink: 0; /* Prevent sockets from getting squished */
 }
 
 .socket img {
-    width: 100%;
-    height: 100%;
+    width: 18px;  /* Make the gem image slightly smaller than the socket */
+    height: 18px; /* to create a "setting" or "border" effect. */
 }
+/* --- END OF CSS FIX --- */
 
 #gem-slots {
     display: grid;
@@ -790,7 +798,8 @@ body.salvage-mode-active #inventory-slots .item:not(.locked-item) { cursor: poin
     -webkit-user-drag: none;
 }
 
-#inventory-slots .item.socket-target {
+#inventory-slots .item.socket-target,
+#equipment-paperdoll .equipment-slot.socket-target {
     animation: pulse-green 1.5s infinite;
 }
 

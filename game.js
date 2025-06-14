@@ -5,7 +5,7 @@ import { REALMS } from './data/realms.js';
 import { MONSTERS } from './data/monsters.js';
 import { ITEMS } from './data/items.js';
 import { STATS } from './data/stat_pools.js';
-import { logMessage, formatNumber, getUpgradeCost, findSubZoneByLevel, findFirstLevelOfZone, isBossLevel, isBigBossLevel } from './utils.js';
+import { logMessage, formatNumber, getUpgradeCost, findSubZoneByLevel, findFirstLevelOfZone, isBossLevel, isBigBossLevel, getCombinedItemStats } from './utils.js';
 import * as ui from './ui.js';
 import * as player from './player_actions.js';
 import * as logic from './game_logic.js';
@@ -66,16 +66,6 @@ document.addEventListener('DOMContentLoaded', () => {
         };
     }
 
-    function addStatsFromItem(item) {
-        for (const stat in item.stats) {
-            const value = item.stats[stat];
-            if (stat === STATS.CLICK_DAMAGE.key) playerStats.baseClickDamage += value;
-            if (stat === STATS.DPS.key) playerStats.baseDps += value;
-            if (stat === STATS.GOLD_GAIN.key) playerStats.bonusGold += value;
-            if (stat === STATS.MAGIC_FIND.key) playerStats.magicFind += value;
-        }
-    }
-
     function recalculateStats() {
         const hero = gameState.hero;
         playerStats.baseClickDamage = 1 + (gameState.absorbedStats?.clickDamage || 0);
@@ -85,58 +75,61 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const synergyGems = [];
 
+        // Combine equipped items and legacy items for stat calculation
         const allItems = [...(gameState.legacyItems || []), ...Object.values(gameState.equipment)];
 
         for (const item of allItems) {
             if (item) {
-                addStatsFromItem(item);
+                // Use the helper to get stats from item + its gems
+                const combinedStats = getCombinedItemStats(item);
+                for(const statKey in combinedStats) {
+                    const value = combinedStats[statKey];
+                     switch (statKey) {
+                        case STATS.CLICK_DAMAGE.key:
+                            playerStats.baseClickDamage += value;
+                            break;
+                        case STATS.DPS.key:
+                            playerStats.baseDps += value;
+                            break;
+                        case STATS.GOLD_GAIN.key:
+                            playerStats.bonusGold += value;
+                            break;
+                        case STATS.MAGIC_FIND.key:
+                            playerStats.magicFind += value;
+                            break;
+                    }
+                }
 
-                if (item.sockets && item.sockets.length > 0) {
+                // Collect synergy gems to be processed last
+                if (item.sockets) {
                     for (const gem of item.sockets) {
-                        if (gem) {
-                            if (gem.synergy) {
-                                synergyGems.push(gem);
-                            }
-                            if (gem.stats) {
-                                for (const statKey in gem.stats) {
-                                    const value = gem.stats[statKey];
-                                    switch (statKey) {
-                                        case STATS.CLICK_DAMAGE.key:
-                                            playerStats.baseClickDamage += value;
-                                            break;
-                                        case STATS.DPS.key:
-                                            playerStats.baseDps += value;
-                                            break;
-                                        case STATS.GOLD_GAIN.key:
-                                            playerStats.bonusGold += value;
-                                            break;
-                                        case STATS.MAGIC_FIND.key:
-                                            playerStats.magicFind += value;
-                                            break;
-                                    }
-                                }
-                            }
+                        if (gem && gem.synergy) {
+                            synergyGems.push(gem);
                         }
                     }
                 }
             }
         }
 
+        // Apply gold upgrades
         const clickUpgradeBonus = gameState.upgrades.clickDamage * 1.25;
         const dpsUpgradeBonus = gameState.upgrades.dps * 2.5;
 
+        // Apply attribute bonuses
         const strengthBonusClickFlat = hero.attributes.strength * 0.5;
         const strengthBonusClickPercent = hero.attributes.strength * 0.2;
         const agilityBonusDpsPercent = hero.attributes.agility * 0.3;
         playerStats.bonusGold += hero.attributes.luck * 0.5;
         playerStats.magicFind += hero.attributes.luck * 0.2;
 
+        // Calculate final damage values
         let finalClickDamage = playerStats.baseClickDamage + clickUpgradeBonus + strengthBonusClickFlat;
         finalClickDamage *= (1 + (strengthBonusClickPercent / 100));
 
         let finalDps = playerStats.baseDps + dpsUpgradeBonus;
         finalDps *= (1 + (agilityBonusDpsPercent / 100));
 
+        // Apply synergy gems after all other DPS calculations
         for (const gem of synergyGems) {
             if (gem.synergy && gem.synergy.source === 'dps' && gem.synergy.target === 'clickDamage') {
                 finalClickDamage += finalDps * (gem.synergy.value / 100);
@@ -146,6 +139,7 @@ document.addEventListener('DOMContentLoaded', () => {
         playerStats.totalClickDamage = finalClickDamage;
         playerStats.totalDps = finalDps;
 
+        // Update server with new stats if connected to raid
         if (socket.connected) {
             socket.emit('updatePlayerStats', { dps: playerStats.totalDps });
         }
@@ -440,6 +434,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
     function setupEventListeners() {
+        window.addEventListener('beforeunload', () => {
+            gameState.lastSaveTimestamp = Date.now();
+            localStorage.setItem('idleRPGSaveData', JSON.stringify(gameState));
+        });
+
         window.addEventListener('keydown', (e) => {
             if (e.key === 'Shift' && !isShiftPressed) {
                 isShiftPressed = true;
@@ -872,96 +871,102 @@ document.addEventListener('DOMContentLoaded', () => {
         setupPrestigeListeners();
     }
     
-    function createBlueprintComparisonTooltipHTML(item, itemBase) {
-        const headerHTML = `<div class="item-header"><span>${item.name}</span></div>
-                            <div class="possible-stats-header">Stat Roll Comparison</div>`;
-        let statsHTML = '<ul>';
-
-        for (const statInfo of itemBase.possibleStats) {
-            const statKey = statInfo.key;
-            const statName = Object.values(STATS).find(s => s.key === statKey)?.name || statKey;
-            const min = statInfo.min;
-            const max = statInfo.max;
-
-            if (item.stats.hasOwnProperty(statKey)) {
-                const currentValue = item.stats[statKey];
-                statsHTML += `<li>${statName}: ${formatNumber(currentValue)} (Range: ${formatNumber(min)} - ${formatNumber(max)})</li>`;
-            } else {
-                statsHTML += `<li>${statName}: <span class="tooltip-shift-hint">Not Rolled</span> (Range: ${formatNumber(min)} - ${formatNumber(max)})</li>`;
-            }
-        }
-        statsHTML += '</ul>';
-        return headerHTML + statsHTML;
-    }
-
+    // --- TOOLTIP LOGIC FIX ---
     function createTooltipHTML(hoveredItem, equippedItem, equippedItem2 = null) {
-        const headerHTML = `<div class="item-header"><span>${hoveredItem.name}</span></div>`;
+        let headerHTML = `<div class="item-header"><span>${hoveredItem.name}</span></div>`;
         
-        if (hoveredItem.type === 'ring' && (equippedItem || equippedItem2)) {
-            let ring1HTML = '<ul>';
-            let ring2HTML = '<ul>';
-            const allStatKeys = new Set([...Object.keys(hoveredItem.stats)]);
-            if(equippedItem) Object.keys(equippedItem.stats).forEach(k => allStatKeys.add(k));
-            if(equippedItem2) Object.keys(equippedItem2.stats).forEach(k => allStatKeys.add(k));
+        // Add item type and rarity below the name
+        headerHTML += `<div style="font-size: 0.9em; color: #95a5a6; margin-bottom: 5px;">${hoveredItem.rarity.charAt(0).toUpperCase() + hoveredItem.rarity.slice(1)} ${hoveredItem.type.charAt(0).toUpperCase() + hoveredItem.type.slice(1)}</div>`;
 
-            allStatKeys.forEach(statKey => {
-                const statInfo = Object.values(STATS).find(s => s.key === statKey);
-                const statName = statInfo ? statInfo.name : statKey;
-                const hoveredValue = hoveredItem.stats[statKey] || 0;
+        const combinedHoveredStats = getCombinedItemStats(hoveredItem);
+
+        // Handle Ring comparison
+        if (hoveredItem.type === 'ring' && (equippedItem || equippedItem2)) {
+            const createComparisonHTML = (equipped) => {
+                if (!equipped) return '<ul><li>(Empty Slot)</li></ul>';
                 
-                if (equippedItem) {
-                    const diff1 = hoveredValue - (equippedItem.stats[statKey] || 0);
-                    const diffClass1 = diff1 > 0 ? 'stat-better' : 'stat-worse';
-                    const sign1 = diff1 > 0 ? '+' : '';
-                    const diffSpan1 = Math.abs(diff1) > 0.001 ? ` <span class="${diffClass1}">(${sign1}${formatNumber(diff1)})</span>` : '';
-                    ring1HTML += `<li>${statName}: ${formatNumber(hoveredValue)}${diffSpan1}</li>`;
-                }
-                if(equippedItem2) {
-                    const diff2 = hoveredValue - (equippedItem2.stats[statKey] || 0);
-                    const diffClass2 = diff2 > 0 ? 'stat-better' : 'stat-worse';
-                    const sign2 = diff2 > 0 ? '+' : '';
-                    const diffSpan2 = Math.abs(diff2) > 0.001 ? ` <span class="${diffClass2}">(${sign2}${formatNumber(diff2)})</span>` : '';
-                    ring2HTML += `<li>${statName}: ${formatNumber(hoveredValue)}${diffSpan2}</li>`;
-                }
-            });
-            ring1HTML += '</ul>';
-            ring2HTML += '</ul>';
+                const combinedEquippedStats = getCombinedItemStats(equipped);
+                const allStatKeys = new Set([...Object.keys(combinedHoveredStats), ...Object.keys(combinedEquippedStats)]);
+                let html = '<ul>';
+
+                allStatKeys.forEach(statKey => {
+                    const hoveredValue = combinedHoveredStats[statKey] || 0;
+                    const equippedValue = combinedEquippedStats[statKey] || 0;
+                    const diff = hoveredValue - equippedValue;
+
+                    const statInfo = Object.values(STATS).find(s => s.key === statKey) || { name: statKey, type: 'flat' };
+                    const statName = statInfo.name;
+                    const isPercent = statInfo.type === 'percent';
+
+                    const valueStr = isPercent ? `${hoveredValue.toFixed(1)}%` : formatNumber(hoveredValue);
+                    
+                    let diffSpan = '';
+                    if (Math.abs(diff) > 0.001) {
+                        const diffClass = diff > 0 ? 'stat-better' : 'stat-worse';
+                        const sign = diff > 0 ? '+' : '';
+                        const diffStr = isPercent ? `${diff.toFixed(1)}%` : formatNumber(diff);
+                        diffSpan = ` <span class="${diffClass}">(${sign}${diffStr})</span>`;
+                    }
+                    html += `<li>${statName}: ${valueStr}${diffSpan}</li>`;
+                });
+                html += '</ul>';
+                return html;
+            }
+
+            const ring1HTML = createComparisonHTML(equippedItem);
+            const ring2HTML = createComparisonHTML(equippedItem2);
+
             return `${headerHTML}
                     <div class="tooltip-ring-comparison">
                         <div>
-                            <h5>vs. ${equippedItem ? equippedItem.name : "Empty Slot"}</h5>
-                            ${equippedItem ? ring1HTML : '<ul><li>-</li></ul>'}
+                            <h5>vs. ${equippedItem ? equippedItem.name : "Ring 1"}</h5>
+                            ${ring1HTML}
                         </div>
                         <div>
-                            <h5>vs. ${equippedItem2 ? equippedItem2.name : "Empty Slot"}</h5>
-                            ${equippedItem2 ? ring2HTML : '<ul><li>-</li></ul>'}
+                            <h5>vs. ${equippedItem2 ? equippedItem2.name : "Ring 2"}</h5>
+                            ${ring2HTML}
                         </div>
                     </div>`;
         }
         
-        if (!equippedItem) {
-            let statsHTML = '<ul>';
-            for (const statKey in hoveredItem.stats) {
-                const statInfo = Object.values(STATS).find(s => s.key === statKey);
-                const statName = statInfo ? statInfo.name : statKey;
-                statsHTML += `<li>+${formatNumber(hoveredItem.stats[statKey])} ${statName}</li>`;
-            }
-            statsHTML += '</ul>';
-            return headerHTML + statsHTML;
-        }
-
-        const allStatKeys = new Set([...Object.keys(hoveredItem.stats), ...Object.keys(equippedItem.stats)]);
+        // Handle comparison for other items
         let statsHTML = '<ul>';
-        allStatKeys.forEach(statKey => {
-            const hoveredValue = hoveredItem.stats[statKey] || 0;
-            const equippedValue = equippedItem.stats[statKey] || 0;
-            const difference = hoveredValue - equippedValue;
-            const statInfo = Object.values(STATS).find(s => s.key === statKey);
-            const statName = statInfo ? statInfo.name : statKey;
-            let diffSpan = '';
-            if (Math.abs(difference) > 0.001) { const diffClass = difference > 0 ? 'stat-better' : 'stat-worse'; const sign = difference > 0 ? '+' : ''; diffSpan = ` <span class="${diffClass}">(${sign}${formatNumber(difference)})</span>`; }
-            statsHTML += `<li>${statName}: ${formatNumber(hoveredValue)}${diffSpan}</li>`;
-        });
+        if (!equippedItem) {
+            // No item equipped, just show the hovered item's stats
+            for (const statKey in combinedHoveredStats) {
+                const statInfo = Object.values(STATS).find(s => s.key === statKey) || { name: statKey, type: 'flat' };
+                const isPercent = statInfo.type === 'percent';
+                const value = combinedHoveredStats[statKey];
+                const valueStr = isPercent ? `${value.toFixed(1)}%` : formatNumber(value);
+                statsHTML += `<li>+${valueStr} ${statInfo.name}</li>`;
+            }
+        } else {
+            // An item is equipped, perform comparison
+            const combinedEquippedStats = getCombinedItemStats(equippedItem);
+            const allStatKeys = new Set([...Object.keys(combinedHoveredStats), ...Object.keys(combinedEquippedStats)]);
+            
+            allStatKeys.forEach(statKey => {
+                const hoveredValue = combinedHoveredStats[statKey] || 0;
+                const equippedValue = combinedEquippedStats[statKey] || 0;
+                const difference = hoveredValue - equippedValue;
+                
+                const statInfo = Object.values(STATS).find(s => s.key === statKey) || { name: statKey, type: 'flat' };
+                const statName = statInfo.name;
+                const isPercent = statInfo.type === 'percent';
+                
+                const valueStr = isPercent ? `${hoveredValue.toFixed(1)}%` : formatNumber(hoveredValue);
+
+                let diffSpan = '';
+                if (Math.abs(difference) > 0.001) { 
+                    const diffClass = difference > 0 ? 'stat-better' : 'stat-worse'; 
+                    const sign = difference > 0 ? '+' : '';
+                    const diffStr = isPercent ? `${difference.toFixed(1)}%` : formatNumber(difference);
+                    diffSpan = ` <span class="${diffClass}">(${sign}${diffStr})</span>`; 
+                }
+                
+                statsHTML += `<li>${statName}: ${valueStr}${diffSpan}</li>`;
+            });
+        }
         statsHTML += '</ul>';
         return headerHTML + statsHTML;
     }
@@ -1217,26 +1222,15 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('confirm-prestige-btn').addEventListener('click', () => {
             if (prestigeSelections.length > 3) { alert("You can only select up to 3 items!"); return; }
             
-            // --- PRESTIGE ABSORPTION FIX ---
             const absorbed = { clickDamage: 0, dps: 0 };
             const allCurrentItems = [...Object.values(gameState.equipment).filter(i => i), ...gameState.inventory];
             const sacrificedItems = allCurrentItems.filter(item => !prestigeSelections.includes(item.id));
 
             for (const item of sacrificedItems) {
-                // Absorb item's base stats
-                if (item.stats.clickDamage) absorbed.clickDamage += item.stats.clickDamage;
-                if (item.stats.dps) absorbed.dps += item.stats.dps;
-                // Absorb stats from gems in the item
-                if (item.sockets) {
-                    for (const gem of item.sockets) {
-                        if (gem && gem.stats) {
-                            if (gem.stats.clickDamage) absorbed.clickDamage += gem.stats.clickDamage;
-                            if (gem.stats.dps) absorbed.dps += gem.stats.dps;
-                        }
-                    }
-                }
+                const combinedStats = getCombinedItemStats(item);
+                if (combinedStats.clickDamage) absorbed.clickDamage += combinedStats.clickDamage;
+                if (combinedStats.dps) absorbed.dps += combinedStats.dps;
             }
-            // --- END OF FIX ---
 
             logMessage(elements.gameLogEl, `Absorbed <b>+${absorbed.clickDamage.toFixed(2)}</b> Click Damage and <b>+${absorbed.dps.toFixed(2)}</b> DPS from your gear!`, 'epic');
             
