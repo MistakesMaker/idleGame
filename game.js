@@ -204,6 +204,36 @@ document.addEventListener('DOMContentLoaded', () => {
         ui.updateUI(elements, gameState, playerStats, currentMonster, salvageMode, craftingGems);
         renderMap();
         renderRealmTabs();
+        // --- ADDED FOR GEM SOCKETING ---
+        // Pass selected gem to UI for highlighting targets
+        if (selectedGemForSocketing) {
+            document.querySelectorAll('.selected-gem').forEach(el => el.classList.remove('selected-gem'));
+            const gemEl = document.querySelector(`.gem[data-gem-id="${selectedGemForSocketing.id}"]`);
+            if (gemEl) gemEl.classList.add('selected-gem');
+            
+            document.querySelectorAll('.socket-target').forEach(el => el.classList.remove('socket-target'));
+            
+            // Highlight valid inventory items
+            gameState.inventory.forEach((item, index) => {
+                if (item.sockets && item.sockets.includes(null)) {
+                    const itemEl = document.querySelector(`.item-wrapper[data-index="${index}"] .item`);
+                    if (itemEl) itemEl.classList.add('socket-target');
+                }
+            });
+
+            // Highlight valid equipped items
+            for (const slotName in gameState.equipment) {
+                const item = gameState.equipment[slotName];
+                if (item && item.sockets && item.sockets.includes(null)) {
+                    const slotEl = document.getElementById(`slot-${slotName}`);
+                    if (slotEl) slotEl.classList.add('socket-target');
+                }
+            }
+        } else {
+            document.querySelectorAll('.selected-gem').forEach(el => el.classList.remove('selected-gem'));
+            document.querySelectorAll('.socket-target').forEach(el => el.classList.remove('socket-target'));
+        }
+        // --- END OF ADDITION ---
     }
 
     function autoSave() {
@@ -511,31 +541,23 @@ document.addEventListener('DOMContentLoaded', () => {
         
         elements.gemSlotsEl.addEventListener('click', (e) => {
             if (!(e.target instanceof Element)) return;
-            const gemWrapper = e.target.closest('div[data-gem-index]');
-            if (!(gemWrapper instanceof HTMLElement) || !gemWrapper.dataset.gemIndex) return;
-        
-            const gemIndex = parseInt(gemWrapper.dataset.gemIndex, 10);
-            const gemInstance = gameState.gems[gemIndex];
+            const gemWrapper = e.target.closest('div.gem');
+            if (!(gemWrapper instanceof HTMLElement) || !gemWrapper.dataset.gemId) return;
+
+            const gemId = gemWrapper.dataset.gemId;
+            const gemInstance = gameState.gems.find(g => String(g.id) === gemId);
             if (!gemInstance) return;
-            
-            // Check if the gem is already in a crafting slot
-            const isInCrafting = craftingGems.some(g => g.id === gemInstance.id);
-            if (isInCrafting) return;
-        
-            // Add to crafting slots if there's space and tiers match
-            if (craftingGems.length < 2) {
-                if (craftingGems.length > 0 && craftingGems[0].tier !== gemInstance.tier) {
-                    logMessage(elements.gameLogEl, "You can only combine gems of the same tier.", "rare");
-                    return;
-                }
-                craftingGems.push(gemInstance);
-                // We need to find the gem by its unique ID to remove it, not by index.
-                const indexToRemove = gameState.gems.findIndex(g => g.id === gemInstance.id);
-                if (indexToRemove > -1) {
-                    gameState.gems.splice(indexToRemove, 1);
-                }
-                updateAll();
+
+            // If it's the currently selected gem, deselect it
+            if (selectedGemForSocketing && selectedGemForSocketing.id === gemInstance.id) {
+                selectedGemForSocketing = null;
+                logMessage(elements.gameLogEl, "Deselected gem.");
+            } else {
+                // Select a new gem
+                selectedGemForSocketing = gemInstance;
+                logMessage(elements.gameLogEl, `Selected ${gemInstance.name}. Click an item with an empty socket to place it.`, 'uncommon');
             }
+            updateAll();
         });
         
         elements.inventorySlotsEl.addEventListener('click', (event) => {
@@ -560,8 +582,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     logMessage(elements.gameLogEl, `Socketed ${gemToSocket.name} into ${item.name}.`, 'epic');
                     
                     selectedGemForSocketing = null;
-                    document.querySelectorAll('.socket-target').forEach(el => el.classList.remove('socket-target'));
-                    document.querySelectorAll('.selected-gem').forEach(el => el.classList.remove('selected-gem'));
                     
                     recalculateStats();
                     updateAll();
@@ -607,6 +627,33 @@ document.addEventListener('DOMContentLoaded', () => {
             const slotElement = event.target.closest('.equipment-slot');
             if (!slotElement) return;
             const slotName = slotElement.id.replace('slot-', '');
+            
+            // --- ADDED FOR GEM SOCKETING ---
+            if (selectedGemForSocketing) {
+                const item = gameState.equipment[slotName];
+                if (item && item.sockets && item.sockets.includes(null)) {
+                    const gemToSocket = selectedGemForSocketing;
+                    const firstEmptySocketIndex = item.sockets.indexOf(null);
+
+                    if (firstEmptySocketIndex > -1) {
+                        item.sockets[firstEmptySocketIndex] = gemToSocket;
+                        
+                        const originalGemIndex = gameState.gems.findIndex(g => g.id === gemToSocket.id);
+                        if(originalGemIndex > -1) gameState.gems.splice(originalGemIndex, 1);
+                        
+                        logMessage(elements.gameLogEl, `Socketed ${gemToSocket.name} into ${item.name}.`, 'epic');
+                        
+                        selectedGemForSocketing = null;
+
+                        recalculateStats();
+                        updateAll();
+                        autoSave();
+                        return; // Prevent unequipping
+                    }
+                }
+            }
+            // --- END OF ADDITION ---
+
             player.unequipItem(gameState, slotName);
             recalculateStats();
             updateAll();
@@ -616,16 +663,41 @@ document.addEventListener('DOMContentLoaded', () => {
         elements.gemCraftingSlotsContainer.addEventListener('click', (e) => {
             if (!(e.target instanceof HTMLElement)) return;
             const slot = e.target.closest('.gem-crafting-slot');
-            if (!(slot instanceof HTMLElement) || slot.innerHTML === '' || !slot.dataset.slot) return;
-
+            if (!(slot instanceof HTMLElement) || !slot.dataset.slot) return;
+        
             const slotIndex = parseInt(slot.dataset.slot, 10);
-            const gemToReturn = craftingGems[slotIndex];
-
-            if (gemToReturn) {
-                gameState.gems.push(gemToReturn);
-                craftingGems.splice(slotIndex, 1);
-                updateAll();
+            const gemInSlot = craftingGems[slotIndex];
+        
+            // If the slot is occupied, return the gem to the main gem inventory
+            if (gemInSlot) {
+                gameState.gems.push(gemInSlot);
+                craftingGems[slotIndex] = undefined; // Leave a hole
+                // Filter out empty spots to keep the array clean
+                craftingGems = craftingGems.filter(Boolean);
+            } 
+            // If the slot is empty and a gem is selected for socketing/crafting, move it here
+            else if (selectedGemForSocketing) {
+                if (craftingGems.length < 2) {
+                    // Check if tiers match if a gem is already in a crafting slot
+                    if (craftingGems.length > 0 && craftingGems[0].tier !== selectedGemForSocketing.tier) {
+                        logMessage(elements.gameLogEl, "You can only combine gems of the same tier.", "rare");
+                        return;
+                    }
+        
+                    // Add to crafting
+                    craftingGems.push(selectedGemForSocketing);
+                    
+                    // Remove from main gem inventory
+                    const indexToRemove = gameState.gems.findIndex(g => g.id === selectedGemForSocketing.id);
+                    if (indexToRemove > -1) {
+                        gameState.gems.splice(indexToRemove, 1);
+                    }
+                    
+                    // Deselect the gem
+                    selectedGemForSocketing = null;
+                }
             }
+            updateAll();
         });
 
         elements.gemCraftBtn.addEventListener('click', () => {
@@ -749,16 +821,22 @@ document.addEventListener('DOMContentLoaded', () => {
                 const viewId = tab.dataset.view || tab.textContent.toLowerCase() + '-view';
                 tab.dataset.view = viewId;
                 tab.addEventListener('click', () => {
-                    if (selectedGemForSocketing !== null) {
+                    // --- FIX ---
+                    // Only clear selections if navigating to a NON-item tab
+                    const itemRelatedViews = ['gems-view', 'inventory-view', 'equipment-view'];
+                    if (selectedGemForSocketing !== null && !itemRelatedViews.includes(viewId)) {
                         selectedGemForSocketing = null;
-                        document.querySelectorAll('.selected-gem').forEach(el => el.classList.remove('selected-gem'));
-                        document.querySelectorAll('.socket-target').forEach(el => el.classList.remove('socket-target'));
+                        logMessage(elements.gameLogEl, "Canceled gem socketing.");
                     }
-                    if (craftingGems.length > 0) {
+                    // Only clear crafting gems if we navigate away from the gems tab
+                    if (craftingGems.length > 0 && viewId !== 'gems-view') {
                         gameState.gems.push(...craftingGems);
                         craftingGems = [];
-                        updateAll();
+                        logMessage(elements.gameLogEl, "Returned gems from crafting slots.");
                     }
+                    // --- END FIX ---
+
+                    updateAll(); 
 
                     tabs.forEach(t => t.classList.remove('active'));
                     tab.classList.add('active');
@@ -931,11 +1009,11 @@ document.addEventListener('DOMContentLoaded', () => {
     function setupGemTooltipListeners(){
         elements.gemSlotsEl.addEventListener('mouseover', (e) => {
             if (!(e.target instanceof Element)) return;
-            const gemWrapper = e.target.closest('div[data-gem-index]');
-            if (!(gemWrapper instanceof HTMLElement) || !gemWrapper.dataset.gemIndex) return;
+            const gemWrapper = e.target.closest('div.gem');
+            if (!(gemWrapper instanceof HTMLElement) || !gemWrapper.dataset.gemId) return;
 
-            const gemIndex = parseInt(gemWrapper.dataset.gemIndex, 10);
-            const gem = gameState.gems[gemIndex];
+            const gemId = gemWrapper.dataset.gemId;
+            const gem = gameState.gems.find(g => String(g.id) === gemId);
             if (!gem) return;
             
             elements.tooltipEl.className = 'hidden';

@@ -154,11 +154,10 @@ export function updateUI(elements, gameState, playerStats, currentMonster, salva
 
     gemSlotsEl.innerHTML = '';
     if (gameState.gems && gameState.gems.length > 0) {
-        gameState.gems.forEach((gem, index) => {
+        gameState.gems.forEach((gem) => {
             const gemDiv = document.createElement('div');
             gemDiv.innerHTML = createGemHTML(gem);
-            gemDiv.dataset.gemIndex = index.toString();
-            gemSlotsEl.appendChild(gemDiv);
+            gemSlotsEl.appendChild(gemDiv.firstChild); // Append the actual gem element, not the wrapper
         });
     } else {
         gemSlotsEl.innerHTML = '<p>No gems yet. Find them as rare drops!</p>';
@@ -341,7 +340,7 @@ export function createLootComparisonTooltipHTML(potentialItem, equippedItem, equ
 export function createItemHTML(item, isEquipped) {
     let socketsHTML = '';
     if (item.sockets) {
-        socketsHTML += '<div class="item-sockets">';
+        socketsHTML += `<div class="item-sockets ${isEquipped ? 'equipped-sockets' : ''}">`;
         item.sockets.forEach(gem => {
             if (gem) {
                 socketsHTML += `<div class="socket"><img src="${gem.icon}" alt="${gem.name}"></div>`;
@@ -353,19 +352,7 @@ export function createItemHTML(item, isEquipped) {
     }
 
     if (isEquipped) {
-        let equippedHTML = `<img src="${getItemIcon(item.type)}" class="item-icon">`;
-        if (item.sockets) {
-            equippedHTML += '<div class="item-sockets equipped-sockets">';
-            item.sockets.forEach(gem => {
-                 if (gem) {
-                    equippedHTML += `<div class="socket"><img src="${gem.icon}" alt="${gem.name}"></div>`;
-                } else {
-                    equippedHTML += '<div class="socket"></div>';
-                }
-            });
-            equippedHTML += '</div>';
-        }
-        return equippedHTML;
+        return `<img src="${getItemIcon(item.type)}" class="item-icon"> ${socketsHTML}`;
     }
 
     const lockHTML = `<i class="fas ${item.locked ? 'fa-lock' : 'fa-lock-open'} lock-icon"></i>`;
