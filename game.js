@@ -480,28 +480,32 @@ document.addEventListener('DOMContentLoaded', () => {
             const confirmBtn = document.getElementById('confirm-salvage-btn');
             const selectAllBtn = document.getElementById('select-all-salvage-btn');
             const raritySalvageContainer = document.getElementById('salvage-by-rarity-controls');
-            if (salvageMode.active) {
-                salvageBtn.textContent = 'Cancel Salvage';
-                salvageBtn.classList.add('active');
-                confirmBtn.classList.remove('hidden');
-                selectAllBtn.classList.remove('hidden');
-                raritySalvageContainer.classList.remove('hidden');
-            } else {
-                salvageBtn.textContent = 'Select to Salvage';
-                salvageBtn.classList.remove('active');
-                confirmBtn.classList.add('hidden');
-                selectAllBtn.classList.add('hidden');
-                raritySalvageContainer.classList.add('hidden');
-                salvageMode.selections = [];
+            if (salvageBtn && confirmBtn && selectAllBtn && raritySalvageContainer) {
+                if (salvageMode.active) {
+                    salvageBtn.textContent = 'Cancel Salvage';
+                    salvageBtn.classList.add('active');
+                    confirmBtn.classList.remove('hidden');
+                    selectAllBtn.classList.remove('hidden');
+                    raritySalvageContainer.classList.remove('hidden');
+                } else {
+                    salvageBtn.textContent = 'Select to Salvage';
+                    salvageBtn.classList.remove('active');
+                    confirmBtn.classList.add('hidden');
+                    selectAllBtn.classList.add('hidden');
+                    raritySalvageContainer.classList.add('hidden');
+                    salvageMode.selections = [];
+                }
             }
             document.body.classList.toggle('salvage-mode-active', salvageMode.active);
-            document.getElementById('salvage-count').textContent = '0';
+            const salvageCountEl = document.getElementById('salvage-count');
+            if (salvageCountEl) salvageCountEl.textContent = '0';
             updateAll();
         });
         document.getElementById('select-all-salvage-btn').addEventListener('click', () => {
              salvageMode.selections = [];
              gameState.inventory.forEach((item, index) => { if (!item.locked) salvageMode.selections.push(index); });
-             document.getElementById('salvage-count').textContent = salvageMode.selections.length.toString();
+             const salvageCountEl = document.getElementById('salvage-count');
+             if (salvageCountEl) salvageCountEl.textContent = salvageMode.selections.length.toString();
              updateAll();
         });
         document.getElementById('confirm-salvage-btn').addEventListener('click', () => {
@@ -512,11 +516,17 @@ document.addEventListener('DOMContentLoaded', () => {
                  logMessage(elements.gameLogEl, "No items selected for salvage.");
             }
             salvageMode.active = false;
-            document.getElementById('salvage-mode-btn').textContent = 'Select to Salvage';
-            document.getElementById('salvage-mode-btn').classList.remove('active');
-            document.getElementById('confirm-salvage-btn').classList.add('hidden');
-            document.getElementById('select-all-salvage-btn').classList.add('hidden');
-            document.getElementById('salvage-by-rarity-controls').classList.add('hidden');
+            const salvageBtn = document.getElementById('salvage-mode-btn');
+            const confirmBtn = document.getElementById('confirm-salvage-btn');
+            const selectAllBtn = document.getElementById('select-all-salvage-btn');
+            const raritySalvageContainer = document.getElementById('salvage-by-rarity-controls');
+            if (salvageBtn) {
+                salvageBtn.textContent = 'Select to Salvage';
+                salvageBtn.classList.remove('active');
+            }
+            if (confirmBtn) confirmBtn.classList.add('hidden');
+            if (selectAllBtn) selectAllBtn.classList.add('hidden');
+            if(raritySalvageContainer) raritySalvageContainer.classList.add('hidden');
             document.body.classList.remove('salvage-mode-active');
             salvageMode.selections = [];
             updateAll();
@@ -574,7 +584,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!(wrapper instanceof HTMLElement)) return;
             
             const itemIndexStr = wrapper.dataset.index;
-            if (itemIndexStr === null) return;
+            if (itemIndexStr === null || itemIndexStr === undefined) return;
             const itemIndex = parseInt(itemIndexStr, 10);
 
             const item = gameState.inventory[itemIndex];
@@ -618,7 +628,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 } else {
                     salvageMode.selections.push(itemIndex);
                 }
-                document.getElementById('salvage-count').textContent = salvageMode.selections.length.toString();
+                const salvageCountEl = document.getElementById('salvage-count');
+                if (salvageCountEl) salvageCountEl.textContent = salvageMode.selections.length.toString();
                 updateAll();
             } else {
                 const result = player.equipItem(gameState, itemIndex);
@@ -675,7 +686,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!(slot instanceof HTMLElement)) return;
         
             const slotIndexStr = slot.dataset.slot;
-            if (!slotIndexStr) return;
+            if (slotIndexStr === null || slotIndexStr === undefined) return;
             const slotIndex = parseInt(slotIndexStr, 10);
 
             const gemInSlot = craftingGems[slotIndex];
@@ -993,7 +1004,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const itemWrapper = event.target.closest('.item-wrapper');
             if (!(itemWrapper instanceof HTMLElement)) return;
             const indexStr = itemWrapper.dataset.index;
-            if (indexStr === null) return;
+            if (indexStr === null || indexStr === undefined) return;
             const index = parseInt(indexStr, 10);
             showTooltip(gameState.inventory[index], itemWrapper);
         });
@@ -1205,16 +1216,31 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         document.getElementById('confirm-prestige-btn').addEventListener('click', () => {
             if (prestigeSelections.length > 3) { alert("You can only select up to 3 items!"); return; }
+            
+            // --- PRESTIGE ABSORPTION FIX ---
             const absorbed = { clickDamage: 0, dps: 0 };
-            for (const item of Object.values(gameState.equipment)) {
-                if (item) {
-                    if(item.stats.clickDamage) absorbed.clickDamage += item.stats.clickDamage;
-                    if(item.stats.dps) absorbed.dps += item.stats.dps;
+            const allCurrentItems = [...Object.values(gameState.equipment).filter(i => i), ...gameState.inventory];
+            const sacrificedItems = allCurrentItems.filter(item => !prestigeSelections.includes(item.id));
+
+            for (const item of sacrificedItems) {
+                // Absorb item's base stats
+                if (item.stats.clickDamage) absorbed.clickDamage += item.stats.clickDamage;
+                if (item.stats.dps) absorbed.dps += item.stats.dps;
+                // Absorb stats from gems in the item
+                if (item.sockets) {
+                    for (const gem of item.sockets) {
+                        if (gem && gem.stats) {
+                            if (gem.stats.clickDamage) absorbed.clickDamage += gem.stats.clickDamage;
+                            if (gem.stats.dps) absorbed.dps += gem.stats.dps;
+                        }
+                    }
                 }
             }
+            // --- END OF FIX ---
+
             logMessage(elements.gameLogEl, `Absorbed <b>+${absorbed.clickDamage.toFixed(2)}</b> Click Damage and <b>+${absorbed.dps.toFixed(2)}</b> DPS from your gear!`, 'epic');
-            const allItems = [...Object.values(gameState.equipment).filter(i => i), ...gameState.inventory];
-            const newLegacyItems = allItems.filter(item => prestigeSelections.includes(item.id));
+            
+            const newLegacyItems = allCurrentItems.filter(item => prestigeSelections.includes(item.id));
             const oldLegacyItems = gameState.legacyItems || [];
             const oldLevel = gameState.maxLevel;
             const heroToKeep = {
