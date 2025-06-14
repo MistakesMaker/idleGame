@@ -28,6 +28,8 @@ document.addEventListener('DOMContentLoaded', () => {
     let salvageMode = { active: false, selections: [] };
     let prestigeSelections = [];
     let saveTimeout;
+    let isShiftPressed = false;
+    let lastMousePosition = { x: 0, y: 0 };
 
     /** @type {DOMElements} */
     let elements = {};
@@ -81,31 +83,25 @@ document.addEventListener('DOMContentLoaded', () => {
         playerStats.baseDps = 0 + (gameState.absorbedStats?.dps || 0);
         playerStats.bonusGold = 0;
         playerStats.magicFind = 0;
-
         const allItems = [...(gameState.legacyItems || []), ...Object.values(gameState.equipment)];
         for (const item of allItems) {
             if (item) {
                 addStatsFromItem(item);
             }
         }
-
         const clickUpgradeBonus = gameState.upgrades.clickDamage * 1.25;
         const dpsUpgradeBonus = gameState.upgrades.dps * 2.5;
-
         const strengthBonusClickFlat = hero.attributes.strength * 0.5;
         const strengthBonusClickPercent = hero.attributes.strength * 0.2;
         const agilityBonusDpsPercent = hero.attributes.agility * 0.3;
         playerStats.bonusGold += hero.attributes.luck * 0.5;
         playerStats.magicFind += hero.attributes.luck * 0.2;
-
         let finalClickDamage = playerStats.baseClickDamage + clickUpgradeBonus + strengthBonusClickFlat;
         finalClickDamage *= (1 + (strengthBonusClickPercent / 100));
         playerStats.totalClickDamage = finalClickDamage;
-
         let finalDps = playerStats.baseDps + dpsUpgradeBonus;
         finalDps *= (1 + (agilityBonusDpsPercent / 100));
         playerStats.totalDps = finalDps;
-
         if (socket.connected) {
             socket.emit('updatePlayerStats', { dps: playerStats.totalDps });
         }
@@ -113,18 +109,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function handleMonsterDefeated() {
         const result = logic.monsterDefeated(gameState, playerStats, currentMonster);
-
         result.logMessages.forEach(msg => logMessage(elements.gameLogEl, msg));
         ui.showGoldPopup(elements.popupContainerEl, result.goldGained);
-
         const levelUpLogs = player.gainXP(gameState, result.xpGained);
         levelUpLogs.forEach(msg => logMessage(elements.gameLogEl, msg, 'legendary'));
-
         const nextRealmIndex = gameState.currentRealmIndex + 1;
         if (REALMS[nextRealmIndex] && gameState.maxLevel >= REALMS[nextRealmIndex].requiredLevel && !gameState.completedLevels.includes(REALMS[nextRealmIndex].requiredLevel - 1)) {
             logMessage(elements.gameLogEl, `A new realm has been unlocked: <b>${REALMS[nextRealmIndex].name}</b>!`, 'legendary');
         }
-
         autoSave();
         setTimeout(() => {
             startNewMonster();
@@ -193,12 +185,10 @@ document.addEventListener('DOMContentLoaded', () => {
             renderMap();
             return;
         }
-
         if (currentMap === 'world') {
             elements.mapTitleEl.textContent = realm.name;
             elements.backToWorldMapBtnEl.classList.add('hidden');
             elements.mapContainerEl.style.backgroundImage = `url('${realm.mapImage}')`;
-
             for (const zoneId in realm.zones) {
                 const zone = realm.zones[zoneId];
                 const isUnlocked = gameState.maxLevel >= findFirstLevelOfZone(zone);
@@ -212,7 +202,6 @@ document.addEventListener('DOMContentLoaded', () => {
             elements.mapTitleEl.textContent = zone.name;
             elements.backToWorldMapBtnEl.classList.remove('hidden');
             elements.mapContainerEl.style.backgroundImage = `url('${zone.mapImage}')`;
-
             for (const subZoneId in zone.subZones) {
                 const subZone = zone.subZones[subZoneId];
                 const isUnlocked = gameState.maxLevel >= subZone.levelRange[0];
@@ -248,35 +237,28 @@ document.addEventListener('DOMContentLoaded', () => {
     function showSubZoneModal(subZone) {
         elements.modalTitleEl.textContent = subZone.name;
         elements.modalBodyEl.innerHTML = '';
-
         const highestCompleted = ui.getHighestCompletedLevelInSubZone(gameState.completedLevels, subZone);
         const startLevel = subZone.levelRange[0];
         const finalLevel = subZone.levelRange[1];
         let nextLevel = Math.min(highestCompleted + 1, finalLevel);
-
         const isSingleLevelBoss = startLevel === finalLevel;
-
         const startCombat = (level, isFarming) => {
             gameState.currentFightingLevel = level;
             gameState.isFarming = isFarming;
             gameState.isAutoProgressing = isFarming ? (/** @type {HTMLInputElement} */ (elements.autoProgressCheckboxEl)).checked : false;
-            
             logMessage(elements.gameLogEl, `Traveling to level ${level}.`);
             elements.modalBackdropEl.classList.add('hidden');
             startNewMonster();
             updateAll();
             autoSave();
-            
             const combatTab = document.querySelector('.tab-button[data-view="combat-view"]');
             if (combatTab instanceof HTMLElement) combatTab.click();
         }
-
         if (!isSingleLevelBoss) {
             const continueButton = document.createElement('button');
             continueButton.textContent = (highestCompleted < startLevel) ? `Start at Lvl ${startLevel}` : `Continue at Lvl ${nextLevel}`;
             continueButton.onclick = () => startCombat(nextLevel, true);
             elements.modalBodyEl.appendChild(continueButton);
-
             if (highestCompleted >= startLevel && highestCompleted < finalLevel) {
                 const restartButton = document.createElement('button');
                 restartButton.textContent = `Restart at Lvl ${startLevel}`;
@@ -284,7 +266,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 elements.modalBodyEl.appendChild(restartButton);
             }
         }
-
         const bossLevel = finalLevel;
         if (isBossLevel(bossLevel) || isBigBossLevel(bossLevel)) {
              if (gameState.completedLevels.includes(bossLevel) || isSingleLevelBoss) {
@@ -294,14 +275,35 @@ document.addEventListener('DOMContentLoaded', () => {
                  elements.modalBodyEl.appendChild(fightBossButton);
              }
         }
-
         elements.modalBackdropEl.classList.remove('hidden');
     }
 
-    // --- SETUP AND INITIALIZATION ---
     function setupEventListeners() {
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'Shift' && !isShiftPressed) {
+                isShiftPressed = true;
+                const elementUnderMouse = document.elementFromPoint(lastMousePosition.x, lastMousePosition.y);
+                if (elementUnderMouse?.closest('.loot-table-entry')) {
+                    elementUnderMouse.dispatchEvent(new MouseEvent('mouseover', { bubbles: true }));
+                }
+            }
+        });
+        window.addEventListener('keyup', (e) => {
+            if (e.key === 'Shift') {
+                isShiftPressed = false;
+                const elementUnderMouse = document.elementFromPoint(lastMousePosition.x, lastMousePosition.y);
+                if (elementUnderMouse?.closest('.loot-table-entry')) {
+                    elementUnderMouse.dispatchEvent(new MouseEvent('mouseover', { bubbles: true }));
+                }
+            }
+        });
+        window.addEventListener('blur', () => { isShiftPressed = false; });
+        window.addEventListener('mousemove', (e) => {
+            lastMousePosition.x = e.clientX;
+            lastMousePosition.y = e.clientY;
+        });
+
         elements.monsterImageEl.addEventListener('click', clickMonster);
-        
         document.getElementById('buy-loot-crate-btn').addEventListener('click', () => {
             const result = player.buyLootCrate(gameState, logic.generateItem);
             logMessage(elements.gameLogEl, result.message);
@@ -311,14 +313,12 @@ document.addEventListener('DOMContentLoaded', () => {
             updateAll();
             autoSave();
         });
-
         document.getElementById('salvage-mode-btn').addEventListener('click', () => {
             salvageMode.active = !salvageMode.active;
             const salvageBtn = document.getElementById('salvage-mode-btn');
             const confirmBtn = document.getElementById('confirm-salvage-btn');
             const selectAllBtn = document.getElementById('select-all-salvage-btn');
             const raritySalvageContainer = document.getElementById('salvage-by-rarity-controls');
-
             if (salvageMode.active) {
                 salvageBtn.textContent = 'Cancel Salvage';
                 salvageBtn.classList.add('active');
@@ -337,14 +337,12 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('salvage-count').textContent = '0';
             updateAll();
         });
-
         document.getElementById('select-all-salvage-btn').addEventListener('click', () => {
              salvageMode.selections = [];
              gameState.inventory.forEach((item, index) => { if (!item.locked) salvageMode.selections.push(index); });
              document.getElementById('salvage-count').textContent = salvageMode.selections.length.toString();
              updateAll();
         });
-
         document.getElementById('confirm-salvage-btn').addEventListener('click', () => {
             const result = player.salvageSelectedItems(gameState, salvageMode);
             if (result.count > 0) {
@@ -363,14 +361,11 @@ document.addEventListener('DOMContentLoaded', () => {
             updateAll();
             autoSave();
         });
-
         document.getElementById('salvage-by-rarity-controls').addEventListener('click', (e) => {
             const target = e.target;
             if (!(target instanceof HTMLElement) || !target.dataset.rarity) return;
-
             const rarity = target.dataset.rarity;
             const result = player.salvageByRarity(gameState, rarity);
-
             if (result.count > 0) {
                 logMessage(elements.gameLogEl, `Salvaged ${result.count} ${rarity} items for ${formatNumber(result.scrapGained)} Scrap.`, 'uncommon');
                 updateAll();
@@ -379,17 +374,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 logMessage(elements.gameLogEl, `No unlocked ${rarity} items to salvage.`);
             }
         });
-
         elements.inventorySlotsEl.addEventListener('click', (event) => {
             const target = event.target;
             if (!(target instanceof Element)) return;
             const wrapper = target.closest('.item-wrapper');
             if (!(wrapper instanceof HTMLElement) || !wrapper.dataset.index) return;
-
             const index = parseInt(wrapper.dataset.index, 10);
             const item = gameState.inventory[index];
             if (!item) return;
-
             if (target.classList.contains('lock-icon')) {
                 const message = player.toggleItemLock(gameState, index);
                 if (message) logMessage(elements.gameLogEl, message);
@@ -409,7 +401,6 @@ document.addEventListener('DOMContentLoaded', () => {
             updateAll();
             autoSave();
         });
-
         document.getElementById('equipment-paperdoll').addEventListener('click', (event) => {
             const target = event.target;
             if (!(target instanceof Element)) return;
@@ -421,24 +412,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 autoSave();
             }
         });
-
         document.getElementById('reset-game-btn').addEventListener('click', resetGame);
         elements.backToWorldMapBtnEl.addEventListener('click', () => { currentMap = 'world'; renderMap(); });
         elements.modalCloseBtnEl.addEventListener('click', () => elements.modalBackdropEl.classList.add('hidden'));
         elements.modalBackdropEl.addEventListener('click', (e) => {
             if (e.target === elements.modalBackdropEl) elements.modalBackdropEl.classList.add('hidden');
         });
-
         elements.autoProgressCheckboxEl.addEventListener('change', () => {
             gameState.isAutoProgressing = (/** @type {HTMLInputElement} */ (elements.autoProgressCheckboxEl)).checked;
             logMessage(elements.gameLogEl, `Auto-progress ${gameState.isAutoProgressing ? 'enabled' : 'disabled'}.`);
             autoSave();
         });
-
         elements.addStrengthBtn.addEventListener('click', () => { player.spendAttributePoint(gameState, 'strength'); recalculateStats(); updateAll(); autoSave(); });
         elements.addAgilityBtn.addEventListener('click', () => { player.spendAttributePoint(gameState, 'agility'); recalculateStats(); updateAll(); autoSave(); });
         elements.addLuckBtn.addEventListener('click', () => { player.spendAttributePoint(gameState, 'luck'); recalculateStats(); updateAll(); autoSave(); });
-
         document.getElementById('upgrade-click-damage').addEventListener('click', (e) => {
             if (!(e.target instanceof Element)) return;
             if (e.target.classList.contains('buy-max-btn')) {
@@ -458,7 +445,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (result.success) { recalculateStats(); updateAll(); autoSave(); }
             }
         });
-
         document.getElementById('upgrade-dps').addEventListener('click', (e) => {
             if (!(e.target instanceof Element)) return;
             if (e.target.classList.contains('buy-max-btn')) {
@@ -478,7 +464,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (result.success) { recalculateStats(); updateAll(); autoSave(); }
             }
         });
-
         document.querySelectorAll('.preset-btn').forEach((btn, index) => {
             btn.addEventListener('click', () => {
                 player.activatePreset(gameState, index);
@@ -498,7 +483,6 @@ document.addEventListener('DOMContentLoaded', () => {
                  }
             });
         });
-        
         document.querySelectorAll('.tabs').forEach(tabContainer => {
             const tabs = tabContainer.querySelectorAll('.tab-button');
             const parentPanel = tabContainer.parentElement;
@@ -506,7 +490,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (!(tab instanceof HTMLElement)) return;
                 const viewId = tab.dataset.view || tab.textContent.toLowerCase() + '-view';
                 tab.dataset.view = viewId;
-
                 tab.addEventListener('click', () => {
                     tabs.forEach(t => t.classList.remove('active'));
                     tab.classList.add('active');
@@ -523,11 +506,11 @@ document.addEventListener('DOMContentLoaded', () => {
         
         setupTooltipListeners();
         setupStatTooltipListeners();
+        setupLootTooltipListeners();
         setupRaidListeners();
         setupPrestigeListeners();
     }
     
-    // --- FIX: Change these from assignments back to regular function declarations ---
     function createTooltipHTML(hoveredItem, equippedItem) {
         const headerHTML = `<div class="item-header"><span class="${hoveredItem.rarity}">${hoveredItem.name}</span></div>`;
         if (!equippedItem) {
@@ -625,6 +608,36 @@ document.addEventListener('DOMContentLoaded', () => {
             elements.statTooltipEl.classList.remove('hidden');
         });
         attributesArea.addEventListener('mouseout', () => elements.statTooltipEl.classList.add('hidden'));
+    }
+
+    function setupLootTooltipListeners() {
+        const lootTableEl = elements.lootTableDisplayEl;
+        lootTableEl.addEventListener('mouseover', (event) => {
+            if (!(event.target instanceof Element)) return;
+            const entryEl = event.target.closest('.loot-table-entry');
+            if (!(entryEl instanceof HTMLElement) || !entryEl.dataset.lootIndex) return;
+            const lootIndex = parseInt(entryEl.dataset.lootIndex, 10);
+            const itemBase = currentMonster.data.lootTable[lootIndex]?.item;
+            if (!itemBase) return;
+            elements.tooltipEl.className = 'hidden';
+            if (isShiftPressed) {
+                let slotToCompare = itemBase.type;
+                if (slotToCompare === 'ring') {
+                    slotToCompare = 'ring1'; 
+                }
+                const equippedItem = gameState.equipment[slotToCompare];
+                elements.tooltipEl.innerHTML = ui.createLootComparisonTooltipHTML(itemBase, equippedItem);
+            } else {
+                elements.tooltipEl.innerHTML = ui.createLootTableTooltipHTML(itemBase);
+            }
+            const rect = entryEl.getBoundingClientRect();
+            elements.tooltipEl.style.left = `${rect.right + 10}px`;
+            elements.tooltipEl.style.top = `${rect.top}px`;
+            elements.tooltipEl.classList.remove('hidden');
+        });
+        lootTableEl.addEventListener('mouseout', () => {
+            elements.tooltipEl.classList.add('hidden');
+        });
     }
 
     function createRaidPanel() {
@@ -770,7 +783,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function main() {
         elements = ui.initDOMElements();
-
         const savedData = localStorage.getItem('idleRPGSaveData');
         if (savedData) {
             const loadedState = JSON.parse(savedData);
@@ -789,18 +801,14 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
             gameState = getDefaultGameState();
         }
-        
         setupEventListeners();
         recalculateStats();
         startNewMonster();
-        
         logMessage(elements.gameLogEl, savedData ? "Saved game loaded!" : "Welcome! Your progress will be saved automatically.");
         updateAll();
-        
         setInterval(autoSave, 30000);
         setInterval(gameLoop, 1000);
     }
 
     main();
 });
-// --- END OF FILE game.js ---

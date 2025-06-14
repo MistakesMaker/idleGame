@@ -47,6 +47,14 @@ export const ITEMS = {
             { key: STATS.GOLD_GAIN.key, min: 1, max: 8 }
         ]
     },
+    DEAMONS_HEAD: {
+        name: "Leather Cap",
+        type: 'helmet',
+        icon: 'images/icons/helmet.png',
+        possibleStats: [
+            { key: STATS.DPS.key, min: 1, max: 100 }
+        ]
+    },
 
     // --- ARMOR ---
     APPRENTICE_ROBE: {

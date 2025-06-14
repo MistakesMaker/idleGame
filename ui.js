@@ -5,7 +5,6 @@ import { getXpForNextLevel, getUpgradeCost, formatNumber, findSubZoneByLevel } f
 
 /**
  * Gathers all necessary DOM elements from the page.
- * @returns {Object<string, HTMLElement|HTMLButtonElement|HTMLInputElement|HTMLImageElement>} An object containing all DOM element references.
  */
 export function initDOMElements() {
     return {
@@ -43,7 +42,6 @@ export function initDOMElements() {
         bonusGoldStatEl: document.getElementById('bonus-gold-stat'),
         magicFindStatEl: document.getElementById('magic-find-stat'),
         lootMonsterNameEl: document.getElementById('loot-monster-name'),
-        lootDropChanceEl: document.getElementById('loot-drop-chance'),
         lootTableDisplayEl: document.getElementById('loot-table-display'),
         statTooltipEl: document.getElementById('stat-tooltip'),
         prestigeCountStatEl: document.getElementById('prestige-count-stat'),
@@ -65,11 +63,6 @@ export function initDOMElements() {
 
 /**
  * Updates the entire game UI based on the current state.
- * @param {object} elements - The object of DOM elements from initDOMElements.
- * @param {object} gameState - The main game state object.
- * @param {object} playerStats - The calculated player stats.
- * @param {object} currentMonster - The current monster object.
- * @param {object} salvageMode - The state of salvage mode.
  */
 export function updateUI(elements, gameState, playerStats, currentMonster, salvageMode) {
     const {
@@ -79,7 +72,7 @@ export function updateUI(elements, gameState, playerStats, currentMonster, salva
         addAgilityBtn, addLuckBtn, bonusGoldStatEl, magicFindStatEl, prestigeCountStatEl,
         legacyItemsStatEl, currentLevelEl, autoProgressCheckboxEl, monsterHealthBarEl,
         upgradeClickLevelEl, upgradeDpsLevelEl, inventorySlotsEl, lootMonsterNameEl,
-        lootDropChanceEl, lootTableDisplayEl, prestigeButton
+        lootTableDisplayEl, prestigeButton
     } = elements;
 
     const xpToNextLevel = getXpForNextLevel(gameState.hero.level);
@@ -95,7 +88,6 @@ export function updateUI(elements, gameState, playerStats, currentMonster, salva
     const dpsCost = getUpgradeCost('dps', gameState.upgrades.dps);
     upgradeClickCostEl.textContent = formatNumber(clickCost);
     upgradeDpsCostEl.textContent = formatNumber(dpsCost);
-
     heroLevelEl.textContent = gameState.hero.level.toString();
     heroXpBarEl.style.width = `${(gameState.hero.xp / xpToNextLevel) * 100}%`;
     attributePointsEl.textContent = gameState.hero.attributePoints.toString();
@@ -110,22 +102,18 @@ export function updateUI(elements, gameState, playerStats, currentMonster, salva
     magicFindStatEl.textContent = playerStats.magicFind.toFixed(1);
     prestigeCountStatEl.textContent = (gameState.prestigeCount || 0).toString();
     legacyItemsStatEl.textContent = (gameState.legacyItems?.length || 0).toString();
-
     currentLevelEl.textContent = gameState.currentFightingLevel.toString();
     (/** @type {HTMLInputElement} */ (autoProgressCheckboxEl)).checked = gameState.isAutoProgressing;
-
     const healthPercent = (gameState.monster.hp / gameState.monster.maxHp) * 100;
     monsterHealthBarEl.style.width = `${healthPercent}%`;
     if (healthPercent < 30) monsterHealthBarEl.style.background = 'linear-gradient(to right, #e74c3c, #c0392b)';
     else if (healthPercent < 60) monsterHealthBarEl.style.background = 'linear-gradient(to right, #f39c12, #e67e22)';
     else monsterHealthBarEl.style.background = 'linear-gradient(to right, #2ecc71, #27ae60)';
-
     upgradeClickLevelEl.textContent = `Lvl ${gameState.upgrades.clickDamage}`;
     upgradeDpsLevelEl.textContent = `Lvl ${gameState.upgrades.dps}`;
     document.getElementById('upgrade-click-damage').classList.toggle('disabled', gameState.gold < clickCost);
     document.getElementById('upgrade-dps').classList.toggle('disabled', gameState.gold < dpsCost);
     (/** @type {HTMLButtonElement} */ (document.getElementById('buy-loot-crate-btn'))).disabled = gameState.scrap < 50;
-
     inventorySlotsEl.innerHTML = '';
     if (gameState.inventory.length > 0) {
         gameState.inventory.forEach((item, index) => {
@@ -133,18 +121,15 @@ export function updateUI(elements, gameState, playerStats, currentMonster, salva
             itemWrapper.className = 'item-wrapper';
             itemWrapper.dataset.index = index.toString();
             itemWrapper.innerHTML = createItemHTML(item, false);
-
             if (salvageMode.active && salvageMode.selections.includes(index)) {
                 const itemDiv = itemWrapper.querySelector('.item');
                 if (itemDiv) itemDiv.classList.add('selected-for-salvage');
             }
-
             inventorySlotsEl.appendChild(itemWrapper);
         });
     } else {
         inventorySlotsEl.innerHTML = `<p style="text-align:center; width:100%;">No items.</p>`;
     }
-
     for (const slotName in gameState.equipment) {
         const slotEl = document.getElementById(`slot-${slotName}`);
         if (!slotEl) continue;
@@ -162,36 +147,101 @@ export function updateUI(elements, gameState, playerStats, currentMonster, salva
             slotEl.appendChild(placeholder);
         }
     }
-
     document.querySelectorAll('.preset-btn').forEach((btn, index) => {
         btn.textContent = gameState.presets[index].name;
         btn.classList.toggle('active', index === gameState.activePresetIndex);
     });
-
     (/** @type {HTMLButtonElement} */ (prestigeButton)).disabled = gameState.maxLevel < 100;
 
     const monsterDef = currentMonster.data;
     if (monsterDef) {
         lootMonsterNameEl.textContent = currentMonster.name;
-        lootDropChanceEl.textContent = `${monsterDef.dropChance}% ${monsterDef.dropChance === 100 ? '(Boss)' : ''}`;
         lootTableDisplayEl.innerHTML = '';
-        monsterDef.lootTable.forEach(entry => {
-            const icon = document.createElement('img');
-            icon.src = entry.item.icon;
-            icon.title = entry.item.name;
-            icon.className = 'loot-item-icon';
-            lootTableDisplayEl.appendChild(icon);
-        });
+        if(monsterDef.lootTable && monsterDef.lootTable.length > 0) {
+            const totalWeight = monsterDef.lootTable.reduce((sum, entry) => sum + entry.weight, 0);
+            monsterDef.lootTable.forEach((entry, index) => {
+                const itemChance = (entry.weight / totalWeight) * monsterDef.dropChance;
+                const entryDiv = document.createElement('div');
+                entryDiv.className = 'loot-table-entry';
+                entryDiv.dataset.lootIndex = index.toString(); 
+                entryDiv.innerHTML = `
+                    <img src="${entry.item.icon}" class="loot-item-icon" alt="${entry.item.name}">
+                    <div class="loot-item-details">
+                        <div class="item-name">${entry.item.name}</div>
+                        <div class="drop-chance">${itemChance.toFixed(2)}% chance</div>
+                    </div>
+                `;
+                lootTableDisplayEl.appendChild(entryDiv);
+            });
+        } else {
+            lootTableDisplayEl.innerHTML = '<p>This monster has no special drops.</p>';
+        }
     }
+}
+
+/**
+ * Creates the HTML for a tooltip showing an item's potential stats (its blueprint).
+ * @param {object} itemBase - The base item definition from items.js.
+ * @returns {string} The inner HTML for the tooltip.
+ */
+export function createLootTableTooltipHTML(itemBase) {
+    let statsHTML = '<ul>';
+    itemBase.possibleStats.forEach(statInfo => {
+        const statName = Object.values(STATS).find(s => s.key === statInfo.key)?.name || statInfo.key;
+        statsHTML += `<li>+ ${statName}: ${statInfo.min} - ${statInfo.max}</li>`;
+    });
+    statsHTML += '</ul>';
+
+    return `<div class="item-header"><span>${itemBase.name}</span></div>
+            <div class="possible-stats-header">
+                Possible Stats:
+                <span class="tooltip-shift-hint">Hold [SHIFT] to compare</span>
+            </div>
+            ${statsHTML}`;
+}
+
+/**
+ * Creates the HTML for a tooltip comparing a potential drop with an equipped item.
+ * @param {object} potentialItem - The base item definition from items.js.
+ * @param {object|null} equippedItem - The currently equipped item object, or null.
+ * @returns {string} The inner HTML for the tooltip.
+ */
+export function createLootComparisonTooltipHTML(potentialItem, equippedItem) {
+    let equippedStatsHTML = '<ul>';
+    if (equippedItem) {
+        for (const statKey in equippedItem.stats) {
+            const statInfo = Object.values(STATS).find(s => s.key === statKey);
+            const statName = statInfo ? statInfo.name : statKey;
+            equippedStatsHTML += `<li>+${formatNumber(equippedItem.stats[statKey])} ${statName}</li>`;
+        }
+    } else {
+        equippedStatsHTML += `<li>Nothing equipped</li>`;
+    }
+    equippedStatsHTML += '</ul>';
+
+    let potentialStatsHTML = '<ul>';
+    potentialItem.possibleStats.forEach(statInfo => {
+        const statName = Object.values(STATS).find(s => s.key === statInfo.key)?.name || statInfo.key;
+        potentialStatsHTML += `<li>+ ${statName}: ${statInfo.min} - ${statInfo.max}</li>`;
+    });
+    potentialStatsHTML += '</ul>';
+
+    return `<div class="item-header"><span>${potentialItem.name}</span></div>
+            <div class="tooltip-comparison-section">
+                <h5>Equipped: ${equippedItem ? equippedItem.name : 'None'}</h5>
+                ${equippedStatsHTML}
+            </div>
+            <div class="tooltip-comparison-section">
+                <h5>Potential Drop</h5>
+                ${potentialStatsHTML}
+            </div>`;
 }
 
 export function createItemHTML(item, isEquipped) {
     if (isEquipped) {
         return `<img src="${getItemIcon(item.type)}" class="item-icon">`;
     }
-
     const lockHTML = `<i class="fas ${item.locked ? 'fa-lock' : 'fa-lock-open'} lock-icon"></i>`;
-
     let statsHTML = '<ul>';
     for (const statKey in item.stats) {
         const statInfo = Object.values(STATS).find(s => s.key === statKey);
@@ -199,9 +249,7 @@ export function createItemHTML(item, isEquipped) {
         statsHTML += `<li>+${formatNumber(item.stats[statKey])} ${statName}</li>`;
     }
     statsHTML += '</ul>';
-
     const lockedClass = item.locked ? 'locked-item' : '';
-
     return `<div class="item ${item.rarity} ${lockedClass}">
                 ${lockHTML}
                 <div class="item-header">
@@ -260,15 +308,12 @@ export function createMapNode(name, iconSrc, coords, isUnlocked, isCompleted, cu
     const node = document.createElement('div');
     node.className = 'map-node';
     if (!isUnlocked) node.classList.add('locked');
-
     const currentFightingSubZone = findSubZoneByLevel(currentFightingLevel);
     if (currentFightingSubZone && currentFightingSubZone.name === name) {
         node.classList.add('active-zone');
     }
-
     node.style.top = coords.top;
     node.style.left = coords.left;
-
     let iconHtml = `<img src="${iconSrc}" class="map-node-icon ${isUnlocked ? '' : 'locked'} ${isCompleted ? 'completed' : ''}">`;
     if (isCompleted) {
         iconHtml += `<i class="fas fa-check-circle map-node-completed-icon"></i>`;
@@ -276,7 +321,6 @@ export function createMapNode(name, iconSrc, coords, isUnlocked, isCompleted, cu
     if (!isUnlocked) {
         iconHtml += `<i class="fas fa-lock map-node-lock-icon"></i>`;
     }
-
     node.innerHTML = `
         ${iconHtml}
         <span class="map-node-label">${name}</span>
@@ -295,4 +339,3 @@ export function getHighestCompletedLevelInSubZone(completedLevels, subZone) {
     }
     return highest;
 }
-// --- END OF FILE ui.js ---
