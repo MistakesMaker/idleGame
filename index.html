@@ -15,11 +15,46 @@
 </head>
 <body>
     <div class="game-container">
-        <!-- Left Panel -->
+        <!-- Left Panel: Combat & Loot -->
         <div class="panel left-panel">
             <div class="tabs">
-                 <button class="tab-button active" data-view="map-view">Map</button>
-                 <button class="tab-button" data-view="combat-view">Combat</button>
+                 <button class="tab-button active" data-view="combat-view">Combat</button>
+                 <button class="tab-button" data-view="loot-view">Loot</button>
+            </div>
+
+            <div id="combat-view" class="view active">
+                 <div id="monster-area">
+                    <div id="monster-info"><span id="monster-name">Slime</span> - <span>Lvl <span id="current-level">1</span></span></div>
+                    <div id="monster-health-bar-container"><div id="monster-health-bar"></div></div>
+                    <div id="monster-health-text">10 / 10</div>
+                    <div id="monster-display">
+                        <img id="monster-image" src="images/slime.png" alt="Monster">
+                        <div id="popup-container"></div>
+                    </div>
+                </div>
+                <div id="game-log-container">
+                    <h4>Game Log</h4>
+                     <div id="game-log"><p>Welcome! Your progress will be saved automatically.</p></div>
+                </div>
+            </div>
+            
+            <div id="loot-view" class="view">
+                <h3 id="loot-monster-name">Monster Loot</h3>
+                <p>Drop Chance: <span id="loot-drop-chance">0%</span></p>
+                <h4>Possible Drops:</h4>
+                <div id="loot-table-display">
+                    <!-- Loot icons will be dynamically inserted here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Middle Panel: Map, Hero, Equipment, Inventory -->
+        <div class="panel middle-panel">
+            <div class="tabs">
+                <button class="tab-button active" data-view="map-view">Map</button>
+                <button class="tab-button" data-view="hero-view">Hero</button>
+                <button class="tab-button" data-view="equipment-view">Equipment</button>
+                <button class="tab-button" data-view="inventory-view">Inventory</button>
             </div>
 
             <div id="map-view" class="view active">
@@ -39,33 +74,7 @@
                 </div>
             </div>
 
-            <div id="combat-view" class="view">
-                 <div id="monster-area">
-                    <div id="monster-info"><span id="monster-name">Slime</span> - <span>Lvl <span id="current-level">1</span></span></div>
-                    <div id="monster-health-bar-container"><div id="monster-health-bar"></div></div>
-                    <div id="monster-health-text">10 / 10</div>
-                    <div id="monster-display">
-                        <img id="monster-image" src="images/slime.png" alt="Monster">
-                        <div id="popup-container"></div>
-                    </div>
-                </div>
-                <div id="game-log-container">
-                    <h4>Game Log</h4>
-                     <div id="game-log"><p>Welcome! Your progress will be saved automatically.</p></div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Middle Panel -->
-        <div class="panel middle-panel">
-            <div class="tabs">
-                <button class="tab-button active" data-view="hero-view">Hero</button>
-                <button class="tab-button" data-view="equipment-view">Equipment</button>
-                <button class="tab-button" data-view="inventory-view">Inventory</button>
-                <button class="tab-button" data-view="loot-view">Loot</button> 
-            </div>
-
-            <div id="hero-view" class="view active">
+            <div id="hero-view" class="view">
                 <h3>Hero Stats</h3>
                 <div id="hero-level-info">
                     <p>Level: <span id="hero-level">1</span></p>
@@ -117,6 +126,7 @@
                     </div>
                 </div>
             </div>
+
             <div id="inventory-view" class="view">
                 <h3>Inventory</h3>
                 <div class="inventory-actions">
@@ -127,14 +137,7 @@
                 </div>
                 <div id="inventory-slots"><p>Defeat bosses for loot!</p></div>
             </div>
-            <div id="loot-view" class="view">
-                <h3 id="loot-monster-name">Monster Loot</h3>
-                <p>Drop Chance: <span id="loot-drop-chance">0%</span></p>
-                <h4>Possible Drops:</h4>
-                <div id="loot-table-display">
-                    <!-- Loot icons will be dynamically inserted here -->
-                </div>
-            </div>
+            
         </div>
 
         <!-- Right Panel -->

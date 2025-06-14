@@ -266,6 +266,8 @@ document.addEventListener('DOMContentLoaded', () => {
             startNewMonster();
             updateAll();
             autoSave();
+            
+            // --- UI/UX TWEAK: Switch to the combat tab after selecting a level ---
             const combatTab = document.querySelector('.tab-button[data-view="combat-view"]');
             if (combatTab instanceof HTMLElement) combatTab.click();
         }
@@ -573,8 +575,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const row = event.target.closest('.attribute-row');
             if (!(row instanceof HTMLElement) || !row.dataset.attribute) return;
             
-            const attribute = row.dataset.attribute;
-            const content = statTooltipContent[attribute];
+            const attributeKey = row.dataset.attribute;
+            const content = statTooltipContent[attributeKey];
             if (!content) return;
 
             let html = `<h4>${content.title}</h4><p>${content.description}</p><ul>`;
