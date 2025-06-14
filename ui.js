@@ -2,6 +2,7 @@
 
 import { STATS } from './data/stat_pools.js';
 import { getXpForNextLevel, getUpgradeCost, formatNumber, findSubZoneByLevel } from './utils.js';
+import { ITEMS } from './data/items.js';
 
 /**
  * Gathers all necessary DOM elements from the page.
@@ -58,13 +59,16 @@ export function initDOMElements() {
         modalCloseBtnEl: document.getElementById('modal-close-btn'),
         autoProgressCheckboxEl: document.getElementById('auto-progress-checkbox'),
         realmTabsContainerEl: document.getElementById('realm-tabs-container'),
+        gemSlotsEl: document.getElementById('gem-slots'),
+        gemCraftingSlotsContainer: document.getElementById('gem-crafting-slots'),
+        gemCraftBtn: document.getElementById('gem-craft-btn'),
     };
 }
 
 /**
  * Updates the entire game UI based on the current state.
  */
-export function updateUI(elements, gameState, playerStats, currentMonster, salvageMode) {
+export function updateUI(elements, gameState, playerStats, currentMonster, salvageMode, craftingGems = []) {
     const {
         goldStatEl, scrapStatEl, heroXpTextEl, clickDamageStatEl, dpsStatEl, absorbedClickDmgStatEl,
         absorbedDpsStatEl, monsterHealthTextEl, upgradeClickCostEl, upgradeDpsCostEl, heroLevelEl,
@@ -72,7 +76,7 @@ export function updateUI(elements, gameState, playerStats, currentMonster, salva
         addAgilityBtn, addLuckBtn, bonusGoldStatEl, magicFindStatEl, prestigeCountStatEl,
         legacyItemsStatEl, currentLevelEl, autoProgressCheckboxEl, monsterHealthBarEl,
         upgradeClickLevelEl, upgradeDpsLevelEl, inventorySlotsEl, lootMonsterNameEl,
-        lootTableDisplayEl, prestigeButton
+        lootTableDisplayEl, prestigeButton, gemSlotsEl, gemCraftingSlotsContainer, gemCraftBtn
     } = elements;
 
     const xpToNextLevel = getXpForNextLevel(gameState.hero.level);
@@ -137,7 +141,7 @@ export function updateUI(elements, gameState, playerStats, currentMonster, salva
         slotEl.innerHTML = '';
         if (item) {
             const itemDiv = document.createElement('div');
-            itemDiv.innerHTML = `<img src="${getItemIcon(item.type)}" class="item-icon">`;
+            itemDiv.innerHTML = createItemHTML(item, true); 
             itemDiv.dataset.slotName = slotName;
             slotEl.appendChild(itemDiv);
         } else {
@@ -147,6 +151,29 @@ export function updateUI(elements, gameState, playerStats, currentMonster, salva
             slotEl.appendChild(placeholder);
         }
     }
+
+    gemSlotsEl.innerHTML = '';
+    if (gameState.gems && gameState.gems.length > 0) {
+        gameState.gems.forEach((gem, index) => {
+            const gemDiv = document.createElement('div');
+            gemDiv.innerHTML = createGemHTML(gem);
+            gemDiv.dataset.gemIndex = index.toString();
+            gemSlotsEl.appendChild(gemDiv);
+        });
+    } else {
+        gemSlotsEl.innerHTML = '<p>No gems yet. Find them as rare drops!</p>';
+    }
+
+    const craftingSlots = gemCraftingSlotsContainer.querySelectorAll('.gem-crafting-slot');
+    craftingSlots.forEach((slot, index) => {
+        slot.innerHTML = '';
+        if (craftingGems[index]) {
+            slot.innerHTML = createGemHTML(craftingGems[index]);
+        }
+    });
+    (/** @type {HTMLButtonElement} */ (gemCraftBtn)).disabled = craftingGems.length !== 2 || gameState.scrap < 100;
+
+
     document.querySelectorAll('.preset-btn').forEach((btn, index) => {
         btn.textContent = gameState.presets[index].name;
         btn.classList.toggle('active', index === gameState.activePresetIndex);
@@ -178,6 +205,36 @@ export function updateUI(elements, gameState, playerStats, currentMonster, salva
     }
 }
 
+export function createGemTooltipHTML(gem) {
+    const name = gem.name || `T${gem.tier} Gem`;
+    // Add the tier to the name for fused gems
+    const displayName = gem.tier > 1 ? `T${gem.tier} Fused Gem` : name;
+    const headerHTML = `<div class="item-header gem-tooltip"><span>${displayName}</span></div>`;
+    let statsHTML = '<ul>';
+
+    if (gem.stats) {
+        for (const statKey in gem.stats) {
+            const statInfo = Object.values(STATS).find(s => s.key === statKey);
+            const statName = statInfo ? statInfo.name : statKey;
+            const value = gem.stats[statKey];
+            const statValue = statInfo && statInfo.type === 'percent' ? `${value}%` : formatNumber(value);
+            statsHTML += `<li>+${statValue} ${statName}</li>`;
+        }
+    }
+
+    if (gem.synergy) {
+        statsHTML += `<li>Adds ${gem.synergy.value}% of total DPS as Click Damage</li>`;
+    }
+
+    if (statsHTML === '<ul>') {
+        statsHTML += `<li>A mysterious gem...</li>`;
+    }
+
+    statsHTML += '</ul>';
+    return headerHTML + statsHTML;
+}
+
+
 export function createLootTableTooltipHTML(itemBase) {
     let statsHTML = '<ul>';
     itemBase.possibleStats.forEach(statInfo => {
@@ -185,17 +242,22 @@ export function createLootTableTooltipHTML(itemBase) {
         statsHTML += `<li>+ ${statName}: ${statInfo.min} - ${statInfo.max}</li>`;
     });
     statsHTML += '</ul>';
-    // --- FIX: The "Hold Shift" hint was confusing here. It's for comparing equipped items, not loot table items. ---
+
+    let socketsHTML = '';
+    if (itemBase.canHaveSockets) {
+        socketsHTML = `<div class="item-sockets-tooltip">Sockets: 0 - ${itemBase.maxSockets}</div>`;
+    }
+
     return `<div class="item-header"><span>${itemBase.name}</span></div>
             <div class="possible-stats-header">
                 Possible Stats:
                 <span class="tooltip-shift-hint">Hold [SHIFT] to compare</span>
             </div>
-            ${statsHTML}`;
+            ${statsHTML}
+            ${socketsHTML}`;
 }
 
 export function createLootComparisonTooltipHTML(potentialItem, equippedItem, equippedItem2 = null) {
-    // --- New logic for ring comparison ---
     if (potentialItem.type === 'ring' && (equippedItem || equippedItem2)) {
         let potentialStatsHTML = '<ul>';
         potentialItem.possibleStats.forEach(statInfo => {
@@ -228,7 +290,6 @@ export function createLootComparisonTooltipHTML(potentialItem, equippedItem, equ
         }
         equipped2StatsHTML += '</ul>';
 
-
         return `<div class="item-header"><span>${potentialItem.name}</span></div>
                 <div class="tooltip-comparison-section">
                     <h5>Potential Drop</h5>
@@ -243,11 +304,9 @@ export function createLootComparisonTooltipHTML(potentialItem, equippedItem, equ
                         <h5>vs. ${equippedItem2 ? equippedItem2.name : "Empty Slot"}</h5>
                         ${equipped2StatsHTML}
                     </div>
-                </div>
-                `;
+                </div>`;
     }
 
-    // --- Original logic for non-ring items ---
     let equippedStatsHTML = '<ul>';
     if (equippedItem) {
         for (const statKey in equippedItem.stats) {
@@ -280,9 +339,35 @@ export function createLootComparisonTooltipHTML(potentialItem, equippedItem, equ
 
 
 export function createItemHTML(item, isEquipped) {
-    if (isEquipped) {
-        return `<img src="${getItemIcon(item.type)}" class="item-icon">`;
+    let socketsHTML = '';
+    if (item.sockets) {
+        socketsHTML += '<div class="item-sockets">';
+        item.sockets.forEach(gem => {
+            if (gem) {
+                socketsHTML += `<div class="socket"><img src="${gem.icon}" alt="${gem.name}"></div>`;
+            } else {
+                socketsHTML += '<div class="socket"></div>';
+            }
+        });
+        socketsHTML += '</div>';
     }
+
+    if (isEquipped) {
+        let equippedHTML = `<img src="${getItemIcon(item.type)}" class="item-icon">`;
+        if (item.sockets) {
+            equippedHTML += '<div class="item-sockets equipped-sockets">';
+            item.sockets.forEach(gem => {
+                 if (gem) {
+                    equippedHTML += `<div class="socket"><img src="${gem.icon}" alt="${gem.name}"></div>`;
+                } else {
+                    equippedHTML += '<div class="socket"></div>';
+                }
+            });
+            equippedHTML += '</div>';
+        }
+        return equippedHTML;
+    }
+
     const lockHTML = `<i class="fas ${item.locked ? 'fa-lock' : 'fa-lock-open'} lock-icon"></i>`;
     let statsHTML = '<ul>';
     for (const statKey in item.stats) {
@@ -293,15 +378,24 @@ export function createItemHTML(item, isEquipped) {
     }
     statsHTML += '</ul>';
     const lockedClass = item.locked ? 'locked-item' : '';
+    
     return `<div class="item ${item.rarity} ${lockedClass}">
                 ${lockHTML}
                 <div class="item-header">
                     <span>${item.name}</span>
                 </div>
                 ${statsHTML}
+                ${socketsHTML} 
                 <img src="${getItemIcon(item.type)}" class="item-bg-icon" alt="">
             </div>`;
 }
+
+export function createGemHTML(gem) {
+    return `<div class="gem" data-gem-id="${gem.id}">
+                <img src="${gem.icon}" alt="${gem.name}">
+           </div>`;
+}
+
 
 export function getItemIcon(type) {
     switch (type) {

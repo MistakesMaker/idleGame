@@ -26,6 +26,8 @@ document.addEventListener('DOMContentLoaded', () => {
     let isShiftPressed = false;
     let lastMousePosition = { x: 0, y: 0 };
     let pendingRingEquip = null;
+    let selectedGemForSocketing = null;
+    let craftingGems = [];
 
     /** @type {DOMElements} */
     let elements = {};
@@ -42,6 +44,7 @@ document.addEventListener('DOMContentLoaded', () => {
             monster: { hp: 10, maxHp: 10 },
             equipment: { ...defaultEquipmentState },
             inventory: [],
+            gems: [],
             legacyItems: [],
             absorbedStats: { clickDamage: 0, dps: 0 },
             prestigeCount: 0,
@@ -59,7 +62,7 @@ document.addEventListener('DOMContentLoaded', () => {
             isFarming: true,
             isAutoProgressing: true,
             currentRealmIndex: 0,
-            lastSaveTimestamp: null // Add for offline progress
+            lastSaveTimestamp: null
         };
     }
 
@@ -69,6 +72,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (stat === STATS.CLICK_DAMAGE.key) playerStats.baseClickDamage += value;
             if (stat === STATS.DPS.key) playerStats.baseDps += value;
             if (stat === STATS.GOLD_GAIN.key) playerStats.bonusGold += value;
+            if (stat === STATS.MAGIC_FIND.key) playerStats.magicFind += value;
         }
     }
 
@@ -78,29 +82,75 @@ document.addEventListener('DOMContentLoaded', () => {
         playerStats.baseDps = 0 + (gameState.absorbedStats?.dps || 0);
         playerStats.bonusGold = 0;
         playerStats.magicFind = 0;
+
+        const synergyGems = [];
+
         const allItems = [...(gameState.legacyItems || []), ...Object.values(gameState.equipment)];
+
         for (const item of allItems) {
             if (item) {
                 addStatsFromItem(item);
+
+                if (item.sockets && item.sockets.length > 0) {
+                    for (const gem of item.sockets) {
+                        if (gem) {
+                            if (gem.synergy) {
+                                synergyGems.push(gem);
+                            }
+                            if (gem.stats) {
+                                for (const statKey in gem.stats) {
+                                    const value = gem.stats[statKey];
+                                    switch (statKey) {
+                                        case STATS.CLICK_DAMAGE.key:
+                                            playerStats.baseClickDamage += value;
+                                            break;
+                                        case STATS.DPS.key:
+                                            playerStats.baseDps += value;
+                                            break;
+                                        case STATS.GOLD_GAIN.key:
+                                            playerStats.bonusGold += value;
+                                            break;
+                                        case STATS.MAGIC_FIND.key:
+                                            playerStats.magicFind += value;
+                                            break;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
+
         const clickUpgradeBonus = gameState.upgrades.clickDamage * 1.25;
         const dpsUpgradeBonus = gameState.upgrades.dps * 2.5;
+
         const strengthBonusClickFlat = hero.attributes.strength * 0.5;
         const strengthBonusClickPercent = hero.attributes.strength * 0.2;
         const agilityBonusDpsPercent = hero.attributes.agility * 0.3;
         playerStats.bonusGold += hero.attributes.luck * 0.5;
         playerStats.magicFind += hero.attributes.luck * 0.2;
+
         let finalClickDamage = playerStats.baseClickDamage + clickUpgradeBonus + strengthBonusClickFlat;
         finalClickDamage *= (1 + (strengthBonusClickPercent / 100));
-        playerStats.totalClickDamage = finalClickDamage;
+
         let finalDps = playerStats.baseDps + dpsUpgradeBonus;
         finalDps *= (1 + (agilityBonusDpsPercent / 100));
+
+        for (const gem of synergyGems) {
+            if (gem.synergy && gem.synergy.source === 'dps' && gem.synergy.target === 'clickDamage') {
+                finalClickDamage += finalDps * (gem.synergy.value / 100);
+            }
+        }
+
+        playerStats.totalClickDamage = finalClickDamage;
         playerStats.totalDps = finalDps;
+
         if (socket.connected) {
             socket.emit('updatePlayerStats', { dps: playerStats.totalDps });
         }
     }
+
 
     function handleMonsterDefeated() {
         const result = logic.monsterDefeated(gameState, playerStats, currentMonster);
@@ -151,7 +201,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function updateAll() {
-        ui.updateUI(elements, gameState, playerStats, currentMonster, salvageMode);
+        ui.updateUI(elements, gameState, playerStats, currentMonster, salvageMode, craftingGems);
         renderMap();
         renderRealmTabs();
     }
@@ -160,7 +210,7 @@ document.addEventListener('DOMContentLoaded', () => {
         elements.saveIndicatorEl.classList.add('visible');
         if (saveTimeout) clearTimeout(saveTimeout);
         
-        gameState.lastSaveTimestamp = Date.now(); // Update timestamp on save
+        gameState.lastSaveTimestamp = Date.now();
         localStorage.setItem('idleRPGSaveData', JSON.stringify(gameState));
 
         saveTimeout = setTimeout(() => {
@@ -337,7 +387,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const startingLevel = gameState.hero.level;
         gameState.gold += totalGoldGained;
         gameState.scrap += totalScrapGained;
-        player.gainXP(gameState, totalXPGained); // Apply XP and let it handle level-ups
+        player.gainXP(gameState, totalXPGained);
         const finalLevel = gameState.hero.level;
 
         recalculateStats();
@@ -349,19 +399,19 @@ document.addEventListener('DOMContentLoaded', () => {
         elements.offlineXp.textContent = formatNumber(totalXPGained);
         elements.offlineScrap.textContent = formatNumber(totalScrapGained);
         
-        // --- NEW: Clear previous level-up messages and add a summary ---
         const existingLevelUps = elements.offlineRewards.querySelectorAll('.level-up-summary');
         existingLevelUps.forEach(el => el.remove());
 
         if (finalLevel > startingLevel) {
             const p = document.createElement('p');
             p.innerHTML = `Leveled Up! (Level ${startingLevel} → Level ${finalLevel})`;
-            p.className = 'legendary level-up-summary'; // Added a class for potential styling
+            p.className = 'legendary level-up-summary';
             elements.offlineRewards.appendChild(p);
         }
 
         elements.offlineProgressModalBackdrop.classList.remove('hidden');
     }
+
 
     function setupEventListeners() {
         window.addEventListener('keydown', (e) => {
@@ -447,9 +497,8 @@ document.addEventListener('DOMContentLoaded', () => {
             autoSave();
         });
         document.getElementById('salvage-by-rarity-controls').addEventListener('click', (e) => {
-            const target = e.target;
-            if (!(target instanceof HTMLElement) || !target.dataset.rarity) return;
-            const rarity = target.dataset.rarity;
+            if (!(e.target instanceof HTMLElement) || !e.target.dataset.rarity) return;
+            const rarity = e.target.dataset.rarity;
             const result = player.salvageByRarity(gameState, rarity);
             if (result.count > 0) {
                 logMessage(elements.gameLogEl, `Salvaged ${result.count} ${rarity} items for ${formatNumber(result.scrapGained)} Scrap.`, 'uncommon');
@@ -459,33 +508,89 @@ document.addEventListener('DOMContentLoaded', () => {
                 logMessage(elements.gameLogEl, `No unlocked ${rarity} items to salvage.`);
             }
         });
+        
+        elements.gemSlotsEl.addEventListener('click', (e) => {
+            if (!(e.target instanceof Element)) return;
+            const gemWrapper = e.target.closest('div[data-gem-index]');
+            if (!(gemWrapper instanceof HTMLElement) || !gemWrapper.dataset.gemIndex) return;
+        
+            const gemIndex = parseInt(gemWrapper.dataset.gemIndex, 10);
+            const gemInstance = gameState.gems[gemIndex];
+            if (!gemInstance) return;
+            
+            // Check if the gem is already in a crafting slot
+            const isInCrafting = craftingGems.some(g => g.id === gemInstance.id);
+            if (isInCrafting) return;
+        
+            // Add to crafting slots if there's space and tiers match
+            if (craftingGems.length < 2) {
+                if (craftingGems.length > 0 && craftingGems[0].tier !== gemInstance.tier) {
+                    logMessage(elements.gameLogEl, "You can only combine gems of the same tier.", "rare");
+                    return;
+                }
+                craftingGems.push(gemInstance);
+                // We need to find the gem by its unique ID to remove it, not by index.
+                const indexToRemove = gameState.gems.findIndex(g => g.id === gemInstance.id);
+                if (indexToRemove > -1) {
+                    gameState.gems.splice(indexToRemove, 1);
+                }
+                updateAll();
+            }
+        });
+        
         elements.inventorySlotsEl.addEventListener('click', (event) => {
-            const target = event.target;
-            if (!(target instanceof Element)) return;
-            const wrapper = target.closest('.item-wrapper');
+            if (!(event.target instanceof Element)) return;
+            const wrapper = event.target.closest('.item-wrapper');
             if (!(wrapper instanceof HTMLElement) || !wrapper.dataset.index) return;
             
-            const index = parseInt(wrapper.dataset.index, 10);
-            const item = gameState.inventory[index];
+            const itemIndex = parseInt(wrapper.dataset.index, 10);
+            const item = gameState.inventory[itemIndex];
             if (!item) return;
 
-            if (target.classList.contains('lock-icon')) {
-                const message = player.toggleItemLock(gameState, index);
+            if (selectedGemForSocketing && item.sockets && item.sockets.includes(null)) {
+                const gemToSocket = selectedGemForSocketing;
+                const firstEmptySocketIndex = item.sockets.indexOf(null);
+                
+                if (firstEmptySocketIndex > -1) {
+                    item.sockets[firstEmptySocketIndex] = gemToSocket;
+                    
+                    const originalGemIndex = gameState.gems.findIndex(g => g.id === gemToSocket.id);
+                    if(originalGemIndex > -1) gameState.gems.splice(originalGemIndex, 1);
+                    
+                    logMessage(elements.gameLogEl, `Socketed ${gemToSocket.name} into ${item.name}.`, 'epic');
+                    
+                    selectedGemForSocketing = null;
+                    document.querySelectorAll('.socket-target').forEach(el => el.classList.remove('socket-target'));
+                    document.querySelectorAll('.selected-gem').forEach(el => el.classList.remove('selected-gem'));
+                    
+                    recalculateStats();
+                    updateAll();
+                    autoSave();
+                    return;
+                }
+            }
+
+            if (pendingRingEquip) {
+                pendingRingEquip = null;
+            }
+
+            if (event.target.closest('.lock-icon')) {
+                const message = player.toggleItemLock(gameState, itemIndex);
                 if (message) logMessage(elements.gameLogEl, message);
                 updateAll();
                 autoSave();
             } else if (salvageMode.active) {
                 if (item.locked) { logMessage(elements.gameLogEl, "This item is locked and cannot be salvaged.", 'rare'); return; }
-                const selectionIndex = salvageMode.selections.indexOf(index);
+                const selectionIndex = salvageMode.selections.indexOf(itemIndex);
                 if (selectionIndex > -1) {
                     salvageMode.selections.splice(selectionIndex, 1);
                 } else {
-                    salvageMode.selections.push(index);
+                    salvageMode.selections.push(itemIndex);
                 }
                 document.getElementById('salvage-count').textContent = salvageMode.selections.length.toString();
                 updateAll();
             } else {
-                const result = player.equipItem(gameState, index);
+                const result = player.equipItem(gameState, itemIndex);
                 if (result.isPendingRing) {
                     pendingRingEquip = result.item;
                     showRingSelectionModal(pendingRingEquip);
@@ -498,12 +603,39 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         
         document.getElementById('equipment-paperdoll').addEventListener('click', (event) => {
-            const target = event.target;
-            if (!(target instanceof Element)) return;
-            const slotElement = target.closest('.equipment-slot');
+            if (!(event.target instanceof Element)) return;
+            const slotElement = event.target.closest('.equipment-slot');
             if (!slotElement) return;
             const slotName = slotElement.id.replace('slot-', '');
             player.unequipItem(gameState, slotName);
+            recalculateStats();
+            updateAll();
+            autoSave();
+        });
+
+        elements.gemCraftingSlotsContainer.addEventListener('click', (e) => {
+            if (!(e.target instanceof HTMLElement)) return;
+            const slot = e.target.closest('.gem-crafting-slot');
+            if (!(slot instanceof HTMLElement) || slot.innerHTML === '' || !slot.dataset.slot) return;
+
+            const slotIndex = parseInt(slot.dataset.slot, 10);
+            const gemToReturn = craftingGems[slotIndex];
+
+            if (gemToReturn) {
+                gameState.gems.push(gemToReturn);
+                craftingGems.splice(slotIndex, 1);
+                updateAll();
+            }
+        });
+
+        elements.gemCraftBtn.addEventListener('click', () => {
+            if (craftingGems.length !== 2) return;
+            
+            const result = player.combineGems(gameState, craftingGems);
+            logMessage(elements.gameLogEl, result.message, result.success && result.newGem ? 'legendary' : 'rare');
+
+            craftingGems = [];
+            
             recalculateStats();
             updateAll();
             autoSave();
@@ -617,6 +749,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 const viewId = tab.dataset.view || tab.textContent.toLowerCase() + '-view';
                 tab.dataset.view = viewId;
                 tab.addEventListener('click', () => {
+                    if (selectedGemForSocketing !== null) {
+                        selectedGemForSocketing = null;
+                        document.querySelectorAll('.selected-gem').forEach(el => el.classList.remove('selected-gem'));
+                        document.querySelectorAll('.socket-target').forEach(el => el.classList.remove('socket-target'));
+                    }
+                    if (craftingGems.length > 0) {
+                        gameState.gems.push(...craftingGems);
+                        craftingGems = [];
+                        updateAll();
+                    }
+
                     tabs.forEach(t => t.classList.remove('active'));
                     tab.classList.add('active');
                     if (parentPanel) {
@@ -630,7 +773,8 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
         
-        setupTooltipListeners();
+        setupItemTooltipListeners();
+        setupGemTooltipListeners();
         setupStatTooltipListeners();
         setupLootTooltipListeners();
         setupRaidListeners();
@@ -731,7 +875,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return headerHTML + statsHTML;
     }
 
-    function setupTooltipListeners() {
+    function setupItemTooltipListeners() {
         const showTooltip = (item, element) => {
             if (!item) return;
 
@@ -747,7 +891,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (isShiftPressed && item.baseId) {
                 const itemBase = ITEMS[item.baseId];
                 if (itemBase) {
-                    elements.tooltipEl.innerHTML = createBlueprintComparisonTooltipHTML(item, itemBase);
+                    elements.tooltipEl.innerHTML = ui.createLootTableTooltipHTML(itemBase);
                 }
             } else {
                 if (item.type === 'ring') {
@@ -782,6 +926,28 @@ document.addEventListener('DOMContentLoaded', () => {
             showTooltip(gameState.equipment[slotName], slotEl);
         });
         equipmentSlots.addEventListener('mouseout', () => elements.tooltipEl.classList.add('hidden'));
+    }
+    
+    function setupGemTooltipListeners(){
+        elements.gemSlotsEl.addEventListener('mouseover', (e) => {
+            if (!(e.target instanceof Element)) return;
+            const gemWrapper = e.target.closest('div[data-gem-index]');
+            if (!(gemWrapper instanceof HTMLElement) || !gemWrapper.dataset.gemIndex) return;
+
+            const gemIndex = parseInt(gemWrapper.dataset.gemIndex, 10);
+            const gem = gameState.gems[gemIndex];
+            if (!gem) return;
+            
+            elements.tooltipEl.className = 'hidden';
+            elements.tooltipEl.classList.add('gem-quality');
+            elements.tooltipEl.innerHTML = ui.createGemTooltipHTML(gem);
+
+            const rect = gemWrapper.getBoundingClientRect();
+            elements.tooltipEl.style.left = `${rect.right + 5}px`;
+            elements.tooltipEl.style.top = `${rect.top}px`;
+            elements.tooltipEl.classList.remove('hidden');
+        });
+        elements.gemSlotsEl.addEventListener('mouseout', () => elements.tooltipEl.classList.add('hidden'));
     }
     
     function setupStatTooltipListeners() {
@@ -823,12 +989,15 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!itemBase) return;
             elements.tooltipEl.className = 'hidden';
             
-            if (isShiftPressed) {
-                let slotToCompare = itemBase.type;
-                if (slotToCompare === 'ring') {
-                     elements.tooltipEl.innerHTML = ui.createLootComparisonTooltipHTML(itemBase, gameState.equipment.ring1, gameState.equipment.ring2);
+            if (itemBase.tier >= 1) {
+                elements.tooltipEl.innerHTML = ui.createGemTooltipHTML(itemBase);
+                elements.tooltipEl.classList.add('gem-quality');
+            }
+            else if (isShiftPressed) {
+                if (itemBase.type === 'ring') {
+                    elements.tooltipEl.innerHTML = ui.createLootComparisonTooltipHTML(itemBase, gameState.equipment.ring1, gameState.equipment.ring2);
                 } else {
-                    const equippedItem = gameState.equipment[slotToCompare];
+                    const equippedItem = gameState.equipment[itemBase.type];
                     elements.tooltipEl.innerHTML = ui.createLootComparisonTooltipHTML(itemBase, equippedItem);
                 }
             } else {
@@ -1008,7 +1177,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const baseState = getDefaultGameState();
             gameState = { 
                 ...baseState, 
-                ...loadedState, 
+                ...loadedState,
+                gems: loadedState.gems || [],
                 hero: { ...baseState.hero, ...(loadedState.hero || {}), attributes: { ...baseState.hero.attributes, ...(loadedState.hero?.attributes || {}) } }, 
                 upgrades: { ...baseState.upgrades, ...(loadedState.upgrades || {}) }, 
                 equipment: { ...baseState.equipment, ...(loadedState.equipment || {}) }, 

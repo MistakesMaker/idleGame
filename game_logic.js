@@ -16,7 +16,7 @@ export function generateItem(rarity, itemLevel, itemBase) {
 
     const item = {
         id: Date.now() + Math.random(),
-        baseId: itemBase.id, // --- THIS IS THE NEW LINE ---
+        baseId: itemBase.id,
         name: `${rarity.charAt(0).toUpperCase() + rarity.slice(1)} ${itemBase.name}`,
         type: itemBase.type.toLowerCase(),
         rarity: rarity,
@@ -47,6 +47,22 @@ export function generateItem(rarity, itemLevel, itemBase) {
         item.stats[statInfo.key] = parseFloat(final_stat_value.toFixed(2));
     });
 
+    if (itemBase.canHaveSockets && itemBase.maxSockets > 0) {
+        item.sockets = [];
+        
+        if (Math.random() < 0.10) {
+            item.sockets.push(null);
+            
+            if (item.sockets.length < itemBase.maxSockets && Math.random() < 0.05) {
+                item.sockets.push(null);
+
+                if (item.sockets.length < itemBase.maxSockets && Math.random() < 0.01) {
+                    item.sockets.push(null);
+                }
+            }
+        }
+    }
+
     return item;
 }
 
@@ -71,6 +87,18 @@ export function dropLoot(currentMonster, gameState, playerStats) {
 
     if (!itemBaseToDrop) return null;
 
+    // Check if the drop is a gem by looking for a 'tier' property
+    const isGem = itemBaseToDrop.tier >= 1;
+
+    if (isGem) {
+        // It's a gem, add it to the gems inventory
+        const newGem = { ...itemBaseToDrop, id: Date.now() + Math.random() };
+        if (!gameState.gems) gameState.gems = []; // Safety check for old saves
+        gameState.gems.push(newGem);
+        return newGem;
+    }
+    
+    // It's a regular item, proceed with rarity roll etc.
     let rarityRoll = Math.random() * 100;
     rarityRoll -= playerStats.magicFind;
 
@@ -121,7 +149,9 @@ export function monsterDefeated(gameState, playerStats, currentMonster) {
     if (dropRoll < currentMonster.data.dropChance) {
         droppedItem = dropLoot(currentMonster, gameState, playerStats);
         if (droppedItem) {
-            logMessages.push(`The ${currentMonster.name} dropped an item! <span class="${droppedItem.rarity}" style="font-weight:bold;">${droppedItem.name}</span>`);
+            const isGem = droppedItem.tier >= 1;
+            const rarityClass = isGem ? 'epic' : droppedItem.rarity;
+            logMessages.push(`The ${currentMonster.name} dropped something! <span class="${rarityClass}" style="font-weight:bold;">${droppedItem.name}</span>`);
         }
     }
 

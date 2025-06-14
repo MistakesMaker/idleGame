@@ -398,6 +398,9 @@ button:disabled { background: #7f8c8d; cursor: not-allowed; border-bottom: 2px s
     box-shadow: 0 0 15px #f39c12; 
     animation: legendary-glow 2s ease-in-out infinite alternate; 
 }
+/* NEW: Quality for Gems */
+.gem-quality { border: 2px solid #c0392b; box-shadow: 0 0 12px #e74c3c; }
+
 
 @keyframes legendary-glow { from { box-shadow: 0 0 5px #f39c12; } to { box-shadow: 0 0 20px #f0b75a; } }
 .selected-for-prestige { border: 3px dashed #f1c40f !important; transform: scale(1.05); }
@@ -478,18 +481,19 @@ body.salvage-mode-active #inventory-slots .item:not(.locked-item) { cursor: poin
 #item-tooltip.rare { border-color: #3498db; }
 #item-tooltip.epic { border-color: #9b59b6; }
 #item-tooltip.legendary { border-color: #f39c12; }
+#item-tooltip.gem-quality { border-color: #c0392b; } /* NEW: Gem tooltip border */
 
 #item-tooltip .item-header .common { color: #bdc3c7; border: none; box-shadow: none; text-shadow: none; }
 #item-tooltip .item-header .uncommon { color: #2ecc71; border: none; box-shadow: none; text-shadow: none; }
 #item-tooltip .item-header .rare { color: #3498db; border: none; box-shadow: none; text-shadow: none; }
 #item-tooltip .item-header .epic { color: #9b59b6; border: none; box-shadow: none; text-shadow: none; }
 #item-tooltip .item-header .legendary { color: #f39c12; border: none; box-shadow: none; text-shadow: none; animation: none; }
+#item-tooltip .item-header.gem-tooltip { color: #e74c3c; border: none; box-shadow: none; text-shadow: 0 0 5px #c0392b; } /* NEW: Gem tooltip header text */
 
 #item-tooltip ul { list-style: none; padding: 0; margin: 0; font-size: 0.9em; }
 #item-tooltip .stat-better { color: #2ecc71; font-weight: bold; }
 #item-tooltip .stat-worse { color: #e74c3c; font-weight: bold; }
 
-/* --- THIS IS THE CORRECTED CSS --- */
 .tooltip-shift-hint {
     font-size: 0.8em;
     color: #7f8c8d;
@@ -589,7 +593,6 @@ body.salvage-mode-active #inventory-slots .item:not(.locked-item) { cursor: poin
     aspect-ratio: 400 / 600;
 }
 
-/* ADD THESE NEW RULES */
 .equipment-slot.ring-equip-pending {
     border-color: #f1c40f;
     box-shadow: 0 0 15px #f1c40f;
@@ -607,7 +610,6 @@ body.salvage-mode-active #inventory-slots .item:not(.locked-item) { cursor: poin
     flex: 1;
 }
 
-/* --- NEW RULES FOR RING SELECTION MODAL --- */
 #ring-selection-modal-backdrop {
     position: fixed;
     top: 0;
@@ -645,10 +647,9 @@ body.salvage-mode-active #inventory-slots .item:not(.locked-item) { cursor: poin
 
 .ring-selection-option {
     flex: 1;
-    min-height: 150px; /* Ensure space for item content */
+    min-height: 150px;
 }
 
-/* Reuse the '.item' class styles inside the modal options */
 .ring-selection-option .item {
     height: 100%;
     display: flex;
@@ -657,15 +658,13 @@ body.salvage-mode-active #inventory-slots .item:not(.locked-item) { cursor: poin
 }
 
 .ring-selection-option .item:hover {
-    transform: scale(1.05); /* Keep hover effect from base .item style */
+    transform: scale(1.05);
 }
 
 #ring-selection-cancel-btn {
     background: #c0392b;
     border-bottom-color: #922b21;
 }
-
-/* --- NEW RULES FOR OFFLINE PROGRESS MODAL --- */
 
 #offline-progress-modal-backdrop {
     position: fixed;
@@ -674,7 +673,7 @@ body.salvage-mode-active #inventory-slots .item:not(.locked-item) { cursor: poin
     width: 100%;
     height: 100%;
     background-color: rgba(0,0,0,0.8);
-    z-index: 10002; /* Higher than ring modal */
+    z-index: 10002;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -719,4 +718,115 @@ body.salvage-mode-active #inventory-slots .item:not(.locked-item) { cursor: poin
     border-bottom-color: #229954;
     padding: 12px 25px;
     font-size: 1.1em;
+}
+
+
+/* --- GEM AND SOCKET STYLES --- */
+
+.item-sockets {
+    display: flex;
+    gap: 4px;
+    margin-top: 8px;
+    position: relative;
+    z-index: 2;
+}
+
+.item-sockets.equipped-sockets {
+    position: absolute;
+    bottom: 5px;
+    left: 5px;
+    right: 5px;
+    justify-content: center;
+}
+
+.socket {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    border: 1px solid #7f8c8d;
+    background-color: rgba(0,0,0,0.5);
+    box-shadow: inset 0 0 3px #000;
+}
+
+.socket img {
+    width: 100%;
+    height: 100%;
+}
+
+#gem-slots {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+    gap: 10px;
+    background-color: rgba(0,0,0,0.3);
+    padding: 10px;
+    border-radius: 5px;
+    margin-top: 10px;
+    min-height: 70px;
+}
+
+.gem {
+    width: 60px;
+    height: 60px;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    border-radius: 8px;
+    background-color: rgba(0,0,0,0.4);
+    border: 2px solid #d41b07;
+    padding: 5px;
+}
+.gem:hover {
+    transform: scale(1.1);
+}
+
+.gem.selected-gem {
+    box-shadow: 0 0 15px #f1c40f;
+    border-color: #f1c40f;
+    transform: scale(1.1);
+}
+
+.gem img {
+    width: 100%;
+    height: 100%;
+    -webkit-user-drag: none;
+}
+
+#inventory-slots .item.socket-target {
+    animation: pulse-green 1.5s infinite;
+}
+
+#gem-crafter {
+    border-top: 2px solid #4a637e;
+    padding-top: 15px;
+}
+
+#gem-crafting-slots {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin: 15px 0;
+}
+
+.gem-crafting-slot {
+    width: 70px;
+    height: 70px;
+    border: 2px dashed #4a637e;
+    border-radius: 10px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: rgba(0,0,0,0.2);
+    cursor: pointer;
+}
+.gem-crafting-slot:hover {
+    border-color: #f1c40f;
+    background-color: rgba(241, 196, 15, 0.1);
+}
+
+.gem-crafting-slot .gem {
+    pointer-events: none;
+}
+
+#gem-craft-btn {
+    background: linear-gradient(145deg, #e67e22, #f39c12);
+    border-bottom-color: #d35400;
 }

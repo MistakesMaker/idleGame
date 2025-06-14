@@ -3,6 +3,7 @@
 import { rarities } from './game.js';
 import { REALMS } from './data/realms.js';
 import { getXpForNextLevel, getUpgradeCost } from './utils.js';
+import { GEMS } from './data/gems.js';
 
 /**
  * Equips an item from the inventory.
@@ -19,7 +20,6 @@ export function equipItem(gameState, inventoryIndex) {
         if (!gameState.equipment.ring1) targetSlot = 'ring1';
         else if (!gameState.equipment.ring2) targetSlot = 'ring2';
         else {
-            // If both rings are full, we don't auto-equip. Signal that it's pending.
             return { isPendingRing: true, item: item };
         }
     }
@@ -40,9 +40,8 @@ export function equipItem(gameState, inventoryIndex) {
  * @param {string} targetSlot - The specific ring slot ('ring1' or 'ring2').
  */
 export function equipRing(gameState, pendingRing, targetSlot) {
-    // Find and remove the pending ring from inventory
     const inventoryIndex = gameState.inventory.findIndex(invItem => invItem.id === pendingRing.id);
-    if (inventoryIndex === -1) return; // Ring not found in inventory anymore
+    if (inventoryIndex === -1) return;
 
     const currentEquipped = gameState.equipment[targetSlot];
     if (currentEquipped) {
@@ -274,4 +273,74 @@ export function activatePreset(gameState, presetIndex) {
     });
     gameState.inventory = newInventory;
     gameState.activePresetIndex = presetIndex;
+}
+
+/**
+ * Attempts to combine two identical-tier gems into a new, higher-tier gem.
+ * @param {object} gameState The main game state object.
+ * @param {Array<object>} craftingGems An array of the two gems being combined.
+ * @returns {{success: boolean, message: string, newGem: object|null}}
+ */
+export function combineGems(gameState, craftingGems) {
+    const cost = 100;
+    if (gameState.scrap < cost) {
+        return { success: false, message: "Not enough Scrap to combine.", newGem: null };
+    }
+
+    const [gem1, gem2] = craftingGems;
+    
+    if (!gem1 || !gem2 || gem1.tier !== gem2.tier) {
+        return { success: false, message: "You must combine two gems of the same tier.", newGem: null };
+    }
+    
+    gameState.scrap -= cost;
+
+    if (Math.random() < 0.5) {
+        // SUCCESS
+        const newTier = gem1.tier + 1;
+        const newStats = {};
+        let newSynergy = null;
+
+        [gem1, gem2].forEach(parentGem => {
+            if (parentGem.stats) {
+                for (const statKey in parentGem.stats) {
+                    newStats[statKey] = (newStats[statKey] || 0) + parentGem.stats[statKey];
+                }
+            }
+            // --- FIX: Correctly combine synergy values ---
+            if (parentGem.synergy) {
+                if (!newSynergy) {
+                    newSynergy = { ...parentGem.synergy }; // Copy the first synergy
+                } else {
+                    // If a synergy already exists, add the values (assuming they are the same type)
+                    newSynergy.value += parentGem.synergy.value;
+                }
+            }
+        });
+
+        const newGem = {
+            id: Date.now() + Math.random(),
+            baseId: `FUSED_T${newTier}`,
+            name: `T${newTier} Gem`,
+            tier: newTier,
+            icon: 'images/gems/hybrid_gem.png',
+            stats: newStats,
+            synergy: newSynergy
+        };
+        
+        const id1 = gem1.id;
+        const id2 = gem2.id;
+        gameState.gems = gameState.gems.filter(g => g.id !== id1 && g.id !== id2);
+
+        gameState.gems.push(newGem);
+
+        return { success: true, message: `Success! You fused a ${newGem.name}!`, newGem: newGem };
+    } else {
+        // FAILURE
+        const id1 = gem1.id;
+        const id2 = gem2.id;
+        gameState.gems = gameState.gems.filter(g => g.id !== id1 && g.id !== id2);
+        
+        return { success: true, message: "The gems shattered... you lost everything.", newGem: null };
+    }
 }

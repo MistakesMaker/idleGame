@@ -54,6 +54,7 @@
                 <button class="tab-button" data-view="hero-view">Hero</button>
                 <button class="tab-button" data-view="equipment-view">Equipment</button>
                 <button class="tab-button" data-view="inventory-view">Inventory</button>
+                <button class="tab-button" data-view="gems-view">Gems</button>
             </div>
 
             <div id="map-view" class="view active">
@@ -141,6 +142,25 @@
                 </div>
                 <div id="inventory-slots"><p>Defeat bosses for loot!</p></div>
             </div>
+
+            <div id="gems-view" class="view">
+                <h3>Gems</h3>
+                <p>Click a gem, then click a socketable item in your inventory to socket it.</p>
+                <div id="gem-slots">
+                    <!-- Gems will be dynamically inserted here -->
+                </div>
+                <div id="gem-crafter" style="margin-top: 20px;">
+                    <h4>Gemcutting</h4>
+                    <!-- FIX: Text changed to reflect 2 gems -->
+                    <p>Combine 2 gems of the same tier for a 50/50 chance to upgrade.</p>
+                    <div id="gem-crafting-slots">
+                        <!-- FIX: Removed third slot -->
+                        <div class="gem-crafting-slot" data-slot="0"></div>
+                        <div class="gem-crafting-slot" data-slot="1"></div>
+                    </div>
+                    <button id="gem-craft-btn" disabled>Combine (Cost: 100 Scrap)</button>
+                </div>
+            </div>
             
         </div>
 
@@ -222,7 +242,6 @@
         </div>
     </div>
 
-    <!-- ADD THIS NEW MODAL FOR OFFLINE PROGRESS -->
     <div id="offline-progress-modal-backdrop" class="hidden">
         <div id="offline-progress-modal">
             <h3>Welcome Back!</h3>
