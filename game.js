@@ -1,82 +1,41 @@
+// --- START OF FILE game.js ---
+
 /* global io */
 import { REALMS } from './data/realms.js';
 import { MONSTERS } from './data/monsters.js';
 import { ITEMS } from './data/items.js';
 import { STATS } from './data/stat_pools.js';
+import { logMessage, formatNumber, getUpgradeCost, findSubZoneByLevel, findFirstLevelOfZone, isBossLevel, isBigBossLevel } from './utils.js';
+import * as ui from './ui.js';
+import * as player from './player_actions.js';
+import * as logic from './game_logic.js';
+
+// This is exported for modules that need it. It MUST be at the top level.
+export const rarities = ['common', 'uncommon', 'rare', 'epic', 'legendary'];
+
+// --- JSDoc Type Definitions ---
+/**
+ * @typedef {Object<string, HTMLElement|HTMLButtonElement|HTMLInputElement|HTMLImageElement>} DOMElements
+ */
 
 document.addEventListener('DOMContentLoaded', () => {
 
     // --- GAME STATE AND CONFIGURATION ---
     let gameState = {};
     let currentMap = 'world';
-    const rarities = ['common', 'uncommon', 'rare', 'epic', 'legendary'];
-    
-    let currentMonster = { name: "Slime", data: MONSTERS.SLIME};
-    let playerStats = { baseClickDamage: 1, baseDps: 0, totalClickDamage: 1, totalDps: 0 };
+    let currentMonster = { name: "Slime", data: MONSTERS.SLIME };
+    let playerStats = { baseClickDamage: 1, baseDps: 0, totalClickDamage: 1, totalDps: 0, bonusGold: 0, magicFind: 0 };
     let salvageMode = { active: false, selections: [] };
     let prestigeSelections = [];
     let saveTimeout;
-    
-    // --- JSDoc annotations for DOM Elements ---
-    /** @type {HTMLElement} */ let saveIndicatorEl;
-    /** @type {HTMLElement} */ let goldStatEl, scrapStatEl, upgradeClickCostEl, upgradeDpsCostEl, upgradeClickLevelEl;
-    /** @type {HTMLElement} */ let upgradeDpsLevelEl, monsterNameEl, currentLevelEl, monsterHealthBarEl, monsterHealthTextEl;
-    /** @type {HTMLElement} */ let inventorySlotsEl, gameLogEl, prestigeSelectionEl, prestigeInventorySlotsEl;
-    /** @type {HTMLButtonElement} */ let prestigeButton;
-    /** @type {HTMLImageElement} */ let monsterImageEl;
-    /** @type {HTMLElement} */ let popupContainerEl, tooltipEl, heroLevelEl; 
-    /** @type {HTMLElement} */ let heroXpBarEl, heroXpTextEl, attributePointsEl, attrStrengthEl, attrAgilityEl, attrLuckEl;
-    /** @type {HTMLButtonElement} */ let addStrengthBtn, addAgilityBtn, addLuckBtn;
-    /** @type {HTMLElement} */ let clickDamageStatEl, dpsStatEl, bonusGoldStatEl, magicFindStatEl, lootMonsterNameEl, lootDropChanceEl, lootTableDisplayEl;
-    /** @type {HTMLElement} */ let statTooltipEl, prestigeCountStatEl, absorbedClickDmgStatEl, absorbedDpsStatEl, legacyItemsStatEl;
-    /** @type {HTMLElement} */ let mapContainerEl, mapTitleEl;
-    /** @type {HTMLButtonElement} */ let backToWorldMapBtnEl;
-    /** @type {HTMLElement} */ let modalBackdropEl, modalContentEl, modalTitleEl, modalBodyEl;
-    /** @type {HTMLButtonElement} */ let modalCloseBtnEl;
-    /** @type {HTMLInputElement} */ let autoProgressCheckboxEl;
-    /** @type {HTMLElement} */ let realmTabsContainerEl;
 
+    /** @type {DOMElements} */
+    let elements = {};
 
     // RAID SECTION
-    const socket = io('https://idlegame-oqyq.onrender.com'); 
+    const socket = io('https://idlegame-oqyq.onrender.com');
     let raidPanel = null;
     let raidPlayerId = `Player_${Math.random().toString(36).substr(2, 5)}`;
-
-    // --- HELPER & UTILITY FUNCTIONS ---
-    function logMessage(message, className = '') { 
-        const p = document.createElement('p'); 
-        p.innerHTML = message; 
-        if (className) p.classList.add(className);
-        gameLogEl.prepend(p); 
-        if (gameLogEl.children.length > 20) { 
-            gameLogEl.removeChild(gameLogEl.lastChild); 
-        } 
-    }
-    
-    const numberAbbreviations = ['K', 'M', 'B', 'T', 'Qa', 'Qi', 'Sx', 'Sp', 'Oc', 'No', 'Dc'];
-
-    function formatNumber(num) {
-        if (num < 1000) {
-            return Math.floor(num).toString();
-        }
-        const tier = Math.floor(Math.log10(Math.abs(num)) / 3);
-        if (tier === 0 || tier > numberAbbreviations.length) {
-            return num.toExponential(2);
-        }
-        const suffix = numberAbbreviations[tier - 1];
-        const scale = Math.pow(10, tier * 3);
-        const scaled = num / scale;
-        return scaled.toFixed(2) + suffix;
-    }
-
-    function isBossLevel(level) { return level > 0 && level % 10 === 0 && level % 100 !== 0; }
-    function isBigBossLevel(level) { return level > 0 && level % 100 === 0; }
-
-    function getCurrentRealm() {
-        let realmIndex = REALMS.findIndex(realm => gameState.maxLevel >= realm.requiredLevel && (!REALMS[REALMS.indexOf(realm)+1] || gameState.maxLevel < REALMS[REALMS.indexOf(realm)+1].requiredLevel) );
-        if(realmIndex === -1) realmIndex = 0;
-        return REALMS[realmIndex];
-    }
 
     // --- CORE GAME LOGIC ---
     const defaultEquipmentState = { sword: null, shield: null, helmet: null, necklace: null, platebody: null, platelegs: null, ring1: null, ring2: null, belt: null };
@@ -86,7 +45,7 @@ document.addEventListener('DOMContentLoaded', () => {
             gold: 0, scrap: 0, upgrades: { clickDamage: 0, dps: 0 }, maxLevel: 1, currentFightingLevel: 1,
             monster: { hp: 10, maxHp: 10 },
             equipment: { ...defaultEquipmentState },
-            inventory: [], 
+            inventory: [],
             legacyItems: [],
             absorbedStats: { clickDamage: 0, dps: 0 },
             prestigeCount: 0,
@@ -102,137 +61,43 @@ document.addEventListener('DOMContentLoaded', () => {
             activePresetIndex: 0,
             completedLevels: [],
             isFarming: true,
-            isAutoProgressing: true, // <-- SET TO TRUE BY DEFAULT
+            isAutoProgressing: true,
             currentRealmIndex: 0
         };
     }
-    
-    function clickMonster() { if (gameState.monster.hp <= 0) return; gameState.monster.hp -= playerStats.totalClickDamage; monsterImageEl.classList.add('monster-hit'); setTimeout(() => monsterImageEl.classList.remove('monster-hit'), 200); showDamagePopup(playerStats.totalClickDamage); if (gameState.monster.hp <= 0) { monsterDefeated(); } updateUI(); }
-    function gameLoop() { if (playerStats.totalDps > 0 && gameState.monster.hp > 0) { gameState.monster.hp -= playerStats.totalDps; showDpsPopup(playerStats.totalDps); if (gameState.monster.hp <= 0) { monsterDefeated(); } updateUI(); } }
-    
-    function monsterDefeated() { 
-        const level = gameState.currentFightingLevel;
-        if (!gameState.completedLevels.includes(level)) {
-            gameState.completedLevels.push(level);
-        }
 
-        const tier = Math.floor((level - 1) / 10);
-        const difficultyResetFactor = 4;
-        const effectiveLevel = level - (tier * difficultyResetFactor);
-        const goldExponent = 1.17; 
-        const baseGold = 15;
-        let goldGained = Math.ceil(baseGold * Math.pow(goldExponent, effectiveLevel) * (1 + (playerStats.bonusGold / 100)));
-        gameState.gold += goldGained;
-        
-        let xpGained = gameState.currentFightingLevel * 5;
-        
-        if (isBossLevel(level) || isBigBossLevel(level)) {
-             xpGained *= 5;
-             const currentRealm = REALMS[gameState.currentRealmIndex];
-             const nextRealmIndex = gameState.currentRealmIndex + 1;
-             if (REALMS[nextRealmIndex] && level + 1 >= REALMS[nextRealmIndex].requiredLevel) {
-                 logMessage(`A new realm has been unlocked: <b>${REALMS[nextRealmIndex].name}</b>!`, 'legendary');
-             }
+    function addStatsFromItem(item) {
+        for (const stat in item.stats) {
+            const value = item.stats[stat];
+            if (stat === STATS.CLICK_DAMAGE.key) playerStats.baseClickDamage += value;
+            if (stat === STATS.DPS.key) playerStats.baseDps += value;
+            if (stat === STATS.GOLD_GAIN.key) playerStats.bonusGold += value;
         }
-        gainXP(xpGained);
-
-        logMessage(`You defeated the ${currentMonster.name} and gained ${formatNumber(goldGained)} gold and ${formatNumber(xpGained)} XP.`);
-        showGoldPopup(goldGained); 
-        
-        const dropRoll = Math.random() * 100;
-        if (dropRoll < currentMonster.data.dropChance) {
-            dropLoot();
-        }
-        
-        // --- LOGIC FIX 2.0: Smarter Auto-Progression ---
-        if (gameState.isAutoProgressing) {
-            const nextLevel = level + 1;
-            const nextSubZone = findSubZoneByLevel(nextLevel);
-            // We can progress as long as there is a valid next sub-zone to fight in.
-            if (nextSubZone) {
-                gameState.currentFightingLevel = nextLevel;
-            }
-        }
-        
-        if (gameState.currentFightingLevel > gameState.maxLevel) { 
-            gameState.maxLevel = gameState.currentFightingLevel; 
-        }
-        
-        autoSave();
-        setTimeout(() => { generateMonster(); updateUI(); }, 300); 
     }
 
-    function findSubZoneByLevel(level) {
-        for (const realm of REALMS) {
-            for (const zoneId in realm.zones) {
-                for (const subZoneId in realm.zones[zoneId].subZones) {
-                    const subZone = realm.zones[zoneId].subZones[subZoneId];
-                    if (level >= subZone.levelRange[0] && level <= subZone.levelRange[1]) {
-                        return subZone;
-                    }
-                }
-            }
-        }
-        return null;
-    }
-    
-    function generateMonster() {
-        const level = gameState.currentFightingLevel;
-        let monsterData;
-
-        // Boss levels are determined by the level number itself, not the sub-zone
-        if (isBigBossLevel(level)) {
-            monsterData = MONSTERS.ARCHDEMON_OVERLORD;
-        } else if (isBossLevel(level)) {
-            monsterData = MONSTERS.DUNGEON_GUARDIAN;
-        } else {
-             const subZone = findSubZoneByLevel(level);
-             if (subZone && subZone.monsterPool.length > 0) {
-                monsterData = subZone.monsterPool[Math.floor(Math.random() * subZone.monsterPool.length)];
-             } else {
-                console.error("No sub-zone or monster pool found for level:", level, "Falling back to Slime.");
-                monsterData = MONSTERS.SLIME;
-                // Don't reset level here, let the player handle it via the map.
-             }
-        }
-
-        currentMonster = { name: monsterData.name, data: monsterData };
-        
-        const baseExponent = 1.15;
-        const tier = Math.floor((level - 1) / 10);
-        const difficultyResetFactor = 4;
-        const effectiveLevel = level - (tier * difficultyResetFactor);
-        let monsterHealth = Math.ceil(10 * Math.pow(baseExponent, effectiveLevel));
-        
-        if (isBigBossLevel(level)) {
-            monsterHealth *= 10;
-        } else if (isBossLevel(level)) {
-            monsterHealth *= 5;
-        }
-
-        monsterImageEl.src = currentMonster.data.image;
-        gameState.monster.maxHp = monsterHealth;
-        gameState.monster.hp = monsterHealth;
-        monsterNameEl.textContent = currentMonster.name;
-    }
-    
     function recalculateStats() {
         const hero = gameState.hero;
         playerStats.baseClickDamage = 1 + (gameState.absorbedStats?.clickDamage || 0);
         playerStats.baseDps = 0 + (gameState.absorbedStats?.dps || 0);
-        
-        const allItems = [...(gameState.legacyItems || []), ...Object.values(gameState.equipment)]; 
-        for(const item of allItems) { if(item) addStatsFromItem(item); }
-        
+        playerStats.bonusGold = 0;
+        playerStats.magicFind = 0;
+
+        const allItems = [...(gameState.legacyItems || []), ...Object.values(gameState.equipment)];
+        for (const item of allItems) {
+            if (item) {
+                addStatsFromItem(item);
+            }
+        }
+
         const clickUpgradeBonus = gameState.upgrades.clickDamage * 1.25;
         const dpsUpgradeBonus = gameState.upgrades.dps * 2.5;
-        
+
         const strengthBonusClickFlat = hero.attributes.strength * 0.5;
         const strengthBonusClickPercent = hero.attributes.strength * 0.2;
         const agilityBonusDpsPercent = hero.attributes.agility * 0.3;
-        playerStats.bonusGold = hero.attributes.luck * 0.5;
-        playerStats.magicFind = hero.attributes.luck * 0.2;
-        
+        playerStats.bonusGold += hero.attributes.luck * 0.5;
+        playerStats.magicFind += hero.attributes.luck * 0.2;
+
         let finalClickDamage = playerStats.baseClickDamage + clickUpgradeBonus + strengthBonusClickFlat;
         finalClickDamage *= (1 + (strengthBonusClickPercent / 100));
         playerStats.totalClickDamage = finalClickDamage;
@@ -245,658 +110,376 @@ document.addEventListener('DOMContentLoaded', () => {
             socket.emit('updatePlayerStats', { dps: playerStats.totalDps });
         }
     }
-    function addStatsFromItem(item) { for (const stat in item.stats) { const value = item.stats[stat]; if (stat === STATS.CLICK_DAMAGE.key) playerStats.baseClickDamage += value; if (stat === STATS.DPS.key) playerStats.baseDps += value; } }
-    
-    function getXpForNextLevel(level) { return Math.floor(100 * Math.pow(level, 1.5)); }
-    function gainXP(amount) {
-        gameState.hero.xp += amount;
-        let xpToNextLevel = getXpForNextLevel(gameState.hero.level);
-        while (gameState.hero.xp >= xpToNextLevel) {
-            gameState.hero.xp -= xpToNextLevel;
-            gameState.hero.level++;
-            gameState.hero.attributePoints += 5;
-            logMessage(`Congratulations! You reached Level ${gameState.hero.level}!`, 'legendary');
-            xpToNextLevel = getXpForNextLevel(gameState.hero.level);
-        }
-    }
-    function spendAttributePoint(attribute) { if (gameState.hero.attributePoints > 0) { gameState.hero.attributePoints--; gameState.hero.attributes[attribute]++; recalculateStats(); updateUI(); autoSave(); } }
 
-    function generateItem(rarity, itemLevel, itemBase) {
-        const rarityIndex = rarities.indexOf(rarity);
-        
-        const item = { 
-            id: Date.now() + Math.random(), 
-            name: `${rarity.charAt(0).toUpperCase() + rarity.slice(1)} ${itemBase.name}`, 
-            type: itemBase.type.toLowerCase(), 
-            rarity: rarity, 
-            stats: {}, 
-            locked: false 
-        };
+    function handleMonsterDefeated() {
+        const result = logic.monsterDefeated(gameState, playerStats, currentMonster);
 
-        // --- Determine the number of stats to add ---
-        const rarityStatsCount = rarityIndex + 1; // common=1, uncommon=2, etc.
-        const maxPossibleStats = itemBase.possibleStats.length;
-        const numStatsToGenerate = Math.min(rarityStatsCount, maxPossibleStats);
+        result.logMessages.forEach(msg => logMessage(elements.gameLogEl, msg));
+        ui.showGoldPopup(elements.popupContainerEl, result.goldGained);
 
-        // --- Randomly pick stats from the item's pool ---
-        const availableStats = [...itemBase.possibleStats];
-        const chosenStats = [];
-        for (let i = 0; i < numStatsToGenerate; i++) {
-            if (availableStats.length === 0) break;
-            const statIndex = Math.floor(Math.random() * availableStats.length);
-            chosenStats.push(availableStats.splice(statIndex, 1)[0]);
+        const levelUpLogs = player.gainXP(gameState, result.xpGained);
+        levelUpLogs.forEach(msg => logMessage(elements.gameLogEl, msg, 'legendary'));
+
+        const nextRealmIndex = gameState.currentRealmIndex + 1;
+        if (REALMS[nextRealmIndex] && gameState.maxLevel >= REALMS[nextRealmIndex].requiredLevel && !gameState.completedLevels.includes(REALMS[nextRealmIndex].requiredLevel - 1)) {
+            logMessage(elements.gameLogEl, `A new realm has been unlocked: <b>${REALMS[nextRealmIndex].name}</b>!`, 'legendary');
         }
 
-        // --- Calculate stat values based on rarity tier ---
-        const tier_min_percent = rarityIndex / rarities.length;       // e.g., for Epic (index 3/5), this is 0.6
-        const tier_max_percent = (rarityIndex + 1) / rarities.length; // e.g., for Epic (index 3/5), this is 0.8
-        
-        chosenStats.forEach(statInfo => {
-            const stat_range = statInfo.max - statInfo.min;
-            
-            // This ensures the roll is *within* the slice for this rarity
-            // e.g., an Epic roll will always be between 60% and 80% of the item's total stat potential.
-            const random_roll_in_tier = Math.random();
-            const final_percent = tier_min_percent + (random_roll_in_tier * (tier_max_percent - tier_min_percent));
-
-            const final_stat_value = statInfo.min + (stat_range * final_percent);
-            item.stats[statInfo.key] = parseFloat(final_stat_value.toFixed(2));
-        });
-
-        return item;
-    }
-
-    function dropLoot() {
-        const monsterDef = currentMonster.data;
-        if (!monsterDef || !monsterDef.lootTable || monsterDef.lootTable.length === 0) return;
-
-        // --- Weighted Loot Table Logic ---
-        const totalWeight = monsterDef.lootTable.reduce((sum, entry) => sum + entry.weight, 0);
-        let roll = Math.random() * totalWeight;
-
-        let itemBaseToDrop;
-        for (const entry of monsterDef.lootTable) {
-            if (roll < entry.weight) {
-                itemBaseToDrop = entry.item;
-                break;
-            }
-            roll -= entry.weight;
-        }
-
-        if (!itemBaseToDrop) {
-            console.error("Loot drop failed to select an item. Check loot tables for monster:", currentMonster.name);
-            return;
-        }
-
-        // --- Rarity Generation Logic ---
-        let rarityRoll = Math.random() * 100;
-        rarityRoll -= playerStats.magicFind; // Apply magic find
-        
-        let rarity;
-        const isBoss = isBossLevel(gameState.currentFightingLevel) || isBigBossLevel(gameState.currentFightingLevel);
-
-        if (isBoss && rarityRoll < 5) rarity = 'legendary'; 
-        else if (rarityRoll < 5) rarity = 'legendary'; 
-        else if (rarityRoll < 20) rarity = 'epic'; 
-        else if (rarityRoll < 50) rarity = 'rare'; 
-        else if (rarityRoll < 85) rarity = 'uncommon'; 
-        else rarity = 'common';
-        
-        const item = generateItem(rarity, gameState.currentFightingLevel, itemBaseToDrop);
-        gameState.inventory.push(item);
-        logMessage(`The ${currentMonster.name} dropped an item! <span class="${item.rarity}" style="font-weight:bold;">${item.name}</span>`);
-    }
-    
-    function equipItem(inventoryIndex) { const item = gameState.inventory[inventoryIndex]; if (!item) return; let targetSlot = item.type; if (item.type === 'ring') { if (!gameState.equipment.ring1) targetSlot = 'ring1'; else if (!gameState.equipment.ring2) targetSlot = 'ring2'; else targetSlot = 'ring1'; } const currentEquipped = gameState.equipment[targetSlot]; if (currentEquipped) { gameState.inventory.push(currentEquipped); } gameState.equipment[targetSlot] = item; gameState.inventory.splice(inventoryIndex, 1); recalculateStats(); updateUI(); autoSave(); }
-    function unequipItem(slotName) { const item = gameState.equipment[slotName]; if (!item) return; gameState.inventory.push(item); gameState.equipment[slotName] = null; recalculateStats(); updateUI(); autoSave(); }
-    
-    function getUpgradeCost(upgradeType) { const level = gameState.upgrades[upgradeType]; if (upgradeType === 'clickDamage') { return Math.floor(10 * Math.pow(1.15, level)); } if (upgradeType === 'dps') { return Math.floor(25 * Math.pow(1.18, level)); } }
-    function buyUpgrade(upgradeType) { const cost = getUpgradeCost(upgradeType); if (gameState.gold >= cost) { gameState.gold -= cost; gameState.upgrades[upgradeType]++; recalculateStats(); updateUI(); logMessage(`Upgraded ${upgradeType} to level ${gameState.upgrades[upgradeType]}!`); autoSave(); } else { logMessage("Not enough gold!"); } }
-    
-    function buyLootCrate() {
-        const cost = 50;
-        if (gameState.scrap < cost) {
-            logMessage("Not enough Scrap!");
-            return;
-        }
-
-        // 1. Get the current realm's zones.
-        const currentRealmData = REALMS[gameState.currentRealmIndex];
-        if (!currentRealmData) return;
-
-        // 2. Collect all monsters from sub-zones in the current realm.
-        const realmMonsters = new Set();
-        for (const zoneId in currentRealmData.zones) {
-            const zone = currentRealmData.zones[zoneId];
-            for (const subZoneId in zone.subZones) {
-                const subZone = zone.subZones[subZoneId];
-                // 3. Only include monsters from levels the player has completed.
-                if (gameState.completedLevels.some(lvl => lvl >= subZone.levelRange[0] && lvl <= subZone.levelRange[1])) {
-                    subZone.monsterPool.forEach(monster => realmMonsters.add(monster));
-                }
-            }
-        }
-        
-        // 4. Build a pool of possible items from those monsters, filtering out uniques.
-        const availableItems = [];
-        realmMonsters.forEach(monster => {
-            if (monster.lootTable) {
-                monster.lootTable.forEach(lootEntry => {
-                    if (!lootEntry.item.isUnique) {
-                        availableItems.push(lootEntry.item);
-                    }
-                });
-            }
-        });
-
-        if (availableItems.length === 0) {
-            logMessage("No available items in loot crate! Defeat more monsters in this realm to unlock their drops.");
-            return;
-        }
-
-        gameState.scrap -= cost;
-        logMessage(`Bought a loot crate for ${cost} Scrap!`);
-
-        // 5. Pick a random (non-unique) item from the unlocked pool.
-        const itemBase = availableItems[Math.floor(Math.random() * availableItems.length)];
-        
-        // 6. Generate a random rarity (but not common).
-        const rarityRoll = Math.floor(Math.random() * (rarities.length - 1)) + 1; // 1 (uncommon) to 4 (legendary)
-        const rarity = rarities[rarityRoll];
-
-        const item = generateItem(rarity, gameState.maxLevel, itemBase);
-        gameState.inventory.push(item);
-
-        logMessage(`The crate contained: <span class="${item.rarity}" style="font-weight:bold;">${item.name}</span>`);
-        updateUI();
         autoSave();
+        setTimeout(() => {
+            startNewMonster();
+            updateAll();
+        }, 300);
     }
 
-    function toggleSalvageMode() { salvageMode.active = !salvageMode.active; const salvageBtn = document.getElementById('salvage-mode-btn'); const confirmBtn = document.getElementById('confirm-salvage-btn'); const selectAllBtn = document.getElementById('select-all-salvage-btn'); if (salvageMode.active) { salvageBtn.textContent = 'Cancel Salvage'; salvageBtn.classList.add('active'); confirmBtn.classList.remove('hidden'); selectAllBtn.classList.remove('hidden'); } else { salvageBtn.textContent = 'Select to Salvage'; salvageBtn.classList.remove('active'); confirmBtn.classList.add('hidden'); selectAllBtn.classList.add('hidden'); salvageMode.selections = []; } document.body.classList.toggle('salvage-mode-active', salvageMode.active); document.getElementById('salvage-count').textContent = '0'; updateUI(); }
-    function selectItemForSalvage(item, index) { if (item.locked) { logMessage("This item is locked and cannot be salvaged.", 'rare'); return; } const selectionIndex = salvageMode.selections.indexOf(index); if (selectionIndex > -1) { salvageMode.selections.splice(selectionIndex, 1); } else { salvageMode.selections.push(index); } document.getElementById('salvage-count').textContent = salvageMode.selections.length.toString(); updateUI(); }
-    function selectAllForSalvage() { salvageMode.selections = []; gameState.inventory.forEach((item, index) => { if (!item.locked) { salvageMode.selections.push(index); } }); document.getElementById('salvage-count').textContent = salvageMode.selections.length.toString(); updateUI(); }
-    function handleInventoryClick(item, index) { if (salvageMode.active) { selectItemForSalvage(item, index); } else { equipItem(index); } }
-    function salvageSelectedItems() { if (salvageMode.selections.length === 0) { logMessage("No items selected for salvage."); return; } let totalScrapGained = 0; const selectedCount = salvageMode.selections.length; salvageMode.selections.sort((a, b) => b - a); salvageMode.selections.forEach(index => { const item = gameState.inventory[index]; if (item) { const rarityIndex = rarities.indexOf(item.rarity); const scrapGained = Math.ceil(Math.pow(4, rarityIndex)); totalScrapGained += scrapGained; gameState.inventory.splice(index, 1); } }); gameState.scrap += totalScrapGained; logMessage(`Salvaged ${selectedCount} items for a total of ${totalScrapGained} Scrap.`, 'uncommon'); toggleSalvageMode(); autoSave(); }
-    function toggleItemLock(inventoryIndex) { const item = gameState.inventory[inventoryIndex]; if (item) { item.locked = !item.locked; logMessage(`Item ${item.name} ${item.locked ? 'locked' : 'unlocked'}.`); } updateUI(); autoSave(); }
-    
-    function activatePreset(presetIndex) {
-        gameState.presets[gameState.activePresetIndex].equipment = { ...gameState.equipment };
-        const newPresetEquipment = gameState.presets[presetIndex].equipment;
-        const itemsToUnequip = { ...gameState.equipment };
-        
-        for (const slot in gameState.equipment) {
-            gameState.equipment[slot] = null;
-        }
-
-        for (const slot in itemsToUnequip) {
-            if (itemsToUnequip[slot]) {
-                gameState.inventory.push(itemsToUnequip[slot]);
-            }
-        }
-        
-        const newInventory = [];
-        const presetEquipmentCopy = { ...newPresetEquipment };
-
-        gameState.inventory.forEach(invItem => {
-            let equipped = false;
-            for (const slot in presetEquipmentCopy) {
-                const presetItem = presetEquipmentCopy[slot];
-                if (presetItem && invItem && presetItem.id === invItem.id) {
-                    gameState.equipment[slot] = invItem;
-                    delete presetEquipmentCopy[slot]; 
-                    equipped = true;
-                    break; 
-                }
-            }
-            if (!equipped) {
-                newInventory.push(invItem);
-            }
-        });
-        
-        gameState.inventory = newInventory;
-        gameState.activePresetIndex = presetIndex;
-        logMessage(`Activated preset: <b>${gameState.presets[presetIndex].name}</b>`);
-        
-        recalculateStats();
-        updateUI();
-        autoSave();
+    function startNewMonster() {
+        const { newMonster, newMonsterState } = logic.generateMonster(gameState.currentFightingLevel);
+        currentMonster = newMonster;
+        gameState.monster = newMonsterState;
+        (/** @type {HTMLImageElement} */ (elements.monsterImageEl)).src = currentMonster.data.image;
+        elements.monsterNameEl.textContent = currentMonster.name;
     }
-    
-    function renamePreset(presetIndex) {
-        const currentName = gameState.presets[presetIndex].name;
-        const newName = prompt("Enter a new name for the preset:", currentName);
-        if (newName && newName.trim() !== "") {
-            gameState.presets[presetIndex].name = newName.trim();
-            logMessage(`Renamed preset to: <b>${newName.trim()}</b>`);
-            updateUI();
-            autoSave();
+
+    function clickMonster() {
+        if (gameState.monster.hp <= 0) return;
+        gameState.monster.hp -= playerStats.totalClickDamage;
+        elements.monsterImageEl.classList.add('monster-hit');
+        setTimeout(() => elements.monsterImageEl.classList.remove('monster-hit'), 200);
+        ui.showDamagePopup(elements.popupContainerEl, playerStats.totalClickDamage);
+        if (gameState.monster.hp <= 0) {
+            handleMonsterDefeated();
+        }
+        updateAll();
+    }
+
+    function gameLoop() {
+        if (playerStats.totalDps > 0 && gameState.monster.hp > 0) {
+            gameState.monster.hp -= playerStats.totalDps;
+            ui.showDpsPopup(elements.popupContainerEl, playerStats.totalDps);
+            if (gameState.monster.hp <= 0) {
+                handleMonsterDefeated();
+            }
+            updateAll();
         }
     }
-    
+
+    function updateAll() {
+        ui.updateUI(elements, gameState, playerStats, currentMonster, salvageMode);
+        renderMap();
+        renderRealmTabs();
+    }
+
+    function autoSave() {
+        elements.saveIndicatorEl.classList.add('visible');
+        if (saveTimeout) clearTimeout(saveTimeout);
+        saveTimeout = setTimeout(() => {
+            elements.saveIndicatorEl.classList.remove('visible');
+        }, 2000);
+        localStorage.setItem('idleRPGSaveData', JSON.stringify(gameState));
+    }
+
+    function resetGame() {
+        if (confirm("Are you sure? This will delete your save permanently.")) {
+            localStorage.removeItem('idleRPGSaveData');
+            window.location.reload();
+        }
+    }
+
     function renderMap() {
-        mapContainerEl.innerHTML = ''; 
-        // --- FIX: Use the selected realm index, not the highest possible one ---
+        elements.mapContainerEl.innerHTML = '';
         const realm = REALMS[gameState.currentRealmIndex];
         if (!realm) {
-            console.error(`Invalid realm index: ${gameState.currentRealmIndex}`);
-            // Fallback to the first realm if the saved index is bad
             gameState.currentRealmIndex = 0;
             renderMap();
             return;
         }
 
-
         if (currentMap === 'world') {
-            mapTitleEl.textContent = realm.name;
-            backToWorldMapBtnEl.classList.add('hidden');
-            mapContainerEl.style.backgroundImage = `url('${realm.mapImage}')`;
+            elements.mapTitleEl.textContent = realm.name;
+            elements.backToWorldMapBtnEl.classList.add('hidden');
+            elements.mapContainerEl.style.backgroundImage = `url('${realm.mapImage}')`;
 
             for (const zoneId in realm.zones) {
                 const zone = realm.zones[zoneId];
                 const isUnlocked = gameState.maxLevel >= findFirstLevelOfZone(zone);
-                const node = createMapNode(zone.name, zone.icon, zone.coords, isUnlocked);
-
-                if (isUnlocked) {
-                    node.onclick = () => showZoneMap(zoneId);
-                }
-                mapContainerEl.appendChild(node);
+                const node = ui.createMapNode(zone.name, zone.icon, zone.coords, isUnlocked, false, gameState.currentFightingLevel);
+                if (isUnlocked) node.onclick = () => { currentMap = zoneId; renderMap(); };
+                elements.mapContainerEl.appendChild(node);
             }
         } else {
             const zone = realm.zones[currentMap];
-            if (!zone) { console.error("Invalid zone ID:", currentMap); showWorldMap(); return; }
-            mapTitleEl.textContent = zone.name;
-            backToWorldMapBtnEl.classList.remove('hidden');
-            mapContainerEl.style.backgroundImage = `url('${zone.mapImage}')`;
+            if (!zone) { currentMap = 'world'; renderMap(); return; }
+            elements.mapTitleEl.textContent = zone.name;
+            elements.backToWorldMapBtnEl.classList.remove('hidden');
+            elements.mapContainerEl.style.backgroundImage = `url('${zone.mapImage}')`;
 
             for (const subZoneId in zone.subZones) {
                 const subZone = zone.subZones[subZoneId];
                 const isUnlocked = gameState.maxLevel >= subZone.levelRange[0];
                 const isCompleted = gameState.completedLevels.includes(subZone.levelRange[1]);
-                
-                // Since ITEMS.SWORD doesn't exist, let's use a fallback icon
                 const icon = 'images/icons/sword.png';
-                const node = createMapNode(subZone.name, icon, subZone.coords, isUnlocked, isCompleted);
-                
-                if (isUnlocked) {
-                    node.onclick = () => showSubZoneModal(subZone);
-                }
-                mapContainerEl.appendChild(node);
+                const node = ui.createMapNode(subZone.name, icon, subZone.coords, isUnlocked, isCompleted, gameState.currentFightingLevel);
+                if (isUnlocked) node.onclick = () => showSubZoneModal(subZone);
+                elements.mapContainerEl.appendChild(node);
             }
         }
-    }
-
-    function findFirstLevelOfZone(zone) {
-        let firstLevel = Infinity;
-        for(const subZoneId in zone.subZones) {
-            if(zone.subZones[subZoneId].levelRange[0] < firstLevel) {
-                firstLevel = zone.subZones[subZoneId].levelRange[0];
-            }
-        }
-        return firstLevel;
-    }
-
-    function createMapNode(name, iconSrc, coords, isUnlocked, isCompleted = false) {
-        const node = document.createElement('div');
-        node.className = 'map-node';
-        if (!isUnlocked) node.classList.add('locked');
-        
-        const currentFightingSubZone = findSubZoneByLevel(gameState.currentFightingLevel);
-        if (currentFightingSubZone && currentFightingSubZone.name === name) {
-            node.classList.add('active-zone');
-        }
-
-        node.style.top = coords.top;
-        node.style.left = coords.left;
-
-        let iconHtml = `<img src="${iconSrc}" class="map-node-icon ${isUnlocked ? '' : 'locked'} ${isCompleted ? 'completed' : ''}">`;
-        if (isCompleted) {
-             iconHtml += `<i class="fas fa-check-circle map-node-completed-icon"></i>`;
-        }
-        if (!isUnlocked) {
-             iconHtml += `<i class="fas fa-lock map-node-lock-icon"></i>`;
-        }
-        
-        node.innerHTML = `
-            ${iconHtml}
-            <span class="map-node-label">${name}</span>
-        `;
-        return node;
-    }
-
-    function showZoneMap(zoneId) {
-        currentMap = zoneId;
-        renderMap();
-    }
-
-    function showWorldMap() {
-        currentMap = 'world';
-        renderMap();
-    }
-
-    function getHighestCompletedLevelInSubZone(subZone) {
-        let highest = 0;
-        for (const level of gameState.completedLevels) {
-            if (level >= subZone.levelRange[0] && level <= subZone.levelRange[1]) {
-                if (level > highest) {
-                    highest = level;
-                }
-            }
-        }
-        return highest;
-    }
-
-    function showSubZoneModal(subZone) {
-        modalTitleEl.textContent = subZone.name;
-        modalBodyEl.innerHTML = ''; 
-
-        const highestCompleted = getHighestCompletedLevelInSubZone(subZone);
-        const startLevel = subZone.levelRange[0];
-        const finalLevel = subZone.levelRange[1];
-        let nextLevel = Math.min(highestCompleted + 1, finalLevel);
-
-        const isSingleLevelBoss = startLevel === finalLevel;
-
-        if(!isSingleLevelBoss) {
-            const continueButton = document.createElement('button');
-            continueButton.textContent = (highestCompleted < startLevel) ? `Start at Lvl ${startLevel}` : `Continue at Lvl ${nextLevel}`;
-            continueButton.onclick = () => {
-                startCombat(nextLevel, true);
-            };
-            modalBodyEl.appendChild(continueButton);
-
-            if (highestCompleted >= startLevel && highestCompleted < finalLevel) {
-                const restartButton = document.createElement('button');
-                restartButton.textContent = `Restart at Lvl ${startLevel}`;
-                restartButton.onclick = () => {
-                    startCombat(startLevel, true);
-                };
-                modalBodyEl.appendChild(restartButton);
-            }
-        }
-        
-        const bossLevel = finalLevel;
-        if (isBossLevel(bossLevel) || isBigBossLevel(bossLevel)) {
-             if (gameState.completedLevels.includes(bossLevel)) {
-                const fightBossButton = document.createElement('button');
-                fightBossButton.textContent = `Re-fight Boss (Lvl ${bossLevel})`;
-                fightBossButton.onclick = () => {
-                    startCombat(bossLevel, false);
-                };
-                modalBodyEl.appendChild(fightBossButton);
-             } else if (isSingleLevelBoss) {
-                 const fightBossButton = document.createElement('button');
-                 fightBossButton.textContent = `Fight Boss (Lvl ${bossLevel})`;
-                 fightBossButton.onclick = () => {
-                     startCombat(bossLevel, false);
-                 };
-                 modalBodyEl.appendChild(fightBossButton);
-             }
-        }
-        
-        modalBackdropEl.classList.remove('hidden');
-    }
-    
-    function startCombat(level, isFarming) {
-        gameState.currentFightingLevel = level;
-        gameState.isFarming = isFarming;
-        gameState.isAutoProgressing = isFarming ? autoProgressCheckboxEl.checked : false;
-        
-        logMessage(`Traveling to level ${level}.`);
-        closeModal();
-        generateMonster();
-        updateUI();
-        autoSave();
-        const combatTab = document.querySelector('.tab-button[data-view="combat-view"]');
-        if (combatTab instanceof HTMLElement) {
-            combatTab.click();
-        }
-    }
-
-    function closeModal() {
-        modalBackdropEl.classList.add('hidden');
     }
 
     function renderRealmTabs() {
-        realmTabsContainerEl.innerHTML = '';
+        elements.realmTabsContainerEl.innerHTML = '';
         REALMS.forEach((realm, index) => {
             const isUnlocked = gameState.maxLevel >= realm.requiredLevel;
             const tab = document.createElement('button');
             tab.className = 'realm-tab-btn';
             tab.textContent = realm.name;
             tab.disabled = !isUnlocked;
-            if (index === gameState.currentRealmIndex) {
-                tab.classList.add('active');
-            }
+            if (index === gameState.currentRealmIndex) tab.classList.add('active');
             tab.onclick = () => {
                 gameState.currentRealmIndex = index;
                 currentMap = 'world';
                 renderMap();
                 renderRealmTabs();
+                autoSave();
             };
-            realmTabsContainerEl.appendChild(tab);
+            elements.realmTabsContainerEl.appendChild(tab);
         });
     }
 
-    function updateUI() {
-        const xpToNextLevel = getXpForNextLevel(gameState.hero.level);
-        goldStatEl.textContent = formatNumber(gameState.gold);
-        scrapStatEl.textContent = formatNumber(gameState.scrap);
-        heroXpTextEl.textContent = `${formatNumber(gameState.hero.xp)} / ${formatNumber(xpToNextLevel)}`;
-        clickDamageStatEl.textContent = formatNumber(playerStats.totalClickDamage);
-        dpsStatEl.textContent = formatNumber(playerStats.totalDps);
-        absorbedClickDmgStatEl.textContent = formatNumber(gameState.absorbedStats?.clickDamage || 0);
-        absorbedDpsStatEl.textContent = formatNumber(gameState.absorbedStats?.dps || 0);
-        monsterHealthTextEl.textContent = `${formatNumber(Math.ceil(Math.max(0, gameState.monster.hp)))} / ${formatNumber(gameState.monster.maxHp)}`;
-        const clickCost = getUpgradeCost('clickDamage');
-        const dpsCost = getUpgradeCost('dps');
-        upgradeClickCostEl.textContent = formatNumber(clickCost);
-        upgradeDpsCostEl.textContent = formatNumber(dpsCost);
-        
-        heroLevelEl.textContent = gameState.hero.level.toString();
-        heroXpBarEl.style.width = `${(gameState.hero.xp / xpToNextLevel) * 100}%`;
-        attributePointsEl.textContent = gameState.hero.attributePoints.toString();
-        attrStrengthEl.textContent = gameState.hero.attributes.strength.toString();
-        attrAgilityEl.textContent = gameState.hero.attributes.agility.toString();
-        attrLuckEl.textContent = gameState.hero.attributes.luck.toString();
-        const havePoints = gameState.hero.attributePoints > 0;
-        addStrengthBtn.disabled = !havePoints; addAgilityBtn.disabled = !havePoints; addLuckBtn.disabled = !havePoints;
-        bonusGoldStatEl.textContent = playerStats.bonusGold.toFixed(1);
-        magicFindStatEl.textContent = playerStats.magicFind.toFixed(1);
-        prestigeCountStatEl.textContent = (gameState.prestigeCount || 0).toString();
-        legacyItemsStatEl.textContent = (gameState.legacyItems?.length || 0).toString();
+    function showSubZoneModal(subZone) {
+        elements.modalTitleEl.textContent = subZone.name;
+        elements.modalBodyEl.innerHTML = '';
 
-        currentLevelEl.textContent = gameState.currentFightingLevel.toString();
-        autoProgressCheckboxEl.checked = gameState.isAutoProgressing;
-        
-        const healthPercent = (gameState.monster.hp / gameState.monster.maxHp) * 100;
-        monsterHealthBarEl.style.width = `${healthPercent}%`;
-        if (healthPercent < 30) monsterHealthBarEl.style.background = 'linear-gradient(to right, #e74c3c, #c0392b)'; else if (healthPercent < 60) monsterHealthBarEl.style.background = 'linear-gradient(to right, #f39c12, #e67e22)'; else monsterHealthBarEl.style.background = 'linear-gradient(to right, #2ecc71, #27ae60)';
-        
-        upgradeClickLevelEl.textContent = `Lvl ${gameState.upgrades.clickDamage}`;
-        upgradeDpsLevelEl.textContent = `Lvl ${gameState.upgrades.dps}`;
-        document.getElementById('upgrade-click-damage').classList.toggle('disabled', gameState.gold < clickCost);
-        document.getElementById('upgrade-dps').classList.toggle('disabled', gameState.gold < dpsCost);
-        (/** @type {HTMLButtonElement} */ (document.getElementById('buy-loot-crate-btn'))).disabled = gameState.scrap < 50;
+        const highestCompleted = ui.getHighestCompletedLevelInSubZone(gameState.completedLevels, subZone);
+        const startLevel = subZone.levelRange[0];
+        const finalLevel = subZone.levelRange[1];
+        let nextLevel = Math.min(highestCompleted + 1, finalLevel);
 
-        inventorySlotsEl.innerHTML = '';
-        if (gameState.inventory.length > 0) {
-            gameState.inventory.forEach((item, index) => {
-                const itemWrapper = document.createElement('div');
-                itemWrapper.className = 'item-wrapper';
-                itemWrapper.dataset.index = index.toString();
-                itemWrapper.innerHTML = createItemHTML(item, false);
+        const isSingleLevelBoss = startLevel === finalLevel;
 
-                if (salvageMode.active && salvageMode.selections.includes(index)) {
-                    const itemDiv = itemWrapper.querySelector('.item');
-                    if (itemDiv) {
-                        itemDiv.classList.add('selected-for-salvage');
-                    }
-                }
-
-                inventorySlotsEl.appendChild(itemWrapper);
-            });
-        } else {
-            inventorySlotsEl.innerHTML = `<p style="text-align:center; width:100%;">No items.</p>`;
+        const startCombat = (level, isFarming) => {
+            gameState.currentFightingLevel = level;
+            gameState.isFarming = isFarming;
+            gameState.isAutoProgressing = isFarming ? (/** @type {HTMLInputElement} */ (elements.autoProgressCheckboxEl)).checked : false;
+            
+            logMessage(elements.gameLogEl, `Traveling to level ${level}.`);
+            elements.modalBackdropEl.classList.add('hidden');
+            startNewMonster();
+            updateAll();
+            autoSave();
+            const combatTab = document.querySelector('.tab-button[data-view="combat-view"]');
+            if (combatTab instanceof HTMLElement) combatTab.click();
         }
-        for (const slotName in gameState.equipment) {
-            const slotEl = document.getElementById(`slot-${slotName}`);
-            const item = gameState.equipment[slotName];
-            slotEl.innerHTML = '';
-            if (item) {
-                const itemDiv = document.createElement('div');
-                itemDiv.innerHTML = createItemHTML(item, true);
-                itemDiv.onclick = (e) => { e.stopPropagation(); unequipItem(slotName); };
-                slotEl.appendChild(itemDiv);
-            } else {
-                const placeholder = document.createElement('img');
-                placeholder.src = getItemIcon(slotName.replace(/\d/g, ''));
-                placeholder.className = 'placeholder-icon';
-                slotEl.appendChild(placeholder);
+
+        if (!isSingleLevelBoss) {
+            const continueButton = document.createElement('button');
+            continueButton.textContent = (highestCompleted < startLevel) ? `Start at Lvl ${startLevel}` : `Continue at Lvl ${nextLevel}`;
+            continueButton.onclick = () => startCombat(nextLevel, true);
+            elements.modalBodyEl.appendChild(continueButton);
+
+            if (highestCompleted >= startLevel && highestCompleted < finalLevel) {
+                const restartButton = document.createElement('button');
+                restartButton.textContent = `Restart at Lvl ${startLevel}`;
+                restartButton.onclick = () => startCombat(startLevel, true);
+                elements.modalBodyEl.appendChild(restartButton);
             }
         }
+
+        const bossLevel = finalLevel;
+        if (isBossLevel(bossLevel) || isBigBossLevel(bossLevel)) {
+             if (gameState.completedLevels.includes(bossLevel) || isSingleLevelBoss) {
+                 const fightBossButton = document.createElement('button');
+                 fightBossButton.textContent = gameState.completedLevels.includes(bossLevel) ? `Re-fight Boss (Lvl ${bossLevel})` : `Fight Boss (Lvl ${bossLevel})`;
+                 fightBossButton.onclick = () => startCombat(bossLevel, false);
+                 elements.modalBodyEl.appendChild(fightBossButton);
+             }
+        }
+
+        elements.modalBackdropEl.classList.remove('hidden');
+    }
+
+    // --- SETUP AND INITIALIZATION ---
+    function setupEventListeners() {
+        elements.monsterImageEl.addEventListener('click', clickMonster);
+        
+        document.getElementById('buy-loot-crate-btn').addEventListener('click', () => {
+            const result = player.buyLootCrate(gameState, logic.generateItem);
+            logMessage(elements.gameLogEl, result.message);
+            if(result.success && result.item) {
+                 logMessage(elements.gameLogEl, `The crate contained: <span class="${result.item.rarity}" style="font-weight:bold;">${result.item.name}</span>`);
+            }
+            updateAll();
+            autoSave();
+        });
+
+        document.getElementById('salvage-mode-btn').addEventListener('click', () => {
+            salvageMode.active = !salvageMode.active;
+            const salvageBtn = document.getElementById('salvage-mode-btn');
+            const confirmBtn = document.getElementById('confirm-salvage-btn');
+            const selectAllBtn = document.getElementById('select-all-salvage-btn');
+            if (salvageMode.active) {
+                salvageBtn.textContent = 'Cancel Salvage';
+                salvageBtn.classList.add('active');
+                confirmBtn.classList.remove('hidden');
+                selectAllBtn.classList.remove('hidden');
+            } else {
+                salvageBtn.textContent = 'Select to Salvage';
+                salvageBtn.classList.remove('active');
+                confirmBtn.classList.add('hidden');
+                selectAllBtn.classList.add('hidden');
+                salvageMode.selections = [];
+            }
+            document.body.classList.toggle('salvage-mode-active', salvageMode.active);
+            document.getElementById('salvage-count').textContent = '0';
+            updateAll();
+        });
+
+        document.getElementById('select-all-salvage-btn').addEventListener('click', () => {
+             salvageMode.selections = [];
+             gameState.inventory.forEach((item, index) => { if (!item.locked) salvageMode.selections.push(index); });
+             document.getElementById('salvage-count').textContent = salvageMode.selections.length.toString();
+             updateAll();
+        });
+
+        document.getElementById('confirm-salvage-btn').addEventListener('click', () => {
+            const result = player.salvageSelectedItems(gameState, salvageMode);
+            if (result.count > 0) {
+                 logMessage(elements.gameLogEl, `Salvaged ${result.count} items for a total of ${formatNumber(result.scrapGained)} Scrap.`, 'uncommon');
+            } else {
+                 logMessage(elements.gameLogEl, "No items selected for salvage.");
+            }
+            // Deactivate salvage mode UI
+            salvageMode.active = false;
+            document.getElementById('salvage-mode-btn').textContent = 'Select to Salvage';
+            document.getElementById('salvage-mode-btn').classList.remove('active');
+            document.getElementById('confirm-salvage-btn').classList.add('hidden');
+            document.getElementById('select-all-salvage-btn').classList.add('hidden');
+            document.body.classList.remove('salvage-mode-active');
+            salvageMode.selections = [];
+            updateAll();
+            autoSave();
+        });
+
+        elements.inventorySlotsEl.addEventListener('click', (event) => {
+            const target = event.target;
+            if (!(target instanceof Element)) return;
+            const wrapper = target.closest('.item-wrapper');
+            if (!(wrapper instanceof HTMLElement) || !wrapper.dataset.index) return;
+
+            const index = parseInt(wrapper.dataset.index, 10);
+            const item = gameState.inventory[index];
+            if (!item) return;
+
+            if (target.classList.contains('lock-icon')) {
+                const message = player.toggleItemLock(gameState, index);
+                if (message) logMessage(elements.gameLogEl, message);
+            } else if (salvageMode.active) {
+                if (item.locked) { logMessage(elements.gameLogEl, "This item is locked and cannot be salvaged.", 'rare'); return; }
+                const selectionIndex = salvageMode.selections.indexOf(index);
+                if (selectionIndex > -1) {
+                    salvageMode.selections.splice(selectionIndex, 1);
+                } else {
+                    salvageMode.selections.push(index);
+                }
+                document.getElementById('salvage-count').textContent = salvageMode.selections.length.toString();
+            } else {
+                player.equipItem(gameState, index);
+                recalculateStats();
+            }
+            updateAll();
+            autoSave();
+        });
+
+        document.getElementById('equipment-paperdoll').addEventListener('click', (event) => {
+            const target = event.target;
+            if (!(target instanceof Element)) return;
+            const slotElement = target.closest('[data-slot-name]');
+            if (slotElement instanceof HTMLElement && slotElement.dataset.slotName) {
+                player.unequipItem(gameState, slotElement.dataset.slotName);
+                recalculateStats();
+                updateAll();
+                autoSave();
+            }
+        });
+
+        document.getElementById('reset-game-btn').addEventListener('click', resetGame);
+        elements.backToWorldMapBtnEl.addEventListener('click', () => { currentMap = 'world'; renderMap(); });
+        elements.modalCloseBtnEl.addEventListener('click', () => elements.modalBackdropEl.classList.add('hidden'));
+        elements.modalBackdropEl.addEventListener('click', (e) => {
+            if (e.target === elements.modalBackdropEl) elements.modalBackdropEl.classList.add('hidden');
+        });
+
+        elements.autoProgressCheckboxEl.addEventListener('change', () => {
+            gameState.isAutoProgressing = (/** @type {HTMLInputElement} */ (elements.autoProgressCheckboxEl)).checked;
+            logMessage(elements.gameLogEl, `Auto-progress ${gameState.isAutoProgressing ? 'enabled' : 'disabled'}.`);
+            autoSave();
+        });
+
+        elements.addStrengthBtn.addEventListener('click', () => { player.spendAttributePoint(gameState, 'strength'); recalculateStats(); updateAll(); autoSave(); });
+        elements.addAgilityBtn.addEventListener('click', () => { player.spendAttributePoint(gameState, 'agility'); recalculateStats(); updateAll(); autoSave(); });
+        elements.addLuckBtn.addEventListener('click', () => { player.spendAttributePoint(gameState, 'luck'); recalculateStats(); updateAll(); autoSave(); });
+
+        document.getElementById('upgrade-click-damage').addEventListener('click', () => {
+            const cost = getUpgradeCost('clickDamage', gameState.upgrades.clickDamage);
+            const result = player.buyUpgrade(gameState, 'clickDamage', cost);
+            logMessage(elements.gameLogEl, result.message);
+            if (result.success) { recalculateStats(); updateAll(); autoSave(); }
+        });
+        document.getElementById('upgrade-dps').addEventListener('click', () => {
+            const cost = getUpgradeCost('dps', gameState.upgrades.dps);
+            const result = player.buyUpgrade(gameState, 'dps', cost);
+            logMessage(elements.gameLogEl, result.message);
+            if (result.success) { recalculateStats(); updateAll(); autoSave(); }
+        });
 
         document.querySelectorAll('.preset-btn').forEach((btn, index) => {
-            btn.textContent = gameState.presets[index].name;
-            btn.classList.toggle('active', index === gameState.activePresetIndex);
-        });
-
-        prestigeButton.disabled = gameState.maxLevel < 100;
-        
-        const monsterDef = currentMonster.data;
-        if (monsterDef) {
-            lootMonsterNameEl.textContent = currentMonster.name;
-            lootDropChanceEl.textContent = `${monsterDef.dropChance}% ${monsterDef.dropChance === 100 ? '(Boss)' : ''}`;
-            lootTableDisplayEl.innerHTML = '';
-            monsterDef.lootTable.forEach(entry => {
-                const icon = document.createElement('img');
-                icon.src = entry.item.icon;
-                icon.title = entry.item.name;
-                icon.className = 'loot-item-icon';
-                lootTableDisplayEl.appendChild(icon);
+            btn.addEventListener('click', () => {
+                player.activatePreset(gameState, index);
+                logMessage(elements.gameLogEl, `Activated preset: <b>${gameState.presets[index].name}</b>`);
+                recalculateStats();
+                updateAll();
+                autoSave();
             });
-        }
-
-        renderMap();
-        renderRealmTabs();
-    }
-    
-    function createItemHTML(item, isEquipped) {
-        if (isEquipped) {
-            return `<img src="${getItemIcon(item.type)}" class="item-icon">`;
-        }
-
-        const lockHTML = `<i class="fas ${item.locked ? 'fa-lock' : 'fa-lock-open'} lock-icon"></i>`;
+            btn.addEventListener('dblclick', () => {
+                 const currentName = gameState.presets[index].name;
+                 const newName = prompt("Enter a new name for the preset:", currentName);
+                 if (newName && newName.trim() !== "") {
+                     gameState.presets[index].name = newName.trim();
+                     logMessage(elements.gameLogEl, `Renamed preset to: <b>${newName.trim()}</b>`);
+                     updateAll();
+                     autoSave();
+                 }
+            });
+        });
         
-        let statsHTML = '<ul>';
-        for (const statKey in item.stats) {
-            const statInfo = Object.values(STATS).find(s => s.key === statKey);
-            const statName = statInfo ? statInfo.name : statKey;
-            statsHTML += `<li>+${formatNumber(item.stats[statKey])} ${statName}</li>`;
-        }
-        statsHTML += '</ul>';
+        document.querySelectorAll('.tabs').forEach(tabContainer => {
+            const tabs = tabContainer.querySelectorAll('.tab-button');
+            const parentPanel = tabContainer.parentElement;
+            tabs.forEach((tab) => {
+                if (!(tab instanceof HTMLElement)) return;
+                const viewId = tab.dataset.view || tab.textContent.toLowerCase() + '-view';
+                tab.dataset.view = viewId;
 
-        const lockedClass = item.locked ? 'locked-item' : '';
-
-        return `<div class="item ${item.rarity} ${lockedClass}">
-                    ${lockHTML}
-                    <div class="item-header">
-                        <span>${item.name}</span>
-                    </div>
-                    ${statsHTML}
-                    <img src="${getItemIcon(item.type)}" class="item-bg-icon" alt="">
-                </div>`;
-    }
-
-
-    function getItemIcon(type) {
-        // Since we have specific items, we can't easily find a generic "sword" icon.
-        // This is a simple fallback. A better system might use the icon of the first item of that type.
-        switch(type) {
-            case 'sword': return 'images/icons/sword.png';
-            case 'shield': return 'images/icons/shield.png';
-            case 'helmet': return 'images/icons/helmet.png';
-            case 'necklace': return 'images/icons/necklace.png';
-            case 'platebody': return 'images/icons/platebody.png';
-            case 'platelegs': return 'images/icons/platelegs.png';
-            case 'ring': return 'images/icons/ring.png';
-            case 'belt': return 'images/icons/belt.png';
-            default: return 'images/icons/sword.png';
-        }
-    }
-    function showDamagePopup(damage) { const popup = document.createElement('div'); popup.textContent = `-${formatNumber(damage)}`; popup.className = 'damage-popup'; popup.style.left = `${40 + Math.random() * 20}%`; popup.style.top = `${40 + Math.random() * 20}%`; popupContainerEl.appendChild(popup); setTimeout(() => popup.remove(), 1000); }
-    function showGoldPopup(gold) { const popup = document.createElement('div'); popup.innerHTML = `+${formatNumber(gold)} <i class="fas fa-coins"></i>`; popup.className = 'gold-popup'; popup.style.left = `${40 + Math.random() * 20}%`; popup.style.top = `${50}%`; popupContainerEl.appendChild(popup); setTimeout(() => popup.remove(), 1500); }
-    
-    function showDpsPopup(damage) { 
-        const popup = document.createElement('div'); 
-        popup.textContent = `-${formatNumber(damage)}`; 
-        popup.className = 'dps-popup';
-        popup.style.left = `${30 + Math.random() * 40}%`;
-        popup.style.top = `${45 + Math.random() * 20}%`; 
-        popupContainerEl.appendChild(popup); 
-        setTimeout(() => popup.remove(), 800); 
+                tab.addEventListener('click', () => {
+                    tabs.forEach(t => t.classList.remove('active'));
+                    tab.classList.add('active');
+                    if (parentPanel) {
+                       parentPanel.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+                    }
+                    const viewElement = document.getElementById(viewId);
+                    if (viewElement) {
+                        viewElement.classList.add('active');
+                    }
+                });
+            });
+        });
+        
+        setupTooltipListeners();
+        setupStatTooltipListeners();
+        setupRaidListeners();
+        setupPrestigeListeners();
     }
     
-    function setupTooltipListeners() {
-        inventorySlotsEl.addEventListener('mouseover', (event) => {
-            const target = event.target;
-            if (!(target instanceof Element)) return;
-            
-            const itemWrapper = target.closest('.item-wrapper');
-            if (!(itemWrapper instanceof HTMLElement)) return;
-            const index = parseInt(itemWrapper.dataset.index, 10);
-            const inventoryItem = gameState.inventory[index];
-            if (!inventoryItem) return;
-            
-            tooltipEl.classList.remove('common', 'uncommon', 'rare', 'epic', 'legendary');
-            tooltipEl.classList.add(inventoryItem.rarity);
-
-            let slotToCompare = inventoryItem.type;
-            if (slotToCompare === 'ring') {
-                if (gameState.equipment.ring1) { slotToCompare = 'ring1'; } else { slotToCompare = 'ring2'; }
-            }
-            const equippedItem = gameState.equipment[slotToCompare];
-            const rect = itemWrapper.getBoundingClientRect();
-            tooltipEl.style.left = `${rect.right + 10}px`;
-            tooltipEl.style.top = `${rect.top}px`;
-            tooltipEl.innerHTML = createTooltipHTML(inventoryItem, equippedItem);
-            tooltipEl.classList.remove('hidden');
-        });
-        inventorySlotsEl.addEventListener('mouseout', (event) => {
-             if (event.relatedTarget instanceof Node && !inventorySlotsEl.contains(event.relatedTarget)) {
-                if (tooltipEl) tooltipEl.classList.add('hidden');
-            }
-        });
-    
-        const equipmentSlots = document.getElementById('equipment-paperdoll');
-        equipmentSlots.addEventListener('mouseover', (event) => {
-            const target = event.target;
-            if (!(target instanceof Element)) return;
-
-            const slotEl = target.closest('.equipment-slot');
-            if (!slotEl) return;
-
-            const slotName = slotEl.id.replace('slot-', '');
-            const equippedItem = gameState.equipment[slotName];
-
-            if (!equippedItem) return;
-
-            tooltipEl.classList.remove('common', 'uncommon', 'rare', 'epic', 'legendary');
-            tooltipEl.classList.add(equippedItem.rarity);
-
-            const rect = slotEl.getBoundingClientRect();
-            tooltipEl.style.left = `${rect.right + 10}px`;
-            tooltipEl.style.top = `${rect.top}px`;
-            tooltipEl.innerHTML = createTooltipHTML(equippedItem, null); 
-            tooltipEl.classList.remove('hidden');
-        });
-
-        equipmentSlots.addEventListener('mouseout', (event) => {
-            if (event.relatedTarget instanceof Node && !equipmentSlots.contains(event.relatedTarget)) {
-                if (tooltipEl) tooltipEl.classList.add('hidden');
-            }
-        });
-    }
-    
+    // --- Complex Listeners (kept in main file for access to shared state) ---
     function createTooltipHTML(hoveredItem, equippedItem) {
         const headerHTML = `<div class="item-header"><span class="${hoveredItem.rarity}">${hoveredItem.name}</span></div>`;
         
@@ -927,152 +510,112 @@ document.addEventListener('DOMContentLoaded', () => {
         return headerHTML + statsHTML;
     }
 
-    const statTooltipContent = {
-        strength: {
-            title: 'Strength',
-            description: 'Increases your raw power. Each point provides:',
-            effects: [
-                '<b>+0.5</b> Flat Click Damage',
-                '<b>+0.2%</b> Total Click Damage'
-            ]
-        },
-        agility: {
-            title: 'Agility',
-            description: 'Improves your hero\'s combat prowess. Each point provides:',
-            effects: [
-                '<b>+0.3%</b> Total DPS'
-            ]
-        },
-        luck: {
-            title: 'Luck',
-            description: 'Increases your fortune in the dungeon. Each point provides:',
-            effects: [
-                '<b>+0.5%</b> Gold Gain',
-                '<b>+0.2%</b> Magic Find (better item rarity)'
-            ]
-        }
-    };
+    function setupTooltipListeners() {
+        elements.inventorySlotsEl.addEventListener('mouseover', (event) => {
+            if (!(event.target instanceof Element)) return;
+            const itemWrapper = event.target.closest('.item-wrapper');
+            if (!(itemWrapper instanceof HTMLElement) || !itemWrapper.dataset.index) return;
 
+            const index = parseInt(itemWrapper.dataset.index, 10);
+            const inventoryItem = gameState.inventory[index];
+            if (!inventoryItem) return;
+            
+            elements.tooltipEl.className = 'hidden';
+            elements.tooltipEl.classList.add(inventoryItem.rarity);
+
+            let slotToCompare = inventoryItem.type;
+            if (slotToCompare === 'ring') {
+                if (!gameState.equipment.ring1) slotToCompare = 'ring1'; 
+                else if (!gameState.equipment.ring2) slotToCompare = 'ring2';
+                else slotToCompare = 'ring1';
+            }
+            const equippedItem = gameState.equipment[slotToCompare];
+            const rect = itemWrapper.getBoundingClientRect();
+            elements.tooltipEl.style.left = `${rect.right + 10}px`;
+            elements.tooltipEl.style.top = `${rect.top}px`;
+            elements.tooltipEl.innerHTML = createTooltipHTML(inventoryItem, equippedItem);
+            elements.tooltipEl.classList.remove('hidden');
+        });
+
+        elements.inventorySlotsEl.addEventListener('mouseout', () => elements.tooltipEl.classList.add('hidden'));
+    
+        const equipmentSlots = document.getElementById('equipment-paperdoll');
+        equipmentSlots.addEventListener('mouseover', (event) => {
+            if (!(event.target instanceof Element)) return;
+            const slotEl = event.target.closest('.equipment-slot');
+            if (!(slotEl instanceof HTMLElement)) return;
+
+            const slotName = slotEl.id.replace('slot-', '');
+            const equippedItem = gameState.equipment[slotName];
+            if (!equippedItem) return;
+
+            elements.tooltipEl.className = 'hidden';
+            elements.tooltipEl.classList.add(equippedItem.rarity);
+            const rect = slotEl.getBoundingClientRect();
+            elements.tooltipEl.style.left = `${rect.right + 10}px`;
+            elements.tooltipEl.style.top = `${rect.top}px`;
+            elements.tooltipEl.innerHTML = createTooltipHTML(equippedItem, null); 
+            elements.tooltipEl.classList.remove('hidden');
+        });
+        equipmentSlots.addEventListener('mouseout', () => elements.tooltipEl.classList.add('hidden'));
+    }
+    
     function setupStatTooltipListeners() {
+        const statTooltipContent = {
+            strength: { title: 'Strength', description: 'Increases your raw power. Each point provides:', effects: ['<b>+0.5</b> Flat Click Damage', '<b>+0.2%</b> Total Click Damage'] },
+            agility: { title: 'Agility', description: 'Improves your hero\'s combat prowess. Each point provides:', effects: ['<b>+0.3%</b> Total DPS'] },
+            luck: { title: 'Luck', description: 'Increases your fortune in the dungeon. Each point provides:', effects: ['<b>+0.5%</b> Gold Gain', '<b>+0.2%</b> Magic Find (better item rarity)'] }
+        };
+
         const attributesArea = document.getElementById('attributes-area');
         attributesArea.addEventListener('mouseover', (event) => {
-            const target = event.target;
-            if (!(target instanceof Element)) return;
-
-            const row = target.closest('.attribute-row');
-            if (!(row instanceof HTMLElement)) return;
-
+            if (!(event.target instanceof Element)) return;
+            const row = event.target.closest('.attribute-row');
+            if (!(row instanceof HTMLElement) || !row.dataset.attribute) return;
+            
             const attribute = row.dataset.attribute;
             const content = statTooltipContent[attribute];
             if (!content) return;
 
             let html = `<h4>${content.title}</h4><p>${content.description}</p><ul>`;
-            content.effects.forEach(effect => {
-                html += `<li>- ${effect}</li>`;
-            });
+            content.effects.forEach(effect => { html += `<li>- ${effect}</li>`; });
             html += '</ul>';
-            statTooltipEl.innerHTML = html;
+            elements.statTooltipEl.innerHTML = html;
             
             const nameSpan = row.querySelector('span');
+            if (!nameSpan) return;
             const rect = nameSpan.getBoundingClientRect();
-
-            statTooltipEl.style.left = `${rect.right + 10}px`;
-            statTooltipEl.style.top = `${rect.top}px`;
-            statTooltipEl.classList.remove('hidden');
+            elements.statTooltipEl.style.left = `${rect.right + 10}px`;
+            elements.statTooltipEl.style.top = `${rect.top}px`;
+            elements.statTooltipEl.classList.remove('hidden');
         });
 
-        attributesArea.addEventListener('mouseout', (event) => {
-            if (event.relatedTarget instanceof Node && !attributesArea.contains(event.relatedTarget)) {
-                if (statTooltipEl) statTooltipEl.classList.add('hidden');
-            }
-        });
+        attributesArea.addEventListener('mouseout', () => elements.statTooltipEl.classList.add('hidden'));
     }
 
-    function autoSave() { saveIndicatorEl.classList.add('visible'); if (saveTimeout) clearTimeout(saveTimeout); saveTimeout = setTimeout(() => { saveIndicatorEl.classList.remove('visible'); }, 2000); localStorage.setItem('idleRPGSaveData', JSON.stringify(gameState)); }
-    function resetGame() { if (confirm("Are you sure? This will delete your save permanently.")) { localStorage.removeItem('idleRPGSaveData'); window.location.reload(); } }
-    
-    function initiatePrestige() { prestigeSelections = []; prestigeSelectionEl.classList.remove('hidden'); prestigeButton.classList.add('hidden'); const allItems = [...Object.values(gameState.equipment).filter(i => i), ...gameState.inventory]; prestigeInventorySlotsEl.innerHTML = ''; allItems.forEach(item => { const itemEl = document.createElement('div'); itemEl.innerHTML = createItemHTML(item, false); itemEl.onclick = () => { const itemCard = itemEl.querySelector('.item'); if (prestigeSelections.includes(item.id)) { prestigeSelections = prestigeSelections.filter(id => id !== item.id); itemCard.classList.remove('selected-for-prestige'); } else if (prestigeSelections.length < 3) { prestigeSelections.push(item.id); itemCard.classList.add('selected-for-prestige'); } }; prestigeInventorySlotsEl.appendChild(itemEl); }); }
-    
-    function confirmPrestige() {
-        if (prestigeSelections.length > 3) { alert("You can only select up to 3 items!"); return; }
-        
-        const absorbed = { clickDamage: 0, dps: 0 };
-        for (const item of Object.values(gameState.equipment)) {
-            if (item) {
-                absorbed.clickDamage += item.stats.clickDamage || 0;
-                absorbed.dps += item.stats.dps || 0;
-            }
-        }
-        logMessage(`Absorbed <b>+${absorbed.clickDamage.toFixed(2)}</b> Click Damage and <b>+${absorbed.dps.toFixed(2)}</b> DPS from your gear!`, 'epic');
-        
-        const allItems = [...Object.values(gameState.equipment).filter(i => i), ...gameState.inventory];
-        const newLegacyItems = allItems.filter(item => prestigeSelections.includes(item.id));
-        const oldLegacyItems = gameState.legacyItems || [];
-        
-        const oldLevel = gameState.maxLevel;
-        const heroToKeep = {
-            level: gameState.hero.level,
-            xp: gameState.hero.xp,
-            attributePoints: (gameState.hero.level - 1) * 5,
-            attributes: { strength: 0, agility: 0, luck: 0 }
-        };
-        logMessage(`Your attributes have been reset, and <b>${heroToKeep.attributePoints}</b> points have been refunded.`, 'uncommon');
-
-        const oldAbsorbedStats = gameState.absorbedStats || { clickDamage: 0, dps: 0 };
-        const oldPrestigeCount = gameState.prestigeCount || 0;
-        const baseState = getDefaultGameState();
-        
-        gameState = {
-            ...baseState,
-            absorbedStats: {
-                clickDamage: oldAbsorbedStats.clickDamage + absorbed.clickDamage,
-                dps: oldAbsorbedStats.dps + absorbed.dps
-            },
-            legacyItems: [...oldLegacyItems, ...newLegacyItems],
-            prestigeCount: oldPrestigeCount + 1,
-            hero: heroToKeep,
-            presets: baseState.presets,
-            activePresetIndex: baseState.activePresetIndex
-        };
-        
-        logMessage(`PRESTIGE! Restarted from Lvl ${oldLevel}, keeping hero progress, ${newLegacyItems.length} new legacy items, and all absorbed stats.`);
-        
-        prestigeSelectionEl.classList.add('hidden');
-        prestigeButton.classList.remove('hidden');
-        recalculateStats();
-        updateUI();
-        autoSave();
-    }
-    
     function createRaidPanel() {
         if (document.getElementById('raid-panel')) return;
-
         const raidContainer = document.getElementById('raid-container');
+        if (!raidContainer) return;
         raidContainer.innerHTML = `
             <div id="raid-panel">
                 <div id="raid-boss-info">
                     <h2 id="raid-boss-name">Loading...</h2>
-                    <div id="raid-boss-health-bar-container">
-                        <div id="raid-boss-health-bar"></div>
-                    </div>
+                    <div id="raid-boss-health-bar-container"><div id="raid-boss-health-bar"></div></div>
                     <p id="raid-boss-health-text">0 / 0</p>
                 </div>
                 <div id="raid-main-content">
-                    <div id="raid-attack-area">
-                        <button id="raid-attack-button">ATTACK!</button>
-                    </div>
-                    <div id="raid-player-list">
-                        <h3>Participants</h3>
-                        <ul></ul>
-                    </div>
+                    <div id="raid-attack-area"><button id="raid-attack-button">ATTACK!</button></div>
+                    <div id="raid-player-list"><h3>Participants</h3><ul></ul></div>
                 </div>
             </div>`;
-
         raidPanel = document.getElementById('raid-panel');
-        document.getElementById('raid-attack-button').addEventListener('click', () => {
-            socket.emit('attackRaidBoss', { damage: playerStats.totalClickDamage });
-        });
-
+        const attackButton = document.getElementById('raid-attack-button');
+        if (attackButton) {
+            attackButton.addEventListener('click', () => {
+                socket.emit('attackRaidBoss', { damage: playerStats.totalClickDamage });
+            });
+        }
         socket.emit('joinRaid', { id: raidPlayerId, dps: playerStats.totalDps });
     }
 
@@ -1085,243 +628,164 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function updateRaidUI(raidState) {
         if (!raidPanel) return;
-
         const boss = raidState.boss;
-        document.getElementById('raid-boss-name').textContent = boss.name;
-        document.getElementById('raid-boss-health-text').textContent = `${formatNumber(Math.ceil(boss.currentHp))} / ${formatNumber(boss.maxHp)}`;
-        
-        const healthPercent = (boss.currentHp / boss.maxHp) * 100;
-        (/** @type {HTMLElement} */ (document.getElementById('raid-boss-health-bar'))).style.width = `${healthPercent}%`;
-
+        const bossNameEl = document.getElementById('raid-boss-name');
+        const bossHealthTextEl = document.getElementById('raid-boss-health-text');
+        const bossHealthBarEl = document.getElementById('raid-boss-health-bar');
+        if (bossNameEl) bossNameEl.textContent = boss.name;
+        if (bossHealthTextEl) bossHealthTextEl.textContent = `${formatNumber(Math.ceil(boss.currentHp))} / ${formatNumber(boss.maxHp)}`;
+        if (bossHealthBarEl) {
+            const healthPercent = (boss.currentHp / boss.maxHp) * 100;
+            (/**@type {HTMLElement}*/(bossHealthBarEl)).style.width = `${healthPercent}%`;
+        }
         const playerListEl = raidPanel.querySelector('#raid-player-list ul');
-        playerListEl.innerHTML = '';
-        Object.values(raidState.players).forEach(player => {
-            const li = document.createElement('li');
-            li.textContent = `${player.id} - ${formatNumber(player.dps)} DPS`;
-            playerListEl.appendChild(li);
-        });
-    }
-
-    function setupRaidListeners() {
-        socket.on('connect', () => {
-            logMessage('Connected to Raid Server!', 'uncommon');
-        });
-
-        socket.on('disconnect', () => {
-            logMessage('Disconnected from Raid Server.', 'rare');
-            destroyRaidPanel();
-        });
-
-        socket.on('raidUpdate', (raidState) => {
-            updateRaidUI(raidState);
-        });
-
-        socket.on('raidOver', (data) => {
-            logMessage(`RAID OVER: ${data.message}`, 'legendary');
-            const scrapReward = 500;
-            gameState.scrap += scrapReward;
-            logMessage(`You received ${formatNumber(scrapReward)} Scrap for participating!`, 'epic');
-            updateUI();
-            destroyRaidPanel();
-        });
+        if (playerListEl) {
+            playerListEl.innerHTML = '';
+            Object.values(raidState.players).forEach(player => {
+                const li = document.createElement('li');
+                li.textContent = `${player.id} - ${formatNumber(player.dps)} DPS`;
+                playerListEl.appendChild(li);
+            });
+        }
     }
     
-    function setupEventListeners() {
-        monsterImageEl.addEventListener('click', clickMonster);
-        document.getElementById('buy-loot-crate-btn').addEventListener('click', buyLootCrate);
-        document.getElementById('salvage-mode-btn').addEventListener('click', toggleSalvageMode);
-        document.getElementById('select-all-salvage-btn').addEventListener('click', selectAllForSalvage);
-        document.getElementById('confirm-salvage-btn').addEventListener('click', salvageSelectedItems);
-        document.getElementById('reset-game-btn').addEventListener('click', resetGame);
-        
-        backToWorldMapBtnEl.addEventListener('click', showWorldMap);
-        modalCloseBtnEl.addEventListener('click', closeModal);
-        modalBackdropEl.addEventListener('click', (e) => {
-            if (e.target === modalBackdropEl) {
-                closeModal();
-            }
-        });
-
-        autoProgressCheckboxEl.addEventListener('change', () => {
-            gameState.isAutoProgressing = autoProgressCheckboxEl.checked;
-            logMessage(`Auto-progress ${gameState.isAutoProgressing ? 'enabled' : 'disabled'}.`);
-            autoSave();
-        });
-
+    function setupRaidListeners() {
         const raidBtn = document.getElementById('raid-btn');
         if (raidBtn) {
             raidBtn.addEventListener('click', () => {
                 if (raidPanel) {
                     destroyRaidPanel();
-                    socket.disconnect(); 
-                    socket.connect(); 
+                    socket.disconnect();
+                    socket.connect();
                 } else {
                     createRaidPanel();
                 }
             });
         }
-        
-        addStrengthBtn.addEventListener('click', () => spendAttributePoint('strength'));
-        addAgilityBtn.addEventListener('click', () => spendAttributePoint('agility'));
-        addLuckBtn.addEventListener('click', () => spendAttributePoint('luck'));
-
-        document.getElementById('upgrade-click-damage').addEventListener('click', () => buyUpgrade('clickDamage'));
-        document.getElementById('upgrade-dps').addEventListener('click', () => buyUpgrade('dps'));
-        prestigeButton.addEventListener('click', initiatePrestige);
-        document.getElementById('confirm-prestige-btn').addEventListener('click', confirmPrestige);
-        
-        document.querySelectorAll('.preset-btn').forEach((btn, index) => {
-            btn.addEventListener('click', () => activatePreset(index));
-            btn.addEventListener('dblclick', () => renamePreset(index));
+        socket.on('connect', () => { logMessage(elements.gameLogEl, 'Connected to Raid Server!', 'uncommon'); });
+        socket.on('disconnect', () => { logMessage(elements.gameLogEl, 'Disconnected from Raid Server.', 'rare'); destroyRaidPanel(); });
+        socket.on('raidUpdate', (raidState) => { updateRaidUI(raidState); });
+        socket.on('raidOver', (data) => {
+            logMessage(elements.gameLogEl, `RAID OVER: ${data.message}`, 'legendary');
+            const scrapReward = 500;
+            gameState.scrap += scrapReward;
+            logMessage(elements.gameLogEl, `You received ${formatNumber(scrapReward)} Scrap for participating!`, 'epic');
+            updateAll();
+            destroyRaidPanel();
         });
-        
-        document.querySelectorAll('.tabs').forEach(tabContainer => {
-            const tabs = tabContainer.querySelectorAll('.tab-button');
-            const parentPanel = tabContainer.parentElement;
-            tabs.forEach(/** @param {HTMLElement} tab */(tab) => {
-                const viewId = tab.dataset.view || tab.textContent.toLowerCase() + '-view';
-                tab.dataset.view = viewId;
+    }
 
-                tab.addEventListener('click', () => {
-                    tabs.forEach(t => t.classList.remove('active'));
-                    tab.classList.add('active');
-                    parentPanel.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-                    if (document.getElementById(viewId)) {
-                        document.getElementById(viewId).classList.add('active');
+    function setupPrestigeListeners() {
+        elements.prestigeButton.addEventListener('click', () => {
+            prestigeSelections = [];
+            elements.prestigeSelectionEl.classList.remove('hidden');
+            elements.prestigeButton.classList.add('hidden');
+            const allItems = [...Object.values(gameState.equipment).filter(i => i), ...gameState.inventory];
+            elements.prestigeInventorySlotsEl.innerHTML = '';
+            allItems.forEach(item => {
+                const itemEl = document.createElement('div');
+                itemEl.innerHTML = ui.createItemHTML(item, false);
+                itemEl.onclick = () => {
+                    const itemCard = itemEl.querySelector('.item');
+                    if (!itemCard) return;
+                    if (prestigeSelections.includes(item.id)) {
+                        prestigeSelections = prestigeSelections.filter(id => id !== item.id);
+                        itemCard.classList.remove('selected-for-prestige');
+                    } else if (prestigeSelections.length < 3) {
+                        prestigeSelections.push(item.id);
+                        itemCard.classList.add('selected-for-prestige');
                     }
-                });
+                };
+                elements.prestigeInventorySlotsEl.appendChild(itemEl);
             });
         });
-        
-        inventorySlotsEl.addEventListener('click', (event) => {
-            const target = event.target;
-            if (!(target instanceof Element)) return;
-            
-            const wrapper = target.closest('.item-wrapper');
-            if (!(wrapper instanceof HTMLElement)) return;
-            const index = parseInt(wrapper.dataset.index, 10);
-            const item = gameState.inventory[index];
-            if (target.classList.contains('lock-icon')) {
-                toggleItemLock(index);
-            } else {
-                handleInventoryClick(item, index);
+
+        document.getElementById('confirm-prestige-btn').addEventListener('click', () => {
+            if (prestigeSelections.length > 3) { alert("You can only select up to 3 items!"); return; }
+
+            const absorbed = { clickDamage: 0, dps: 0 };
+            for (const item of Object.values(gameState.equipment)) {
+                if (item) {
+                    if(item.stats.clickDamage) absorbed.clickDamage += item.stats.clickDamage;
+                    if(item.stats.dps) absorbed.dps += item.stats.dps;
+                }
             }
+            logMessage(elements.gameLogEl, `Absorbed <b>+${absorbed.clickDamage.toFixed(2)}</b> Click Damage and <b>+${absorbed.dps.toFixed(2)}</b> DPS from your gear!`, 'epic');
+
+            const allItems = [...Object.values(gameState.equipment).filter(i => i), ...gameState.inventory];
+            const newLegacyItems = allItems.filter(item => prestigeSelections.includes(item.id));
+            const oldLegacyItems = gameState.legacyItems || [];
+            
+            const oldLevel = gameState.maxLevel;
+            const heroToKeep = {
+                level: gameState.hero.level,
+                xp: gameState.hero.xp,
+                attributePoints: (gameState.hero.level - 1) * 5,
+                attributes: { strength: 0, agility: 0, luck: 0 }
+            };
+            logMessage(elements.gameLogEl, `Your attributes have been reset, and <b>${heroToKeep.attributePoints}</b> points have been refunded.`, 'uncommon');
+
+            const oldAbsorbedStats = gameState.absorbedStats || { clickDamage: 0, dps: 0 };
+            const oldPrestigeCount = gameState.prestigeCount || 0;
+            const baseState = getDefaultGameState();
+            
+            gameState = {
+                ...baseState,
+                absorbedStats: {
+                    clickDamage: oldAbsorbedStats.clickDamage + absorbed.clickDamage,
+                    dps: oldAbsorbedStats.dps + absorbed.dps
+                },
+                legacyItems: [...oldLegacyItems, ...newLegacyItems],
+                prestigeCount: oldPrestigeCount + 1,
+                hero: heroToKeep,
+                presets: baseState.presets,
+                activePresetIndex: baseState.activePresetIndex
+            };
+            
+            logMessage(elements.gameLogEl, `PRESTIGE! Restarted from Lvl ${oldLevel}, keeping hero progress, ${newLegacyItems.length} new legacy items, and all absorbed stats.`);
+            
+            elements.prestigeSelectionEl.classList.add('hidden');
+            elements.prestigeButton.classList.remove('hidden');
+            recalculateStats();
+            startNewMonster();
+            updateAll();
+            autoSave();
         });
-        
-        setupTooltipListeners();
-        setupStatTooltipListeners(); 
     }
-    
+
     function main() {
-        saveIndicatorEl = /** @type {HTMLElement} */ (document.getElementById('save-indicator'));
-        goldStatEl = /** @type {HTMLElement} */ (document.getElementById('gold-stat'));
-        scrapStatEl = /** @type {HTMLElement} */ (document.getElementById('scrap-stat'));
-        upgradeClickCostEl = /** @type {HTMLElement} */ (document.getElementById('upgrade-click-cost'));
-        upgradeDpsCostEl = /** @type {HTMLElement} */ (document.getElementById('upgrade-dps-cost'));
-        upgradeClickLevelEl = /** @type {HTMLElement} */ (document.getElementById('upgrade-click-level'));
-        upgradeDpsLevelEl = /** @type {HTMLElement} */ (document.getElementById('upgrade-dps-level'));
-        monsterNameEl = /** @type {HTMLElement} */ (document.getElementById('monster-name'));
-        currentLevelEl = /** @type {HTMLElement} */ (document.getElementById('current-level'));
-        monsterHealthBarEl = /** @type {HTMLElement} */ (document.getElementById('monster-health-bar'));
-        monsterHealthTextEl = /** @type {HTMLElement} */ (document.getElementById('monster-health-text'));
-        inventorySlotsEl = /** @type {HTMLElement} */ (document.getElementById('inventory-slots'));
-        gameLogEl = /** @type {HTMLElement} */ (document.getElementById('game-log'));
-        prestigeButton = /** @type {HTMLButtonElement} */ (document.getElementById('prestige-button'));
-        prestigeSelectionEl = /** @type {HTMLElement} */ (document.getElementById('prestige-selection'));
-        prestigeInventorySlotsEl = /** @type {HTMLElement} */ (document.getElementById('prestige-inventory-slots'));
-        monsterImageEl = /** @type {HTMLImageElement} */ (document.getElementById('monster-image'));
-        popupContainerEl = /** @type {HTMLElement} */ (document.getElementById('popup-container'));
-        tooltipEl = /** @type {HTMLElement} */ (document.getElementById('item-tooltip'));
-        statTooltipEl = /** @type {HTMLElement} */ (document.getElementById('stat-tooltip')); 
-        heroLevelEl = /** @type {HTMLElement} */ (document.getElementById('hero-level'));
-        heroXpBarEl = /** @type {HTMLElement} */ (document.getElementById('hero-xp-bar'));
-        heroXpTextEl = /** @type {HTMLElement} */ (document.getElementById('hero-xp-text'));
-        attributePointsEl = /** @type {HTMLElement} */ (document.getElementById('attribute-points'));
-        attrStrengthEl = /** @type {HTMLElement} */ (document.getElementById('attr-strength'));
-        attrAgilityEl = /** @type {HTMLElement} */ (document.getElementById('attr-agility'));
-        attrLuckEl = /** @type {HTMLElement} */ (document.getElementById('attr-luck'));
-        addStrengthBtn = /** @type {HTMLButtonElement} */ (document.getElementById('add-strength-btn'));
-        addAgilityBtn = /** @type {HTMLButtonElement} */ (document.getElementById('add-agility-btn'));
-        addLuckBtn = /** @type {HTMLButtonElement} */ (document.getElementById('add-luck-btn'));
-        clickDamageStatEl = /** @type {HTMLElement} */ (document.getElementById('click-damage-stat'));
-        dpsStatEl = /** @type {HTMLElement} */ (document.getElementById('dps-stat'));
-        bonusGoldStatEl = /** @type {HTMLElement} */ (document.getElementById('bonus-gold-stat'));
-        magicFindStatEl = /** @type {HTMLElement} */ (document.getElementById('magic-find-stat'));
-        lootMonsterNameEl = /** @type {HTMLElement} */ (document.getElementById('loot-monster-name'));
-        lootDropChanceEl = /** @type {HTMLElement} */ (document.getElementById('loot-drop-chance'));
-        lootTableDisplayEl = /** @type {HTMLElement} */ (document.getElementById('loot-table-display'));
-        prestigeCountStatEl = /** @type {HTMLElement} */ (document.getElementById('prestige-count-stat'));
-        absorbedClickDmgStatEl = /** @type {HTMLElement} */ (document.getElementById('absorbed-click-dmg-stat'));
-        absorbedDpsStatEl = /** @type {HTMLElement} */ (document.getElementById('absorbed-dps-stat'));
-        legacyItemsStatEl = /** @type {HTMLElement} */ (document.getElementById('legacy-items-stat'));
-        mapContainerEl = /** @type {HTMLElement} */ (document.getElementById('map-container'));
-        mapTitleEl = /** @type {HTMLElement} */ (document.getElementById('map-title'));
-        backToWorldMapBtnEl = /** @type {HTMLButtonElement} */ (document.getElementById('back-to-world-map-btn'));
-        modalBackdropEl = /** @type {HTMLElement} */ (document.getElementById('modal-backdrop'));
-        modalContentEl = /** @type {HTMLElement} */ (document.getElementById('modal-content'));
-        modalTitleEl = /** @type {HTMLElement} */ (document.getElementById('modal-title'));
-        modalBodyEl = /** @type {HTMLElement} */ (document.getElementById('modal-body'));
-        modalCloseBtnEl = /** @type {HTMLButtonElement} */ (document.getElementById('modal-close-btn'));
-        autoProgressCheckboxEl = /** @type {HTMLInputElement} */ (document.getElementById('auto-progress-checkbox'));
-        realmTabsContainerEl = /** @type {HTMLElement} */ (document.getElementById('realm-tabs-container'));
+        elements = ui.initDOMElements();
 
         const savedData = localStorage.getItem('idleRPGSaveData');
         if (savedData) {
             const loadedState = JSON.parse(savedData);
             const baseState = getDefaultGameState();
             gameState = {
-                ...baseState,
-                ...loadedState,
-    
+                ...baseState, ...loadedState,
                 hero: { ...baseState.hero, ...(loadedState.hero || {}), attributes: { ...baseState.hero.attributes, ...(loadedState.hero?.attributes || {}) } },
                 upgrades: { ...baseState.upgrades, ...(loadedState.upgrades || {}) },
                 equipment: { ...baseState.equipment, ...(loadedState.equipment || {}) },
                 absorbedStats: { ...baseState.absorbedStats, ...(loadedState.absorbedStats || {}) },
                 monster: { ...baseState.monster, ...(loadedState.monster || {}) },
                 presets: loadedState.presets || baseState.presets,
-                activePresetIndex: loadedState.activePresetIndex || 0,
-                completedLevels: loadedState.completedLevels || [],
-                isFarming: loadedState.isFarming !== undefined ? loadedState.isFarming : true,
-                isAutoProgressing: loadedState.isAutoProgressing, // Load the saved setting
+                isAutoProgressing: loadedState.isAutoProgressing !== undefined ? loadedState.isAutoProgressing : true,
                 currentRealmIndex: loadedState.currentRealmIndex || 0,
             };
-
-            // This ensures that if a new save is created, it uses the default, but if an old save exists without the property, it defaults to true.
-            if (gameState.isAutoProgressing === undefined) {
-                gameState.isAutoProgressing = true;
-            }
-
-            // REMOVED THE BUGGY PRESET LOADING BLOCK
-
-            if (loadedState.level && loadedState.maxLevel === undefined) {
-                gameState.maxLevel = loadedState.level;
-                if (loadedState.currentFightingLevel === undefined) {
-                    gameState.currentFightingLevel = loadedState.level;
-                }
-            }
-            if (gameState.level) {
-                delete gameState.level;
-            }
         } else {
             gameState = getDefaultGameState();
         }
         
         setupEventListeners();
         recalculateStats();
-        generateMonster();
+        startNewMonster();
         
-        if (!savedData) {
-             logMessage("Welcome! Your progress will be saved automatically.");
-        } else {
-            logMessage("Saved game loaded!");
-        }
-        updateUI();
-
-        setupRaidListeners();
+        logMessage(elements.gameLogEl, savedData ? "Saved game loaded!" : "Welcome! Your progress will be saved automatically.");
+        updateAll();
         
-        setInterval(autoSave, 30000); 
+        setInterval(autoSave, 30000);
         setInterval(gameLoop, 1000);
     }
-    
+
     main();
 });
+// --- END OF FILE game.js ---
