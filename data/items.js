@@ -34,7 +34,7 @@ export const ITEMS = {
         id: 'GLADIATORS_LONGSWORD',
         name: "Gladiator's Longsword",
         type: 'sword',
-        icon: 'images/icons/sword.png',
+        icon: 'images/icons/gladiatorlsongsword.png',
         isUnique: true,
         canHaveSockets: true,
         maxSockets: 3,
@@ -62,7 +62,7 @@ export const ITEMS = {
         id: 'LEATHER_CAP',
         name: "Leather Cap",
         type: 'helmet',
-        icon: 'images/icons/helmet.png',
+        icon: 'images/icons/Leather_cap.png',
         canHaveSockets: true,
         maxSockets: 1,
         possibleStats: [
