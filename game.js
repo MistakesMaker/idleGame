@@ -1,13 +1,16 @@
+// --- START OF FILE game.js ---
+
 /* global io */
 import { REALMS } from './data/realms.js';
 import { MONSTERS } from './data/monsters.js';
 import { ITEMS } from './data/items.js';
 import { STATS } from './data/stat_pools.js';
 import { logMessage, formatNumber, getUpgradeCost, findSubZoneByLevel, findFirstLevelOfZone, findLastLevelOfZone, isBossLevel, isBigBossLevel, getCombinedItemStats, isMiniBossLevel } from './utils.js';
-import { rarities, logMessage, formatNumber, getUpgradeCost, findSubZoneByLevel, findFirstLevelOfZone, isBossLevel, isBigBossLevel, getCombinedItemStats, isMiniBossLevel } from './utils.js';
 import * as ui from './ui.js';
 import * as player from './player_actions.js';
 import * as logic from './game_logic.js';
+
+export const rarities = ['common', 'uncommon', 'rare', 'epic', 'legendary'];
 
 /** @typedef {Object<string, HTMLElement|HTMLButtonElement|HTMLInputElement|HTMLImageElement>} DOMElements */
 
@@ -18,16 +21,14 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentMonster = { name: "Slime", data: MONSTERS.SLIME };
     let playerStats = { baseClickDamage: 1, baseDps: 0, totalClickDamage: 1, totalDps: 0, bonusGold: 0, magicFind: 0 };
     let salvageMode = { active: false, selections: [] };
-    let prestigeSelections = [];
     let saveTimeout;
     let isShiftPressed = false;
     let lastMousePosition = { x: 0, y: 0 };
     let pendingRingEquip = null;
     let selectedGemForSocketing = null;
     let craftingGems = [];
-    let isResetting = false; // --- FIX: Flag to prevent saving on reset ---
-    
-    // NOTE: Removed selectedItemForForge as it's not used
+    let selectedItemForForge = null;
+    let isResetting = false; 
 
     /** @type {DOMElements} */
     let elements = {};
@@ -45,7 +46,6 @@ document.addEventListener('DOMContentLoaded', () => {
             equipment: { ...defaultEquipmentState },
             inventory: [],
             gems: [],
-            legacyItems: [],
             absorbedStats: {},
             absorbedSynergies: [],
             prestigeCount: 0,
@@ -87,7 +87,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         const equippedSynergyGems = [];
-        const allItems = [...(gameState.legacyItems || []), ...Object.values(gameState.equipment)];
+        const allItems = [...Object.values(gameState.equipment)];
 
         for (const item of allItems) {
             if (item) {
@@ -188,6 +188,8 @@ document.addEventListener('DOMContentLoaded', () => {
         
         if (gameState.monster.hp <= 0) {
             handleMonsterDefeated();
+        } else {
+            ui.updateMonsterHealthUI(elements, gameState.monster);
         }
     }
 
@@ -198,12 +200,14 @@ document.addEventListener('DOMContentLoaded', () => {
             
             if (gameState.monster.hp <= 0) {
                 handleMonsterDefeated();
+            } else {
+                ui.updateMonsterHealthUI(elements, gameState.monster);
             }
         }
     }
 
     function updateAll() {
-        ui.updateUI(elements, gameState, playerStats, currentMonster, salvageMode, craftingGems);
+        ui.updateUI(elements, gameState, playerStats, currentMonster, salvageMode, craftingGems, selectedItemForForge);
         renderMap();
         renderRealmTabs();
         
@@ -249,7 +253,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function resetGame() {
         if (confirm("Are you sure? This will delete your save permanently.")) {
-            isResetting = true; // --- FIX: Set the flag before reloading ---
+            isResetting = true; 
             localStorage.removeItem('idleRPGSaveData');
             window.location.reload();
         }
@@ -263,6 +267,14 @@ document.addEventListener('DOMContentLoaded', () => {
             renderMap();
             return;
         }
+    
+        const pathContainer = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+        pathContainer.setAttribute('id', 'map-path-container');
+        pathContainer.setAttribute('viewBox', '0 0 100 100');
+        pathContainer.setAttribute('preserveAspectRatio', 'none');
+        pathContainer.style.fill = 'none';
+        elements.mapContainerEl.appendChild(pathContainer);
+    
         if (currentMap === 'world') {
             elements.mapTitleEl.textContent = realm.name;
             elements.backToWorldMapBtnEl.classList.add('hidden');
@@ -288,11 +300,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (isUnlocked) {
                     node.onclick = () => { currentMap = zoneId; renderMap(); };
                 }
-            for (const zoneId in realm.zones) {
-                const zone = realm.zones[zoneId];
-                const isUnlocked = gameState.maxLevel >= findFirstLevelOfZone(zone);
-                const node = ui.createMapNode(zone.name, zone.icon, zone.coords, isUnlocked, false, gameState.currentFightingLevel, zone.subZones[Object.keys(zone.subZones)[0]].levelRange);
-                if (isUnlocked) node.onclick = () => { currentMap = zoneId; renderMap(); };
                 elements.mapContainerEl.appendChild(node);
             }
             
@@ -549,7 +556,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function setupEventListeners() {
         window.addEventListener('beforeunload', () => {
-            // --- FIX: Check the flag before saving ---
             if (isResetting) return; 
             gameState.lastSaveTimestamp = Date.now();
             localStorage.setItem('idleRPGSaveData', JSON.stringify(gameState));
@@ -873,7 +879,6 @@ document.addEventListener('DOMContentLoaded', () => {
             elements.offlineProgressModalBackdrop.classList.add('hidden');
         });
 
-        // --- THE FIX ---
         elements.resetGameBtn.addEventListener('click', resetGame);
         
         elements.backToWorldMapBtnEl.addEventListener('click', () => { currentMap = 'world'; renderMap(); });
@@ -956,7 +961,6 @@ document.addEventListener('DOMContentLoaded', () => {
         
                 tab.addEventListener('click', () => {
                     const itemRelatedViews = ['gems-view', 'inventory-view', 'equipment-view', 'forge-view'];
-                    const itemRelatedViews = ['gems-view', 'inventory-view', 'equipment-view'];
                     if (selectedGemForSocketing !== null && !itemRelatedViews.includes(viewId)) {
                         selectedGemForSocketing = null;
                         logMessage(elements.gameLogEl, "Canceled gem socketing.");
@@ -971,9 +975,6 @@ document.addEventListener('DOMContentLoaded', () => {
                         logMessage(elements.gameLogEl, "Forge selection cleared.");
                     }
         
-
-                    updateAll(); 
-
                     tabs.forEach(t => t.classList.remove('active'));
                     tab.classList.add('active');
                     if (parentPanel) {
@@ -988,47 +989,51 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
         
-        elements.forgeInventorySlotsEl.addEventListener('click', (e) => {
-            if (!(e.target instanceof Element)) return;
-            const wrapper = e.target.closest('.item-wrapper');
-            if (!(wrapper instanceof HTMLElement)) return;
-            
-            const location = wrapper.dataset.location;
-            let item = null;
-            
-            if (location === 'equipment') {
-                const slot = wrapper.dataset.slot;
-                if (slot) item = gameState.equipment[slot];
-            } else if (location === 'inventory') {
-                const itemIndexStr = wrapper.dataset.index;
-                if (itemIndexStr) {
-                    const itemIndex = parseInt(itemIndexStr, 10);
-                    item = gameState.inventory[itemIndex];
+        if (elements.forgeInventorySlotsEl) {
+            elements.forgeInventorySlotsEl.addEventListener('click', (e) => {
+                if (!(e.target instanceof Element)) return;
+                const wrapper = e.target.closest('.item-wrapper');
+                if (!(wrapper instanceof HTMLElement)) return;
+                
+                const location = wrapper.dataset.location;
+                let item = null;
+                
+                if (location === 'equipment') {
+                    const slot = wrapper.dataset.slot;
+                    if (slot) item = gameState.equipment[slot];
+                } else if (location === 'inventory') {
+                    const itemIndexStr = wrapper.dataset.index;
+                    if (itemIndexStr) {
+                        const itemIndex = parseInt(itemIndexStr, 10);
+                        item = gameState.inventory[itemIndex];
+                    }
                 }
-            }
-            
-            if (item && item.stats) {
-                selectedItemForForge = item; 
-                logMessage(elements.gameLogEl, `Selected <span class="${item.rarity}">${item.name}</span> for rerolling.`, 'uncommon');
-                updateAll();
-            }
-        });
-
-        elements.forgeRerollBtn.addEventListener('click', () => {
-            if (!selectedItemForForge) {
-                logMessage(elements.gameLogEl, "No item selected to reroll.", 'rare');
-                return;
-            }
-
-            const result = player.rerollItemStats(gameState, selectedItemForForge);
-            logMessage(elements.gameLogEl, result.message, result.success ? 'epic' : 'rare');
-            
-            if (result.success) {
-                recalculateStats();
-                updateAll();
-                autoSave();
-            }
-        });
+                
+                if (item && item.stats) {
+                    selectedItemForForge = item; 
+                    logMessage(elements.gameLogEl, `Selected <span class="${item.rarity}">${item.name}</span> for rerolling.`, 'uncommon');
+                    updateAll();
+                }
+            });
+        }
+        
+        if (elements.forgeRerollBtn) {
+            elements.forgeRerollBtn.addEventListener('click', () => {
+                if (!selectedItemForForge) {
+                    logMessage(elements.gameLogEl, "No item selected to reroll.", 'rare');
+                    return;
+                }
+    
+                const result = player.rerollItemStats(gameState, selectedItemForForge);
+                logMessage(elements.gameLogEl, result.message, result.success ? 'epic' : 'rare');
+                
+                if (result.success) {
+                    recalculateStats();
+                    updateAll();
+                    autoSave();
+                }
+            });
+        }
 
         setupItemTooltipListeners();
         setupGemTooltipListeners();
@@ -1216,6 +1221,30 @@ document.addEventListener('DOMContentLoaded', () => {
             showTooltip(gameState.equipment[slotName], slotEl);
         });
         equipmentSlots.addEventListener('mouseout', () => elements.tooltipEl.classList.add('hidden'));
+        
+        if (elements.forgeInventorySlotsEl) {
+            elements.forgeInventorySlotsEl.addEventListener('mouseover', (event) => {
+                if (!(event.target instanceof Element)) return;
+                const wrapper = event.target.closest('.item-wrapper');
+                if (!(wrapper instanceof HTMLElement)) return;
+    
+                const location = wrapper.dataset.location;
+                let item = null;
+    
+                if (location === 'equipment') {
+                    const slot = wrapper.dataset.slot;
+                    if(slot) item = gameState.equipment[slot];
+                } else {
+                    const indexStr = wrapper.dataset.index;
+                     if (indexStr) {
+                        const index = parseInt(indexStr, 10);
+                        item = gameState.inventory[index];
+                    }
+                }
+                showTooltip(item, wrapper);
+            });
+            elements.forgeInventorySlotsEl.addEventListener('mouseout', () => elements.tooltipEl.classList.add('hidden'));
+        }
     }
     
     function setupGemTooltipListeners(){
@@ -1389,38 +1418,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function setupPrestigeListeners() {
         elements.prestigeButton.addEventListener('click', () => {
-            prestigeSelections = [];
-            elements.prestigeSelectionEl.classList.remove('hidden');
-            elements.prestigeButton.classList.add('hidden');
-            const allItems = [...Object.values(gameState.equipment).filter(i => i), ...gameState.inventory];
-            elements.prestigeInventorySlotsEl.innerHTML = '';
-            if (allItems.length === 0) {
-                 elements.prestigeInventorySlotsEl.innerHTML = '<p>You have no items to keep. All stats will be absorbed from your empty inventory.</p>';
-            }
-            allItems.forEach(item => {
-                const itemEl = document.createElement('div');
-                itemEl.innerHTML = ui.createItemHTML(item, false);
-                itemEl.onclick = () => {
-                    const itemCard = itemEl.querySelector('.item');
-                    if (!itemCard) return;
-                    if (prestigeSelections.includes(item.id)) {
-                        prestigeSelections = prestigeSelections.filter(id => id !== item.id);
-                        itemCard.classList.remove('selected-for-prestige');
-                    } else if (prestigeSelections.length < 3) {
-                        prestigeSelections.push(item.id);
-                        itemCard.classList.add('selected-for-prestige');
-                    }
-                };
-                elements.prestigeInventorySlotsEl.appendChild(itemEl);
-            });
-        });
-
-        document.getElementById('confirm-prestige-btn').addEventListener('click', () => {
-            if (prestigeSelections.length > 3) {
-                alert("You can only select up to 3 items!");
-                return;
-            }
-            
+            if (!gameState.completedLevels.includes(gameState.nextPrestigeLevel)) return;
             const allCurrentItems = [...Object.values(gameState.equipment).filter(i => i), ...gameState.inventory];
             
             const newAbsorbedStats = {};
@@ -1483,8 +1481,6 @@ document.addEventListener('DOMContentLoaded', () => {
             };
 
             logMessage(elements.gameLogEl, `PRESTIGE! You are reborn with greater power. Your next goal is Level ${gameState.nextPrestigeLevel}.`, 'legendary');
-            elements.prestigeSelectionEl.classList.add('hidden');
-            elements.prestigeButton.classList.remove('hidden');
             recalculateStats();
             startNewMonster();
             updateAll();
