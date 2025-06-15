@@ -52,10 +52,10 @@ export const MONSTERS = {
             { item: ITEMS.IRON_RING, weight: 1 },
         ]
     },
-    // --- NEW MEADOWS MONSTERS ---
+
     WILD_BOAR: {
         name: 'Wild Boar',
-        image: 'images/monsters/orc.png', // Placeholder image
+        image: 'images/monsters/wild_boar.png', 
         dropChance: 2.5,
         lootTable: [
             { item: ITEMS.LEATHER_TROUSERS, weight: 10 },
@@ -64,7 +64,7 @@ export const MONSTERS = {
     },
     WOLF: {
         name: 'Wolf',
-        image: 'images/monsters/orc.png', // Placeholder image
+        image: 'images/monsters/wolf.png', 
         dropChance: 2.8,
         lootTable: [
             { item: ITEMS.SERRATED_DAGGER, weight: 2 },
@@ -111,7 +111,7 @@ export const MONSTERS = {
     // --- NEW VOLCANO MONSTERS ---
     ORC_SHAMAN: {
         name: 'Orc Shaman',
-        image: 'images/monsters/goblin.png', // Placeholder image
+        image: 'images/monsters/orc_shaman.png', 
         dropChance: 4.0,
         lootTable: [
             { item: ITEMS.MAGE_HOOD, weight: 3 },
@@ -122,7 +122,7 @@ export const MONSTERS = {
     },
     MAGMA_SLIME: {
         name: 'Magma Slime',
-        image: 'images/monsters/slime.png', // Placeholder image
+        image: 'images/monsters/magma_slime.png', 
         dropChance: 3.0,
         lootTable: [
             { item: ITEMS.RUBY_AMULET, weight: 3 },
@@ -178,7 +178,7 @@ export const MONSTERS = {
     // --- NEW DESERT MONSTERS ---
     GHOUL: {
         name: 'Ghoul',
-        image: 'images/monsters/zombie.png', // Placeholder image
+        image: 'images/monsters/ghoul.png', 
         dropChance: 3.5,
         lootTable: [
             { item: ITEMS.BONE_SHIELD, weight: 2 },
@@ -187,7 +187,7 @@ export const MONSTERS = {
     },
     GIANT_SCORPION: {
         name: 'Giant Scorpion',
-        image: 'images/slime_general.png', // Placeholder image
+        image: 'images/giant_scorpion.png', 
         dropChance: 4.0,
         lootTable: [
             { item: ITEMS.SPIKED_BULWARK, weight: 1 },
@@ -224,7 +224,7 @@ export const MONSTERS = {
     // --- NEW DUNGEON MONSTERS ---
     GARGOYLE: {
         name: 'Gargoyle',
-        image: 'images/boss.png', // Placeholder
+        image: 'images/gargoyle.png', 
         dropChance: 4.0,
         lootTable: [
             { item: ITEMS.TOWER_SHIELD, weight: 3 },
@@ -234,7 +234,7 @@ export const MONSTERS = {
     },
     IMP: {
         name: 'Imp',
-        image: 'images/monsters/goblin.png', // Placeholder
+        image: 'images/monsters/imp.png', 
         dropChance: 3.5,
         lootTable: [
             { item: ITEMS.BLOODSTONE_PENDANT, weight: 1 },
@@ -244,7 +244,7 @@ export const MONSTERS = {
     },
     HELLHOUND: {
         name: 'Hellhound',
-        image: 'images/monsters/orc.png', // Placeholder
+        image: 'images/monsters/hellhound.png', 
         dropChance: 4.5,
         lootTable: [
             { item: ITEMS.OBSIDIAN_BAND, weight: 2 },
@@ -253,7 +253,7 @@ export const MONSTERS = {
     },
     CULTIST: {
         name: 'Cultist',
-        image: 'images/monsters/zombie.png', // Placeholder
+        image: 'images/monsters/cultist.png', 
         dropChance: 4.0,
         lootTable: [
             { item: ITEMS.GHASTLY_ROBES, weight: 1 },
@@ -263,7 +263,7 @@ export const MONSTERS = {
     },
     TOXIC_SULPHUR_GAS: {
         name: 'Toxic Sulphur Gas',
-        image: 'images/Toxic_sulphur_gas.png',
+        image: 'images/toxic_sulphur_gas.png',
         dropChance: 4.0,
         lootTable: [
             { item: ITEMS.MIRRORED_SHIELD, weight: 1 },
