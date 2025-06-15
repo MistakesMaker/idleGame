@@ -142,7 +142,7 @@ export const MONSTERS = {
     },
     RULER_OF_ORCS: {
         name: 'Ruler of Orcs',
-        image: 'images/ruler_of_orcs.png',
+        image: 'images//monsters/ruler_of_orcs.png',
         dropChance: 50,
         lootTable: [
             { item: ITEMS.RUNIC_BLADE, weight: 10 },
