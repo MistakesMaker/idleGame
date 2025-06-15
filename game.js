@@ -5,7 +5,7 @@ import { REALMS } from './data/realms.js';
 import { MONSTERS } from './data/monsters.js';
 import { ITEMS } from './data/items.js';
 import { STATS } from './data/stat_pools.js';
-import { logMessage, formatNumber, getUpgradeCost, findSubZoneByLevel, findFirstLevelOfZone, isBossLevel, isBigBossLevel, getCombinedItemStats } from './utils.js';
+import { logMessage, formatNumber, getUpgradeCost, findSubZoneByLevel, findFirstLevelOfZone, isBossLevel, isBigBossLevel, getCombinedItemStats, isMiniBossLevel } from './utils.js';
 import * as ui from './ui.js';
 import * as player from './player_actions.js';
 import * as logic from './game_logic.js';
@@ -317,14 +317,15 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // --- FIX IS HERE ---
     function showSubZoneModal(subZone) {
         elements.modalTitleEl.textContent = subZone.name;
         elements.modalBodyEl.innerHTML = '';
-        const highestCompleted = ui.getHighestCompletedLevelInSubZone(gameState.completedLevels, subZone);
+
         const startLevel = subZone.levelRange[0];
         const finalLevel = subZone.levelRange[1];
-        let nextLevel = Math.min(highestCompleted + 1, finalLevel);
-        const isSingleLevelBoss = startLevel === finalLevel;
+        const isSingleLevelZone = startLevel === finalLevel;
+
         const startCombat = (level, isFarming) => {
             gameState.currentFightingLevel = level;
             gameState.isFarming = isFarming;
@@ -336,12 +337,26 @@ document.addEventListener('DOMContentLoaded', () => {
             autoSave();
             const combatTab = document.querySelector('.tab-button[data-view="combat-view"]');
             if (combatTab instanceof HTMLElement) combatTab.click();
-        }
-        if (!isSingleLevelBoss) {
+        };
+
+        if (isSingleLevelZone) {
+            // This is a boss zone (e.g., level 25, 50, 75, 100...)
+            const bossLevel = startLevel;
+            const fightBossButton = document.createElement('button');
+            fightBossButton.textContent = gameState.completedLevels.includes(bossLevel) ? `Re-fight Boss (Lvl ${bossLevel})` : `Fight Boss (Lvl ${bossLevel})`;
+            fightBossButton.onclick = () => startCombat(bossLevel, false);
+            elements.modalBodyEl.appendChild(fightBossButton);
+
+        } else {
+            // This is a regular farming zone
+            const highestCompleted = ui.getHighestCompletedLevelInSubZone(gameState.completedLevels, subZone);
+            let nextLevel = Math.min(highestCompleted + 1, finalLevel);
+
             const continueButton = document.createElement('button');
             continueButton.textContent = (highestCompleted < startLevel) ? `Start at Lvl ${startLevel}` : `Continue at Lvl ${nextLevel}`;
             continueButton.onclick = () => startCombat(nextLevel, true);
             elements.modalBodyEl.appendChild(continueButton);
+
             if (highestCompleted >= startLevel && highestCompleted < finalLevel) {
                 const restartButton = document.createElement('button');
                 restartButton.textContent = `Restart at Lvl ${startLevel}`;
@@ -349,15 +364,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 elements.modalBodyEl.appendChild(restartButton);
             }
         }
-        const bossLevel = finalLevel;
-        if (isBossLevel(bossLevel) || isBigBossLevel(bossLevel)) {
-             if (gameState.completedLevels.includes(bossLevel) || isSingleLevelBoss) {
-                 const fightBossButton = document.createElement('button');
-                 fightBossButton.textContent = gameState.completedLevels.includes(bossLevel) ? `Re-fight Boss (Lvl ${bossLevel})` : `Fight Boss (Lvl ${bossLevel})`;
-                 fightBossButton.onclick = () => startCombat(bossLevel, false);
-                 elements.modalBodyEl.appendChild(fightBossButton);
-             }
-        }
+
         elements.modalBackdropEl.classList.remove('hidden');
     }
 
@@ -394,16 +401,20 @@ document.addEventListener('DOMContentLoaded', () => {
         const timeToKill = monsterHp / playerStats.totalDps;
         const killsPerSecond = 1 / timeToKill;
 
-        const tier = Math.floor((level - 1) / 10);
-        const difficultyResetFactor = 4;
-        const effectiveLevel = level - (tier * difficultyResetFactor);
+        // Use the same reward logic as monsterDefeated
         const goldExponent = 1.17;
         const baseGold = 15;
-        let goldPerKill = Math.ceil(baseGold * Math.pow(goldExponent, effectiveLevel) * (1 + (playerStats.bonusGold / 100)));
+        let goldPerKill = Math.ceil(baseGold * Math.pow(goldExponent, level) * (1 + (playerStats.bonusGold / 100)));
         let xpPerKill = level * 5;
-        if (isBigBossLevel(level) || isBossLevel(level)) {
+        if (isBigBossLevel(level)) {
             xpPerKill *= 5;
             goldPerKill *= 5;
+        } else if (isBossLevel(level)) {
+            xpPerKill *= 3;
+            goldPerKill *= 3;
+        } else if(isMiniBossLevel(level)) {
+            xpPerKill *= 2;
+            goldPerKill *= 2;
         }
 
         const goldPerSecond = goldPerKill * killsPerSecond;
