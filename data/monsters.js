@@ -131,7 +131,7 @@ export const MONSTERS = {
     },
     GIANT_ORC: {
         name: 'Giant Orc',
-        image: 'images/giant_orc.png',
+        image: 'images/monsters/giant_orc.png',
         dropChance: 25,
         lootTable: [
             { item: ITEMS.BELT_OF_THE_GIANT, weight: 2 },
