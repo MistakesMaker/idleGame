@@ -499,26 +499,43 @@ export function showDpsPopup(popupContainerEl, damage) {
     setTimeout(() => popup.remove(), 800);
 }
 
-export function createMapNode(name, iconSrc, coords, isUnlocked, isCompleted, currentFightingLevel) {
+export function createMapNode(name, iconSrc, coords, isUnlocked, isCompleted, currentFightingLevel, levelRange = null, isBoss = false) {
     const node = document.createElement('div');
     node.className = 'map-node';
     if (!isUnlocked) node.classList.add('locked');
+    if (isBoss) node.classList.add('boss-node');
+
     const currentFightingSubZone = findSubZoneByLevel(currentFightingLevel);
     if (currentFightingSubZone && currentFightingSubZone.name === name) {
         node.classList.add('active-zone');
     }
+
     node.style.top = coords.top;
     node.style.left = coords.left;
-    let iconHtml = `<img src="${iconSrc}" class="map-node-icon ${isUnlocked ? '' : 'locked'} ${isCompleted ? 'completed' : ''}">`;
+
+    let levelText = '';
+    if (levelRange) {
+        if (levelRange[0] === levelRange[1]) {
+            levelText = `<br>(Lvl ${levelRange[0]})`;
+        } else {
+            levelText = `<br>(Lvls ${levelRange[0]}-${levelRange[1]})`;
+        }
+    }
+    
+    // Use a dedicated boss icon if isBoss is true, otherwise use the provided icon.
+    const finalIconSrc = isBoss ? 'images/icons/boss.png' : iconSrc;
+
+    let iconHtml = `<img src="${finalIconSrc}" class="map-node-icon ${isUnlocked ? '' : 'locked'} ${isCompleted ? 'completed' : ''}">`;
     if (isCompleted) {
         iconHtml += `<i class="fas fa-check-circle map-node-completed-icon"></i>`;
     }
     if (!isUnlocked) {
         iconHtml += `<i class="fas fa-lock map-node-lock-icon"></i>`;
     }
+
     node.innerHTML = `
         ${iconHtml}
-        <span class="map-node-label">${name}</span>
+        <span class="map-node-label">${name}${levelText}</span>
     `;
     return node;
 }

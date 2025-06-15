@@ -145,10 +145,33 @@ button:disabled { background: #7f8c8d; cursor: not-allowed; border-bottom: 2px s
     font-family: 'Cinzel', serif;
     font-size: 14px;
     white-space: nowrap;
+    text-align: center;
 }
 .map-node.active-zone .map-node-icon {
     border-color: #e74c3c;
     animation: pulse-red 2s infinite;
+}
+
+/* --- BOSS NODE STYLES --- */
+.map-node.boss-node .map-node-icon {
+    width: 65px;
+    height: 65px;
+    border-width: 3px;
+    border-color: #e74c3c;
+    box-shadow: 0 0 15px #e74c3c;
+}
+.map-node.boss-node.locked .map-node-icon {
+    border-color: #7f8c8d;
+    box-shadow: none;
+}
+.map-node.boss-node.completed .map-node-icon {
+    border-color: #2ecc71;
+    box-shadow: 0 0 15px #2ecc71;
+}
+.map-node.boss-node .map-node-label {
+    font-size: 16px;
+    color: #e74c3c;
+    text-shadow: 1px 1px 2px black;
 }
 
 @keyframes pulse-red { 0% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(231, 76, 60, 0); } 100% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0); } }

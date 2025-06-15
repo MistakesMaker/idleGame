@@ -276,7 +276,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const isUnlocked = gameState.maxLevel >= subZone.levelRange[0];
                 const isCompleted = gameState.completedLevels.includes(subZone.levelRange[1]);
                 const icon = 'images/icons/sword.png';
-                const node = ui.createMapNode(subZone.name, icon, subZone.coords, isUnlocked, isCompleted, gameState.currentFightingLevel);
+                const node = ui.createMapNode(subZone.name, icon, subZone.coords, isUnlocked, isCompleted, gameState.currentFightingLevel, subZone.levelRange, subZone.isBoss);
                 if (isUnlocked) node.onclick = () => showSubZoneModal(subZone);
                 elements.mapContainerEl.appendChild(node);
             }
@@ -303,7 +303,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // --- FIX IS HERE ---
     function showSubZoneModal(subZone) {
         elements.modalTitleEl.textContent = subZone.name;
         elements.modalBodyEl.innerHTML = '';
