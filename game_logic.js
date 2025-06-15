@@ -128,10 +128,13 @@ export function monsterDefeated(gameState, playerStats, currentMonster) {
         gameState.completedLevels.push(level);
     }
 
-    // --- REWARD CALCULATION ---
+    // --- REWARD CALCULATION (Reverted to old tier-based system) ---
+    const tier = Math.floor((level - 1) / 10);
+    const difficultyResetFactor = 4;
+    const effectiveLevel = level - (tier * difficultyResetFactor);
     const goldExponent = 1.17;
     const baseGold = 15;
-    let goldGained = Math.ceil(baseGold * Math.pow(goldExponent, level) * (1 + (playerStats.bonusGold / 100)));
+    let goldGained = Math.ceil(baseGold * Math.pow(goldExponent, effectiveLevel) * (1 + (playerStats.bonusGold / 100)));
     let xpGained = gameState.currentFightingLevel * 5;
     let droppedItem = null;
 
@@ -194,18 +197,19 @@ export function generateMonster(level) {
         monsterData = MONSTERS.SLIME;
     }
 
-    // --- SMOOTH SCALING FIX ---
-    // The exponent determines how quickly monster health scales.
-    const baseExponent = 1.16; 
-    // Health is now a smooth curve based on the actual level. No more tiers.
-    let monsterHealth = Math.ceil(10 * Math.pow(baseExponent, level));
+    // --- REVERTED TO OLD TIER-BASED SCALING ---
+    const baseExponent = 1.15;
+    const tier = Math.floor((level - 1) / 10);
+    const difficultyResetFactor = 4;
+    const effectiveLevel = level - (tier * difficultyResetFactor);
+    let monsterHealth = Math.ceil(10 * Math.pow(baseExponent, effectiveLevel));
 
-    // Apply explicit multipliers ONLY for boss levels.
-    if (isBigBossLevel(level)) {       // e.g., Level 100, 200...
+    // Apply explicit multipliers ONLY for designated boss levels.
+    if (isBigBossLevel(level)) {
         monsterHealth *= 10;
-    } else if (isBossLevel(level)) { // e.g., Level 50, 150...
+    } else if (isBossLevel(level)) {
         monsterHealth *= 5;
-    } else if (isMiniBossLevel(level)) { // e.g., Level 10, 20, 30...
+    } else if (isMiniBossLevel(level)) {
         monsterHealth *= 2.5;
     }
     
