@@ -98,7 +98,7 @@ export const MONSTERS = {
             { item: ITEMS.AMULET_OF_POWER, weight: 25 },
             { item: GEMS.BASE_AMETHYST, weight: 10 } // Special gem from the final boss
         ]
-    },    // overworld realm guardians
+    },    // overworld medwos monsters
     KING_OF_SLIMES: {
         name: 'King of slimes',
         image: 'images/king_of_slimes.png',
@@ -111,5 +111,20 @@ export const MONSTERS = {
             { item: GEMS.BASE_EMERALD, weight: 8 },
             { item: GEMS.BASE_TOPAZ, weight: 8 }
         ]
+        
+    },
+    SLIME_GENERAL: {
+        name: 'Slime general',
+        image: 'images/slime_general.png',
+        dropChance: 100,
+        lootTable: [
+            { item: ITEMS.GLADIATORS_LONGSWORD, weight: 10 },
+            { item: ITEMS.AMULET_OF_POWER, weight: 5 },
+            { item: ITEMS.KNIGHTS_PLATELEGS, weight: 20 },
+            { item: ITEMS.RING_OF_WEALTH, weight: 20 },
+            { item: GEMS.BASE_EMERALD, weight: 8 },
+            { item: GEMS.BASE_TOPAZ, weight: 8 }
+        ]
+        
     } 
 }; 
