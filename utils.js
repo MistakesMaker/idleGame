@@ -40,22 +40,32 @@ export function formatNumber(num) {
 }
 
 /**
- * Checks if a given level is a regular boss level.
+ * Checks if a given level is a mini-boss level (every 25, but not 50 or 100).
+ * @param {number} level - The level to check.
+ * @returns {boolean}
+ */
+export function isMiniBossLevel(level) {
+    return level > 0 && level % 25 === 0 && level % 50 !== 0;
+}
+
+/**
+ * Checks if a given level is a mid-zone boss level (every 50, but not 100).
  * @param {number} level - The level to check.
  * @returns {boolean}
  */
 export function isBossLevel(level) {
-    return level > 0 && level % 10 === 0 && level % 100 !== 0;
+    return level > 0 && level % 50 === 0 && level % 100 !== 0;
 }
 
 /**
- * Checks if a given level is a major boss level.
+ * Checks if a given level is a major realm boss level (every 100).
  * @param {number} level - The level to check.
  * @returns {boolean}
  */
 export function isBigBossLevel(level) {
     return level > 0 && level % 100 === 0;
 }
+
 
 /**
  * Calculates the experience required to reach the next level.
