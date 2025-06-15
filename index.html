@@ -20,6 +20,7 @@
             <div class="tabs">
                  <button class="tab-button active" data-view="combat-view">Combat</button>
                  <button class="tab-button" data-view="loot-view">Loot</button>
+                 <button class="tab-button" data-view="forge-view">Forge</button>
             </div>
 
             <div id="combat-view" class="view active">
@@ -45,6 +46,20 @@
                     <!-- Loot items will be dynamically inserted here as a list -->
                 </div>
             </div>
+
+             <div id="forge-view" class="view">
+                <h3>The Forge</h3>
+                <p>Select an item below to reroll its stats for 50 Scrap.</p>
+                <div id="forge-main-area">
+                    <div id="forge-selected-item">
+                        <!-- Selected item will be displayed here -->
+                    </div>
+                    <button id="forge-reroll-btn" disabled>Reroll Stats (50 Scrap)</button>
+                </div>
+                <div id="forge-inventory-slots">
+                    <!-- Player's inventory and equipment will appear here -->
+                </div>
+            </div>
         </div>
 
         <!-- Middle Panel: Map, Hero, Equipment, Inventory -->
@@ -55,8 +70,6 @@
                 <button class="tab-button" data-view="equipment-view">Equipment</button>
                 <button class="tab-button" data-view="inventory-view">Inventory</button>
                 <button class="tab-button" data-view="gems-view">Gems</button>
-                <!-- NEW FORGE TAB -->
-                <button class="tab-button" data-view="forge-view">Forge</button>
             </div>
 
             <div id="map-view" class="view active">
@@ -162,27 +175,6 @@
                     <button id="gem-craft-btn" disabled>Combine (Cost: 100 Scrap)</button>
                 </div>
             </div>
-
-            <!-- NEW FORGE VIEW -->
-            <div id="forge-view" class="view">
-                <h3>The Forge</h3>
-                <p>Select an item from your inventory to reroll its stat values within its current quality tier.</p>
-                <div id="forge-container">
-                    <div id="forge-inventory">
-                        <h4>Your Equipment</h4>
-                        <div id="forge-inventory-slots">
-                            <!-- Forgable items will be dynamically inserted here -->
-                        </div>
-                    </div>
-                    <div id="forge-workbench">
-                        <h4>Workbench</h4>
-                        <div id="forge-selected-item">
-                            <p>Select an item to begin.</p>
-                        </div>
-                        <button id="forge-reroll-btn" disabled>Reroll Stats (Cost: 50 Scrap)</button>
-                    </div>
-                </div>
-            </div>
             
         </div>
 
@@ -214,19 +206,20 @@
             </div>
             <div id="prestige-area">
                 <h3>Prestige</h3>
-                <p>Reach Max Level 100 to unlock Prestige.</p>
+                <!-- FIX: Added ID to this P tag for reliable selection -->
+                <p id="prestige-requirement-text">Reach Max Level 100 to unlock Prestige.</p>
                 
                 <div id="prestige-stats-area">
                     <h4>Prestige Bonuses</h4>
                      <p><i class="fas fa-award"></i> Prestige Count: <span id="prestige-count-stat">0</span></p>
-                     <p><i class="fas fa-hand-rock"></i> Absorbed Click Dmg: <span id="absorbed-click-dmg-stat">0</span></p>
-                     <p><i class="fas fa-sword"></i> Absorbed DPS: <span id="absorbed-dps-stat">0</span></p>
-                     <p><i class="fas fa-gem"></i> Legacy Items: <span id="legacy-items-stat">0</span></p>
+                     <div id="absorbed-stats-list">
+                        <!-- Absorbed stats will be dynamically inserted here -->
+                     </div>
                 </div>
 
                 <button id="prestige-button" disabled>Prestige Now</button>
                 <div id="prestige-selection" class="hidden">
-                    <h4>Select 3 Items to Keep</h4>
+                    <h4>Select up to 3 Items to keep through Prestige</h4>
                     <div id="prestige-inventory-slots"></div>
                     <button id="confirm-prestige-btn">Confirm Prestige</button>
                 </div>
