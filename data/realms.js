@@ -14,7 +14,7 @@ export const REALMS = [
                 icon: 'images/icons/green_meadows.png', // Just the path string
                 subZones: {
                     "starting_fields": { name: "Starting Fields", levelRange: [1, 19], monsterPool: [MONSTERS.SLIME, MONSTERS.GOBLIN, MONSTERS.BAT], coords: {top: '60%', left: '30%'} },
-                    "meadows_boss_area": { name: "Guardian's Post", levelRange: [20, 20], monsterPool: [MONSTERS.DUNGEON_GUARDIAN], coords: {top: '75%', left: '70%'}, isBoss: true }
+                    "meadows_boss_area": { name: "Guardian's Post", levelRange: [20, 20], monsterPool: [MONSTERS.KING_OF_SLIMES], coords: {top: '75%', left: '70%'}, isBoss: true }
                 }
             },
             "orc_volcano": {
