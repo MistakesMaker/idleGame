@@ -5,7 +5,7 @@ import { REALMS } from './data/realms.js';
 import { MONSTERS } from './data/monsters.js';
 import { ITEMS } from './data/items.js';
 import { STATS } from './data/stat_pools.js';
-import { logMessage, formatNumber, getUpgradeCost, findSubZoneByLevel, findFirstLevelOfZone, isBossLevel, isBigBossLevel, getCombinedItemStats, isMiniBossLevel } from './utils.js';
+import { logMessage, formatNumber, getUpgradeCost, findSubZoneByLevel, findFirstLevelOfZone, findLastLevelOfZone, isBossLevel, isBigBossLevel, getCombinedItemStats, isMiniBossLevel } from './utils.js';
 import * as ui from './ui.js';
 import * as player from './player_actions.js';
 import * as logic from './game_logic.js';
@@ -178,20 +178,26 @@ document.addEventListener('DOMContentLoaded', () => {
         elements.monsterImageEl.classList.add('monster-hit');
         setTimeout(() => elements.monsterImageEl.classList.remove('monster-hit'), 200);
         ui.showDamagePopup(elements.popupContainerEl, playerStats.totalClickDamage);
+        
         if (gameState.monster.hp <= 0) {
             handleMonsterDefeated();
+        } else {
+            // Only update the health bar, not the whole UI
+            ui.updateMonsterHealthUI(elements, gameState.monster);
         }
-        updateAll();
     }
 
     function gameLoop() {
         if (playerStats.totalDps > 0 && gameState.monster.hp > 0) {
             gameState.monster.hp -= playerStats.totalDps;
             ui.showDpsPopup(elements.popupContainerEl, playerStats.totalDps);
+            
             if (gameState.monster.hp <= 0) {
                 handleMonsterDefeated();
+            } else {
+                // Only update the health bar, not the whole UI
+                ui.updateMonsterHealthUI(elements, gameState.monster);
             }
-            updateAll();
         }
     }
 
@@ -249,36 +255,127 @@ document.addEventListener('DOMContentLoaded', () => {
     function renderMap() {
         elements.mapContainerEl.innerHTML = '';
         const realm = REALMS[gameState.currentRealmIndex];
-        if (!realm) {
-            gameState.currentRealmIndex = 0;
-            renderMap();
-            return;
-        }
+        if (!realm) { return; }
+    
+        const pathContainer = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+        pathContainer.setAttribute('id', 'map-path-container');
+        pathContainer.setAttribute('viewBox', '0 0 100 100');
+        pathContainer.setAttribute('preserveAspectRatio', 'none');
+        pathContainer.style.fill = 'none';
+        elements.mapContainerEl.appendChild(pathContainer);
+    
         if (currentMap === 'world') {
             elements.mapTitleEl.textContent = realm.name;
             elements.backToWorldMapBtnEl.classList.add('hidden');
             elements.mapContainerEl.style.backgroundImage = `url('${realm.mapImage}')`;
-            for (const zoneId in realm.zones) {
-                const zone = realm.zones[zoneId];
-                const isUnlocked = gameState.maxLevel >= findFirstLevelOfZone(zone);
-                const node = ui.createMapNode(zone.name, zone.icon, zone.coords, isUnlocked, false, gameState.currentFightingLevel);
-                if (isUnlocked) node.onclick = () => { currentMap = zoneId; renderMap(); };
+    
+            const sortedZones = Object.entries(realm.zones).sort(([, a], [, b]) => findFirstLevelOfZone(a) - findFirstLevelOfZone(b));
+    
+            for (const [zoneId, zone] of sortedZones) {
+                const firstLevel = findFirstLevelOfZone(zone);
+                const lastLevel = findLastLevelOfZone(zone);
+                const isUnlocked = gameState.maxLevel >= firstLevel;
+                const isCompleted = gameState.maxLevel > lastLevel;
+                const levelRange = [firstLevel, lastLevel];
+    
+                const node = ui.createMapNode(zone.name, zone.icon, zone.coords, isUnlocked, isCompleted, null, levelRange, true);
+                
+                const labelEl = node.querySelector('.map-node-label');
+                if (labelEl) {
+                    const labelPosition = zone.labelPosition || 'label-bottom';
+                    labelEl.classList.add(labelPosition);
+                }
+
+                if (isUnlocked) {
+                    node.onclick = () => { currentMap = zoneId; renderMap(); };
+                }
                 elements.mapContainerEl.appendChild(node);
+            }
+            
+            for (let i = 0; i < sortedZones.length - 1; i++) {
+                const startZone = sortedZones[i][1];
+                const endZone = sortedZones[i + 1][1];
+                
+                const startX = parseFloat(startZone.coords.left);
+                const startY = parseFloat(startZone.coords.top);
+                const endX = parseFloat(endZone.coords.left);
+                const endY = parseFloat(endZone.coords.top);
+                
+                const dx = endX - startX;
+                const dy = endY - startY;
+                const midX = startX + dx * 0.5;
+                const midY = startY + dy * 0.5;
+                const controlX = midX - dy * 0.2; 
+                const controlY = midY + dx * 0.2;
+
+                const d = `M ${startX},${startY} Q ${controlX},${controlY} ${endX},${endY}`;
+                
+                const outlinePath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                outlinePath.setAttribute('d', d);
+                outlinePath.setAttribute('class', 'map-path-outline');
+                pathContainer.appendChild(outlinePath);
+
+                const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                path.setAttribute('d', d);
+                path.setAttribute('class', 'map-path');
+                pathContainer.appendChild(path);
             }
         } else {
             const zone = realm.zones[currentMap];
             if (!zone) { currentMap = 'world'; renderMap(); return; }
+    
             elements.mapTitleEl.textContent = zone.name;
             elements.backToWorldMapBtnEl.classList.remove('hidden');
             elements.mapContainerEl.style.backgroundImage = `url('${zone.mapImage}')`;
-            for (const subZoneId in zone.subZones) {
-                const subZone = zone.subZones[subZoneId];
-                const isUnlocked = gameState.maxLevel >= subZone.levelRange[0];
-                const isCompleted = gameState.completedLevels.includes(subZone.levelRange[1]);
-                const icon = 'images/icons/sword.png';
-                const node = ui.createMapNode(subZone.name, icon, subZone.coords, isUnlocked, isCompleted, gameState.currentFightingLevel, subZone.levelRange, subZone.isBoss);
-                if (isUnlocked) node.onclick = () => showSubZoneModal(subZone);
-                elements.mapContainerEl.appendChild(node);
+    
+            const allNodesSorted = Object.values(zone.subZones).sort((a, b) => a.levelRange[0] - b.levelRange[0]);
+            
+            for (const nodeData of allNodesSorted) {
+                const labelPosition = nodeData.labelPosition || 'label-bottom';
+                
+                const isUnlocked = gameState.maxLevel >= nodeData.levelRange[0];
+                const isCompleted = gameState.completedLevels.includes(nodeData.levelRange[1]);
+                
+                const nodeEl = ui.createMapNode(nodeData.name, 'images/icons/sword.png', nodeData.coords, isUnlocked, isCompleted, gameState.currentFightingLevel, nodeData.levelRange, nodeData.isBoss);
+                nodeEl.classList.add('subzone-node');
+                const labelEl = nodeEl.querySelector('.map-node-label');
+                if (labelEl) {
+                    labelEl.classList.add(labelPosition);
+                }
+    
+                if (isUnlocked) {
+                    nodeEl.onclick = () => showSubZoneModal(nodeData);
+                }
+                elements.mapContainerEl.appendChild(nodeEl);
+            }
+    
+            for (let i = 0; i < allNodesSorted.length - 1; i++) {
+                const startNode = allNodesSorted[i];
+                const endNode = allNodesSorted[i+1];
+                
+                const startX = parseFloat(startNode.coords.left);
+                const startY = parseFloat(startNode.coords.top);
+                const endX = parseFloat(endNode.coords.left);
+                const endY = parseFloat(endNode.coords.top);
+                
+                const dx = endX - startX;
+                const dy = endY - startY;
+                const midX = startX + dx * 0.5;
+                const midY = startY + dy * 0.5;
+                const controlX = midX - dy * 0.2;
+                const controlY = midY + dx * 0.2;
+    
+                const d = `M ${startX},${startY} Q ${controlX},${controlY} ${endX},${endY}`;
+
+                const outlinePath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                outlinePath.setAttribute('d', d);
+                outlinePath.setAttribute('class', 'map-path-outline');
+                pathContainer.appendChild(outlinePath);
+
+                const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                path.setAttribute('d', d);
+                path.setAttribute('class', 'map-path');
+                pathContainer.appendChild(path);
             }
         }
     }
@@ -336,6 +433,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // This is a regular farming zone
             const highestCompleted = ui.getHighestCompletedLevelInSubZone(gameState.completedLevels, subZone);
             let nextLevel = Math.min(highestCompleted + 1, finalLevel);
+            if (nextLevel < startLevel) nextLevel = startLevel;
 
             const continueButton = document.createElement('button');
             continueButton.textContent = (highestCompleted < startLevel) ? `Start at Lvl ${startLevel}` : `Continue at Lvl ${nextLevel}`;
@@ -846,9 +944,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (!(tab instanceof HTMLElement)) return;
                 const viewId = tab.dataset.view;
                 if (!viewId) return;
-
+        
                 tab.addEventListener('click', () => {
-                    const itemRelatedViews = ['gems-view', 'inventory-view', 'equipment-view', 'forge-view']; // Add forge-view here
+                    const itemRelatedViews = ['gems-view', 'inventory-view', 'equipment-view', 'forge-view'];
                     if (selectedGemForSocketing !== null && !itemRelatedViews.includes(viewId)) {
                         selectedGemForSocketing = null;
                         logMessage(elements.gameLogEl, "Canceled gem socketing.");
@@ -858,14 +956,11 @@ document.addEventListener('DOMContentLoaded', () => {
                         craftingGems = [];
                         logMessage(elements.gameLogEl, "Returned gems from crafting slots.");
                     }
-                    // Deselect forge item if we navigate away
                     if (selectedItemForForge !== null && !itemRelatedViews.includes(viewId)) {
                         selectedItemForForge = null;
                         logMessage(elements.gameLogEl, "Forge selection cleared.");
                     }
-
-                    updateAll(); 
-
+        
                     tabs.forEach(t => t.classList.remove('active'));
                     tab.classList.add('active');
                     if (parentPanel) {
@@ -875,11 +970,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (viewElement) {
                         viewElement.classList.add('active');
                     }
+                    renderMap();
                 });
             });
         });
         
-        // --- FIXED FORGE EVENT LISTENER ---
         elements.forgeInventorySlotsEl.addEventListener('click', (e) => {
             if (!(e.target instanceof Element)) return;
             const wrapper = e.target.closest('.item-wrapper');
@@ -888,7 +983,6 @@ document.addEventListener('DOMContentLoaded', () => {
             const location = wrapper.dataset.location;
             let item = null;
             
-            // This is the main logic fix: Find the item from the correct source
             if (location === 'equipment') {
                 const slot = wrapper.dataset.slot;
                 if (slot) item = gameState.equipment[slot];
@@ -931,16 +1025,13 @@ document.addEventListener('DOMContentLoaded', () => {
         setupPrestigeListeners();
     }
     
-    // --- TOOLTIP LOGIC FIX ---
     function createTooltipHTML(hoveredItem, equippedItem, equippedItem2 = null) {
         let headerHTML = `<div class="item-header"><span>${hoveredItem.name}</span></div>`;
         
-        // Add item type and rarity below the name
         headerHTML += `<div style="font-size: 0.9em; color: #95a5a6; margin-bottom: 5px;">${hoveredItem.rarity.charAt(0).toUpperCase() + hoveredItem.rarity.slice(1)} ${hoveredItem.type.charAt(0).toUpperCase() + hoveredItem.type.slice(1)}</div>`;
 
         const combinedHoveredStats = getCombinedItemStats(hoveredItem);
 
-        // Handle Ring comparison
         if (hoveredItem.type === 'ring' && (equippedItem || equippedItem2)) {
             const createComparisonHTML = (equipped) => {
                 if (!equipped) return '<ul><li>(Empty Slot)</li></ul>';
@@ -989,10 +1080,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div>`;
         }
         
-        // Handle comparison for other items
         let statsHTML = '<ul>';
         if (!equippedItem) {
-            // No item equipped, just show the hovered item's stats
             for (const statKey in combinedHoveredStats) {
                 const statInfo = Object.values(STATS).find(s => s.key === statKey) || { name: statKey, type: 'flat' };
                 const isPercent = statInfo.type === 'percent';
@@ -1001,7 +1090,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 statsHTML += `<li>+${valueStr} ${statInfo.name}</li>`;
             }
         } else {
-            // An item is equipped, perform comparison
             const combinedEquippedStats = getCombinedItemStats(equippedItem);
             const allStatKeys = new Set([...Object.keys(combinedHoveredStats), ...Object.keys(combinedEquippedStats)]);
             
@@ -1085,7 +1173,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         equipmentSlots.addEventListener('mouseout', () => elements.tooltipEl.classList.add('hidden'));
         
-        // Tooltip listener for the Forge inventory
         elements.forgeInventorySlotsEl.addEventListener('mouseover', (event) => {
             if (!(event.target instanceof Element)) return;
             const wrapper = event.target.closest('.item-wrapper');

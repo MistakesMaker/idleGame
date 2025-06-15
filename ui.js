@@ -69,19 +69,39 @@ export function initDOMElements() {
 }
 
 /**
+ * A lightweight function to only update the monster's health UI.
+ */
+export function updateMonsterHealthUI(elements, monsterState) {
+    const { monsterHealthBarEl, monsterHealthTextEl } = elements;
+    if (!monsterHealthBarEl || !monsterHealthTextEl || !monsterState) return;
+
+    const healthPercent = (monsterState.hp / monsterState.maxHp) * 100;
+    monsterHealthBarEl.style.width = `${healthPercent}%`;
+    monsterHealthTextEl.textContent = `${formatNumber(Math.ceil(Math.max(0, monsterState.hp)))} / ${formatNumber(monsterState.maxHp)}`;
+
+    if (healthPercent < 30) monsterHealthBarEl.style.background = 'linear-gradient(to right, #e74c3c, #c0392b)';
+    else if (healthPercent < 60) monsterHealthBarEl.style.background = 'linear-gradient(to right, #f39c12, #e67e22)';
+    else monsterHealthBarEl.style.background = 'linear-gradient(to right, #2ecc71, #27ae60)';
+}
+
+
+/**
  * Updates the entire game UI based on the current state.
  */
 export function updateUI(elements, gameState, playerStats, currentMonster, salvageMode, craftingGems = [], selectedItemForForge = null) {
     const {
         goldStatEl, scrapStatEl, heroXpTextEl, clickDamageStatEl, dpsStatEl, absorbedClickDmgStatEl,
-        absorbedDpsStatEl, monsterHealthTextEl, upgradeClickCostEl, upgradeDpsCostEl, heroLevelEl,
+        absorbedDpsStatEl, upgradeClickCostEl, upgradeDpsCostEl, heroLevelEl,
         heroXpBarEl, attributePointsEl, attrStrengthEl, attrAgilityEl, attrLuckEl, addStrengthBtn,
         addAgilityBtn, addLuckBtn, bonusGoldStatEl, magicFindStatEl, prestigeCountStatEl,
-        legacyItemsStatEl, currentLevelEl, autoProgressCheckboxEl, monsterHealthBarEl,
+        legacyItemsStatEl, currentLevelEl, autoProgressCheckboxEl,
         upgradeClickLevelEl, upgradeDpsLevelEl, inventorySlotsEl, lootMonsterNameEl,
         lootTableDisplayEl, prestigeButton, gemSlotsEl, gemCraftingSlotsContainer, gemCraftBtn,
         forgeInventorySlotsEl, forgeSelectedItemEl, forgeRerollBtn
     } = elements;
+    
+    // Update monster health separately to avoid re-rendering it here unnecessarily
+    updateMonsterHealthUI(elements, gameState.monster);
 
     const xpToNextLevel = getXpForNextLevel(gameState.hero.level);
     goldStatEl.textContent = formatNumber(gameState.gold);
@@ -91,7 +111,6 @@ export function updateUI(elements, gameState, playerStats, currentMonster, salva
     dpsStatEl.textContent = formatNumber(playerStats.totalDps);
     absorbedClickDmgStatEl.textContent = formatNumber(gameState.absorbedStats?.clickDamage || 0);
     absorbedDpsStatEl.textContent = formatNumber(gameState.absorbedStats?.dps || 0);
-    monsterHealthTextEl.textContent = `${formatNumber(Math.ceil(Math.max(0, gameState.monster.hp)))} / ${formatNumber(gameState.monster.maxHp)}`;
     const clickCost = getUpgradeCost('clickDamage', gameState.upgrades.clickDamage);
     const dpsCost = getUpgradeCost('dps', gameState.upgrades.dps);
     upgradeClickCostEl.textContent = formatNumber(clickCost);
@@ -112,11 +131,7 @@ export function updateUI(elements, gameState, playerStats, currentMonster, salva
     legacyItemsStatEl.textContent = (gameState.legacyItems?.length || 0).toString();
     currentLevelEl.textContent = gameState.currentFightingLevel.toString();
     (/** @type {HTMLInputElement} */ (autoProgressCheckboxEl)).checked = gameState.isAutoProgressing;
-    const healthPercent = (gameState.monster.hp / gameState.monster.maxHp) * 100;
-    monsterHealthBarEl.style.width = `${healthPercent}%`;
-    if (healthPercent < 30) monsterHealthBarEl.style.background = 'linear-gradient(to right, #e74c3c, #c0392b)';
-    else if (healthPercent < 60) monsterHealthBarEl.style.background = 'linear-gradient(to right, #f39c12, #e67e22)';
-    else monsterHealthBarEl.style.background = 'linear-gradient(to right, #2ecc71, #27ae60)';
+
     upgradeClickLevelEl.textContent = `Lvl ${gameState.upgrades.clickDamage}`;
     upgradeDpsLevelEl.textContent = `Lvl ${gameState.upgrades.dps}`;
     document.getElementById('upgrade-click-damage').classList.toggle('disabled', gameState.gold < clickCost);
@@ -505,8 +520,8 @@ export function createMapNode(name, iconSrc, coords, isUnlocked, isCompleted, cu
     if (!isUnlocked) node.classList.add('locked');
     if (isBoss) node.classList.add('boss-node');
 
-    const currentFightingSubZone = findSubZoneByLevel(currentFightingLevel);
-    if (currentFightingSubZone && currentFightingSubZone.name === name) {
+    const subZoneForLevel = findSubZoneByLevel(currentFightingLevel);
+    if (subZoneForLevel && subZoneForLevel.name === name) {
         node.classList.add('active-zone');
     }
 
@@ -522,7 +537,6 @@ export function createMapNode(name, iconSrc, coords, isUnlocked, isCompleted, cu
         }
     }
     
-    // Use a dedicated boss icon if isBoss is true, otherwise use the provided icon.
     const finalIconSrc = isBoss ? 'images/icons/boss.png' : iconSrc;
 
     let iconHtml = `<img src="${finalIconSrc}" class="map-node-icon ${isUnlocked ? '' : 'locked'} ${isCompleted ? 'completed' : ''}">`;
@@ -548,6 +562,10 @@ export function getHighestCompletedLevelInSubZone(completedLevels, subZone) {
                 highest = level;
             }
         }
+    }
+    // If no levels in the range are completed, but we have access, the "start" is the first level.
+    if (highest === 0 && completedLevels.some(l => l >= subZone.levelRange[0]-1)) {
+        return subZone.levelRange[0] -1;
     }
     return highest;
 }

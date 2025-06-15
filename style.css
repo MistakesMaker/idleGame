@@ -84,6 +84,33 @@ button:disabled { background: #7f8c8d; cursor: not-allowed; border-bottom: 2px s
     border: 2px solid #4a637e;
     transition: background-image 0.5s ease-in-out;
 }
+
+#map-path-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 1;
+}
+
+.map-path-outline {
+    stroke: black;
+    stroke-width: 4px;
+    stroke-linecap: round;
+    fill: none;
+}
+
+.map-path {
+    stroke: rgba(241, 196, 15, 0.95);
+    stroke-width: 2px;
+    stroke-dasharray: 4 4; /* Denser dashes */
+    stroke-linecap: round;
+    fill: none;
+}
+
+
 .map-node {
     position: absolute;
     transform: translate(-50%, -50%);
@@ -92,9 +119,11 @@ button:disabled { background: #7f8c8d; cursor: not-allowed; border-bottom: 2px s
     align-items: center;
     cursor: pointer;
     transition: transform 0.2s ease;
+    z-index: 2;
 }
 .map-node:hover {
     transform: translate(-50%, -50%) scale(1.1);
+    z-index: 10;
 }
 .map-node.locked {
     cursor: not-allowed;
@@ -103,9 +132,10 @@ button:disabled { background: #7f8c8d; cursor: not-allowed; border-bottom: 2px s
 .map-node.locked:hover {
     transform: translate(-50%, -50%);
 }
+
 .map-node-icon {
-    width: 50px;
-    height: 50px;
+    width: 30px;
+    height: 30px;
     background-color: rgba(0,0,0,0.5);
     border: 2px solid #f1c40f;
     border-radius: 50%;
@@ -113,6 +143,12 @@ button:disabled { background: #7f8c8d; cursor: not-allowed; border-bottom: 2px s
     box-shadow: 0 0 10px rgba(241, 196, 15, 0.7);
     object-fit: contain;
 }
+
+.subzone-node .map-node-icon {
+    width: 48px;
+    height: 48px;
+}
+
 .map-node-icon.locked {
      border-color: #7f8c8d;
      box-shadow: none;
@@ -136,30 +172,56 @@ button:disabled { background: #7f8c8d; cursor: not-allowed; border-bottom: 2px s
     color: #2ecc71;
 }
 .map-node-label {
-    background-color: rgba(0,0,0,0.7);
+    background-color: rgba(0,0,0,0.8);
     padding: 2px 8px;
     border-radius: 4px;
-    margin-top: 5px;
     color: white;
     font-weight: bold;
     font-family: 'Cinzel', serif;
-    font-size: 14px;
     white-space: nowrap;
     text-align: center;
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 10px;
+    width: 110px;
+    line-height: 1.2;
+    transition: background-color 0.2s ease;
+    border: 1px solid rgba(241, 196, 15, 0.5);
 }
+
+.map-node:hover .map-node-label {
+    background-color: rgb(0, 0, 0);
+}
+
+.label-top {
+    bottom: 100%;
+    margin-bottom: 8px;
+}
+
+.label-bottom {
+    top: 100%;
+    margin-top: 8px;
+}
+
 .map-node.active-zone .map-node-icon {
     border-color: #e74c3c;
     animation: pulse-red 2s infinite;
 }
 
-/* --- BOSS NODE STYLES --- */
 .map-node.boss-node .map-node-icon {
-    width: 65px;
-    height: 65px;
+    width: 32px;
+    height: 32px;
     border-width: 3px;
     border-color: #e74c3c;
     box-shadow: 0 0 15px #e74c3c;
 }
+.subzone-node.boss-node .map-node-icon {
+    width: 52px;
+    height: 52px;
+}
+
+
 .map-node.boss-node.locked .map-node-icon {
     border-color: #7f8c8d;
     box-shadow: none;
@@ -169,7 +231,7 @@ button:disabled { background: #7f8c8d; cursor: not-allowed; border-bottom: 2px s
     box-shadow: 0 0 15px #2ecc71;
 }
 .map-node.boss-node .map-node-label {
-    font-size: 16px;
+    font-size: 11px;
     color: #e74c3c;
     text-shadow: 1px 1px 2px black;
 }
@@ -431,7 +493,7 @@ button:disabled { background: #7f8c8d; cursor: not-allowed; border-bottom: 2px s
 .selected-for-prestige { border: 3px dashed #f1c40f !important; transform: scale(1.05); }
 .hidden { display: none !important; }
 #prestige-button:not(:disabled) { animation: pulse 2s infinite; background: linear-gradient(145deg, #f1c40f, #e67e22); border-bottom: 2px solid #d35400; }
-@keyframes pulse { 0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(241, 196, 15, 0.7); } 70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(241, 196, 15, 0); } 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(241, 196, 15, 0); } }
+@keyframes pulse { 0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(241, 196, 15, 0.7); } 70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(241, 196, 15, 0); } 100% { box-shadow: 0 0 0 0 rgba(241, 196, 15, 0); } }
 
 #upgrades-area { margin-top: 20px; padding-top: 15px; border-top: 1px solid #4a637e; }
 .upgrade-button { background: linear-gradient(145deg, #2c3e50, #34495e); border: 1px solid #7f8c8d; padding: 10px; margin-bottom: 10px; border-radius: 5px; cursor: pointer; text-align: center; transition: all 0.2s ease; position: relative; padding-right: 60px; }
