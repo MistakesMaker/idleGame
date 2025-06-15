@@ -13,8 +13,10 @@ export const REALMS = [
                 coords: { top: '78%', left: '20%' },
                 icon: 'images/icons/green_meadows.png', // Just the path string
                 subZones: {
-                    "starting_fields": { name: "Starting Fields", levelRange: [1, 19], monsterPool: [MONSTERS.SLIME, MONSTERS.GOBLIN, MONSTERS.BAT], coords: {top: '60%', left: '30%'} },
-                    "meadows_boss_area": { name: "Guardian's Post", levelRange: [20, 20], monsterPool: [MONSTERS.KING_OF_SLIMES], coords: {top: '75%', left: '70%'}, isBoss: true }
+                    "starting_fields": { name: "Starting Fields", levelRange: [1, 9], monsterPool: [MONSTERS.SLIME, MONSTERS.GOBLIN, MONSTERS.BAT], coords: {top: '60%', left: '30%'} },
+                    "meadows_hill": { name: "Meadow's hill", levelRange: [11, 19], monsterPool: [MONSTERS.SLIME, MONSTERS.GOBLIN, MONSTERS.BAT], coords: {top: '80%', left: '50%'} },
+                    "meadows_boss_area": { name: "King's castle", levelRange: [20, 20], monsterPool: [MONSTERS.KING_OF_SLIMES], coords: {top: '75%', left: '70%'}, isBoss: true },
+                    "generals_Post": { name: "General's Post", levelRange: [10, 10], monsterPool: [MONSTERS.SLIME_GENERAL], coords: {top: '20%', left: '70%'}, isBoss: true },
                 }
             },
             "orc_volcano": {
