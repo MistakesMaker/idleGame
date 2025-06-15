@@ -11,7 +11,7 @@ export const REALMS = [
                 name: "Green Meadows",
                 mapImage: "images/map_meadows_zoomed.png",
                 coords: { top: '78%', left: '20%' },
-                icon: 'images/icons/sword.png', // Just the path string
+                icon: 'images/icons/green_meadows.png', // Just the path string
                 subZones: {
                     "starting_fields": { name: "Starting Fields", levelRange: [1, 19], monsterPool: [MONSTERS.SLIME, MONSTERS.GOBLIN, MONSTERS.BAT], coords: {top: '60%', left: '30%'} },
                     "meadows_boss_area": { name: "Guardian's Post", levelRange: [20, 20], monsterPool: [MONSTERS.DUNGEON_GUARDIAN], coords: {top: '75%', left: '70%'}, isBoss: true }
@@ -21,7 +21,7 @@ export const REALMS = [
                 name: "Orc Volcano",
                 mapImage: "images/map_volcano_zoomed.png",
                 coords: { top: '30%', left: '38%' },
-                icon: 'images/icons/platebody.png', // Just the path string
+                icon: 'images/icons/orc_volcano.png', // Just the path string
                 subZones: {
                     "ashfall_plains": { name: "Ashfall Plains", levelRange: [21, 39], monsterPool: [MONSTERS.ORC], coords: {top: '70%', left: '30%'} },
                     "volcano_peak": { name: "Volcano Peak", levelRange: [40, 40], monsterPool: [MONSTERS.DUNGEON_GUARDIAN], coords: {top: '20%', left: '50%'}, isBoss: true }
@@ -31,7 +31,7 @@ export const REALMS = [
                 name: "Undead Desert",
                 mapImage: "images/map_desert_zoomed.png",
                 coords: { top: '70%', left: '75%' },
-                icon: 'images/icons/shield.png', // Just the path string
+                icon: 'images/icons/undead_desert.png', // Just the path string
                 subZones: {
                      "lost_tombs": { name: "Lost Tombs", levelRange: [41, 59], monsterPool: [MONSTERS.SKELETON, MONSTERS.ZOMBIE], coords: {top: '70%', left: '30%'} },
                      "sand_pit": { name: "The Sand Pit", levelRange: [60, 60], monsterPool: [MONSTERS.DUNGEON_GUARDIAN], coords: {top: '20%', left: '50%'}, isBoss: true }
@@ -41,7 +41,7 @@ export const REALMS = [
                 name: "Final Dungeon",
                 mapImage: "images/map_dungeon_zoomed.png",
                 coords: { top: '22%', left: '78%' },
-                icon: 'images/icons/helmet.png', // Just the path string
+                icon: 'images/icons/final_dungeon.png', // Just the path string
                 subZones: {
                     // --- FIX: This pool should contain regular monsters, not the boss ---
                     "gatehouse": { name: "The Gatehouse", levelRange: [61, 99], monsterPool: [MONSTERS.SKELETON, MONSTERS.ORC, MONSTERS.ZOMBIE], coords: {top: '80%', left: '50%'} },
