@@ -1,8 +1,7 @@
 // --- START OF FILE game_logic.js ---
 
 import { MONSTERS } from './data/monsters.js';
-import { rarities } from './game.js';
-import { isBossLevel, isBigBossLevel, isMiniBossLevel, findSubZoneByLevel, formatNumber } from './utils.js';
+import { rarities, isBossLevel, isBigBossLevel, isMiniBossLevel, findSubZoneByLevel, formatNumber } from './utils.js';
 
 /**
  * Generates a new item based on rarity, level, and a base item definition.
