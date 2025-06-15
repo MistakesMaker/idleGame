@@ -73,7 +73,7 @@ export const MONSTERS = {
     },
     SLIME_GENERAL: {
         name: 'Slime General',
-        image: 'images/slime_general.png',
+        image: 'images/monsters/slime_general.png',
         dropChance: 100,
         lootTable: [
             { item: ITEMS.GLADIATORS_LONGSWORD, weight: 10 },
@@ -84,7 +84,7 @@ export const MONSTERS = {
     },
     KING_OF_SLIMES: {
         name: 'King of Slimes',
-        image: 'images/king_of_slimes.png',
+        image: 'images/monsters/king_of_slimes.png',
         dropChance: 100,
         lootTable: [
             { item: ITEMS.ROYAL_CIRCLET, weight: 10 },
@@ -187,7 +187,7 @@ export const MONSTERS = {
     },
     GIANT_SCORPION: {
         name: 'Giant Scorpion',
-        image: 'images/giant_scorpion.png', 
+        image: 'images/monsters/giant_scorpion.png', 
         dropChance: 4.0,
         lootTable: [
             { item: ITEMS.SPIKED_BULWARK, weight: 1 },
@@ -197,7 +197,7 @@ export const MONSTERS = {
     },
     CURSED_MUMMY: {
         name: 'Cursed Mummy',
-        image: 'images/cursed_mummy.png',
+        image: 'images/monsters/cursed_mummy.png',
         dropChance: 100,
         lootTable: [
             { item: ITEMS.SANDSTRIDER_LEGGINGS, weight: 10 },
@@ -208,7 +208,7 @@ export const MONSTERS = {
     },
     GATEKEEPER_OF_THE_SANDS: {
         name: 'Gatekeeper of the Sands',
-        image: 'images/gatekeeper_of_the_sands.png',
+        image: 'images/monsters/gatekeeper_of_the_sands.png',
         dropChance: 100,
         lootTable: [
             { item: ITEMS.AEGIS_OF_THE_GUARDIAN, weight: 10 },
@@ -224,7 +224,7 @@ export const MONSTERS = {
     // --- NEW DUNGEON MONSTERS ---
     GARGOYLE: {
         name: 'Gargoyle',
-        image: 'images/gargoyle.png', 
+        image: 'images/monsters/gargoyle.png', 
         dropChance: 4.0,
         lootTable: [
             { item: ITEMS.TOWER_SHIELD, weight: 3 },
@@ -263,7 +263,7 @@ export const MONSTERS = {
     },
     TOXIC_SULPHUR_GAS: {
         name: 'Toxic Sulphur Gas',
-        image: 'images/toxic_sulphur_gas.png',
+        image: 'images/monsters/toxic_sulphur_gas.png',
         dropChance: 4.0,
         lootTable: [
             { item: ITEMS.MIRRORED_SHIELD, weight: 1 },
@@ -274,7 +274,7 @@ export const MONSTERS = {
     },
     ARCHDEMON_OVERLORD: {
         name: 'Archdemon Overlord',
-        image: 'images/bigboss.png',
+        image: 'images/monsters/bigboss.png',
         dropChance: 50,
         lootTable: [
             { item: ITEMS.DRAGONFANG, weight: 10 },
