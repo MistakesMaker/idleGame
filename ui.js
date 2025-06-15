@@ -46,9 +46,8 @@ export function initDOMElements() {
         lootTableDisplayEl: document.getElementById('loot-table-display'),
         statTooltipEl: document.getElementById('stat-tooltip'),
         prestigeCountStatEl: document.getElementById('prestige-count-stat'),
-        absorbedClickDmgStatEl: document.getElementById('absorbed-click-dmg-stat'),
-        absorbedDpsStatEl: document.getElementById('absorbed-dps-stat'),
-        legacyItemsStatEl: document.getElementById('legacy-items-stat'),
+        absorbedStatsListEl: document.getElementById('absorbed-stats-list'),
+        prestigeRequirementTextEl: document.getElementById('prestige-requirement-text'),
         mapContainerEl: document.getElementById('map-container'),
         mapTitleEl: document.getElementById('map-title'),
         backToWorldMapBtnEl: document.getElementById('back-to-world-map-btn'),
@@ -62,9 +61,7 @@ export function initDOMElements() {
         gemSlotsEl: document.getElementById('gem-slots'),
         gemCraftingSlotsContainer: document.getElementById('gem-crafting-slots'),
         gemCraftBtn: document.getElementById('gem-craft-btn'),
-        forgeInventorySlotsEl: document.getElementById('forge-inventory-slots'),
-        forgeSelectedItemEl: document.getElementById('forge-selected-item'),
-        forgeRerollBtn: document.getElementById('forge-reroll-btn'),
+        resetGameBtn: document.getElementById('reset-game-btn'),
     };
 }
 
@@ -90,18 +87,14 @@ export function updateMonsterHealthUI(elements, monsterState) {
  */
 export function updateUI(elements, gameState, playerStats, currentMonster, salvageMode, craftingGems = [], selectedItemForForge = null) {
     const {
-        goldStatEl, scrapStatEl, heroXpTextEl, clickDamageStatEl, dpsStatEl, absorbedClickDmgStatEl,
-        absorbedDpsStatEl, upgradeClickCostEl, upgradeDpsCostEl, heroLevelEl,
+        goldStatEl, scrapStatEl, heroXpTextEl, clickDamageStatEl, dpsStatEl, absorbedStatsListEl,
+        monsterHealthTextEl, upgradeClickCostEl, upgradeDpsCostEl, heroLevelEl,
         heroXpBarEl, attributePointsEl, attrStrengthEl, attrAgilityEl, attrLuckEl, addStrengthBtn,
         addAgilityBtn, addLuckBtn, bonusGoldStatEl, magicFindStatEl, prestigeCountStatEl,
-        legacyItemsStatEl, currentLevelEl, autoProgressCheckboxEl,
+        prestigeRequirementTextEl, currentLevelEl, autoProgressCheckboxEl,
         upgradeClickLevelEl, upgradeDpsLevelEl, inventorySlotsEl, lootMonsterNameEl,
-        lootTableDisplayEl, prestigeButton, gemSlotsEl, gemCraftingSlotsContainer, gemCraftBtn,
-        forgeInventorySlotsEl, forgeSelectedItemEl, forgeRerollBtn
+        lootTableDisplayEl, prestigeButton, gemSlotsEl, gemCraftingSlotsContainer, gemCraftBtn
     } = elements;
-    
-    // Update monster health separately to avoid re-rendering it here unnecessarily
-    updateMonsterHealthUI(elements, gameState.monster);
 
     const xpToNextLevel = getXpForNextLevel(gameState.hero.level);
     goldStatEl.textContent = formatNumber(gameState.gold);
@@ -109,8 +102,37 @@ export function updateUI(elements, gameState, playerStats, currentMonster, salva
     heroXpTextEl.textContent = `${formatNumber(gameState.hero.xp)} / ${formatNumber(xpToNextLevel)}`;
     clickDamageStatEl.textContent = formatNumber(playerStats.totalClickDamage);
     dpsStatEl.textContent = formatNumber(playerStats.totalDps);
-    absorbedClickDmgStatEl.textContent = formatNumber(gameState.absorbedStats?.clickDamage || 0);
-    absorbedDpsStatEl.textContent = formatNumber(gameState.absorbedStats?.dps || 0);
+    
+    absorbedStatsListEl.innerHTML = '';
+    const absorbedStats = gameState.absorbedStats || {};
+    for (const statKey in absorbedStats) {
+        if (absorbedStats[statKey] > 0) {
+            const statInfo = Object.values(STATS).find(s => s.key === statKey) || { name: `${statKey.charAt(0).toUpperCase() + statKey.slice(1)}`, type: 'flat' };
+            const isPercent = statInfo.type === 'percent';
+            const value = absorbedStats[statKey];
+            const displayValue = isPercent ? `${value.toFixed(2)}%` : formatNumber(value);
+
+            let iconClass = 'fa-question-circle'; 
+            if (statKey === STATS.CLICK_DAMAGE.key) iconClass = 'fa-hand-rock';
+            if (statKey === STATS.DPS.key) iconClass = 'fa-sword';
+            if (statKey === STATS.GOLD_GAIN.key) iconClass = 'fa-coins';
+            if (statKey === STATS.MAGIC_FIND.key) iconClass = 'fa-star';
+
+            const statEl = document.createElement('p');
+            statEl.innerHTML = `<i class="fas ${iconClass}"></i> ${statInfo.name}: <span>${displayValue}</span>`;
+            absorbedStatsListEl.appendChild(statEl);
+        }
+    }
+
+    const absorbedSynergies = gameState.absorbedSynergies || [];
+    for (const synergy of absorbedSynergies) {
+        if (synergy.value > 0) {
+            const statEl = document.createElement('p');
+            statEl.innerHTML = `<i class="fas fa-link"></i> Absorbed Special: <span>+${(synergy.value * 100).toFixed(2)}% of DPS to Click Dmg</span>`;
+            absorbedStatsListEl.appendChild(statEl);
+        }
+    }
+
     const clickCost = getUpgradeCost('clickDamage', gameState.upgrades.clickDamage);
     const dpsCost = getUpgradeCost('dps', gameState.upgrades.dps);
     upgradeClickCostEl.textContent = formatNumber(clickCost);
@@ -128,10 +150,13 @@ export function updateUI(elements, gameState, playerStats, currentMonster, salva
     bonusGoldStatEl.textContent = playerStats.bonusGold.toFixed(1);
     magicFindStatEl.textContent = playerStats.magicFind.toFixed(1);
     prestigeCountStatEl.textContent = (gameState.prestigeCount || 0).toString();
-    legacyItemsStatEl.textContent = (gameState.legacyItems?.length || 0).toString();
     currentLevelEl.textContent = gameState.currentFightingLevel.toString();
     (/** @type {HTMLInputElement} */ (autoProgressCheckboxEl)).checked = gameState.isAutoProgressing;
-
+    const healthPercent = (gameState.monster.hp / gameState.monster.maxHp) * 100;
+    monsterHealthBarEl.style.width = `${healthPercent}%`;
+    if (healthPercent < 30) monsterHealthBarEl.style.background = 'linear-gradient(to right, #e74c3c, #c0392b)';
+    else if (healthPercent < 60) monsterHealthBarEl.style.background = 'linear-gradient(to right, #f39c12, #e67e22)';
+    else monsterHealthBarEl.style.background = 'linear-gradient(to right, #2ecc71, #27ae60)';
     upgradeClickLevelEl.textContent = `Lvl ${gameState.upgrades.clickDamage}`;
     upgradeDpsLevelEl.textContent = `Lvl ${gameState.upgrades.dps}`;
     document.getElementById('upgrade-click-damage').classList.toggle('disabled', gameState.gold < clickCost);
@@ -197,7 +222,13 @@ export function updateUI(elements, gameState, playerStats, currentMonster, salva
         btn.textContent = gameState.presets[index].name;
         btn.classList.toggle('active', index === gameState.activePresetIndex);
     });
-    (/** @type {HTMLButtonElement} */ (prestigeButton)).disabled = gameState.maxLevel < 100;
+    
+    const nextPrestigeLevel = gameState.nextPrestigeLevel || 100;
+    if (prestigeRequirementTextEl) {
+        prestigeRequirementTextEl.innerHTML = `Defeat the boss at Level <b>${nextPrestigeLevel}</b> to Prestige.`;
+    }
+    (/** @type {HTMLButtonElement} */ (prestigeButton)).disabled = !gameState.completedLevels.includes(nextPrestigeLevel);
+
     const monsterDef = currentMonster.data;
     if (monsterDef) {
         lootMonsterNameEl.textContent = currentMonster.name;
@@ -222,63 +253,6 @@ export function updateUI(elements, gameState, playerStats, currentMonster, salva
             lootTableDisplayEl.innerHTML = '<p>This monster has no special drops.</p>';
         }
     }
-
-    // --- FORGE UI UPDATE ---
-    forgeInventorySlotsEl.innerHTML = '';
-    
-    // Create a combined list of forgable items
-    const allPlayerItems = [
-        ...Object.entries(gameState.equipment)
-            .filter(([slot, item]) => item && item.stats)
-            .map(([slot, item]) => ({ ...item, location: 'equipment', slot: slot })),
-        ...gameState.inventory
-            .map((item, index) => ({ ...item, location: 'inventory', index: index }))
-            .filter(item => item && item.stats)
-    ];
-
-    // Sort the list: equipped first, then locked, then by rarity
-    allPlayerItems.sort((a, b) => {
-        const aIsEquipped = a.location === 'equipment';
-        const bIsEquipped = b.location === 'equipment';
-        if (aIsEquipped !== bIsEquipped) return aIsEquipped ? -1 : 1;
-
-        if (a.locked !== b.locked) return a.locked ? -1 : 1;
-
-        return 0; // Or add more sorting by rarity, name etc. if desired
-    });
-
-    if (allPlayerItems.length > 0) {
-        allPlayerItems.forEach(item => {
-            const itemWrapper = document.createElement('div');
-            itemWrapper.className = 'item-wrapper';
-            // Set data attributes to identify the item's location
-            itemWrapper.dataset.location = item.location;
-            if (item.location === 'equipment') {
-                itemWrapper.dataset.slot = item.slot;
-            } else {
-                itemWrapper.dataset.index = item.index.toString();
-            }
-            
-            itemWrapper.innerHTML = createItemHTML(item, false);
-            
-            if (selectedItemForForge && selectedItemForForge.id === item.id) {
-                const itemDiv = itemWrapper.querySelector('.item');
-                if (itemDiv) itemDiv.classList.add('selected-for-forge');
-            }
-
-            forgeInventorySlotsEl.appendChild(itemWrapper);
-        });
-    } else {
-        forgeInventorySlotsEl.innerHTML = `<p>No forgable equipment to display.</p>`;
-    }
-
-    if (selectedItemForForge) {
-        forgeSelectedItemEl.innerHTML = createItemHTML(selectedItemForForge, false);
-    } else {
-        forgeSelectedItemEl.innerHTML = `<p>Select an item to begin.</p>`;
-    }
-
-    (/** @type {HTMLButtonElement} */ (forgeRerollBtn)).disabled = !selectedItemForForge || gameState.scrap < 50;
 }
 
 export function createGemTooltipHTML(gem) {
@@ -298,7 +272,7 @@ export function createGemTooltipHTML(gem) {
     }
 
     if (gem.synergy) {
-        statsHTML += `<li>Adds ${gem.synergy.value}% of total DPS as Click Damage</li>`;
+        statsHTML += `<li class="stat-special" style="margin: 5px 0;">Special: +${gem.synergy.value * 100}% of total DPS to Click Dmg</li>`;
     }
 
     if (statsHTML === '<ul>') {
@@ -415,6 +389,7 @@ export function createLootComparisonTooltipHTML(potentialItem, equippedItem, equ
 
 
 export function createItemHTML(item, isEquipped) {
+    if (!item) return '';
     let socketsHTML = '';
     if (item.sockets) {
         socketsHTML += `<div class="item-sockets ${isEquipped ? 'equipped-sockets' : ''}">`;
@@ -434,19 +409,30 @@ export function createItemHTML(item, isEquipped) {
 
     const lockHTML = `<i class="fas ${item.locked ? 'fa-lock' : 'fa-lock-open'} lock-icon"></i>`;
     
-    // --- THIS IS THE CRITICAL FIX ---
     const combinedStats = getCombinedItemStats(item);
     let statsHTML = '<ul>';
     for (const statKey in combinedStats) {
         const statInfo = Object.values(STATS).find(s => s.key === statKey);
         const statName = statInfo ? statInfo.name : statKey;
-        // Check for 'percent' type to format correctly
         const value = combinedStats[statKey];
         const statValue = statInfo && statInfo.type === 'percent' ? `${value.toFixed(1)}%` : formatNumber(value);
         statsHTML += `<li>+${statValue} ${statName}</li>`;
     }
+
+    let totalSynergyValue = 0;
+    if (item.sockets) {
+        for (const gem of item.sockets) {
+            if (gem && gem.synergy && gem.synergy.source === 'dps' && gem.synergy.target === 'clickDamage') {
+                totalSynergyValue += gem.synergy.value;
+            }
+        }
+    }
+    if (totalSynergyValue > 0) {
+        const synergyPercentage = (totalSynergyValue * 100).toFixed(1);
+        statsHTML += `<li class="stat-special">Special: +${synergyPercentage}% DPS to Click Dmg</li>`;
+    }
+
     statsHTML += '</ul>';
-    // --- END OF FIX ---
     
     const lockedClass = item.locked ? 'locked-item' : '';
     

@@ -1,6 +1,7 @@
+
 // --- START OF FILE player_actions.js ---
 
-import { rarities } from './game.js';
+import { rarities } from './utils.js';
 import { REALMS } from './data/realms.js';
 import { getXpForNextLevel, getUpgradeCost } from './utils.js';
 import { GEMS } from './data/gems.js';
