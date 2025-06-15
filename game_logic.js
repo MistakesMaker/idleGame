@@ -176,18 +176,15 @@ export function monsterDefeated(gameState, playerStats, currentMonster) {
 export function generateMonster(level) {
     let monsterData;
 
-    if (isBigBossLevel(level)) {
-        monsterData = MONSTERS.ARCHDEMON_OVERLORD;
-    } else if (isBossLevel(level)) {
-        monsterData = MONSTERS.DUNGEON_GUARDIAN;
+    const subZone = findSubZoneByLevel(level);
+
+    if (subZone && subZone.monsterPool && subZone.monsterPool.length > 0) {
+        // Select a random monster from the pool defined in realms.js
+        monsterData = subZone.monsterPool[Math.floor(Math.random() * subZone.monsterPool.length)];
     } else {
-        const subZone = findSubZoneByLevel(level);
-        if (subZone && subZone.monsterPool.length > 0) {
-            monsterData = subZone.monsterPool[Math.floor(Math.random() * subZone.monsterPool.length)];
-        } else {
-            console.error("No sub-zone or monster pool found for level:", level, "Falling back to Slime.");
-            monsterData = MONSTERS.SLIME;
-        }
+        // Fallback if no sub-zone or monster pool is defined for the current level
+        console.error("No sub-zone or monster pool found for level:", level, ". Falling back to Slime.");
+        monsterData = MONSTERS.SLIME;
     }
 
     const baseExponent = 1.15;
