@@ -89,16 +89,7 @@ export const MONSTERS = {
             { item: GEMS.BASE_TOPAZ, weight: 8 }
         ]
     },
-    ARCHDEMON_OVERLORD: {
-        name: 'Archdemon Overlord',
-        image: 'images/bigboss.png',
-        dropChance: 100,
-        lootTable: [
-            { item: ITEMS.GLADIATORS_LONGSWORD, weight: 25 },
-            { item: ITEMS.AMULET_OF_POWER, weight: 25 },
-            { item: GEMS.BASE_AMETHYST, weight: 10 } // Special gem from the final boss
-        ]
-    },    // overworld medwos monsters
+        // overworld medwos monsters
     KING_OF_SLIMES: {
         name: 'King of slimes',
         image: 'images/king_of_slimes.png',
@@ -126,5 +117,85 @@ export const MONSTERS = {
             { item: GEMS.BASE_TOPAZ, weight: 8 }
         ]
         
-    } 
+    }, //overworld orc volcano monsters
+    GIANT_ORC: {
+        name: 'Giant orc',
+        image: 'images/giant_orc.png',
+        dropChance: 100,
+        lootTable: [
+            { item: ITEMS.GLADIATORS_LONGSWORD, weight: 10 },
+            { item: ITEMS.AMULET_OF_POWER, weight: 5 },
+            { item: ITEMS.KNIGHTS_PLATELEGS, weight: 20 },
+            { item: ITEMS.RING_OF_WEALTH, weight: 20 },
+            { item: GEMS.BASE_EMERALD, weight: 8 },
+            { item: GEMS.BASE_TOPAZ, weight: 8 }
+        ]
+        
+    },
+    RULER_OF_ORCS: {
+        name: 'Ruler of orcs',
+        image: 'images/ruler_of_orcs.png',
+        dropChance: 100,
+        lootTable: [
+            { item: ITEMS.GLADIATORS_LONGSWORD, weight: 10 },
+            { item: ITEMS.AMULET_OF_POWER, weight: 5 },
+            { item: ITEMS.KNIGHTS_PLATELEGS, weight: 20 },
+            { item: ITEMS.RING_OF_WEALTH, weight: 20 },
+            { item: GEMS.BASE_EMERALD, weight: 8 },
+            { item: GEMS.BASE_TOPAZ, weight: 8 }
+        ]
+        
+    }, //overworld undead desert monsters
+    CURSED_MUMMY: {
+        name: 'Cursed mummy',
+        image: 'images/cursed_mummy.png',
+        dropChance: 100,
+        lootTable: [
+            { item: ITEMS.GLADIATORS_LONGSWORD, weight: 10 },
+            { item: ITEMS.AMULET_OF_POWER, weight: 5 },
+            { item: ITEMS.KNIGHTS_PLATELEGS, weight: 20 },
+            { item: ITEMS.RING_OF_WEALTH, weight: 20 },
+            { item: GEMS.BASE_EMERALD, weight: 8 },
+            { item: GEMS.BASE_TOPAZ, weight: 8 }
+        ]
+        
+    },
+    GATEKEEPER_OF_THE_SANDS: {
+        name: 'Gatekeeper of the sands',
+        image: 'images/gatekeeper_of_the_sands.png',
+        dropChance: 100,
+        lootTable: [
+            { item: ITEMS.GLADIATORS_LONGSWORD, weight: 10 },
+            { item: ITEMS.AMULET_OF_POWER, weight: 5 },
+            { item: ITEMS.KNIGHTS_PLATELEGS, weight: 20 },
+            { item: ITEMS.RING_OF_WEALTH, weight: 20 },
+            { item: GEMS.BASE_EMERALD, weight: 8 },
+            { item: GEMS.BASE_TOPAZ, weight: 8 }
+        ]
+        
+    }, //overworld final dungeon monsters
+    TOXIC_SULPHUR_GAS: {
+        name: 'Toxic_sulphur_gas',
+        image: 'images/Toxic_sulphur_gas.png',
+        dropChance: 100,
+        lootTable: [
+            { item: ITEMS.GLADIATORS_LONGSWORD, weight: 10 },
+            { item: ITEMS.AMULET_OF_POWER, weight: 5 },
+            { item: ITEMS.KNIGHTS_PLATELEGS, weight: 20 },
+            { item: ITEMS.RING_OF_WEALTH, weight: 20 },
+            { item: GEMS.BASE_EMERALD, weight: 8 },
+            { item: GEMS.BASE_TOPAZ, weight: 8 }
+        ]
+        
+    },
+    ARCHDEMON_OVERLORD: {
+        name: 'Archdemon Overlord',
+        image: 'images/bigboss.png',
+        dropChance: 100,
+        lootTable: [
+            { item: ITEMS.GLADIATORS_LONGSWORD, weight: 25 },
+            { item: ITEMS.AMULET_OF_POWER, weight: 25 },
+            { item: GEMS.BASE_AMETHYST, weight: 10 } // Special gem from the final boss
+        ]
+    },
 }; 
