@@ -4,6 +4,7 @@ import { rarities } from './game.js';
 import { REALMS } from './data/realms.js';
 import { getXpForNextLevel, getUpgradeCost } from './utils.js';
 import { GEMS } from './data/gems.js';
+import { ITEMS } from './data/items.js';
 
 /**
  * Equips an item from the inventory.
@@ -342,5 +343,105 @@ export function combineGems(gameState, craftingGems) {
         gameState.gems = gameState.gems.filter(g => g.id !== id1 && g.id !== id2);
         
         return { success: true, message: "The gems shattered... you lost everything.", newGem: null };
+    }
+}
+
+/**
+ * Rerolls the stat values of a given item from either inventory or equipment.
+ * @param {object} gameState The main game state object.
+ * @param {object} itemToReroll The item object to be rerolled.
+ * @returns {{success: boolean, message: string}}
+ */
+export function rerollItemStats(gameState, itemToReroll) {
+    const cost = 50;
+    if (gameState.scrap < cost) {
+        return { success: false, message: "Not enough Scrap to reroll!" };
+    }
+    
+    if (!itemToReroll || !itemToReroll.baseId) {
+        return { success: false, message: "Invalid item selected for rerolling." };
+    }
+
+    const itemBase = ITEMS[itemToReroll.baseId];
+    if (!itemBase) {
+        return { success: false, message: `Could not find base definition for ${itemToReroll.name}.` };
+    }
+    
+    const rarityIndex = rarities.indexOf(itemToReroll.rarity);
+    const tier_max_percent = (rarityIndex + 1) / rarities.length;
+    let isMaxed = true;
+    
+    const currentStatKeys = Object.keys(itemToReroll.stats);
+
+    if (currentStatKeys.length === 0) {
+        isMaxed = false;
+    }
+
+    for (const statKey of currentStatKeys) {
+        const statDefinition = itemBase.possibleStats.find(p => p.key === statKey);
+        if (!statDefinition) {
+            isMaxed = false; 
+            break;
+        }
+
+        const statRange = statDefinition.max - statDefinition.min;
+        const maxStatForTier = statDefinition.min + (statRange * tier_max_percent);
+
+        if (itemToReroll.stats[statKey] < maxStatForTier - 0.001) {
+            isMaxed = false;
+            break; 
+        }
+    }
+
+    if (isMaxed) {
+        return { success: false, message: "This item's stats are already perfect for its tier!" };
+    }
+
+    gameState.scrap -= cost;
+    
+    // --- FAILSAFE LOGIC ---
+    // Initialize counter if it doesn't exist (for items from old saves)
+    if (typeof itemToReroll.rerollAttempts !== 'number') {
+        itemToReroll.rerollAttempts = 0;
+    }
+    itemToReroll.rerollAttempts++;
+    
+    const isGuaranteedRoll = itemToReroll.rerollAttempts >= 100;
+    // --- END OF FAILSAFE LOGIC ---
+
+    const newStats = {};
+    const tier_min_percent = rarityIndex / rarities.length;
+    
+    for(const statKey of currentStatKeys) {
+        const statDefinition = itemBase.possibleStats.find(p => p.key === statKey);
+        if (statDefinition) {
+            const total_stat_range = statDefinition.max - statDefinition.min;
+            const range_per_tier = total_stat_range / rarities.length;
+
+            const min_for_tier = statDefinition.min + (range_per_tier * rarityIndex);
+            const max_for_tier = statDefinition.min + (range_per_tier * (rarityIndex + 1));
+            
+            let final_stat_value;
+
+            if (isGuaranteedRoll) {
+                // Guaranteed perfect roll
+                final_stat_value = max_for_tier;
+            } else {
+                // Normal random roll within the tier's range
+                const tier_specific_range = max_for_tier - min_for_tier;
+                final_stat_value = min_for_tier + (Math.random() * tier_specific_range);
+            }
+            
+            newStats[statKey] = parseFloat(final_stat_value.toFixed(2));
+        }
+    }
+    
+    itemToReroll.stats = newStats;
+    
+    if (isGuaranteedRoll) {
+        itemToReroll.rerollAttempts = 0; // Reset the counter
+        return { success: true, message: `FAILSAFE! After 100 attempts, the forge grants a PERFECT reroll on ${itemToReroll.name}!` };
+    } else {
+        return { success: true, message: `Successfully rerolled ${itemToReroll.name}! (Attempt #${itemToReroll.rerollAttempts})` };
     }
 }

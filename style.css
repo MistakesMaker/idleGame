@@ -294,9 +294,6 @@ button:disabled { background: #7f8c8d; cursor: not-allowed; border-bottom: 2px s
     margin-right: 8px; 
     color: #f1c40f; 
 }
-#absorbed-stats-list p {
-    font-size: 1em;
-}
 
 #loot-view { padding: 10px; }
 #loot-table-display {
@@ -412,18 +409,6 @@ button:disabled { background: #7f8c8d; cursor: not-allowed; border-bottom: 2px s
     position: relative; 
     z-index: 2;
 }
-
-.stat-special {
-    color: #c48ef1; /* Lighter purple for text */
-    font-weight: bold;
-    border: 1px solid #9b59b6;
-    background-color: rgba(155, 89, 182, 0.1);
-    border-radius: 4px;
-    padding: 3px 6px;
-    margin-top: 6px;
-    text-shadow: 0 0 5px #9b59b6;
-}
-
 .common { border: 2px solid #bdc3c7; }
 .uncommon { border: 2px solid #2ecc71; box-shadow: 0 0 5px #2ecc71; }
 .rare { border: 2px solid #3498db; box-shadow: 0 0 8px #3498db; }
@@ -873,4 +858,81 @@ body.salvage-mode-active #inventory-slots .item:not(.locked-item) { cursor: poin
 #gem-craft-btn {
     background: linear-gradient(145deg, #e67e22, #f39c12);
     border-bottom-color: #d35400;
+}
+
+/* --- NEW FORGE STYLES --- */
+#forge-container {
+    display: flex;
+    gap: 20px;
+    height: 500px; /* Example height, adjust as needed */
+}
+
+#forge-inventory {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+#forge-inventory h4 {
+    margin-top: 0;
+    text-align: center;
+}
+
+#forge-inventory-slots {
+    flex-grow: 1;
+    overflow-y: auto;
+    background-color: rgba(0,0,0,0.3);
+    padding: 10px;
+    border-radius: 5px;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 15px;
+    align-content: flex-start;
+}
+
+#forge-workbench {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background-image: url('images/anvil.png');
+    background-position: center 40%;
+    background-repeat: no-repeat;
+    background-size: 60%;
+    border: 2px dashed #4a637e;
+    border-radius: 8px;
+    padding: 10px;
+}
+
+#forge-workbench h4 {
+    margin-top: 0;
+}
+
+#forge-selected-item {
+    width: 200px;
+    min-height: 200px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: auto; /* Pushes the button to the bottom */
+}
+
+#forge-selected-item .item {
+    cursor: default;
+}
+#forge-selected-item .item:hover {
+    transform: none;
+}
+
+#forge-reroll-btn {
+    width: 80%;
+    padding: 15px;
+    font-size: 1.2em;
+    background: linear-gradient(145deg, #e67e22, #f39c12);
+    border-bottom-color: #d35400;
+}
+
+.selected-for-forge {
+    border: 3px solid #f1c40f !important;
+    transform: translateY(-2px) scale(1.03) !important;
 }

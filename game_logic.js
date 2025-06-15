@@ -21,7 +21,8 @@ export function generateItem(rarity, itemLevel, itemBase) {
         type: itemBase.type.toLowerCase(),
         rarity: rarity,
         stats: {},
-        locked: false
+        locked: false,
+        rerollAttempts: 0 // Initialize the failsafe counter
     };
 
     const rarityStatsCount = rarityIndex + 1;
@@ -36,14 +37,17 @@ export function generateItem(rarity, itemLevel, itemBase) {
         chosenStats.push(availableStats.splice(statIndex, 1)[0]);
     }
 
-    const tier_min_percent = rarityIndex / rarities.length;
-    const tier_max_percent = (rarityIndex + 1) / rarities.length;
-
     chosenStats.forEach(statInfo => {
-        const stat_range = statInfo.max - statInfo.min;
-        const random_roll_in_tier = Math.random();
-        const final_percent = tier_min_percent + (random_roll_in_tier * (tier_max_percent - tier_min_percent));
-        const final_stat_value = statInfo.min + (stat_range * final_percent);
+        const total_stat_range = statInfo.max - statInfo.min;
+        const range_per_tier = total_stat_range / rarities.length;
+        
+        const min_for_tier = statInfo.min + (range_per_tier * rarityIndex);
+        const max_for_tier = statInfo.min + (range_per_tier * (rarityIndex + 1));
+        
+        const tier_specific_range = max_for_tier - min_for_tier;
+        
+        const final_stat_value = min_for_tier + (Math.random() * tier_specific_range);
+
         item.stats[statInfo.key] = parseFloat(final_stat_value.toFixed(2));
     });
 
