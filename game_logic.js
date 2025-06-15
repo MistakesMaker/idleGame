@@ -2,7 +2,7 @@
 
 import { MONSTERS } from './data/monsters.js';
 import { rarities } from './game.js';
-import { isBossLevel, isBigBossLevel, findSubZoneByLevel, formatNumber } from './utils.js';
+import { isBossLevel, isBigBossLevel, isMiniBossLevel, findSubZoneByLevel, formatNumber } from './utils.js';
 
 /**
  * Generates a new item based on rarity, level, and a base item definition.
@@ -103,9 +103,9 @@ export function dropLoot(currentMonster, gameState, playerStats) {
     rarityRoll -= playerStats.magicFind;
 
     let rarity;
-    const isBoss = isBossLevel(gameState.currentFightingLevel) || isBigBossLevel(gameState.currentFightingLevel);
+    const isAnyBoss = isBossLevel(gameState.currentFightingLevel) || isBigBossLevel(gameState.currentFightingLevel) || isMiniBossLevel(gameState.currentFightingLevel);
 
-    if (isBoss && rarityRoll < 5) rarity = 'legendary';
+    if (isAnyBoss && rarityRoll < 5) rarity = 'legendary';
     else if (rarityRoll < 5) rarity = 'legendary';
     else if (rarityRoll < 20) rarity = 'epic';
     else if (rarityRoll < 50) rarity = 'rare';
@@ -128,19 +128,23 @@ export function monsterDefeated(gameState, playerStats, currentMonster) {
         gameState.completedLevels.push(level);
     }
 
-    const tier = Math.floor((level - 1) / 10);
-    const difficultyResetFactor = 4;
-    const effectiveLevel = level - (tier * difficultyResetFactor);
+    // --- REWARD CALCULATION ---
     const goldExponent = 1.17;
     const baseGold = 15;
-    let goldGained = Math.ceil(baseGold * Math.pow(goldExponent, effectiveLevel) * (1 + (playerStats.bonusGold / 100)));
-    gameState.gold += goldGained;
-
+    let goldGained = Math.ceil(baseGold * Math.pow(goldExponent, level) * (1 + (playerStats.bonusGold / 100)));
     let xpGained = gameState.currentFightingLevel * 5;
     let droppedItem = null;
 
-    if (isBossLevel(level) || isBigBossLevel(level)) {
+    // Apply boss multipliers
+    if (isBigBossLevel(level)) {
         xpGained *= 5;
+        goldGained *= 5;
+    } else if (isBossLevel(level)) {
+        xpGained *= 3;
+        goldGained *= 3;
+    } else if (isMiniBossLevel(level)) {
+        xpGained *= 2;
+        goldGained *= 2;
     }
 
     logMessages.push(`You defeated the ${currentMonster.name} and gained ${formatNumber(goldGained)} gold and ${formatNumber(xpGained)} XP.`);
@@ -154,6 +158,9 @@ export function monsterDefeated(gameState, playerStats, currentMonster) {
             logMessages.push(`The ${currentMonster.name} dropped something! <span class="${rarityClass}" style="font-weight:bold;">${droppedItem.name}</span>`);
         }
     }
+    
+    // --- Update state after rewards ---
+    gameState.gold += goldGained;
 
     if (gameState.isAutoProgressing) {
         const nextLevel = level + 1;
@@ -187,18 +194,21 @@ export function generateMonster(level) {
         monsterData = MONSTERS.SLIME;
     }
 
-    const baseExponent = 1.15;
-    const tier = Math.floor((level - 1) / 10);
-    const difficultyResetFactor = 4;
-    const effectiveLevel = level - (tier * difficultyResetFactor);
-    let monsterHealth = Math.ceil(10 * Math.pow(baseExponent, effectiveLevel));
+    // --- SMOOTH SCALING FIX ---
+    // The exponent determines how quickly monster health scales.
+    const baseExponent = 1.16; 
+    // Health is now a smooth curve based on the actual level. No more tiers.
+    let monsterHealth = Math.ceil(10 * Math.pow(baseExponent, level));
 
-    if (isBigBossLevel(level)) {
+    // Apply explicit multipliers ONLY for boss levels.
+    if (isBigBossLevel(level)) {       // e.g., Level 100, 200...
         monsterHealth *= 10;
-    } else if (isBossLevel(level)) {
+    } else if (isBossLevel(level)) { // e.g., Level 50, 150...
         monsterHealth *= 5;
+    } else if (isMiniBossLevel(level)) { // e.g., Level 10, 20, 30...
+        monsterHealth *= 2.5;
     }
-
+    
     const newMonster = { name: monsterData.name, data: monsterData };
     const newMonsterState = { hp: monsterHealth, maxHp: monsterHealth };
     
