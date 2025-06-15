@@ -45,8 +45,9 @@ document.addEventListener('DOMContentLoaded', () => {
             equipment: { ...defaultEquipmentState },
             inventory: [],
             gems: [],
-            legacyItems: [],
-            absorbedStats: { clickDamage: 0, dps: 0 },
+            legacyItems: [], // This is now unused but kept for safety with old saves
+            absorbedStats: {},
+            absorbedSynergies: [],
             prestigeCount: 0,
             hero: {
                 level: 1, xp: 0, attributePoints: 0,
@@ -68,78 +69,88 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function recalculateStats() {
         const hero = gameState.hero;
-        playerStats.baseClickDamage = 1 + (gameState.absorbedStats?.clickDamage || 0);
-        playerStats.baseDps = 0 + (gameState.absorbedStats?.dps || 0);
-        playerStats.bonusGold = 0;
-        playerStats.magicFind = 0;
+        const absorbed = gameState.absorbedStats || {};
 
-        const synergyGems = [];
+        // 1. Create a fresh, local object for the new stats.
+        const newCalculatedStats = {
+            baseClickDamage: 1,
+            baseDps: 0,
+            bonusGold: 0,
+            magicFind: 0,
+        };
 
-        // Combine equipped items and legacy items for stat calculation
-        const allItems = [...(gameState.legacyItems || []), ...Object.values(gameState.equipment)];
+        // 2. Accumulate all base bonuses (Prestige + Items) into the new object.
+        for (const statKey in absorbed) {
+            if (statKey === STATS.CLICK_DAMAGE.key) newCalculatedStats.baseClickDamage += absorbed[statKey];
+            if (statKey === STATS.DPS.key) newCalculatedStats.baseDps += absorbed[statKey];
+            if (statKey === STATS.GOLD_GAIN.key) newCalculatedStats.bonusGold += absorbed[statKey];
+            if (statKey === STATS.MAGIC_FIND.key) newCalculatedStats.magicFind += absorbed[statKey];
+        }
 
+        const equippedSynergyGems = [];
+        const allItems = Object.values(gameState.equipment); // Only equipped items provide stats now
         for (const item of allItems) {
             if (item) {
-                // Use the helper to get stats from item + its gems
                 const combinedStats = getCombinedItemStats(item);
                 for(const statKey in combinedStats) {
                     const value = combinedStats[statKey];
-                     switch (statKey) {
-                        case STATS.CLICK_DAMAGE.key:
-                            playerStats.baseClickDamage += value;
-                            break;
-                        case STATS.DPS.key:
-                            playerStats.baseDps += value;
-                            break;
-                        case STATS.GOLD_GAIN.key:
-                            playerStats.bonusGold += value;
-                            break;
-                        case STATS.MAGIC_FIND.key:
-                            playerStats.magicFind += value;
-                            break;
-                    }
+                    if (statKey === STATS.CLICK_DAMAGE.key) newCalculatedStats.baseClickDamage += value;
+                    if (statKey === STATS.DPS.key) newCalculatedStats.baseDps += value;
+                    if (statKey === STATS.GOLD_GAIN.key) newCalculatedStats.bonusGold += value;
+                    if (statKey === STATS.MAGIC_FIND.key) newCalculatedStats.magicFind += value;
                 }
-
-                // Collect synergy gems to be processed last
                 if (item.sockets) {
                     for (const gem of item.sockets) {
-                        if (gem && gem.synergy) {
-                            synergyGems.push(gem);
-                        }
+                        if (gem && gem.synergy) equippedSynergyGems.push(gem);
                     }
                 }
             }
         }
-
-        // Apply gold upgrades
-        const clickUpgradeBonus = gameState.upgrades.clickDamage * 1.25;
+        
+        // 3. Calculate final values using the accumulated base stats.
         const dpsUpgradeBonus = gameState.upgrades.dps * 2.5;
-
-        // Apply attribute bonuses
+        const agilityBonusDpsPercent = hero.attributes.agility * 0.3;
+        let finalDps = newCalculatedStats.baseDps + dpsUpgradeBonus;
+        finalDps *= (1 + (agilityBonusDpsPercent / 100));
+        
+        const clickUpgradeBonus = gameState.upgrades.clickDamage * 1.25;
         const strengthBonusClickFlat = hero.attributes.strength * 0.5;
         const strengthBonusClickPercent = hero.attributes.strength * 0.2;
-        const agilityBonusDpsPercent = hero.attributes.agility * 0.3;
-        playerStats.bonusGold += hero.attributes.luck * 0.5;
-        playerStats.magicFind += hero.attributes.luck * 0.2;
-
-        // Calculate final damage values
-        let finalClickDamage = playerStats.baseClickDamage + clickUpgradeBonus + strengthBonusClickFlat;
+        let finalClickDamage = newCalculatedStats.baseClickDamage + clickUpgradeBonus + strengthBonusClickFlat;
         finalClickDamage *= (1 + (strengthBonusClickPercent / 100));
 
-        let finalDps = playerStats.baseDps + dpsUpgradeBonus;
-        finalDps *= (1 + (agilityBonusDpsPercent / 100));
+        const luckBonusGold = hero.attributes.luck * 0.5;
+        const luckBonusMagicFind = hero.attributes.luck * 0.2;
+        const finalBonusGold = newCalculatedStats.bonusGold + luckBonusGold;
+        const finalMagicFind = newCalculatedStats.magicFind + luckBonusMagicFind;
 
-        // Apply synergy gems after all other DPS calculations
-        for (const gem of synergyGems) {
+        // 4. Apply synergy effects using the final calculated DPS.
+        let totalSynergyValue = 0;
+        for (const gem of equippedSynergyGems) {
             if (gem.synergy && gem.synergy.source === 'dps' && gem.synergy.target === 'clickDamage') {
-                finalClickDamage += finalDps * (gem.synergy.value / 100);
+                totalSynergyValue += gem.synergy.value;
             }
         }
+        const absorbedSynergies = gameState.absorbedSynergies || [];
+        for (const synergy of absorbedSynergies) {
+            if (synergy.source === 'dps' && synergy.target === 'clickDamage') {
+                totalSynergyValue += synergy.value;
+            }
+        }
+        if (totalSynergyValue > 0) {
+            finalClickDamage += finalDps * totalSynergyValue;
+        }
 
-        playerStats.totalClickDamage = finalClickDamage;
-        playerStats.totalDps = finalDps;
+        // 5. Overwrite the global playerStats object.
+        playerStats = {
+            baseClickDamage: newCalculatedStats.baseClickDamage,
+            baseDps: newCalculatedStats.baseDps,
+            totalClickDamage: finalClickDamage,
+            totalDps: finalDps,
+            bonusGold: finalBonusGold,
+            magicFind: finalMagicFind,
+        };
 
-        // Update server with new stats if connected to raid
         if (socket.connected) {
             socket.emit('updatePlayerStats', { dps: playerStats.totalDps });
         }
@@ -241,7 +252,11 @@ document.addEventListener('DOMContentLoaded', () => {
     function resetGame() {
         if (confirm("Are you sure? This will delete your save permanently.")) {
             localStorage.removeItem('idleRPGSaveData');
-            window.location.reload();
+            gameState = getDefaultGameState();
+            recalculateStats();
+            startNewMonster();
+            updateAll();
+            logMessage(elements.gameLogEl, "Game has been reset.", "legendary");
         }
     }
 
@@ -871,16 +886,13 @@ document.addEventListener('DOMContentLoaded', () => {
         setupPrestigeListeners();
     }
     
-    // --- TOOLTIP LOGIC FIX ---
     function createTooltipHTML(hoveredItem, equippedItem, equippedItem2 = null) {
         let headerHTML = `<div class="item-header"><span>${hoveredItem.name}</span></div>`;
         
-        // Add item type and rarity below the name
         headerHTML += `<div style="font-size: 0.9em; color: #95a5a6; margin-bottom: 5px;">${hoveredItem.rarity.charAt(0).toUpperCase() + hoveredItem.rarity.slice(1)} ${hoveredItem.type.charAt(0).toUpperCase() + hoveredItem.type.slice(1)}</div>`;
 
         const combinedHoveredStats = getCombinedItemStats(hoveredItem);
 
-        // Handle Ring comparison
         if (hoveredItem.type === 'ring' && (equippedItem || equippedItem2)) {
             const createComparisonHTML = (equipped) => {
                 if (!equipped) return '<ul><li>(Empty Slot)</li></ul>';
@@ -909,6 +921,20 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                     html += `<li>${statName}: ${valueStr}${diffSpan}</li>`;
                 });
+                
+                let totalSynergyValue = 0;
+                if(equipped && equipped.sockets) { // Check synergy on the compared ring
+                    for (const gem of equipped.sockets) {
+                        if (gem && gem.synergy) {
+                            totalSynergyValue += gem.synergy.value;
+                        }
+                    }
+                }
+                 if (totalSynergyValue > 0) {
+                    const synergyPercentage = (totalSynergyValue * 100).toFixed(1);
+                    html += `<li class="stat-special">Special: +${synergyPercentage}% DPS to Click Dmg</li>`;
+                }
+
                 html += '</ul>';
                 return html;
             }
@@ -929,10 +955,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div>`;
         }
         
-        // Handle comparison for other items
         let statsHTML = '<ul>';
         if (!equippedItem) {
-            // No item equipped, just show the hovered item's stats
             for (const statKey in combinedHoveredStats) {
                 const statInfo = Object.values(STATS).find(s => s.key === statKey) || { name: statKey, type: 'flat' };
                 const isPercent = statInfo.type === 'percent';
@@ -941,7 +965,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 statsHTML += `<li>+${valueStr} ${statInfo.name}</li>`;
             }
         } else {
-            // An item is equipped, perform comparison
             const combinedEquippedStats = getCombinedItemStats(equippedItem);
             const allStatKeys = new Set([...Object.keys(combinedHoveredStats), ...Object.keys(combinedEquippedStats)]);
             
@@ -967,6 +990,23 @@ document.addEventListener('DOMContentLoaded', () => {
                 statsHTML += `<li>${statName}: ${valueStr}${diffSpan}</li>`;
             });
         }
+        
+        let totalSynergyValue = 0;
+        if (hoveredItem.sockets) {
+            for (const gem of hoveredItem.sockets) {
+                if (gem && gem.synergy) {
+                     if (gem.synergy.source === 'dps' && gem.synergy.target === 'clickDamage') {
+                        totalSynergyValue += gem.synergy.value;
+                    }
+                }
+            }
+        }
+
+        if (totalSynergyValue > 0) {
+            const synergyPercentage = (totalSynergyValue * 100).toFixed(1);
+            statsHTML += `<li class="stat-special">Special: +${synergyPercentage}% DPS to Click Dmg</li>`;
+        }
+
         statsHTML += '</ul>';
         return headerHTML + statsHTML;
     }
@@ -1220,23 +1260,32 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
         document.getElementById('confirm-prestige-btn').addEventListener('click', () => {
-            if (prestigeSelections.length > 3) { alert("You can only select up to 3 items!"); return; }
+            if (prestigeSelections.length > 3) {
+                alert("You can only select up to 3 items!");
+                return;
+            }
             
-            const absorbed = { clickDamage: 0, dps: 0 };
+            const newAbsorbedStats = {};
+            const newAbsorbedSynergies = [];
             const allCurrentItems = [...Object.values(gameState.equipment).filter(i => i), ...gameState.inventory];
-            const sacrificedItems = allCurrentItems.filter(item => !prestigeSelections.includes(item.id));
+            const itemsToAbsorb = allCurrentItems.filter(item => prestigeSelections.includes(item.id));
 
-            for (const item of sacrificedItems) {
+            for (const item of itemsToAbsorb) {
                 const combinedStats = getCombinedItemStats(item);
-                if (combinedStats.clickDamage) absorbed.clickDamage += combinedStats.clickDamage;
-                if (combinedStats.dps) absorbed.dps += combinedStats.dps;
+                for (const statKey in combinedStats) {
+                    newAbsorbedStats[statKey] = (newAbsorbedStats[statKey] || 0) + combinedStats[statKey];
+                }
+                if (item.sockets) {
+                    for (const gem of item.sockets) {
+                        if (gem && gem.synergy) {
+                            newAbsorbedSynergies.push(gem.synergy);
+                        }
+                    }
+                }
             }
 
-            logMessage(elements.gameLogEl, `Absorbed <b>+${absorbed.clickDamage.toFixed(2)}</b> Click Damage and <b>+${absorbed.dps.toFixed(2)}</b> DPS from your gear!`, 'epic');
+            logMessage(elements.gameLogEl, `Absorbed stats from ${itemsToAbsorb.length} selected items!`, 'epic');
             
-            const newLegacyItems = allCurrentItems.filter(item => prestigeSelections.includes(item.id));
-            const oldLegacyItems = gameState.legacyItems || [];
-            const oldLevel = gameState.maxLevel;
             const heroToKeep = {
                 level: gameState.hero.level,
                 xp: gameState.hero.xp,
@@ -1244,22 +1293,37 @@ document.addEventListener('DOMContentLoaded', () => {
                 attributes: { strength: 0, agility: 0, luck: 0 }
             };
             logMessage(elements.gameLogEl, `Your attributes have been reset, and <b>${heroToKeep.attributePoints}</b> points have been refunded.`, 'uncommon');
-            const oldAbsorbedStats = gameState.absorbedStats || { clickDamage: 0, dps: 0 };
+            
+            const oldAbsorbedStats = gameState.absorbedStats || {};
+            const finalAbsorbedStats = { ...oldAbsorbedStats };
+            for(const statKey in newAbsorbedStats) {
+                finalAbsorbedStats[statKey] = (finalAbsorbedStats[statKey] || 0) + newAbsorbedStats[statKey];
+            }
+            
+            const oldAbsorbedSynergies = gameState.absorbedSynergies || [];
+            const finalAbsorbedSynergies = [...oldAbsorbedSynergies];
+            for (const newSynergy of newAbsorbedSynergies) {
+                const existingSynergy = finalAbsorbedSynergies.find(s => s.source === newSynergy.source && s.target === newSynergy.target);
+                if (existingSynergy) {
+                    existingSynergy.value += newSynergy.value;
+                } else {
+                    finalAbsorbedSynergies.push({ ...newSynergy });
+                }
+            }
+
             const oldPrestigeCount = gameState.prestigeCount || 0;
             const baseState = getDefaultGameState();
             gameState = {
                 ...baseState,
-                absorbedStats: {
-                    clickDamage: oldAbsorbedStats.clickDamage + absorbed.clickDamage,
-                    dps: oldAbsorbedStats.dps + absorbed.dps
-                },
-                legacyItems: [...oldLegacyItems, ...newLegacyItems],
+                absorbedStats: finalAbsorbedStats,
+                absorbedSynergies: finalAbsorbedSynergies,
                 prestigeCount: oldPrestigeCount + 1,
                 hero: heroToKeep,
                 presets: baseState.presets,
-                activePresetIndex: baseState.activePresetIndex
+                activePresetIndex: baseState.activePresetIndex,
+                legacyItems: [] // Ensure legacy items are wiped
             };
-            logMessage(elements.gameLogEl, `PRESTIGE! Restarted from Lvl ${oldLevel}, keeping hero progress, ${newLegacyItems.length} new legacy items, and all absorbed stats.`);
+            logMessage(elements.gameLogEl, `PRESTIGE! All items destroyed. Power absorbed.`, 'legendary');
             elements.prestigeSelectionEl.classList.add('hidden');
             elements.prestigeButton.classList.remove('hidden');
             recalculateStats();
@@ -1284,6 +1348,7 @@ document.addEventListener('DOMContentLoaded', () => {
             offlineXp: document.getElementById('offline-xp'),
             offlineScrap: document.getElementById('offline-scrap'),
             offlineRewards: document.getElementById('offline-rewards'),
+            absorbedStatsListEl: document.getElementById('absorbed-stats-list'),
         };
         
         const savedData = localStorage.getItem('idleRPGSaveData');
@@ -1297,11 +1362,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 hero: { ...baseState.hero, ...(loadedState.hero || {}), attributes: { ...baseState.hero.attributes, ...(loadedState.hero?.attributes || {}) } }, 
                 upgrades: { ...baseState.upgrades, ...(loadedState.upgrades || {}) }, 
                 equipment: { ...baseState.equipment, ...(loadedState.equipment || {}) }, 
-                absorbedStats: { ...baseState.absorbedStats, ...(loadedState.absorbedStats || {}) }, 
+                absorbedStats: { ...(loadedState.absorbedStats || {}) },
+                absorbedSynergies: loadedState.absorbedSynergies || [],
                 monster: { ...baseState.monster, ...(loadedState.monster || {}) }, 
                 presets: loadedState.presets || baseState.presets, 
                 isAutoProgressing: loadedState.isAutoProgressing !== undefined ? loadedState.isAutoProgressing : true, 
                 currentRealmIndex: loadedState.currentRealmIndex || 0,
+                legacyItems: [], // Explicitly clear legacy items from old saves
             };
             calculateOfflineProgress();
         } else {

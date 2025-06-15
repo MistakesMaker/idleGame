@@ -196,14 +196,14 @@
                 <div id="prestige-stats-area">
                     <h4>Prestige Bonuses</h4>
                      <p><i class="fas fa-award"></i> Prestige Count: <span id="prestige-count-stat">0</span></p>
-                     <p><i class="fas fa-hand-rock"></i> Absorbed Click Dmg: <span id="absorbed-click-dmg-stat">0</span></p>
-                     <p><i class="fas fa-sword"></i> Absorbed DPS: <span id="absorbed-dps-stat">0</span></p>
-                     <p><i class="fas fa-gem"></i> Legacy Items: <span id="legacy-items-stat">0</span></p>
+                     <div id="absorbed-stats-list">
+                        <!-- Absorbed stats will be dynamically inserted here -->
+                     </div>
                 </div>
 
                 <button id="prestige-button" disabled>Prestige Now</button>
                 <div id="prestige-selection" class="hidden">
-                    <h4>Select 3 Items to Keep</h4>
+                    <h4>Select up to 3 Items to Absorb</h4>
                     <div id="prestige-inventory-slots"></div>
                     <button id="confirm-prestige-btn">Confirm Prestige</button>
                 </div>

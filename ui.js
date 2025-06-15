@@ -46,9 +46,7 @@ export function initDOMElements() {
         lootTableDisplayEl: document.getElementById('loot-table-display'),
         statTooltipEl: document.getElementById('stat-tooltip'),
         prestigeCountStatEl: document.getElementById('prestige-count-stat'),
-        absorbedClickDmgStatEl: document.getElementById('absorbed-click-dmg-stat'),
-        absorbedDpsStatEl: document.getElementById('absorbed-dps-stat'),
-        legacyItemsStatEl: document.getElementById('legacy-items-stat'),
+        absorbedStatsListEl: document.getElementById('absorbed-stats-list'),
         mapContainerEl: document.getElementById('map-container'),
         mapTitleEl: document.getElementById('map-title'),
         backToWorldMapBtnEl: document.getElementById('back-to-world-map-btn'),
@@ -70,11 +68,11 @@ export function initDOMElements() {
  */
 export function updateUI(elements, gameState, playerStats, currentMonster, salvageMode, craftingGems = []) {
     const {
-        goldStatEl, scrapStatEl, heroXpTextEl, clickDamageStatEl, dpsStatEl, absorbedClickDmgStatEl,
-        absorbedDpsStatEl, monsterHealthTextEl, upgradeClickCostEl, upgradeDpsCostEl, heroLevelEl,
+        goldStatEl, scrapStatEl, heroXpTextEl, clickDamageStatEl, dpsStatEl, absorbedStatsListEl,
+        monsterHealthTextEl, upgradeClickCostEl, upgradeDpsCostEl, heroLevelEl,
         heroXpBarEl, attributePointsEl, attrStrengthEl, attrAgilityEl, attrLuckEl, addStrengthBtn,
         addAgilityBtn, addLuckBtn, bonusGoldStatEl, magicFindStatEl, prestigeCountStatEl,
-        legacyItemsStatEl, currentLevelEl, autoProgressCheckboxEl, monsterHealthBarEl,
+        currentLevelEl, autoProgressCheckboxEl, monsterHealthBarEl,
         upgradeClickLevelEl, upgradeDpsLevelEl, inventorySlotsEl, lootMonsterNameEl,
         lootTableDisplayEl, prestigeButton, gemSlotsEl, gemCraftingSlotsContainer, gemCraftBtn
     } = elements;
@@ -85,8 +83,40 @@ export function updateUI(elements, gameState, playerStats, currentMonster, salva
     heroXpTextEl.textContent = `${formatNumber(gameState.hero.xp)} / ${formatNumber(xpToNextLevel)}`;
     clickDamageStatEl.textContent = formatNumber(playerStats.totalClickDamage);
     dpsStatEl.textContent = formatNumber(playerStats.totalDps);
-    absorbedClickDmgStatEl.textContent = formatNumber(gameState.absorbedStats?.clickDamage || 0);
-    absorbedDpsStatEl.textContent = formatNumber(gameState.absorbedStats?.dps || 0);
+    
+    // Dynamically update absorbed stats
+    absorbedStatsListEl.innerHTML = '';
+    const absorbedStats = gameState.absorbedStats || {};
+    for (const statKey in absorbedStats) {
+        if (absorbedStats[statKey] > 0) {
+            const statInfo = Object.values(STATS).find(s => s.key === statKey) || { name: `${statKey.charAt(0).toUpperCase() + statKey.slice(1)}`, type: 'flat' };
+            const isPercent = statInfo.type === 'percent';
+            const value = absorbedStats[statKey];
+            const displayValue = isPercent ? `${value.toFixed(2)}%` : formatNumber(value);
+
+            let iconClass = 'fa-question-circle'; // Default icon
+            if (statKey === STATS.CLICK_DAMAGE.key) iconClass = 'fa-hand-rock';
+            if (statKey === STATS.DPS.key) iconClass = 'fa-sword';
+            if (statKey === STATS.GOLD_GAIN.key) iconClass = 'fa-coins';
+            if (statKey === STATS.MAGIC_FIND.key) iconClass = 'fa-star';
+
+            const statEl = document.createElement('p');
+            statEl.innerHTML = `<i class="fas ${iconClass}"></i> ${statInfo.name}: <span>${displayValue}</span>`;
+            absorbedStatsListEl.appendChild(statEl);
+        }
+    }
+
+    // Dynamically update absorbed synergies
+    const absorbedSynergies = gameState.absorbedSynergies || [];
+    for (const synergy of absorbedSynergies) {
+        if (synergy.value > 0) {
+            const statEl = document.createElement('p');
+            // Corrected the text to be more descriptive and use the 'value' property correctly
+            statEl.innerHTML = `<i class="fas fa-link"></i> Absorbed Special: <span>+${(synergy.value * 100).toFixed(2)}% of DPS to Click Dmg</span>`;
+            absorbedStatsListEl.appendChild(statEl);
+        }
+    }
+
     monsterHealthTextEl.textContent = `${formatNumber(Math.ceil(Math.max(0, gameState.monster.hp)))} / ${formatNumber(gameState.monster.maxHp)}`;
     const clickCost = getUpgradeCost('clickDamage', gameState.upgrades.clickDamage);
     const dpsCost = getUpgradeCost('dps', gameState.upgrades.dps);
@@ -105,7 +135,6 @@ export function updateUI(elements, gameState, playerStats, currentMonster, salva
     bonusGoldStatEl.textContent = playerStats.bonusGold.toFixed(1);
     magicFindStatEl.textContent = playerStats.magicFind.toFixed(1);
     prestigeCountStatEl.textContent = (gameState.prestigeCount || 0).toString();
-    legacyItemsStatEl.textContent = (gameState.legacyItems?.length || 0).toString();
     currentLevelEl.textContent = gameState.currentFightingLevel.toString();
     (/** @type {HTMLInputElement} */ (autoProgressCheckboxEl)).checked = gameState.isAutoProgressing;
     const healthPercent = (gameState.monster.hp / gameState.monster.maxHp) * 100;
@@ -222,7 +251,7 @@ export function createGemTooltipHTML(gem) {
     }
 
     if (gem.synergy) {
-        statsHTML += `<li>Adds ${gem.synergy.value}% of total DPS as Click Damage</li>`;
+        statsHTML += `<li class="stat-special" style="margin: 5px 0;">Special: +${gem.synergy.value * 100}% of total DPS to Click Dmg</li>`;
     }
 
     if (statsHTML === '<ul>') {
@@ -338,10 +367,54 @@ export function createLootComparisonTooltipHTML(potentialItem, equippedItem, equ
 }
 
 
-export function createItemHTML(item, isEquipped) {
+export function createItemHTML(item, isEquipped = false) {
+    if (isEquipped) {
+        let socketsHTML = '';
+        if (item.sockets) {
+            socketsHTML += `<div class="item-sockets equipped-sockets">`;
+            item.sockets.forEach(gem => {
+                if (gem) {
+                    socketsHTML += `<div class="socket"><img src="${gem.icon}" alt="${gem.name}"></div>`;
+                } else {
+                    socketsHTML += '<div class="socket"></div>';
+                }
+            });
+            socketsHTML += '</div>';
+        }
+        return `<img src="${getItemIcon(item.type)}" class="item-icon"> ${socketsHTML}`;
+    }
+
+    // This part now only runs for inventory items
+    const lockHTML = `<i class="fas ${item.locked ? 'fa-lock' : 'fa-lock-open'} lock-icon"></i>`;
+    const combinedStats = getCombinedItemStats(item);
+    let statsHTML = '<ul>';
+
+    for (const statKey in combinedStats) {
+        const statInfo = Object.values(STATS).find(s => s.key === statKey);
+        const statName = statInfo ? statInfo.name : statKey;
+        const value = combinedStats[statKey];
+        const statValue = statInfo && statInfo.type === 'percent' ? `${value.toFixed(1)}%` : formatNumber(value);
+        statsHTML += `<li>+${statValue} ${statName}</li>`;
+    }
+    
+    let totalSynergyValue = 0;
+    if (item.sockets) {
+        for (const gem of item.sockets) {
+            if (gem && gem.synergy && gem.synergy.source === 'dps' && gem.synergy.target === 'clickDamage') {
+                totalSynergyValue += gem.synergy.value;
+            }
+        }
+    }
+    if (totalSynergyValue > 0) {
+        const synergyPercentage = (totalSynergyValue * 100).toFixed(1);
+        statsHTML += `<li class="stat-special">Special: +${synergyPercentage}% DPS to Click Dmg</li>`;
+    }
+    
+    statsHTML += '</ul>';
+    
     let socketsHTML = '';
     if (item.sockets) {
-        socketsHTML += `<div class="item-sockets ${isEquipped ? 'equipped-sockets' : ''}">`;
+        socketsHTML += `<div class="item-sockets">`;
         item.sockets.forEach(gem => {
             if (gem) {
                 socketsHTML += `<div class="socket"><img src="${gem.icon}" alt="${gem.name}"></div>`;
@@ -352,26 +425,6 @@ export function createItemHTML(item, isEquipped) {
         socketsHTML += '</div>';
     }
 
-    if (isEquipped) {
-        return `<img src="${getItemIcon(item.type)}" class="item-icon"> ${socketsHTML}`;
-    }
-
-    const lockHTML = `<i class="fas ${item.locked ? 'fa-lock' : 'fa-lock-open'} lock-icon"></i>`;
-    
-    // --- THIS IS THE CRITICAL FIX ---
-    const combinedStats = getCombinedItemStats(item);
-    let statsHTML = '<ul>';
-    for (const statKey in combinedStats) {
-        const statInfo = Object.values(STATS).find(s => s.key === statKey);
-        const statName = statInfo ? statInfo.name : statKey;
-        // Check for 'percent' type to format correctly
-        const value = combinedStats[statKey];
-        const statValue = statInfo && statInfo.type === 'percent' ? `${value.toFixed(1)}%` : formatNumber(value);
-        statsHTML += `<li>+${statValue} ${statName}</li>`;
-    }
-    statsHTML += '</ul>';
-    // --- END OF FIX ---
-    
     const lockedClass = item.locked ? 'locked-item' : '';
     
     return `<div class="item ${item.rarity} ${lockedClass}">
