@@ -32,7 +32,7 @@ export const MONSTERS = {
     },
     GOBLIN: {
         name: 'Goblin',
-        image: 'images/slime.png',
+        image: 'images/monsters/goblin.png',
         dropChance: 2.0,
         lootTable: [
             { item: ITEMS.WOODEN_SHIELD, weight: 1 },
@@ -49,7 +49,7 @@ export const MONSTERS = {
     },
     SKELETON: {
         name: 'Skeleton',
-        image: 'images/slime.png',
+        image: 'images/monsters/skeleton.png',
         dropChance: 2.5,
         lootTable: [
             { item: ITEMS.KNIGHTS_PLATELEGS, weight: 2 },
@@ -59,7 +59,7 @@ export const MONSTERS = {
     },
     ZOMBIE: {
         name: 'Zombie',
-        image: 'images/slime.png',
+        image: 'images/monsters/zombie.png',
         dropChance: 2.5,
         lootTable: [
             { item: ITEMS.APPRENTICE_ROBE, weight: 2 },
@@ -68,7 +68,7 @@ export const MONSTERS = {
     },
     ORC: {
         name: 'Orc',
-        image: 'images/slime.png',
+        image: 'images/monsters/orc.png',
         dropChance: 3.0,
         lootTable: [
             { item: ITEMS.GLADIATORS_LONGSWORD, weight: 1 },
