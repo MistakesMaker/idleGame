@@ -191,7 +191,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (gameState.monster.hp <= 0) {
             handleMonsterDefeated();
         }
-        updateAll();
+        updateMonsterHealthUI(); // Use the lightweight update function
     }
 
     function gameLoop() {
@@ -201,8 +201,21 @@ document.addEventListener('DOMContentLoaded', () => {
             if (gameState.monster.hp <= 0) {
                 handleMonsterDefeated();
             }
-            updateAll();
+            updateMonsterHealthUI(); // Use the lightweight update function
         }
+    }
+
+    /**
+     * A lightweight UI update function that only targets the monster's health.
+     */
+    function updateMonsterHealthUI() {
+        const { monsterHealthTextEl, monsterHealthBarEl } = elements;
+        monsterHealthTextEl.textContent = `${formatNumber(Math.ceil(Math.max(0, gameState.monster.hp)))} / ${formatNumber(gameState.monster.maxHp)}`;
+        const healthPercent = (gameState.monster.hp / gameState.monster.maxHp) * 100;
+        monsterHealthBarEl.style.width = `${healthPercent}%`;
+        if (healthPercent < 30) monsterHealthBarEl.style.background = 'linear-gradient(to right, #e74c3c, #c0392b)';
+        else if (healthPercent < 60) monsterHealthBarEl.style.background = 'linear-gradient(to right, #f39c12, #e67e22)';
+        else monsterHealthBarEl.style.background = 'linear-gradient(to right, #2ecc71, #27ae60)';
     }
 
     function updateAll() {
@@ -935,7 +948,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // --- Event listener for the new Log/Loot toggle button ---
         document.getElementById('toggle-loot-log-btn').addEventListener('click', (e) => {
-            // FIX: Add a type guard to ensure e.currentTarget is an element.
             if (!(e.currentTarget instanceof HTMLButtonElement)) return;
 
             const btn = e.currentTarget;

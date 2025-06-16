@@ -243,7 +243,7 @@ button:disabled { background: #7f8c8d; cursor: not-allowed; border-bottom: 2px s
 }
 
 /* --- COMBAT AREA --- */
-#monster-area { flex-shrink: 0; }
+#monster-area { flex-shrink: 0; position: relative; /* Make this the positioning parent for popups */ }
 #monster-display { position: relative; width: 200px; height: 200px; margin: 20px auto; }
 #monster-image { width: 100%; height: 100%; cursor: pointer; transition: transform 0.1s ease; -webkit-user-drag: none; }
 .monster-hit { animation: monster-hit-anim 0.2s ease; }
@@ -470,7 +470,8 @@ button:disabled { background: #7f8c8d; cursor: not-allowed; border-bottom: 2px s
     width: 80%;
     height: 80%;
     object-fit: contain;
-    opacity: 0.1;
+    /* --- UPDATED: Increased opacity to make the icon more visible --- */
+    opacity: 0.25;
     z-index: 1;
     pointer-events: none;
     transform: rotate(-15deg);
@@ -500,7 +501,7 @@ button:disabled { background: #7f8c8d; cursor: not-allowed; border-bottom: 2px s
 .selected-for-prestige { border: 3px dashed #f1c40f !important; transform: scale(1.05); }
 .hidden { display: none !important; }
 #prestige-button:not(:disabled) { animation: pulse 2s infinite; background: linear-gradient(145deg, #f1c40f, #e67e22); border-bottom: 2px solid #d35400; }
-@keyframes pulse { 0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(241, 196, 15, 0.7); } 70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(241, 196, 15, 0); } 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(241, 196, 15, 0); } }
+@keyframes pulse { 0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(241, 196, 15, 0.7); } 70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(241, 196, 15, 0); } 100% { box-shadow: 0 0 0 0 rgba(241, 196, 15, 0); } }
 
 #upgrades-area { margin-top: 20px; padding-top: 15px; border-top: 1px solid #4a637e; }
 .upgrade-button { background: linear-gradient(145deg, #2c3e50, #34495e); border: 1px solid #7f8c8d; padding: 10px; margin-bottom: 10px; border-radius: 5px; cursor: pointer; text-align: center; transition: all 0.2s ease; position: relative; padding-right: 60px; }
