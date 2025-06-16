@@ -132,22 +132,6 @@ export function findFirstLevelOfZone(zone) {
 }
 
 /**
- * Finds the last level of a given zone.
- * @param {object} zone - The zone object from REALMS data.
- * @returns {number} The ending level of the zone.
- */
-export function findLastLevelOfZone(zone) {
-    let lastLevel = 0;
-    for (const subZoneId in zone.subZones) {
-        if (zone.subZones[subZoneId].levelRange[1] > lastLevel) {
-            lastLevel = zone.subZones[subZoneId].levelRange[1];
-        }
-    }
-    return lastLevel;
-}
-
-
-/**
  * Calculates the total stats of an item, including its gems.
  * @param {object} item The item object.
  * @returns {Object<string, number>} An object containing the combined stats.

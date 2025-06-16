@@ -62,28 +62,8 @@ export function initDOMElements() {
         gemCraftingSlotsContainer: document.getElementById('gem-crafting-slots'),
         gemCraftBtn: document.getElementById('gem-craft-btn'),
         resetGameBtn: document.getElementById('reset-game-btn'),
-        forgeInventorySlotsEl: document.getElementById('forge-inventory-slots'),
-        forgeSelectedItemEl: document.getElementById('forge-selected-item'),
-        forgeRerollBtn: document.getElementById('forge-reroll-btn'),
     };
 }
-
-/**
- * A lightweight function to only update the monster's health UI.
- */
-export function updateMonsterHealthUI(elements, monsterState) {
-    const { monsterHealthBarEl, monsterHealthTextEl } = elements;
-    if (!monsterHealthBarEl || !monsterHealthTextEl || !monsterState) return;
-
-    const healthPercent = (monsterState.hp / monsterState.maxHp) * 100;
-    monsterHealthBarEl.style.width = `${healthPercent}%`;
-    monsterHealthTextEl.textContent = `${formatNumber(Math.ceil(Math.max(0, monsterState.hp)))} / ${formatNumber(monsterState.maxHp)}`;
-
-    if (healthPercent < 30) monsterHealthBarEl.style.background = 'linear-gradient(to right, #e74c3c, #c0392b)';
-    else if (healthPercent < 60) monsterHealthBarEl.style.background = 'linear-gradient(to right, #f39c12, #e67e22)';
-    else monsterHealthBarEl.style.background = 'linear-gradient(to right, #2ecc71, #27ae60)';
-}
-
 
 /**
  * Updates the entire game UI based on the current state.
@@ -94,13 +74,10 @@ export function updateUI(elements, gameState, playerStats, currentMonster, salva
         monsterHealthTextEl, upgradeClickCostEl, upgradeDpsCostEl, heroLevelEl,
         heroXpBarEl, attributePointsEl, attrStrengthEl, attrAgilityEl, attrLuckEl, addStrengthBtn,
         addAgilityBtn, addLuckBtn, bonusGoldStatEl, magicFindStatEl, prestigeCountStatEl,
-        prestigeRequirementTextEl, currentLevelEl, autoProgressCheckboxEl,
+        prestigeRequirementTextEl, currentLevelEl, autoProgressCheckboxEl, monsterHealthBarEl,
         upgradeClickLevelEl, upgradeDpsLevelEl, inventorySlotsEl, lootMonsterNameEl,
-        lootTableDisplayEl, prestigeButton, gemSlotsEl, gemCraftingSlotsContainer, gemCraftBtn,
-        forgeInventorySlotsEl, forgeSelectedItemEl, forgeRerollBtn
+        lootTableDisplayEl, prestigeButton, gemSlotsEl, gemCraftingSlotsContainer, gemCraftBtn
     } = elements;
-    
-    updateMonsterHealthUI(elements, gameState.monster);
 
     const xpToNextLevel = getXpForNextLevel(gameState.hero.level);
     goldStatEl.textContent = formatNumber(gameState.gold);
@@ -139,6 +116,7 @@ export function updateUI(elements, gameState, playerStats, currentMonster, salva
         }
     }
 
+    monsterHealthTextEl.textContent = `${formatNumber(Math.ceil(Math.max(0, gameState.monster.hp)))} / ${formatNumber(gameState.monster.maxHp)}`;
     const clickCost = getUpgradeCost('clickDamage', gameState.upgrades.clickDamage);
     const dpsCost = getUpgradeCost('dps', gameState.upgrades.dps);
     upgradeClickCostEl.textContent = formatNumber(clickCost);
@@ -158,6 +136,11 @@ export function updateUI(elements, gameState, playerStats, currentMonster, salva
     prestigeCountStatEl.textContent = (gameState.prestigeCount || 0).toString();
     currentLevelEl.textContent = gameState.currentFightingLevel.toString();
     (/** @type {HTMLInputElement} */ (autoProgressCheckboxEl)).checked = gameState.isAutoProgressing;
+    const healthPercent = (gameState.monster.hp / gameState.monster.maxHp) * 100;
+    monsterHealthBarEl.style.width = `${healthPercent}%`;
+    if (healthPercent < 30) monsterHealthBarEl.style.background = 'linear-gradient(to right, #e74c3c, #c0392b)';
+    else if (healthPercent < 60) monsterHealthBarEl.style.background = 'linear-gradient(to right, #f39c12, #e67e22)';
+    else monsterHealthBarEl.style.background = 'linear-gradient(to right, #2ecc71, #27ae60)';
     upgradeClickLevelEl.textContent = `Lvl ${gameState.upgrades.clickDamage}`;
     upgradeDpsLevelEl.textContent = `Lvl ${gameState.upgrades.dps}`;
     document.getElementById('upgrade-click-damage').classList.toggle('disabled', gameState.gold < clickCost);
@@ -225,16 +208,10 @@ export function updateUI(elements, gameState, playerStats, currentMonster, salva
     });
     
     const nextPrestigeLevel = gameState.nextPrestigeLevel || 100;
-    const canPrestige = gameState.completedLevels.includes(nextPrestigeLevel);
-
     if (prestigeRequirementTextEl) {
         prestigeRequirementTextEl.innerHTML = `Defeat the boss at Level <b>${nextPrestigeLevel}</b> to Prestige.`;
-        prestigeRequirementTextEl.style.display = canPrestige ? 'none' : 'block';
     }
-    if (prestigeButton) {
-        (/** @type {HTMLButtonElement} */ (prestigeButton)).disabled = !canPrestige;
-        prestigeButton.style.display = canPrestige ? 'block' : 'none';
-    }
+    (/** @type {HTMLButtonElement} */ (prestigeButton)).disabled = !gameState.completedLevels.includes(nextPrestigeLevel);
 
     const monsterDef = currentMonster.data;
     if (monsterDef) {
@@ -259,58 +236,6 @@ export function updateUI(elements, gameState, playerStats, currentMonster, salva
         } else {
             lootTableDisplayEl.innerHTML = '<p>This monster has no special drops.</p>';
         }
-    }
-
-    if (forgeInventorySlotsEl) {
-        forgeInventorySlotsEl.innerHTML = '';
-        const allPlayerItems = [
-            ...Object.entries(gameState.equipment)
-                .filter(([slot, item]) => item && item.stats)
-                .map(([slot, item]) => ({ ...item, location: 'equipment', slot: slot })),
-            ...gameState.inventory
-                .map((item, index) => ({ ...item, location: 'inventory', index: index }))
-                .filter(item => item && item.stats)
-        ];
-
-        allPlayerItems.sort((a, b) => {
-            const aIsEquipped = a.location === 'equipment';
-            const bIsEquipped = b.location === 'equipment';
-            if (aIsEquipped !== bIsEquipped) return aIsEquipped ? -1 : 1;
-            if (a.locked !== b.locked) return a.locked ? -1 : 1;
-            return 0;
-        });
-
-        if (allPlayerItems.length > 0) {
-            allPlayerItems.forEach(item => {
-                const itemWrapper = document.createElement('div');
-                itemWrapper.className = 'item-wrapper';
-                itemWrapper.dataset.location = item.location;
-                if (item.location === 'equipment') {
-                    itemWrapper.dataset.slot = item.slot;
-                } else {
-                    itemWrapper.dataset.index = item.index.toString();
-                }
-                
-                itemWrapper.innerHTML = createItemHTML(item, false);
-                
-                if (selectedItemForForge && selectedItemForForge.id === item.id) {
-                    const itemDiv = itemWrapper.querySelector('.item');
-                    if (itemDiv) itemDiv.classList.add('selected-for-forge');
-                }
-    
-                forgeInventorySlotsEl.appendChild(itemWrapper);
-            });
-        } else {
-            forgeInventorySlotsEl.innerHTML = `<p>No forgable equipment to display.</p>`;
-        }
-    
-        if (selectedItemForForge) {
-            forgeSelectedItemEl.innerHTML = createItemHTML(selectedItemForForge, false);
-        } else {
-            forgeSelectedItemEl.innerHTML = `<p>Select an item to begin.</p>`;
-        }
-    
-        (/** @type {HTMLButtonElement} */ (forgeRerollBtn)).disabled = !selectedItemForForge || gameState.scrap < 50;
     }
 }
 
@@ -565,8 +490,8 @@ export function createMapNode(name, iconSrc, coords, isUnlocked, isCompleted, cu
     if (!isUnlocked) node.classList.add('locked');
     if (isBoss) node.classList.add('boss-node');
 
-    const subZoneForLevel = findSubZoneByLevel(currentFightingLevel);
-    if (subZoneForLevel && subZoneForLevel.name === name) {
+    const currentFightingSubZone = findSubZoneByLevel(currentFightingLevel);
+    if (currentFightingSubZone && currentFightingSubZone.name === name) {
         node.classList.add('active-zone');
     }
 
@@ -607,10 +532,6 @@ export function getHighestCompletedLevelInSubZone(completedLevels, subZone) {
                 highest = level;
             }
         }
-    }
-    // If no levels in the range are completed, but we have access, the "start" is the first level.
-    if (highest === 0 && completedLevels.some(l => l >= subZone.levelRange[0]-1)) {
-        return subZone.levelRange[0] -1;
     }
     return highest;
 }
