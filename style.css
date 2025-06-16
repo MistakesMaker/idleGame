@@ -84,8 +84,20 @@ button:disabled { background: #7f8c8d; cursor: not-allowed; border-bottom: 2px s
     border: 2px solid #4a637e;
     transition: background-image 0.5s ease-in-out;
 }
+
+#map-lines-canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none; /* Allows clicks to pass through to the nodes below */
+    z-index: 1; /* Places the canvas above the map background but below the nodes */
+}
+
 .map-node {
     position: absolute;
+    z-index: 2; /* Ensure nodes are on top of the canvas */
     transform: translate(-50%, -50%);
     display: flex;
     flex-direction: column;
