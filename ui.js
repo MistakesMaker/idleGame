@@ -47,7 +47,6 @@ export function initDOMElements() {
         statTooltipEl: document.getElementById('stat-tooltip'),
         prestigeCountStatEl: document.getElementById('prestige-count-stat'),
         absorbedStatsListEl: document.getElementById('absorbed-stats-list'),
-        // --- FIX: Use getElementById for a reliable selection ---
         prestigeRequirementTextEl: document.getElementById('prestige-requirement-text'),
         mapContainerEl: document.getElementById('map-container'),
         mapTitleEl: document.getElementById('map-title'),
@@ -444,8 +443,12 @@ export function createItemHTML(item, isEquipped) {
         socketsHTML += '</div>';
     }
 
+    // --- THIS IS THE CORRECTED LOGIC ---
+    const iconSrc = item.icon || getItemIcon(item.type);
+
     if (isEquipped) {
-        return `<img src="${getItemIcon(item.type)}" class="item-icon"> ${socketsHTML}`;
+        // Correctly use the specific icon for equipped items as well
+        return `<img src="${iconSrc}" class="item-icon"> ${socketsHTML}`;
     }
 
     const lockHTML = `<i class="fas ${item.locked ? 'fa-lock' : 'fa-lock-open'} lock-icon"></i>`;
@@ -484,7 +487,7 @@ export function createItemHTML(item, isEquipped) {
                 </div>
                 ${statsHTML}
                 ${socketsHTML} 
-                <img src="${getItemIcon(item.type)}" class="item-bg-icon" alt="">
+                <img src="${iconSrc}" class="item-bg-icon" alt="">
             </div>`;
 }
 

@@ -19,6 +19,7 @@ export function generateItem(rarity, itemLevel, itemBase) {
         baseId: itemBase.id,
         name: `${rarity.charAt(0).toUpperCase() + rarity.slice(1)} ${itemBase.name}`,
         type: itemBase.type.toLowerCase(),
+        icon: itemBase.icon, // <-- THIS IS THE FIX. It copies the icon path to the new item.
         rarity: rarity,
         stats: {},
         locked: false,
