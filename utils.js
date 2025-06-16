@@ -1,11 +1,6 @@
-import { REALMS } from './data/realms.js';
+// --- START OF FILE utils.js ---
 
-/**
- * An array of item rarities, ordered from least to most rare.
- * This is used throughout the application for stat calculation, loot drops, and UI styling.
- * Moved here to prevent circular dependency issues.
- */
-export const rarities = ['common', 'uncommon', 'rare', 'epic', 'legendary'];
+import { REALMS } from './data/realms.js';
 
 /**
  * Prepends a message to the game log element.

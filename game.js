@@ -1,12 +1,16 @@
+// --- START OF FILE game.js ---
+
 /* global io */
 import { REALMS } from './data/realms.js';
 import { MONSTERS } from './data/monsters.js';
 import { ITEMS } from './data/items.js';
 import { STATS } from './data/stat_pools.js';
-import { rarities, logMessage, formatNumber, getUpgradeCost, findSubZoneByLevel, findFirstLevelOfZone, isBossLevel, isBigBossLevel, getCombinedItemStats, isMiniBossLevel } from './utils.js';
+import { logMessage, formatNumber, getUpgradeCost, findSubZoneByLevel, findFirstLevelOfZone, isBossLevel, isBigBossLevel, getCombinedItemStats, isMiniBossLevel } from './utils.js';
 import * as ui from './ui.js';
 import * as player from './player_actions.js';
 import * as logic from './game_logic.js';
+
+export const rarities = ['common', 'uncommon', 'rare', 'epic', 'legendary'];
 
 /** @typedef {Object<string, HTMLElement|HTMLButtonElement|HTMLInputElement|HTMLImageElement>} DOMElements */
 
@@ -24,9 +28,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let pendingRingEquip = null;
     let selectedGemForSocketing = null;
     let craftingGems = [];
-    let isResetting = false; // --- FIX: Flag to prevent saving on reset ---
-    
-    // NOTE: Removed selectedItemForForge as it's not used
+    let selectedItemForForge = null;
 
     /** @type {DOMElements} */
     let elements = {};
@@ -106,22 +108,29 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
         
+        // --- GOLD UPGRADE CALCULATION (REWORKED) ---
+
+        // 1. Calculate damage from attributes first
         const strengthBonusClickFlat = hero.attributes.strength * 0.5;
         const strengthBonusClickPercent = hero.attributes.strength * 0.2;
         const agilityBonusDpsPercent = hero.attributes.agility * 0.3;
-        
+
+        // 2. Get the subtotal damage before applying the new gold upgrade percentages
         let clickDamageSubtotal = newCalculatedStats.baseClickDamage + strengthBonusClickFlat;
         clickDamageSubtotal *= (1 + (strengthBonusClickPercent / 100));
 
         let dpsSubtotal = newCalculatedStats.baseDps;
         dpsSubtotal *= (1 + (agilityBonusDpsPercent / 100));
 
-        const clickUpgradeBonusPercent = gameState.upgrades.clickDamage * 1;
+        // 3. Apply the new percentage-based gold upgrades
+        const clickUpgradeBonusPercent = gameState.upgrades.clickDamage * 1; // 1% per level
         let finalClickDamage = clickDamageSubtotal * (1 + (clickUpgradeBonusPercent / 100));
         
-        const dpsUpgradeBonusPercent = gameState.upgrades.dps * 1;
+        const dpsUpgradeBonusPercent = gameState.upgrades.dps * 1; // 1% per level
         let finalDps = dpsSubtotal * (1 + (dpsUpgradeBonusPercent / 100));
-        
+
+        // --- END OF REWORK ---
+
         const luckBonusGold = hero.attributes.luck * 0.5;
         const luckBonusMagicFind = hero.attributes.luck * 0.2;
         const finalBonusGold = newCalculatedStats.bonusGold + luckBonusGold;
@@ -202,7 +211,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function updateAll() {
-        ui.updateUI(elements, gameState, playerStats, currentMonster, salvageMode, craftingGems);
+        ui.updateUI(elements, gameState, playerStats, currentMonster, salvageMode, craftingGems, selectedItemForForge);
         renderMap();
         renderRealmTabs();
         
@@ -247,7 +256,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function resetGame() {
         if (confirm("Are you sure? This will delete your save permanently.")) {
-            isResetting = true; // --- FIX: Set the flag before reloading ---
             localStorage.removeItem('idleRPGSaveData');
             window.location.reload();
         }
@@ -454,8 +462,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function setupEventListeners() {
         window.addEventListener('beforeunload', () => {
-            // --- FIX: Check the flag before saving ---
-            if (isResetting) return; 
             gameState.lastSaveTimestamp = Date.now();
             localStorage.setItem('idleRPGSaveData', JSON.stringify(gameState));
         });
@@ -778,9 +784,7 @@ document.addEventListener('DOMContentLoaded', () => {
             elements.offlineProgressModalBackdrop.classList.add('hidden');
         });
 
-        // --- THE FIX ---
-        elements.resetGameBtn.addEventListener('click', resetGame);
-        
+        document.getElementById('reset-game-btn').addEventListener('click', resetGame);
         elements.backToWorldMapBtnEl.addEventListener('click', () => { currentMap = 'world'; renderMap(); });
         elements.modalCloseBtnEl.addEventListener('click', () => elements.modalBackdropEl.classList.add('hidden'));
         elements.modalBackdropEl.addEventListener('click', (e) => {
@@ -860,7 +864,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (!viewId) return;
 
                 tab.addEventListener('click', () => {
-                    const itemRelatedViews = ['gems-view', 'inventory-view', 'equipment-view'];
+                    const itemRelatedViews = ['gems-view', 'inventory-view', 'equipment-view', 'forge-view'];
                     if (selectedGemForSocketing !== null && !itemRelatedViews.includes(viewId)) {
                         selectedGemForSocketing = null;
                         logMessage(elements.gameLogEl, "Canceled gem socketing.");
@@ -869,6 +873,10 @@ document.addEventListener('DOMContentLoaded', () => {
                         gameState.gems.push(...craftingGems);
                         craftingGems = [];
                         logMessage(elements.gameLogEl, "Returned gems from crafting slots.");
+                    }
+                    if (selectedItemForForge !== null && !itemRelatedViews.includes(viewId)) {
+                        selectedItemForForge = null;
+                        logMessage(elements.gameLogEl, "Forge selection cleared.");
                     }
 
                     updateAll(); 
@@ -884,6 +892,48 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 });
             });
+        });
+        
+        elements.forgeInventorySlotsEl.addEventListener('click', (e) => {
+            if (!(e.target instanceof Element)) return;
+            const wrapper = e.target.closest('.item-wrapper');
+            if (!(wrapper instanceof HTMLElement)) return;
+            
+            const location = wrapper.dataset.location;
+            let item = null;
+            
+            if (location === 'equipment') {
+                const slot = wrapper.dataset.slot;
+                if (slot) item = gameState.equipment[slot];
+            } else if (location === 'inventory') {
+                const itemIndexStr = wrapper.dataset.index;
+                if (itemIndexStr) {
+                    const itemIndex = parseInt(itemIndexStr, 10);
+                    item = gameState.inventory[itemIndex];
+                }
+            }
+            
+            if (item && item.stats) {
+                selectedItemForForge = item; 
+                logMessage(elements.gameLogEl, `Selected <span class="${item.rarity}">${item.name}</span> for rerolling.`, 'uncommon');
+                updateAll();
+            }
+        });
+
+        elements.forgeRerollBtn.addEventListener('click', () => {
+            if (!selectedItemForForge) {
+                logMessage(elements.gameLogEl, "No item selected to reroll.", 'rare');
+                return;
+            }
+
+            const result = player.rerollItemStats(gameState, selectedItemForForge);
+            logMessage(elements.gameLogEl, result.message, result.success ? 'epic' : 'rare');
+            
+            if (result.success) {
+                recalculateStats();
+                updateAll();
+                autoSave();
+            }
         });
 
         setupItemTooltipListeners();
@@ -1072,6 +1122,28 @@ document.addEventListener('DOMContentLoaded', () => {
             showTooltip(gameState.equipment[slotName], slotEl);
         });
         equipmentSlots.addEventListener('mouseout', () => elements.tooltipEl.classList.add('hidden'));
+        
+        elements.forgeInventorySlotsEl.addEventListener('mouseover', (event) => {
+            if (!(event.target instanceof Element)) return;
+            const wrapper = event.target.closest('.item-wrapper');
+            if (!(wrapper instanceof HTMLElement)) return;
+
+            const location = wrapper.dataset.location;
+            let item = null;
+
+            if (location === 'equipment') {
+                const slot = wrapper.dataset.slot;
+                if(slot) item = gameState.equipment[slot];
+            } else {
+                const indexStr = wrapper.dataset.index;
+                 if (indexStr) {
+                    const index = parseInt(indexStr, 10);
+                    item = gameState.inventory[index];
+                }
+            }
+            showTooltip(item, wrapper);
+        });
+        elements.forgeInventorySlotsEl.addEventListener('mouseout', () => elements.tooltipEl.classList.add('hidden'));
     }
     
     function setupGemTooltipListeners(){
@@ -1283,6 +1355,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const newAbsorbedSynergies = [];
 
             for (const item of allCurrentItems) {
+                // We are absorbing ALL items, as per the new prestige logic
                 const combinedStats = getCombinedItemStats(item);
                 for (const statKey in combinedStats) {
                     newAbsorbedStats[statKey] = (newAbsorbedStats[statKey] || 0) + combinedStats[statKey];
@@ -1363,6 +1436,9 @@ document.addEventListener('DOMContentLoaded', () => {
             offlineXp: document.getElementById('offline-xp'),
             offlineScrap: document.getElementById('offline-scrap'),
             offlineRewards: document.getElementById('offline-rewards'),
+            forgeInventorySlotsEl: document.getElementById('forge-inventory-slots'),
+            forgeSelectedItemEl: document.getElementById('forge-selected-item'),
+            forgeRerollBtn: document.getElementById('forge-reroll-btn'),
         };
         
         const savedData = localStorage.getItem('idleRPGSaveData');

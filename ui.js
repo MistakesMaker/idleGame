@@ -47,6 +47,7 @@ export function initDOMElements() {
         statTooltipEl: document.getElementById('stat-tooltip'),
         prestigeCountStatEl: document.getElementById('prestige-count-stat'),
         absorbedStatsListEl: document.getElementById('absorbed-stats-list'),
+        // --- FIX: Use getElementById for a reliable selection ---
         prestigeRequirementTextEl: document.getElementById('prestige-requirement-text'),
         mapContainerEl: document.getElementById('map-container'),
         mapTitleEl: document.getElementById('map-title'),
@@ -61,7 +62,9 @@ export function initDOMElements() {
         gemSlotsEl: document.getElementById('gem-slots'),
         gemCraftingSlotsContainer: document.getElementById('gem-crafting-slots'),
         gemCraftBtn: document.getElementById('gem-craft-btn'),
-        resetGameBtn: document.getElementById('reset-game-btn'),
+        forgeInventorySlotsEl: document.getElementById('forge-inventory-slots'),
+        forgeSelectedItemEl: document.getElementById('forge-selected-item'),
+        forgeRerollBtn: document.getElementById('forge-reroll-btn'),
     };
 }
 
@@ -76,7 +79,8 @@ export function updateUI(elements, gameState, playerStats, currentMonster, salva
         addAgilityBtn, addLuckBtn, bonusGoldStatEl, magicFindStatEl, prestigeCountStatEl,
         prestigeRequirementTextEl, currentLevelEl, autoProgressCheckboxEl, monsterHealthBarEl,
         upgradeClickLevelEl, upgradeDpsLevelEl, inventorySlotsEl, lootMonsterNameEl,
-        lootTableDisplayEl, prestigeButton, gemSlotsEl, gemCraftingSlotsContainer, gemCraftBtn
+        lootTableDisplayEl, prestigeButton, gemSlotsEl, gemCraftingSlotsContainer, gemCraftBtn,
+        forgeInventorySlotsEl, forgeSelectedItemEl, forgeRerollBtn
     } = elements;
 
     const xpToNextLevel = getXpForNextLevel(gameState.hero.level);
@@ -207,6 +211,7 @@ export function updateUI(elements, gameState, playerStats, currentMonster, salva
         btn.classList.toggle('active', index === gameState.activePresetIndex);
     });
     
+    // --- PRESTIGE UI UPDATE ---
     const nextPrestigeLevel = gameState.nextPrestigeLevel || 100;
     if (prestigeRequirementTextEl) {
         prestigeRequirementTextEl.innerHTML = `Defeat the boss at Level <b>${nextPrestigeLevel}</b> to Prestige.`;
@@ -237,6 +242,58 @@ export function updateUI(elements, gameState, playerStats, currentMonster, salva
             lootTableDisplayEl.innerHTML = '<p>This monster has no special drops.</p>';
         }
     }
+
+    // --- FORGE UI UPDATE ---
+    forgeInventorySlotsEl.innerHTML = '';
+    
+    const allPlayerItems = [
+        ...Object.entries(gameState.equipment)
+            .filter(([slot, item]) => item && item.stats)
+            .map(([slot, item]) => ({ ...item, location: 'equipment', slot: slot })),
+        ...gameState.inventory
+            .map((item, index) => ({ ...item, location: 'inventory', index: index }))
+            .filter(item => item && item.stats)
+    ];
+
+    allPlayerItems.sort((a, b) => {
+        const aIsEquipped = a.location === 'equipment';
+        const bIsEquipped = b.location === 'equipment';
+        if (aIsEquipped !== bIsEquipped) return aIsEquipped ? -1 : 1;
+        if (a.locked !== b.locked) return a.locked ? -1 : 1;
+        return 0;
+    });
+
+    if (allPlayerItems.length > 0) {
+        allPlayerItems.forEach(item => {
+            const itemWrapper = document.createElement('div');
+            itemWrapper.className = 'item-wrapper';
+            itemWrapper.dataset.location = item.location;
+            if (item.location === 'equipment') {
+                itemWrapper.dataset.slot = item.slot;
+            } else {
+                itemWrapper.dataset.index = item.index.toString();
+            }
+            
+            itemWrapper.innerHTML = createItemHTML(item, false);
+            
+            if (selectedItemForForge && selectedItemForForge.id === item.id) {
+                const itemDiv = itemWrapper.querySelector('.item');
+                if (itemDiv) itemDiv.classList.add('selected-for-forge');
+            }
+
+            forgeInventorySlotsEl.appendChild(itemWrapper);
+        });
+    } else {
+        forgeInventorySlotsEl.innerHTML = `<p>No forgable equipment to display.</p>`;
+    }
+
+    if (selectedItemForForge) {
+        forgeSelectedItemEl.innerHTML = createItemHTML(selectedItemForForge, false);
+    } else {
+        forgeSelectedItemEl.innerHTML = `<p>Select an item to begin.</p>`;
+    }
+
+    (/** @type {HTMLButtonElement} */ (forgeRerollBtn)).disabled = !selectedItemForForge || gameState.scrap < 50;
 }
 
 export function createGemTooltipHTML(gem) {
