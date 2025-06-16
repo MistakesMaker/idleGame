@@ -133,7 +133,7 @@ export const ITEMS = {
         id: 'WOODEN_SHIELD',
         name: "Wooden Shield",
         type: 'shield',
-        icon: 'images/icons/shield.png',
+        icon: 'images/icons/wooden_shield.png',
         possibleStats: [ { key: STATS.DPS.key, min: 5, max: 25 } ]
     },
     BRONZE_BUCKLER: {

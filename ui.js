@@ -287,6 +287,7 @@ export function updateUI(elements, gameState, playerStats, currentMonster, salva
     }
 
     if (selectedItemForForge) {
+        // --- THIS IS THE FIX ---
         forgeSelectedItemEl.innerHTML = createItemHTML(selectedItemForForge, false);
     } else {
         forgeSelectedItemEl.innerHTML = `<p>Select an item to begin.</p>`;
@@ -428,7 +429,7 @@ export function createLootComparisonTooltipHTML(potentialItem, equippedItem, equ
 }
 
 
-export function createItemHTML(item, isEquipped) {
+export function createItemHTML(item, isEquipped = false) {
     if (!item) return '';
     let socketsHTML = '';
     if (item.sockets) {
@@ -443,15 +444,14 @@ export function createItemHTML(item, isEquipped) {
         socketsHTML += '</div>';
     }
 
-    // --- THIS IS THE CORRECTED LOGIC ---
     const iconSrc = item.icon || getItemIcon(item.type);
 
     if (isEquipped) {
-        // Correctly use the specific icon for equipped items as well
+        // This logic now correctly shows only the icon and sockets for equipped items.
         return `<img src="${iconSrc}" class="item-icon"> ${socketsHTML}`;
     }
 
-    const lockHTML = `<i class="fas ${item.locked ? 'fa-lock' : 'fa-lock-open'} lock-icon"></i>`;
+    const lockHTML = item.locked !== undefined ? `<i class="fas ${item.locked ? 'fa-lock' : 'fa-lock-open'} lock-icon"></i>` : '';
     
     const combinedStats = getCombinedItemStats(item);
     let statsHTML = '<ul>';
@@ -499,7 +499,12 @@ export function createGemHTML(gem) {
     return gemEl.outerHTML;
 }
 
-
+/**
+ * Gets the appropriate icon path for an item type.
+ * This is now primarily a fallback for items without a specific icon.
+ * @param {string} type - The item type (e.g., 'sword', 'shield').
+ * @returns {string} The path to the icon image.
+ */
 export function getItemIcon(type) {
     switch (type) {
         case 'sword': return 'images/icons/sword.png';

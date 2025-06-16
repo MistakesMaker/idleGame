@@ -416,7 +416,7 @@ button:disabled { background: #7f8c8d; cursor: not-allowed; border-bottom: 2px s
 #slot-ring2 { width: 18%; height: 12%; top: 80%; right: 35%; }
 
 .equipment-slot .item, .equipment-slot .item:hover { width: 100%; height: 100%; padding: 0; margin: 0; background-size: contain; background-position: center; background-repeat: no-repeat; transform: none; }
-.equipment-slot .item-icon { width: 90%; height: 90%; object-fit: contain; -webkit-user-drag: none; cursor: pointer; }
+.equipment-slot .item-icon { width: 90%; height: 90%; object-fit: contain; -webkit-user-drag: none; cursor: pointer; opacity: 1; }
 
 .equipment-slot .placeholder-icon { 
     width: 60%; 
@@ -470,8 +470,7 @@ button:disabled { background: #7f8c8d; cursor: not-allowed; border-bottom: 2px s
     width: 80%;
     height: 80%;
     object-fit: contain;
-    /* --- UPDATED: Increased opacity to make the icon more visible --- */
-    opacity: 0.25;
+    opacity: 0.4; /* <<< THIS IS THE FIX */
     z-index: 1;
     pointer-events: none;
     transform: rotate(-15deg);
@@ -501,7 +500,7 @@ button:disabled { background: #7f8c8d; cursor: not-allowed; border-bottom: 2px s
 .selected-for-prestige { border: 3px dashed #f1c40f !important; transform: scale(1.05); }
 .hidden { display: none !important; }
 #prestige-button:not(:disabled) { animation: pulse 2s infinite; background: linear-gradient(145deg, #f1c40f, #e67e22); border-bottom: 2px solid #d35400; }
-@keyframes pulse { 0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(241, 196, 15, 0.7); } 70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(241, 196, 15, 0); } 100% { box-shadow: 0 0 0 0 rgba(241, 196, 15, 0); } }
+@keyframes pulse { 0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(241, 196, 15, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(241, 196, 15, 0); } 100% { box-shadow: 0 0 0 0 rgba(241, 196, 15, 0); } }
 
 #upgrades-area { margin-top: 20px; padding-top: 15px; border-top: 1px solid #4a637e; }
 .upgrade-button { background: linear-gradient(145deg, #2c3e50, #34495e); border: 1px solid #7f8c8d; padding: 10px; margin-bottom: 10px; border-radius: 5px; cursor: pointer; text-align: center; transition: all 0.2s ease; position: relative; padding-right: 60px; }
@@ -834,6 +833,7 @@ body.salvage-mode-active #inventory-slots .item:not(.locked-item) { cursor: poin
     width: 100%;
     justify-content: center;
     padding-left: 0;
+    opacity: 0.8; /* Slightly transparent to let icon show through */
 }
 
 .socket {
