@@ -8,7 +8,7 @@ import * as ui from './ui.js';
 import * as player from './player_actions.js';
 import * as logic from './game_logic.js';
 
-/** @typedef {Object<string, HTMLElement|HTMLButtonElement|HTMLInputElement|HTMLImageElement>} DOMElements */
+/** @typedef {Object<string, HTMLElement|HTMLButtonElement|HTMLInputElement|HTMLImageElement|HTMLCanvasElement>} DOMElements */
 
 document.addEventListener('DOMContentLoaded', () => {
 
@@ -254,7 +254,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function renderMap() {
-        elements.mapContainerEl.innerHTML = '';
+        // Clear nodes but keep canvas
+        const nodes = elements.mapContainerEl.querySelectorAll('.map-node');
+        nodes.forEach(node => node.remove());
+
         const realm = REALMS[gameState.currentRealmIndex];
         if (!realm) {
             gameState.currentRealmIndex = 0;
@@ -278,8 +281,11 @@ document.addEventListener('DOMContentLoaded', () => {
             elements.mapTitleEl.textContent = zone.name;
             elements.backToWorldMapBtnEl.classList.remove('hidden');
             elements.mapContainerEl.style.backgroundImage = `url('${zone.mapImage}')`;
-            for (const subZoneId in zone.subZones) {
-                const subZone = zone.subZones[subZoneId];
+
+            // Sort sub-zones by their starting level to draw the path correctly
+            const sortedSubZones = Object.values(zone.subZones).sort((a, b) => a.levelRange[0] - b.levelRange[0]);
+
+            for (const subZone of sortedSubZones) {
                 const isUnlocked = gameState.maxLevel >= subZone.levelRange[0];
                 const isCompleted = gameState.completedLevels.includes(subZone.levelRange[1]);
                 const icon = 'images/icons/sword.png';
@@ -287,6 +293,63 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (isUnlocked) node.onclick = () => showSubZoneModal(subZone);
                 elements.mapContainerEl.appendChild(node);
             }
+            drawMapLines(sortedSubZones);
+        }
+    }
+
+    function drawMapLines(sortedSubZones) {
+        const canvas = /** @type {HTMLCanvasElement} */ (elements.mapLinesCanvasEl);
+        const ctx = canvas.getContext('2d');
+        const container = elements.mapContainerEl;
+
+        // Match canvas drawing size to its display size
+        canvas.width = container.clientWidth;
+        canvas.height = container.clientHeight;
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        const points = sortedSubZones.map(sz => ({
+            x: parseFloat(sz.coords.left) / 100 * canvas.width,
+            y: parseFloat(sz.coords.top) / 100 * canvas.height,
+            isUnlocked: gameState.maxLevel >= sz.levelRange[0]
+        }));
+
+        for (let i = 0; i < points.length - 1; i++) {
+            const p1 = points[i];
+            const p2 = points[i+1];
+
+            if (!p1.isUnlocked) continue; // Don't draw lines from locked nodes
+
+            // --- Zebra Stripe Path ---
+            const length = Math.hypot(p2.x - p1.x, p2.y - p1.y);
+            const segmentLength = 10; // Length of each dash/gap
+            const numSegments = Math.floor(length / segmentLength);
+            const dx = (p2.x - p1.x) / length;
+            const dy = (p2.y - p1.y) / length;
+
+            ctx.lineWidth = 6;
+            ctx.lineCap = 'round';
+            
+            // Draw the white "under-line"
+            ctx.strokeStyle = '#FFFFFF';
+            ctx.beginPath();
+            ctx.moveTo(p1.x, p1.y);
+            ctx.lineTo(p2.x, p2.y);
+            ctx.stroke();
+
+            // Draw the black "over-dashes"
+            ctx.strokeStyle = '#34495e';
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            for (let j = 0; j < numSegments; j += 2) {
+                const startX = p1.x + dx * j * segmentLength;
+                const startY = p1.y + dy * j * segmentLength;
+                const endX = p1.x + dx * (j + 1) * segmentLength;
+                const endY = p1.y + dy * (j + 1) * segmentLength;
+                ctx.moveTo(startX, startY);
+                ctx.lineTo(endX, endY);
+            }
+            ctx.stroke();
         }
     }
 
@@ -1352,6 +1415,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const baseElements = ui.initDOMElements();
         elements = {
             ...baseElements,
+            mapLinesCanvasEl: document.getElementById('map-lines-canvas'),
             ringSelectionModalBackdrop: document.getElementById('ring-selection-modal-backdrop'),
             ringSelectionSlot1: document.getElementById('ring-selection-slot1'),
             ringSelectionSlot2: document.getElementById('ring-selection-slot2'),
