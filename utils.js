@@ -13,7 +13,8 @@ export function logMessage(gameLogEl, message, className = '') {
     p.innerHTML = message;
     if (className) p.classList.add(className);
     gameLogEl.prepend(p);
-    if (gameLogEl.children.length > 50) { // Increased log history
+    // Keep the log to a fixed length by removing the oldest message if the limit is exceeded.
+    if (gameLogEl.children.length > 30) {
         gameLogEl.removeChild(gameLogEl.lastChild);
     }
 }
