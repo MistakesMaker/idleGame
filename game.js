@@ -169,8 +169,25 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         autoSave();
         setTimeout(() => {
+            // --- FIX: Preserve scroll positions before UI update to prevent jumpiness ---
+            const scrollPositions = {
+                inventory: elements.inventorySlotsEl.scrollTop,
+                forge: elements.forgeInventorySlotsEl.scrollTop,
+                gems: elements.gemSlotsEl.scrollTop,
+                rightPanel: document.querySelector('.right-panel')?.scrollTop || 0
+            };
+
             startNewMonster();
             updateAll();
+
+            // --- FIX: Restore scroll positions after UI update ---
+            elements.inventorySlotsEl.scrollTop = scrollPositions.inventory;
+            elements.forgeInventorySlotsEl.scrollTop = scrollPositions.forge;
+            elements.gemSlotsEl.scrollTop = scrollPositions.gems;
+            const rightPanel = document.querySelector('.right-panel');
+            if (rightPanel) {
+                rightPanel.scrollTop = scrollPositions.rightPanel;
+            }
         }, 300);
     }
 

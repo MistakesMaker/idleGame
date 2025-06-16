@@ -863,6 +863,8 @@ body.salvage-mode-active #inventory-slots .item:not(.locked-item) { cursor: poin
     border-radius: 5px;
     margin-top: 10px;
     min-height: 70px;
+    max-height: 220px;
+    overflow-y: auto;
 }
 
 .gem {

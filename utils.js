@@ -3,18 +3,28 @@
 import { REALMS } from './data/realms.js';
 
 /**
- * Prepends a message to the game log element.
+ * Prepends a message to the game log element and auto-scrolls if appropriate.
  * @param {HTMLElement} gameLogEl - The game log container element.
  * @param {string} message - The HTML string message to log.
  * @param {string} [className=''] - An optional CSS class for the message paragraph.
  */
 export function logMessage(gameLogEl, message, className = '') {
+    // Check if the user is scrolled to the bottom before adding the new message.
+    // In a reversed flex-column, being "at the bottom" means scrollTop is 0.
+    const isScrolledToBottom = gameLogEl.scrollTop === 0;
+
     const p = document.createElement('p');
     p.innerHTML = message;
     if (className) p.classList.add(className);
     gameLogEl.prepend(p);
+
+    // If they were at the bottom, automatically scroll to the new message.
+    if (isScrolledToBottom) {
+        gameLogEl.scrollTop = 0;
+    }
+
     // Keep the log to a fixed length by removing the oldest message if the limit is exceeded.
-    if (gameLogEl.children.length > 30) {
+    if (gameLogEl.children.length > 50) { // Increased history from 30 to 50
         gameLogEl.removeChild(gameLogEl.lastChild);
     }
 }
