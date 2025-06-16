@@ -17,47 +17,30 @@
     <div class="game-container">
         <!-- Left Panel: Combat & Loot -->
         <div class="panel left-panel">
-            <div class="tabs">
-                 <button class="tab-button active" data-view="combat-view">Combat</button>
-                 <button class="tab-button" data-view="loot-view">Loot</button>
-                 <button class="tab-button" data-view="forge-view">Forge</button>
+            <div id="monster-area">
+                <div id="monster-info"><span id="monster-name">Slime</span> - <span>Lvl <span id="current-level">1</span></span></div>
+                <div id="monster-health-bar-container"><div id="monster-health-bar"></div></div>
+                <div id="monster-health-text">10 / 10</div>
+                <div id="monster-display">
+                    <img id="monster-image" src="images/monsters/slime.png" alt="Monster">
+                    <div id="popup-container"></div>
+                </div>
             </div>
 
-            <div id="combat-view" class="view active">
-                 <div id="monster-area">
-                    <div id="monster-info"><span id="monster-name">Slime</span> - <span>Lvl <span id="current-level">1</span></span></div>
-                    <div id="monster-health-bar-container"><div id="monster-health-bar"></div></div>
-                    <div id="monster-health-text">10 / 10</div>
-                    <div id="monster-display">
-                        <img id="monster-image" src="images/slime.png" alt="Monster">
-                        <div id="popup-container"></div>
-                    </div>
-                </div>
-                <div id="game-log-container">
-                    <h4>Game Log</h4>
-                     <div id="game-log"><p>Welcome! Your progress will be saved automatically.</p></div>
-                </div>
+            <div id="bottom-view-controls">
+                 <button id="toggle-loot-log-btn">View Loot</button>
+            </div>
+
+            <div id="game-log-container">
+                <h4>Game Log</h4>
+                <div id="game-log"><p>Welcome! Your progress will be saved automatically.</p></div>
             </div>
             
-            <div id="loot-view" class="view">
+            <div id="loot-view" class="hidden">
                 <h3 id="loot-monster-name">Monster Loot</h3>
                 <h4>Possible Drops:</h4>
                 <div id="loot-table-display">
                     <!-- Loot items will be dynamically inserted here as a list -->
-                </div>
-            </div>
-
-             <div id="forge-view" class="view">
-                <h3>The Forge</h3>
-                <p>Select an item below to reroll its stats for 50 Scrap.</p>
-                <div id="forge-main-area">
-                    <div id="forge-selected-item">
-                        <!-- Selected item will be displayed here -->
-                    </div>
-                    <button id="forge-reroll-btn" disabled>Reroll Stats (50 Scrap)</button>
-                </div>
-                <div id="forge-inventory-slots">
-                    <!-- Player's inventory and equipment will appear here -->
                 </div>
             </div>
         </div>
@@ -70,6 +53,7 @@
                 <button class="tab-button" data-view="equipment-view">Equipment</button>
                 <button class="tab-button" data-view="inventory-view">Inventory</button>
                 <button class="tab-button" data-view="gems-view">Gems</button>
+                <button class="tab-button" data-view="forge-view">Forge</button>
             </div>
 
             <div id="map-view" class="view active">
@@ -176,6 +160,19 @@
                 </div>
             </div>
             
+             <div id="forge-view" class="view">
+                <h3>The Forge</h3>
+                <p>Select an item below to reroll its stats for 50 Scrap.</p>
+                <div id="forge-main-area">
+                    <div id="forge-selected-item">
+                        <!-- Selected item will be displayed here -->
+                    </div>
+                    <button id="forge-reroll-btn" disabled>Reroll Stats (50 Scrap)</button>
+                </div>
+                <div id="forge-inventory-slots">
+                    <!-- Player's inventory and equipment will appear here -->
+                </div>
+            </div>
         </div>
 
         <!-- Right Panel -->
@@ -206,7 +203,6 @@
             </div>
             <div id="prestige-area">
                 <h3>Prestige</h3>
-                <!-- FIX: Added ID to this P tag for reliable selection -->
                 <p id="prestige-requirement-text">Reach Max Level 100 to unlock Prestige.</p>
                 
                 <div id="prestige-stats-area">
@@ -271,7 +267,6 @@
     </div>
 
     <!-- Scripts -->
-    <script src="/socket.io/socket.io.js"></script>
     <script type="module" src="game.js"></script>
 </body>
 </html>

@@ -31,7 +31,11 @@ document.addEventListener('DOMContentLoaded', () => {
     /** @type {DOMElements} */
     let elements = {};
 
-    const socket = io('https://idlegame-oqyq.onrender.com');
+    let socket = null;
+    if (typeof io !== 'undefined') {
+        socket = io('https://idlegame-oqyq.onrender.com');
+    }
+
     let raidPanel = null;
     let raidPlayerId = `Player_${Math.random().toString(36).substr(2, 5)}`;
     
@@ -106,28 +110,21 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
         
-        // --- GOLD UPGRADE CALCULATION (REWORKED) ---
-
-        // 1. Calculate damage from attributes first
         const strengthBonusClickFlat = hero.attributes.strength * 0.5;
         const strengthBonusClickPercent = hero.attributes.strength * 0.2;
         const agilityBonusDpsPercent = hero.attributes.agility * 0.3;
 
-        // 2. Get the subtotal damage before applying the new gold upgrade percentages
         let clickDamageSubtotal = newCalculatedStats.baseClickDamage + strengthBonusClickFlat;
         clickDamageSubtotal *= (1 + (strengthBonusClickPercent / 100));
 
         let dpsSubtotal = newCalculatedStats.baseDps;
         dpsSubtotal *= (1 + (agilityBonusDpsPercent / 100));
 
-        // 3. Apply the new percentage-based gold upgrades
-        const clickUpgradeBonusPercent = gameState.upgrades.clickDamage * 1; // 1% per level
+        const clickUpgradeBonusPercent = gameState.upgrades.clickDamage * 1;
         let finalClickDamage = clickDamageSubtotal * (1 + (clickUpgradeBonusPercent / 100));
         
-        const dpsUpgradeBonusPercent = gameState.upgrades.dps * 1; // 1% per level
+        const dpsUpgradeBonusPercent = gameState.upgrades.dps * 1;
         let finalDps = dpsSubtotal * (1 + (dpsUpgradeBonusPercent / 100));
-
-        // --- END OF REWORK ---
 
         const luckBonusGold = hero.attributes.luck * 0.5;
         const luckBonusMagicFind = hero.attributes.luck * 0.2;
@@ -154,7 +151,7 @@ document.addEventListener('DOMContentLoaded', () => {
             magicFind: finalMagicFind,
         };
 
-        if (socket.connected) {
+        if (socket && socket.connected) {
             socket.emit('updatePlayerStats', { dps: playerStats.totalDps });
         }
     }
@@ -287,13 +284,12 @@ document.addEventListener('DOMContentLoaded', () => {
             
             const subZonesArray = Object.values(zone.subZones).sort((a, b) => a.levelRange[0] - b.levelRange[0]);
             
-            // --- NEW PATH DRAWING LOGIC ---
             const unlockedNodes = subZonesArray.filter(sz => gameState.maxLevel >= sz.levelRange[0]);
 
             if (unlockedNodes.length > 1) {
                 const mapWidth = elements.mapContainerEl.clientWidth;
                 const mapHeight = elements.mapContainerEl.clientHeight;
-                const NODE_RADIUS = 21; // MODIFIED: 60% of 35. Adjusted for smaller node size.
+                const NODE_RADIUS = 21;
 
                 const points = unlockedNodes.map(sz => ({
                     x: parseFloat(sz.coords.left) / 100 * mapWidth,
@@ -309,24 +305,20 @@ document.addEventListener('DOMContentLoaded', () => {
                     const p1 = points[i];
                     const p2 = points[i+1];
 
-                    // Calculate vector from p1 to p2
                     const dx = p2.x - p1.x;
                     const dy = p2.y - p1.y;
                     const mag = Math.sqrt(dx * dx + dy * dy);
-                    if (mag < NODE_RADIUS * 2) continue; // Skip if nodes are too close
+                    if (mag < NODE_RADIUS * 2) continue;
 
                     const unitX = dx / mag;
                     const unitY = dy / mag;
 
-                    // Offset start point from p1's center
                     const startX = p1.x + unitX * NODE_RADIUS;
                     const startY = p1.y + unitY * NODE_RADIUS;
 
-                    // Offset end point from p2's center
                     const endX = p2.x - unitX * NODE_RADIUS;
                     const endY = p2.y - unitY * NODE_RADIUS;
                     
-                    // Recalculate segment details for the control point
                     const segDx = endX - startX;
                     const segDy = endY - startY;
                     const segDist = Math.sqrt(segDx * segDx + segDy * segDy);
@@ -335,7 +327,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     const midX = (startX + endX) / 2;
                     const midY = (startY + endY) / 2;
 
-                    const waviness = ((i + 1) % 2 === 1) ? 1 : -1; // Alternate wave direction
+                    const waviness = ((i + 1) % 2 === 1) ? 1 : -1;
                     const offsetMagnitude = Math.min(segDist / 8, 15) * waviness;
 
                     const controlX = midX - segDy * (offsetMagnitude / segDist);
@@ -350,7 +342,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 elements.mapContainerEl.appendChild(svgEl);
             }
-            // --- END OF PATH DRAWING LOGIC ---
 
             for (const subZone of subZonesArray) {
                 const isUnlocked = gameState.maxLevel >= subZone.levelRange[0];
@@ -400,8 +391,6 @@ document.addEventListener('DOMContentLoaded', () => {
             startNewMonster();
             updateAll();
             autoSave();
-            const combatTab = document.querySelector('.tab-button[data-view="combat-view"]');
-            if (combatTab instanceof HTMLElement) combatTab.click();
         };
 
         if (isSingleLevelZone) {
@@ -920,6 +909,8 @@ document.addEventListener('DOMContentLoaded', () => {
                  }
             });
         });
+        
+        // --- Tab logic for the main tabbed panels ---
         document.querySelectorAll('.tabs').forEach(tabContainer => {
             const tabs = tabContainer.querySelectorAll('.tab-button');
             const parentPanel = tabContainer.parentElement;
@@ -929,23 +920,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (!viewId) return;
 
                 tab.addEventListener('click', () => {
-                    const itemRelatedViews = ['gems-view', 'inventory-view', 'equipment-view', 'forge-view'];
-                    if (selectedGemForSocketing !== null && !itemRelatedViews.includes(viewId)) {
-                        selectedGemForSocketing = null;
-                        logMessage(elements.gameLogEl, "Canceled gem socketing.");
-                    }
-                    if (craftingGems.length > 0 && viewId !== 'gems-view') {
-                        gameState.gems.push(...craftingGems);
-                        craftingGems = [];
-                        logMessage(elements.gameLogEl, "Returned gems from crafting slots.");
-                    }
-                    if (selectedItemForForge !== null && !itemRelatedViews.includes(viewId)) {
-                        selectedItemForForge = null;
-                        logMessage(elements.gameLogEl, "Forge selection cleared.");
-                    }
-
-                    updateAll(); 
-
                     tabs.forEach(t => t.classList.remove('active'));
                     tab.classList.add('active');
                     if (parentPanel) {
@@ -957,6 +931,30 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 });
             });
+        });
+
+        // --- Event listener for the new Log/Loot toggle button ---
+        document.getElementById('toggle-loot-log-btn').addEventListener('click', (e) => {
+            // FIX: Add a type guard to ensure e.currentTarget is an element.
+            if (!(e.currentTarget instanceof HTMLButtonElement)) return;
+
+            const btn = e.currentTarget;
+            const logView = document.getElementById('game-log-container');
+            const lootView = document.getElementById('loot-view');
+
+            if (btn.classList.contains('active')) {
+                // Switch back to log
+                btn.classList.remove('active');
+                btn.textContent = 'View Loot';
+                logView.classList.remove('hidden');
+                lootView.classList.add('hidden');
+            } else {
+                // Switch to loot
+                btn.classList.add('active');
+                btn.textContent = 'View Log';
+                logView.classList.add('hidden');
+                lootView.classList.remove('hidden');
+            }
         });
         
         elements.forgeInventorySlotsEl.addEventListener('click', (e) => {
@@ -1310,6 +1308,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function createRaidPanel() {
+        if (!socket) return;
         if (document.getElementById('raid-panel')) return;
         const raidContainer = document.getElementById('raid-container');
         if (!raidContainer) return;
@@ -1356,17 +1355,20 @@ document.addEventListener('DOMContentLoaded', () => {
     
     function setupRaidListeners() {
         const raidBtn = document.getElementById('raid-btn');
-        if (raidBtn) {
-            raidBtn.addEventListener('click', () => {
-                if (raidPanel) {
-                    destroyRaidPanel();
-                    socket.disconnect();
-                    socket.connect();
-                } else {
-                    createRaidPanel();
-                }
-            });
-        }
+        if (!socket || !raidBtn) {
+            if(raidBtn) raidBtn.style.display = 'none';
+            return;
+        };
+
+        raidBtn.addEventListener('click', () => {
+            if (raidPanel) {
+                destroyRaidPanel();
+                socket.disconnect();
+                socket.connect();
+            } else {
+                createRaidPanel();
+            }
+        });
         socket.on('connect', () => { logMessage(elements.gameLogEl, 'Connected to Raid Server!', 'uncommon'); });
         socket.on('disconnect', () => { logMessage(elements.gameLogEl, 'Disconnected from Raid Server.', 'rare'); destroyRaidPanel(); });
         socket.on('raidUpdate', (raidState) => { updateRaidUI(raidState); });
@@ -1420,7 +1422,6 @@ document.addEventListener('DOMContentLoaded', () => {
             const newAbsorbedSynergies = [];
 
             for (const item of allCurrentItems) {
-                // We are absorbing ALL items, as per the new prestige logic
                 const combinedStats = getCombinedItemStats(item);
                 for (const statKey in combinedStats) {
                     newAbsorbedStats[statKey] = (newAbsorbedStats[statKey] || 0) + combinedStats[statKey];
@@ -1490,6 +1491,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const baseElements = ui.initDOMElements();
         elements = {
             ...baseElements,
+            toggleLootLogBtn: document.getElementById('toggle-loot-log-btn'),
+            lootView: document.getElementById('loot-view'),
+            gameLogContainer: document.getElementById('game-log-container'),
             ringSelectionModalBackdrop: document.getElementById('ring-selection-modal-backdrop'),
             ringSelectionSlot1: document.getElementById('ring-selection-slot1'),
             ringSelectionSlot2: document.getElementById('ring-selection-slot2'),
