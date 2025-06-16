@@ -1,5 +1,3 @@
-// --- START OF FILE game.js ---
-
 /* global io */
 import { REALMS } from './data/realms.js';
 import { MONSTERS } from './data/monsters.js';
@@ -286,8 +284,75 @@ document.addEventListener('DOMContentLoaded', () => {
             elements.mapTitleEl.textContent = zone.name;
             elements.backToWorldMapBtnEl.classList.remove('hidden');
             elements.mapContainerEl.style.backgroundImage = `url('${zone.mapImage}')`;
-            for (const subZoneId in zone.subZones) {
-                const subZone = zone.subZones[subZoneId];
+            
+            const subZonesArray = Object.values(zone.subZones).sort((a, b) => a.levelRange[0] - b.levelRange[0]);
+            
+            // --- NEW PATH DRAWING LOGIC ---
+            const unlockedNodes = subZonesArray.filter(sz => gameState.maxLevel >= sz.levelRange[0]);
+
+            if (unlockedNodes.length > 1) {
+                const mapWidth = elements.mapContainerEl.clientWidth;
+                const mapHeight = elements.mapContainerEl.clientHeight;
+                const NODE_RADIUS = 21; // MODIFIED: 60% of 35. Adjusted for smaller node size.
+
+                const points = unlockedNodes.map(sz => ({
+                    x: parseFloat(sz.coords.left) / 100 * mapWidth,
+                    y: parseFloat(sz.coords.top) / 100 * mapHeight,
+                }));
+                
+                const svgNS = "http://www.w3.org/2000/svg";
+                const svgEl = document.createElementNS(svgNS, 'svg');
+                svgEl.setAttribute('class', 'map-path-svg');
+                svgEl.setAttribute('viewBox', `0 0 ${mapWidth} ${mapHeight}`);
+
+                for (let i = 0; i < points.length - 1; i++) {
+                    const p1 = points[i];
+                    const p2 = points[i+1];
+
+                    // Calculate vector from p1 to p2
+                    const dx = p2.x - p1.x;
+                    const dy = p2.y - p1.y;
+                    const mag = Math.sqrt(dx * dx + dy * dy);
+                    if (mag < NODE_RADIUS * 2) continue; // Skip if nodes are too close
+
+                    const unitX = dx / mag;
+                    const unitY = dy / mag;
+
+                    // Offset start point from p1's center
+                    const startX = p1.x + unitX * NODE_RADIUS;
+                    const startY = p1.y + unitY * NODE_RADIUS;
+
+                    // Offset end point from p2's center
+                    const endX = p2.x - unitX * NODE_RADIUS;
+                    const endY = p2.y - unitY * NODE_RADIUS;
+                    
+                    // Recalculate segment details for the control point
+                    const segDx = endX - startX;
+                    const segDy = endY - startY;
+                    const segDist = Math.sqrt(segDx * segDx + segDy * segDy);
+                    if (segDist < 1) continue;
+
+                    const midX = (startX + endX) / 2;
+                    const midY = (startY + endY) / 2;
+
+                    const waviness = ((i + 1) % 2 === 1) ? 1 : -1; // Alternate wave direction
+                    const offsetMagnitude = Math.min(segDist / 8, 15) * waviness;
+
+                    const controlX = midX - segDy * (offsetMagnitude / segDist);
+                    const controlY = midY + segDx * (offsetMagnitude / segDist);
+                    
+                    const pathEl = document.createElementNS(svgNS, 'path');
+                    pathEl.setAttribute('d', `M ${startX} ${startY} Q ${controlX} ${controlY} ${endX} ${endY}`);
+                    pathEl.setAttribute('class', 'map-path-line');
+                    
+                    svgEl.appendChild(pathEl);
+                }
+
+                elements.mapContainerEl.appendChild(svgEl);
+            }
+            // --- END OF PATH DRAWING LOGIC ---
+
+            for (const subZone of subZonesArray) {
                 const isUnlocked = gameState.maxLevel >= subZone.levelRange[0];
                 const isCompleted = gameState.completedLevels.includes(subZone.levelRange[1]);
                 const icon = 'images/icons/sword.png';
@@ -1019,8 +1084,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 const statInfo = Object.values(STATS).find(s => s.key === statKey) || { name: statKey, type: 'flat' };
                 const isPercent = statInfo.type === 'percent';
                 const value = combinedHoveredStats[statKey];
-                const valueStr = isPercent ? `${value.toFixed(1)}%` : formatNumber(value);
-                statsHTML += `<li>+${valueStr} ${statInfo.name}</li>`;
+                const statValue = isPercent ? `${value.toFixed(1)}%` : formatNumber(value);
+                statsHTML += `<li>+${statValue} ${statInfo.name}</li>`;
             }
         } else {
             const combinedEquippedStats = getCombinedItemStats(equippedItem);

@@ -92,6 +92,7 @@ button:disabled { background: #7f8c8d; cursor: not-allowed; border-bottom: 2px s
     align-items: center;
     cursor: pointer;
     transition: transform 0.2s ease;
+    z-index: 1; /* Make sure nodes are on top of the line */
 }
 .map-node:hover {
     transform: translate(-50%, -50%) scale(1.1);
@@ -104,13 +105,13 @@ button:disabled { background: #7f8c8d; cursor: not-allowed; border-bottom: 2px s
     transform: translate(-50%, -50%);
 }
 .map-node-icon {
-    width: 50px;
-    height: 50px;
+    width: 30px; /* MODIFIED: 60% of 50px */
+    height: 30px; /* MODIFIED: 60% of 50px */
     background-color: rgba(0,0,0,0.5);
     border: 2px solid #f1c40f;
     border-radius: 50%;
-    padding: 5px;
-    box-shadow: 0 0 10px rgba(241, 196, 15, 0.7);
+    padding: 3px; /* MODIFIED: 60% of 5px */
+    box-shadow: 0 0 6px rgba(241, 196, 15, 0.7); /* MODIFIED: 60% of 10px */
     object-fit: contain;
 }
 .map-node-icon.locked {
@@ -119,31 +120,31 @@ button:disabled { background: #7f8c8d; cursor: not-allowed; border-bottom: 2px s
 }
 .map-node-icon.completed {
     border-color: #2ecc71;
-    box-shadow: 0 0 15px #2ecc71;
+    box-shadow: 0 0 9px #2ecc71; /* MODIFIED: 60% of 15px */
 }
 .map-node-lock-icon, .map-node-completed-icon {
     position: absolute;
-    top: -5px;
-    right: -5px;
-    font-size: 20px;
+    top: -3px; /* MODIFIED: 60% of -5px */
+    right: -3px; /* MODIFIED: 60% of -5px */
+    font-size: 12px; /* MODIFIED: 60% of 20px */
     color: white;
-    text-shadow: 0 0 5px black;
+    text-shadow: 0 0 3px black;
     background-color: rgba(0,0,0,0.5);
     border-radius: 50%;
-    padding: 5px;
+    padding: 3px; /* MODIFIED: 60% of 5px */
 }
 .map-node-completed-icon {
     color: #2ecc71;
 }
 .map-node-label {
     background-color: rgba(0,0,0,0.7);
-    padding: 2px 8px;
+    padding: 1px 5px; /* MODIFIED: ~60% of 2px 8px */
     border-radius: 4px;
-    margin-top: 5px;
+    margin-top: -8px; /* MODIFIED: Adjusted for new size */
     color: white;
     font-weight: bold;
     font-family: 'Cinzel', serif;
-    font-size: 14px;
+    font-size: 9px; /* MODIFIED: ~60% of 14px */
     white-space: nowrap;
     text-align: center;
 }
@@ -154,11 +155,11 @@ button:disabled { background: #7f8c8d; cursor: not-allowed; border-bottom: 2px s
 
 /* --- BOSS NODE STYLES --- */
 .map-node.boss-node .map-node-icon {
-    width: 65px;
-    height: 65px;
+    width: 39px; /* MODIFIED: 60% of 65px */
+    height: 39px; /* MODIFIED: 60% of 65px */
     border-width: 3px;
     border-color: #e74c3c;
-    box-shadow: 0 0 15px #e74c3c;
+    box-shadow: 0 0 9px #e74c3c; /* MODIFIED: 60% of 15px */
 }
 .map-node.boss-node.locked .map-node-icon {
     border-color: #7f8c8d;
@@ -166,15 +167,42 @@ button:disabled { background: #7f8c8d; cursor: not-allowed; border-bottom: 2px s
 }
 .map-node.boss-node.completed .map-node-icon {
     border-color: #2ecc71;
-    box-shadow: 0 0 15px #2ecc71;
+    box-shadow: 0 0 9px #2ecc71;
 }
 .map-node.boss-node .map-node-label {
-    font-size: 16px;
+    font-size: 10px; /* MODIFIED: ~60% of 16px */
     color: #e74c3c;
     text-shadow: 1px 1px 2px black;
 }
 
 @keyframes pulse-red { 0% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(231, 76, 60, 0); } 100% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0); } }
+
+/* --- NEW MAP PATH STYLES --- */
+.map-path-svg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none; /* Allows clicks to go through to the nodes below */
+    z-index: 0; /* Ensure it's behind the nodes */
+}
+
+.map-path-line {
+    fill: none;
+    stroke: rgba(241, 196, 15, 0.7);
+    stroke-width: 6px;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-dasharray: 15, 10; /* This creates the dashed/"zebra" effect */
+    animation: dash-flow 60s linear infinite;
+}
+
+@keyframes dash-flow {
+    to {
+        stroke-dashoffset: -1000;
+    }
+}
 
 
 #modal-backdrop {
