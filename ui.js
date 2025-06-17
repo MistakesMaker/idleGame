@@ -213,9 +213,12 @@ export function updateUI(elements, gameState, playerStats, currentMonster, salva
     // --- PRESTIGE UI UPDATE ---
     const nextPrestigeLevel = gameState.nextPrestigeLevel || 100;
     if (prestigeRequirementTextEl) {
+        // <<< THIS IS THE FIX. Update the descriptive text.
         prestigeRequirementTextEl.innerHTML = `Defeat the boss at Level <b>${nextPrestigeLevel}</b> to Prestige.`;
     }
-    (/** @type {HTMLButtonElement} */ (prestigeButton)).disabled = !gameState.completedLevels.includes(nextPrestigeLevel);
+    // <<< THIS IS THE FIX. Check the current run's completed levels array.
+    (/** @type {HTMLButtonElement} */ (prestigeButton)).disabled = !gameState.currentRunCompletedLevels.includes(nextPrestigeLevel);
+
 
     const monsterDef = currentMonster.data;
     if (monsterDef) {
@@ -287,7 +290,6 @@ export function updateUI(elements, gameState, playerStats, currentMonster, salva
     }
 
     if (selectedItemForForge) {
-        // --- THIS IS THE FIX ---
         forgeSelectedItemEl.innerHTML = createItemHTML(selectedItemForForge, false);
     } else {
         forgeSelectedItemEl.innerHTML = `<p>Select an item to begin.</p>`;

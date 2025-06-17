@@ -129,8 +129,12 @@ export function monsterDefeated(gameState, playerStats, currentMonster) {
     const level = gameState.currentFightingLevel;
     const logMessages = [];
 
+    // --- FIX: Add level to BOTH permanent and current run trackers ---
     if (!gameState.completedLevels.includes(level)) {
         gameState.completedLevels.push(level);
+    }
+    if (!gameState.currentRunCompletedLevels.includes(level)) {
+        gameState.currentRunCompletedLevels.push(level);
     }
 
     // --- REWARD CALCULATION (Reverted to old tier-based system) ---

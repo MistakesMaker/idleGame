@@ -64,6 +64,7 @@ document.addEventListener('DOMContentLoaded', () => {
             ],
             activePresetIndex: 0,
             completedLevels: [],
+            currentRunCompletedLevels: [], // <-- NEW: Tracks levels completed in this run
             isFarming: true,
             isAutoProgressing: true,
             currentRealmIndex: 0,
@@ -169,7 +170,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         autoSave();
         setTimeout(() => {
-            // --- FIX: Preserve scroll positions before UI update to prevent jumpiness ---
             const scrollPositions = {
                 inventory: elements.inventorySlotsEl.scrollTop,
                 forge: elements.forgeInventorySlotsEl.scrollTop,
@@ -180,7 +180,6 @@ document.addEventListener('DOMContentLoaded', () => {
             startNewMonster();
             updateAll();
 
-            // --- FIX: Restore scroll positions after UI update ---
             elements.inventorySlotsEl.scrollTop = scrollPositions.inventory;
             elements.forgeInventorySlotsEl.scrollTop = scrollPositions.forge;
             elements.gemSlotsEl.scrollTop = scrollPositions.gems;
@@ -279,8 +278,14 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 2000);
     }
 
+    function saveOnExit() {
+        gameState.lastSaveTimestamp = Date.now();
+        localStorage.setItem('idleRPGSaveData', JSON.stringify(gameState));
+    }
+
     function resetGame() {
         if (confirm("Are you sure? This will delete your save permanently.")) {
+            window.removeEventListener('beforeunload', saveOnExit);
             localStorage.removeItem('idleRPGSaveData');
             window.location.reload();
         }
@@ -545,10 +550,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
     function setupEventListeners() {
-        window.addEventListener('beforeunload', () => {
-            gameState.lastSaveTimestamp = Date.now();
-            localStorage.setItem('idleRPGSaveData', JSON.stringify(gameState));
-        });
+        window.addEventListener('beforeunload', saveOnExit);
 
         window.addEventListener('keydown', (e) => {
             if (e.key === 'Shift' && !isShiftPressed) {
@@ -1500,10 +1502,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 absorbedSynergies: finalAbsorbedSynergies,
                 prestigeCount: oldPrestigeCount + 1,
                 completedLevels: gameState.completedLevels,
-                maxLevel: gameState.maxLevel,
+                maxLevel: 1, 
                 nextPrestigeLevel: currentPrestigeLevel + 25,
                 hero: heroToKeep,
                 currentFightingLevel: 1,
+                currentRunCompletedLevels: [], // <-- NEW: Reset the current run tracker
             };
 
             logMessage(elements.gameLogEl, `PRESTIGE! You are reborn with greater power. Your next goal is Level ${gameState.nextPrestigeLevel}.`, 'legendary');
@@ -1556,6 +1559,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 presets: loadedState.presets || baseState.presets, 
                 isAutoProgressing: loadedState.isAutoProgressing !== undefined ? loadedState.isAutoProgressing : true, 
                 currentRealmIndex: loadedState.currentRealmIndex || 0,
+                currentRunCompletedLevels: loadedState.currentRunCompletedLevels || [], // <-- NEW: Load the run tracker
                 legacyItems: [],
             };
 
