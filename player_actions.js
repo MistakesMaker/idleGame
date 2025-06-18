@@ -2,36 +2,75 @@
 
 import { rarities } from './game.js';
 import { REALMS } from './data/realms.js';
-import { getXpForNextLevel, getUpgradeCost } from './utils.js';
+import { getXpForNextLevel, getUpgradeCost, findEmptySpot } from './utils.js';
 import { GEMS } from './data/gems.js';
 import { ITEMS } from './data/items.js';
 
 /**
+ * Re-packs the inventory to remove any gaps.
+ * @param {Array<object>} inventory - The current inventory array.
+ * @returns {Array<object>} The compacted inventory array.
+ */
+export function compactInventory(inventory) {
+    const newInventory = [];
+    // Sort items to ensure a consistent packing order (top-to-bottom, left-to-right)
+    const sortedItems = [...inventory].sort((a, b) => {
+        if (a.y !== b.y) return a.y - b.y;
+        return a.x - b.x;
+    });
+
+    for (const item of sortedItems) {
+        const spot = findEmptySpot(item.width, item.height, newInventory);
+        if (spot) {
+            item.x = spot.x;
+            item.y = spot.y;
+            newInventory.push(item);
+        } else {
+            // This should not happen in a compaction, but is a safe fallback
+            console.error("Failed to find space during inventory compaction for item:", item);
+            newInventory.push(item); // Add it anyway to prevent data loss
+        }
+    }
+    return newInventory;
+}
+
+/**
  * Equips an item from the inventory.
  * @param {object} gameState - The main game state object.
- * @param {number} inventoryIndex - The index of the item in the inventory.
- * @returns {{isPendingRing: boolean, item: object|null}} Returns true if the equip is pending user choice for a ring slot.
+ * @param {object} itemToEquip - The item object from the inventory to equip.
+ * @returns {{isPendingRing: boolean, item: object|null, success: boolean, message: string}}
  */
-export function equipItem(gameState, inventoryIndex) {
-    const item = gameState.inventory[inventoryIndex];
-    if (!item) return { isPendingRing: false, item: null };
+export function equipItem(gameState, itemToEquip) {
+    if (!itemToEquip) return { isPendingRing: false, item: null, success: false, message: "Invalid item." };
 
-    let targetSlot = item.type;
-    if (item.type === 'ring') {
+    const inventoryItemIndex = gameState.inventory.findIndex(i => i.id === itemToEquip.id);
+    if (inventoryItemIndex === -1) {
+        return { isPendingRing: false, item: null, success: false, message: "Item not found in inventory." };
+    }
+
+    let targetSlot = itemToEquip.type;
+    if (itemToEquip.type === 'ring') {
         if (!gameState.equipment.ring1) targetSlot = 'ring1';
         else if (!gameState.equipment.ring2) targetSlot = 'ring2';
         else {
-            return { isPendingRing: true, item: item };
+            return { isPendingRing: true, item: itemToEquip, success: true, message: "Select a ring to replace." };
         }
     }
 
-    const currentEquipped = gameState.equipment[targetSlot];
-    if (currentEquipped) {
-        gameState.inventory.push(currentEquipped);
+    const itemInSlot = gameState.equipment[targetSlot];
+    const [equippedItem] = gameState.inventory.splice(inventoryItemIndex, 1);
+    
+    // Perform the direct swap
+    if (itemInSlot) {
+        // Place the previously worn item in the exact spot of the newly equipped item
+        itemInSlot.x = equippedItem.x;
+        itemInSlot.y = equippedItem.y;
+        gameState.inventory.push(itemInSlot);
     }
-    gameState.equipment[targetSlot] = item;
-    gameState.inventory.splice(inventoryIndex, 1);
-    return { isPendingRing: false, item: null };
+    
+    gameState.equipment[targetSlot] = equippedItem;
+    
+    return { isPendingRing: false, item: null, success: true, message: `Equipped ${equippedItem.name}.` };
 }
 
 /**
@@ -41,15 +80,19 @@ export function equipItem(gameState, inventoryIndex) {
  * @param {string} targetSlot - The specific ring slot ('ring1' or 'ring2').
  */
 export function equipRing(gameState, pendingRing, targetSlot) {
-    const inventoryIndex = gameState.inventory.findIndex(invItem => invItem.id === pendingRing.id);
-    if (inventoryIndex === -1) return;
+    const inventoryItemIndex = gameState.inventory.findIndex(i => i.id === pendingRing.id);
+    if (inventoryItemIndex === -1) return;
 
-    const currentEquipped = gameState.equipment[targetSlot];
-    if (currentEquipped) {
-        gameState.inventory.push(currentEquipped);
+    const itemInSlot = gameState.equipment[targetSlot];
+    const [equippedItem] = gameState.inventory.splice(inventoryItemIndex, 1);
+
+    if (itemInSlot) {
+        // Direct swap logic for rings as well
+        itemInSlot.x = equippedItem.x;
+        itemInSlot.y = equippedItem.y;
+        gameState.inventory.push(itemInSlot);
     }
-    gameState.equipment[targetSlot] = pendingRing;
-    gameState.inventory.splice(inventoryIndex, 1);
+    gameState.equipment[targetSlot] = equippedItem;
 }
 
 
@@ -59,8 +102,16 @@ export function equipRing(gameState, pendingRing, targetSlot) {
 export function unequipItem(gameState, slotName) {
     const item = gameState.equipment[slotName];
     if (!item) return;
-    gameState.inventory.push(item);
-    gameState.equipment[slotName] = null;
+
+    const spot = findEmptySpot(item.width, item.height, gameState.inventory);
+    if (spot) {
+        item.x = spot.x;
+        item.y = spot.y;
+        gameState.inventory.push(item);
+        gameState.equipment[slotName] = null;
+    } else {
+        alert("Cannot unequip item, inventory is full!");
+    }
 }
 
 /**
@@ -176,31 +227,45 @@ export function buyLootCrate(gameState, generateItemFn) {
     const rarityRoll = Math.floor(Math.random() * (rarities.length - 1)) + 1;
     const rarity = rarities[rarityRoll];
     const item = generateItemFn(rarity, gameState.maxLevel, itemBase);
-    gameState.inventory.push(item);
-
-    return { success: true, message: `Bought a loot crate for ${cost} Scrap!`, item };
+    
+    const spot = findEmptySpot(item.width, item.height, gameState.inventory);
+    if (spot) {
+        item.x = spot.x;
+        item.y = spot.y;
+        gameState.inventory.push(item);
+        return { success: true, message: `Bought a loot crate for ${cost} Scrap!`, item };
+    } else {
+        gameState.scrap += cost;
+        return { success: false, message: "Not enough space in your inventory for the item from the crate!", item: null };
+    }
 }
 
 /**
  * Salvages selected items for scrap.
+ * @param {object} gameState - The main game state object.
+ * @param {object} salvageMode - The salvage mode state, containing selections.
+ * @returns {{count: number, scrapGained: number}}
  */
 export function salvageSelectedItems(gameState, salvageMode) {
     if (salvageMode.selections.length === 0) {
         return { count: 0, scrapGained: 0 };
     }
+
     let totalScrapGained = 0;
     const selectedCount = salvageMode.selections.length;
-    salvageMode.selections.sort((a, b) => b - a);
-    salvageMode.selections.forEach(index => {
-        const item = gameState.inventory[index];
-        if (item) {
-            const rarityIndex = rarities.indexOf(item.rarity);
-            const scrapGained = Math.ceil(Math.pow(4, rarityIndex));
-            totalScrapGained += scrapGained;
-            gameState.inventory.splice(index, 1);
-        }
+    const idsToSalvage = new Set(salvageMode.selections.map(item => item.id));
+
+    salvageMode.selections.forEach(item => {
+        const rarityIndex = rarities.indexOf(item.rarity);
+        totalScrapGained += Math.ceil(Math.pow(4, rarityIndex));
     });
+    
+    gameState.inventory = gameState.inventory.filter(item => !idsToSalvage.has(item.id));
     gameState.scrap += totalScrapGained;
+
+    // Compact the inventory after salvaging
+    gameState.inventory = compactInventory(gameState.inventory);
+
     return { count: selectedCount, scrapGained: totalScrapGained };
 }
 
@@ -211,6 +276,7 @@ export function salvageByRarity(gameState, rarityToSalvage) {
     let scrapGained = 0;
     let itemsSalvagedCount = 0;
     const itemsToKeep = [];
+    
     gameState.inventory.forEach(item => {
         if (item.rarity === rarityToSalvage && !item.locked) {
             const rarityIndex = rarities.indexOf(item.rarity);
@@ -220,19 +286,26 @@ export function salvageByRarity(gameState, rarityToSalvage) {
             itemsToKeep.push(item);
         }
     });
+
     if (itemsSalvagedCount > 0) {
         gameState.inventory = itemsToKeep;
         gameState.scrap += scrapGained;
+        // Compact the inventory after salvaging
+        gameState.inventory = compactInventory(gameState.inventory);
     }
+    
     return { count: itemsSalvagedCount, scrapGained };
 }
 
 
 /**
  * Toggles the lock state of an inventory item.
+ * @param {object} gameState - The main game state object.
+ * @param {object} itemToToggle - The item object to lock/unlock.
+ * @returns {string} A message describing the action.
  */
-export function toggleItemLock(gameState, inventoryIndex) {
-    const item = gameState.inventory[inventoryIndex];
+export function toggleItemLock(gameState, itemToToggle) {
+    const item = gameState.inventory.find(i => i.id === itemToToggle.id);
     if (item) {
         item.locked = !item.locked;
         return `Item ${item.name} ${item.locked ? 'locked' : 'unlocked'}.`;
@@ -245,25 +318,34 @@ export function toggleItemLock(gameState, inventoryIndex) {
  */
 export function activatePreset(gameState, presetIndex) {
     gameState.presets[gameState.activePresetIndex].equipment = { ...gameState.equipment };
-    const newPresetEquipment = gameState.presets[presetIndex].equipment;
-    const itemsToUnequip = { ...gameState.equipment };
+
+    const itemsToUnequip = Object.values(gameState.equipment).filter(Boolean);
+    for (const item of itemsToUnequip) {
+        const spot = findEmptySpot(item.width, item.height, gameState.inventory);
+        if (spot) {
+            item.x = spot.x;
+            item.y = spot.y;
+            gameState.inventory.push(item);
+        } else {
+            console.error(`No space for ${item.name} when swapping presets!`);
+            gameState.inventory.push(item); 
+        }
+    }
+    
     for (const slot in gameState.equipment) {
         gameState.equipment[slot] = null;
     }
-    for (const slot in itemsToUnequip) {
-        if (itemsToUnequip[slot]) {
-            gameState.inventory.push(itemsToUnequip[slot]);
-        }
-    }
+
+    const newPresetEquipment = { ...gameState.presets[presetIndex].equipment };
     const newInventory = [];
-    const presetEquipmentCopy = { ...newPresetEquipment };
+    
     gameState.inventory.forEach(invItem => {
         let equipped = false;
-        for (const slot in presetEquipmentCopy) {
-            const presetItem = presetEquipmentCopy[slot];
+        for (const slot in newPresetEquipment) {
+            const presetItem = newPresetEquipment[slot];
             if (presetItem && invItem && presetItem.id === invItem.id) {
                 gameState.equipment[slot] = invItem;
-                delete presetEquipmentCopy[slot];
+                delete newPresetEquipment[slot]; 
                 equipped = true;
                 break;
             }
@@ -272,7 +354,8 @@ export function activatePreset(gameState, presetIndex) {
             newInventory.push(invItem);
         }
     });
-    gameState.inventory = newInventory;
+
+    gameState.inventory = compactInventory(newInventory); // Compact after preset load
     gameState.activePresetIndex = presetIndex;
 }
 
@@ -310,21 +393,20 @@ export function combineGems(gameState, craftingGems) {
             }
             if (parentGem.synergy) {
                 if (!newSynergy) {
-                    newSynergy = { ...parentGem.synergy }; // Copy the first synergy
+                    newSynergy = { ...parentGem.synergy };
                 } else {
-                    // If a synergy already exists, add the values (assuming they are the same type)
                     newSynergy.value += parentGem.synergy.value;
                 }
             }
         });
 
-        // --- FIX: Add baseId and make name/icon dynamic for fused gems ---
         const newGem = {
             id: Date.now() + Math.random(),
             baseId: `FUSED_T${newTier}`,
             name: `T${newTier} Fused Gem`,
             tier: newTier,
             icon: `images/gems/fused_t${newTier}.png`,
+            width: 1, height: 1,
             stats: newStats,
             synergy: newSynergy
         };
@@ -399,15 +481,12 @@ export function rerollItemStats(gameState, itemToReroll) {
 
     gameState.scrap -= cost;
     
-    // --- FAILSAFE LOGIC ---
-    // Initialize counter if it doesn't exist (for items from old saves)
     if (typeof itemToReroll.rerollAttempts !== 'number') {
         itemToReroll.rerollAttempts = 0;
     }
     itemToReroll.rerollAttempts++;
     
     const isGuaranteedRoll = itemToReroll.rerollAttempts >= 100;
-    // --- END OF FAILSAFE LOGIC ---
 
     const newStats = {};
     const tier_min_percent = rarityIndex / rarities.length;
@@ -424,10 +503,8 @@ export function rerollItemStats(gameState, itemToReroll) {
             let final_stat_value;
 
             if (isGuaranteedRoll) {
-                // Guaranteed perfect roll
                 final_stat_value = max_for_tier;
             } else {
-                // Normal random roll within the tier's range
                 const tier_specific_range = max_for_tier - min_for_tier;
                 final_stat_value = min_for_tier + (Math.random() * tier_specific_range);
             }
@@ -439,7 +516,7 @@ export function rerollItemStats(gameState, itemToReroll) {
     itemToReroll.stats = newStats;
     
     if (isGuaranteedRoll) {
-        itemToReroll.rerollAttempts = 0; // Reset the counter
+        itemToReroll.rerollAttempts = 0;
         return { success: true, message: `FAILSAFE! After 100 attempts, the forge grants a PERFECT reroll on ${itemToReroll.name}!` };
     } else {
         return { success: true, message: `Successfully rerolled ${itemToReroll.name}! (Attempt #${itemToReroll.rerollAttempts})` };

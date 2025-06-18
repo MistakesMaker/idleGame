@@ -3,7 +3,7 @@ import { REALMS } from './data/realms.js';
 import { MONSTERS } from './data/monsters.js';
 import { ITEMS } from './data/items.js';
 import { STATS } from './data/stat_pools.js';
-import { logMessage, formatNumber, getUpgradeCost, findSubZoneByLevel, findFirstLevelOfZone, isBossLevel, isBigBossLevel, getCombinedItemStats, isMiniBossLevel } from './utils.js';
+import { logMessage, formatNumber, getUpgradeCost, findSubZoneByLevel, findFirstLevelOfZone, isBossLevel, isBigBossLevel, getCombinedItemStats, isMiniBossLevel, findEmptySpot } from './utils.js';
 import * as ui from './ui.js';
 import * as player from './player_actions.js';
 import * as logic from './game_logic.js';
@@ -48,6 +48,7 @@ document.addEventListener('DOMContentLoaded', () => {
             monster: { hp: 10, maxHp: 10 },
             equipment: { ...defaultEquipmentState },
             inventory: [],
+            inventoryGridInitialized: true,
             gems: [],
             legacyItems: [],
             absorbedStats: {},
@@ -65,7 +66,7 @@ document.addEventListener('DOMContentLoaded', () => {
             ],
             activePresetIndex: 0,
             completedLevels: [],
-            currentRunCompletedLevels: [], // <-- NEW: Tracks levels completed in this run
+            currentRunCompletedLevels: [],
             isFarming: true,
             isAutoProgressing: true,
             currentRealmIndex: 0,
@@ -158,7 +159,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-
     function handleMonsterDefeated() {
         const result = logic.monsterDefeated(gameState, playerStats, currentMonster);
         result.logMessages.forEach(msg => logMessage(elements.gameLogEl, msg));
@@ -172,18 +172,18 @@ document.addEventListener('DOMContentLoaded', () => {
         autoSave();
         setTimeout(() => {
             const scrollPositions = {
-                inventory: elements.inventorySlotsEl.scrollTop,
-                forge: elements.forgeInventorySlotsEl.scrollTop,
-                gems: elements.gemSlotsEl.scrollTop,
+                inventory: elements.inventorySlotsEl.parentElement.scrollTop,
+                forge: elements.forgeInventorySlotsEl.parentElement.scrollTop,
+                gems: elements.gemSlotsEl.parentElement.scrollTop,
                 rightPanel: document.querySelector('.right-panel')?.scrollTop || 0
             };
 
             startNewMonster();
             updateAll();
-
-            elements.inventorySlotsEl.scrollTop = scrollPositions.inventory;
-            elements.forgeInventorySlotsEl.scrollTop = scrollPositions.forge;
-            elements.gemSlotsEl.scrollTop = scrollPositions.gems;
+            
+            elements.inventorySlotsEl.parentElement.scrollTop = scrollPositions.inventory;
+            elements.forgeInventorySlotsEl.parentElement.scrollTop = scrollPositions.forge;
+            elements.gemSlotsEl.parentElement.scrollTop = scrollPositions.gems;
             const rightPanel = document.querySelector('.right-panel');
             if (rightPanel) {
                 rightPanel.scrollTop = scrollPositions.rightPanel;
@@ -208,7 +208,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (gameState.monster.hp <= 0) {
             handleMonsterDefeated();
         }
-        updateMonsterHealthUI(); // Use the lightweight update function
+        updateMonsterHealthUI();
     }
 
     function gameLoop() {
@@ -218,13 +218,10 @@ document.addEventListener('DOMContentLoaded', () => {
             if (gameState.monster.hp <= 0) {
                 handleMonsterDefeated();
             }
-            updateMonsterHealthUI(); // Use the lightweight update function
+            updateMonsterHealthUI();
         }
     }
 
-    /**
-     * A lightweight UI update function that only targets the monster's health.
-     */
     function updateMonsterHealthUI() {
         const { monsterHealthTextEl, monsterHealthBarEl } = elements;
         monsterHealthTextEl.textContent = `${formatNumber(Math.ceil(Math.max(0, gameState.monster.hp)))} / ${formatNumber(gameState.monster.maxHp)}`;
@@ -236,20 +233,20 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function updateAll() {
-        ui.updateUI(elements, gameState, playerStats, currentMonster, salvageMode, craftingGems, selectedItemForForge);
+        ui.updateUI(elements, gameState, playerStats, currentMonster, salvageMode, craftingGems, selectedItemForForge, prestigeSelections);
         renderMap();
         renderRealmTabs();
         
         if (selectedGemForSocketing) {
             document.querySelectorAll('.selected-gem').forEach(el => el.classList.remove('selected-gem'));
-            const gemEl = document.querySelector(`.gem[data-gem-id="${selectedGemForSocketing.id}"]`);
+            const gemEl = document.querySelector(`.gem-wrapper[data-id="${selectedGemForSocketing.id}"]`);
             if (gemEl) gemEl.classList.add('selected-gem');
             
             document.querySelectorAll('.socket-target').forEach(el => el.classList.remove('socket-target'));
             
-            gameState.inventory.forEach((item, index) => {
+            gameState.inventory.forEach((item) => {
                 if (item.sockets && item.sockets.includes(null)) {
-                    const itemEl = document.querySelector(`.item-wrapper[data-index="${index}"] .item`);
+                    const itemEl = document.querySelector(`.item-wrapper[data-id="${item.id}"] .item`);
                     if (itemEl) itemEl.classList.add('socket-target');
                 }
             });
@@ -441,7 +438,6 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
             const highestCompleted = ui.getHighestCompletedLevelInSubZone(gameState.completedLevels, subZone);
             
-            // --- FIX: Correctly determine the level to start/continue at ---
             const nextLevelToTry = Math.min(highestCompleted + 1, finalLevel);
             const isNewZone = highestCompleted < startLevel;
             const levelToStart = isNewZone ? startLevel : nextLevelToTry;
@@ -465,8 +461,8 @@ document.addEventListener('DOMContentLoaded', () => {
     function showRingSelectionModal(pendingRing) {
         const { ringSelectionModalBackdrop, ringSelectionSlot1, ringSelectionSlot2 } = elements;
         
-        ringSelectionSlot1.innerHTML = ui.createItemHTML(gameState.equipment.ring1, false);
-        ringSelectionSlot2.innerHTML = ui.createItemHTML(gameState.equipment.ring2, false);
+        ringSelectionSlot1.innerHTML = ui.createItemHTML(gameState.equipment.ring1);
+        ringSelectionSlot2.innerHTML = ui.createItemHTML(gameState.equipment.ring2);
 
         ringSelectionModalBackdrop.classList.remove('hidden');
     }
@@ -555,7 +551,6 @@ document.addEventListener('DOMContentLoaded', () => {
         elements.offlineProgressModalBackdrop.classList.remove('hidden');
     }
 
-
     function setupEventListeners() {
         window.addEventListener('beforeunload', saveOnExit);
 
@@ -621,8 +616,7 @@ document.addEventListener('DOMContentLoaded', () => {
             updateAll();
         });
         document.getElementById('select-all-salvage-btn').addEventListener('click', () => {
-             salvageMode.selections = [];
-             gameState.inventory.forEach((item, index) => { if (!item.locked) salvageMode.selections.push(index); });
+             salvageMode.selections = gameState.inventory.filter(item => !item.locked);
              const salvageCountEl = document.getElementById('salvage-count');
              if (salvageCountEl) salvageCountEl.textContent = salvageMode.selections.length.toString();
              updateAll();
@@ -664,109 +658,95 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
         
-        elements.gemSlotsEl.addEventListener('click', (e) => {
-            if (!(e.target instanceof Element)) return;
-            const gemWrapper = e.target.closest('div.gem');
-            if (!(gemWrapper instanceof HTMLElement)) return;
-
-            const gemId = gemWrapper.dataset.gemId;
-            if (!gemId) return;
-
-            const gemInstance = gameState.gems.find(g => String(g.id) === gemId);
-            if (!gemInstance) return;
-
-            if (isShiftPressed) {
-                if (craftingGems.length < 2) {
-                     if (craftingGems.length > 0 && craftingGems[0].tier !== gemInstance.tier) {
-                        logMessage(elements.gameLogEl, "You can only combine gems of the same tier.", "rare");
-                        return;
-                    }
-                    craftingGems.push(gemInstance);
-                    const indexToRemove = gameState.gems.findIndex(g => g.id === gemInstance.id);
-                    if (indexToRemove > -1) gameState.gems.splice(indexToRemove, 1);
-                }
-            } else {
-                if (selectedGemForSocketing && selectedGemForSocketing.id === gemInstance.id) {
-                    selectedGemForSocketing = null;
-                    logMessage(elements.gameLogEl, "Deselected gem.");
-                } else {
-                    selectedGemForSocketing = gemInstance;
-                    logMessage(elements.gameLogEl, `Selected ${gemInstance.name}. Click an item with an empty socket to place it.`, 'uncommon');
-                }
-            }
-            updateAll();
-        });
-        
-        elements.inventorySlotsEl.addEventListener('click', (event) => {
+        const gridClickHandler = (event) => {
             if (!(event.target instanceof Element)) return;
-            const wrapper = event.target.closest('.item-wrapper');
+            const wrapper = event.target.closest('.item-wrapper, .gem-wrapper');
             if (!(wrapper instanceof HTMLElement)) return;
-            
-            const itemIndexStr = wrapper.dataset.index;
-            if (itemIndexStr === null || itemIndexStr === undefined) return;
-            const itemIndex = parseInt(itemIndexStr, 10);
 
-            const item = gameState.inventory[itemIndex];
+            const id = wrapper.dataset.id;
+            if (!id) return;
+            
+            const isGem = wrapper.classList.contains('gem-wrapper');
+            const item = isGem ? gameState.gems.find(i => String(i.id) === id) : gameState.inventory.find(i => String(i.id) === id);
+
             if (!item) return;
 
-            if (selectedGemForSocketing && item.sockets && item.sockets.includes(null)) {
-                const gemToSocket = selectedGemForSocketing;
-                const firstEmptySocketIndex = item.sockets.indexOf(null);
-                
-                if (firstEmptySocketIndex > -1) {
-                    item.sockets[firstEmptySocketIndex] = gemToSocket;
-                    
-                    const originalGemIndex = gameState.gems.findIndex(g => g.id === gemToSocket.id);
-                    if(originalGemIndex > -1) gameState.gems.splice(originalGemIndex, 1);
-                    
-                    logMessage(elements.gameLogEl, `Socketed ${gemToSocket.name} into ${item.name}.`, 'epic');
-                    
-                    selectedGemForSocketing = null;
-                    
-                    recalculateStats();
-                    updateAll();
-                    autoSave();
-                    return;
+            if (isGem) {
+                if (isShiftPressed) {
+                    if (craftingGems.length < 2) {
+                         if (craftingGems.length > 0 && craftingGems[0].tier !== item.tier) {
+                            logMessage(elements.gameLogEl, "You can only combine gems of the same tier.", "rare");
+                            return;
+                        }
+                        craftingGems.push(item);
+                        gameState.gems = gameState.gems.filter(g => g.id !== item.id);
+                    }
+                } else {
+                    if (selectedGemForSocketing && selectedGemForSocketing.id === item.id) {
+                        selectedGemForSocketing = null;
+                        logMessage(elements.gameLogEl, "Deselected gem.");
+                    } else {
+                        selectedGemForSocketing = item;
+                        logMessage(elements.gameLogEl, `Selected ${item.name}. Click an item with an empty socket to place it.`, 'uncommon');
+                    }
                 }
-            }
+                updateAll();
 
-            if (pendingRingEquip) {
-                pendingRingEquip = null;
-            }
-
-            if (event.target.closest('.lock-icon')) {
-                const message = player.toggleItemLock(gameState, itemIndex);
-                if (message) logMessage(elements.gameLogEl, message);
+            } else {
+                if (selectedGemForSocketing && item.sockets && item.sockets.includes(null)) {
+                    const gemToSocket = selectedGemForSocketing;
+                    const firstEmptySocketIndex = item.sockets.indexOf(null);
+                    
+                    if (firstEmptySocketIndex > -1) {
+                        item.sockets[firstEmptySocketIndex] = gemToSocket;
+                        gameState.gems = gameState.gems.filter(g => g.id !== gemToSocket.id);
+                        logMessage(elements.gameLogEl, `Socketed ${gemToSocket.name} into ${item.name}.`, 'epic');
+                        selectedGemForSocketing = null;
+                        recalculateStats();
+                        updateAll();
+                        autoSave();
+                        return;
+                    }
+                }
+    
+                if (event.target.closest('.lock-icon')) {
+                    const message = player.toggleItemLock(gameState, item);
+                    if (message) logMessage(elements.gameLogEl, message);
+                } else if (salvageMode.active) {
+                    if (item.locked) { logMessage(elements.gameLogEl, "This item is locked and cannot be salvaged.", 'rare'); return; }
+                    const selectionIndex = salvageMode.selections.findIndex(sel => sel.id === item.id);
+                    if (selectionIndex > -1) {
+                        salvageMode.selections.splice(selectionIndex, 1);
+                    } else {
+                        salvageMode.selections.push(item);
+                    }
+                    document.getElementById('salvage-count').textContent = salvageMode.selections.length.toString();
+                } else {
+                    const result = player.equipItem(gameState, item);
+                    if (result.success) {
+                        if (result.isPendingRing) {
+                            pendingRingEquip = result.item;
+                            showRingSelectionModal(pendingRingEquip);
+                        } else {
+                            logMessage(elements.gameLogEl, result.message);
+                            recalculateStats();
+                        }
+                    } else {
+                        logMessage(elements.gameLogEl, result.message, 'rare');
+                    }
+                }
                 updateAll();
                 autoSave();
-            } else if (salvageMode.active) {
-                if (item.locked) { logMessage(elements.gameLogEl, "This item is locked and cannot be salvaged.", 'rare'); return; }
-                const selectionIndex = salvageMode.selections.indexOf(itemIndex);
-                if (selectionIndex > -1) {
-                    salvageMode.selections.splice(selectionIndex, 1);
-                } else {
-                    salvageMode.selections.push(itemIndex);
-                }
-                const salvageCountEl = document.getElementById('salvage-count');
-                if (salvageCountEl) salvageCountEl.textContent = salvageMode.selections.length.toString();
-                updateAll();
-            } else {
-                const result = player.equipItem(gameState, itemIndex);
-                if (result.isPendingRing) {
-                    pendingRingEquip = result.item;
-                    showRingSelectionModal(pendingRingEquip);
-                } else {
-                    recalculateStats();
-                    updateAll();
-                    autoSave();
-                }
             }
-        });
+        };
+
+        elements.inventorySlotsEl.addEventListener('click', gridClickHandler);
+        elements.gemSlotsEl.addEventListener('click', gridClickHandler);
         
         document.getElementById('equipment-paperdoll').addEventListener('click', (event) => {
             if (!(event.target instanceof Element)) return;
             const slotElement = event.target.closest('.equipment-slot');
-            if (!slotElement) return;
+            if (!(slotElement instanceof HTMLElement)) return;
             const slotName = slotElement.id.replace('slot-', '');
             
             if (selectedGemForSocketing) {
@@ -777,14 +757,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     if (firstEmptySocketIndex > -1) {
                         item.sockets[firstEmptySocketIndex] = gemToSocket;
-                        
-                        const originalGemIndex = gameState.gems.findIndex(g => g.id === gemToSocket.id);
-                        if(originalGemIndex > -1) gameState.gems.splice(originalGemIndex, 1);
-                        
+                        gameState.gems = gameState.gems.filter(g => g.id !== gemToSocket.id);
                         logMessage(elements.gameLogEl, `Socketed ${gemToSocket.name} into ${item.name}.`, 'epic');
-                        
                         selectedGemForSocketing = null;
-
                         recalculateStats();
                         updateAll();
                         autoSave();
@@ -823,12 +798,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
         
                     craftingGems.push(selectedGemForSocketing);
-                    
-                    const indexToRemove = gameState.gems.findIndex(g => g.id === selectedGemForSocketing.id);
-                    if (indexToRemove > -1) {
-                        gameState.gems.splice(indexToRemove, 1);
-                    }
-                    
+                    gameState.gems = gameState.gems.filter(g => g.id !== selectedGemForSocketing.id);
                     selectedGemForSocketing = null;
                 }
             }
@@ -949,7 +919,6 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
         
-        // --- Tab logic for the main tabbed panels ---
         document.querySelectorAll('.tabs').forEach(tabContainer => {
             const tabs = tabContainer.querySelectorAll('.tab-button');
             const parentPanel = tabContainer.parentElement;
@@ -972,7 +941,6 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
 
-        // --- Event listener for the new Log/Loot toggle button ---
         document.getElementById('toggle-loot-log-btn').addEventListener('click', (e) => {
             if (!(e.currentTarget instanceof HTMLButtonElement)) return;
 
@@ -981,13 +949,11 @@ document.addEventListener('DOMContentLoaded', () => {
             const lootView = document.getElementById('loot-view');
 
             if (btn.classList.contains('active')) {
-                // Switch back to log
                 btn.classList.remove('active');
                 btn.textContent = 'View Loot';
                 logView.classList.remove('hidden');
                 lootView.classList.add('hidden');
             } else {
-                // Switch to loot
                 btn.classList.add('active');
                 btn.textContent = 'View Log';
                 logView.classList.add('hidden');
@@ -1000,19 +966,10 @@ document.addEventListener('DOMContentLoaded', () => {
             const wrapper = e.target.closest('.item-wrapper');
             if (!(wrapper instanceof HTMLElement)) return;
             
-            const location = wrapper.dataset.location;
-            let item = null;
+            const id = wrapper.dataset.id;
+            if (!id) return;
             
-            if (location === 'equipment') {
-                const slot = wrapper.dataset.slot;
-                if (slot) item = gameState.equipment[slot];
-            } else if (location === 'inventory') {
-                const itemIndexStr = wrapper.dataset.index;
-                if (itemIndexStr) {
-                    const itemIndex = parseInt(itemIndexStr, 10);
-                    item = gameState.inventory[itemIndex];
-                }
-            }
+            const item = [...Object.values(gameState.equipment), ...gameState.inventory].find(i => i && String(i.id) === id);
             
             if (item && item.stats) {
                 selectedItemForForge = item; 
@@ -1045,140 +1002,9 @@ document.addEventListener('DOMContentLoaded', () => {
         setupPrestigeListeners();
     }
     
-    function createTooltipHTML(hoveredItem, equippedItem, equippedItem2 = null) {
-        let headerHTML = `<div class="item-header"><span>${hoveredItem.name}</span></div>`;
-        
-        headerHTML += `<div style="font-size: 0.9em; color: #95a5a6; margin-bottom: 5px;">${hoveredItem.rarity.charAt(0).toUpperCase() + hoveredItem.rarity.slice(1)} ${hoveredItem.type.charAt(0).toUpperCase() + hoveredItem.type.slice(1)}</div>`;
-
-        const combinedHoveredStats = getCombinedItemStats(hoveredItem);
-
-        if (hoveredItem.type === 'ring' && (equippedItem || equippedItem2)) {
-            const createComparisonHTML = (equipped) => {
-                if (!equipped) return '<ul><li>(Empty Slot)</li></ul>';
-                
-                const combinedEquippedStats = getCombinedItemStats(equipped);
-                const allStatKeys = new Set([...Object.keys(combinedHoveredStats), ...Object.keys(combinedEquippedStats)]);
-                let html = '<ul>';
-
-                allStatKeys.forEach(statKey => {
-                    const hoveredValue = combinedHoveredStats[statKey] || 0;
-                    const equippedValue = combinedEquippedStats[statKey] || 0;
-                    const diff = hoveredValue - equippedValue;
-
-                    const statInfo = Object.values(STATS).find(s => s.key === statKey) || { name: statKey, type: 'flat' };
-                    const statName = statInfo.name;
-                    const isPercent = statInfo.type === 'percent';
-
-                    const valueStr = isPercent ? `${hoveredValue.toFixed(1)}%` : formatNumber(hoveredValue);
-                    
-                    let diffSpan = '';
-                    if (Math.abs(diff) > 0.001) {
-                        const diffClass = diff > 0 ? 'stat-better' : 'stat-worse';
-                        const sign = diff > 0 ? '+' : '';
-                        const diffStr = isPercent ? `${diff.toFixed(1)}%` : formatNumber(diff);
-                        diffSpan = ` <span class="${diffClass}">(${sign}${diffStr})</span>`;
-                    }
-                    html += `<li>${statName}: ${valueStr}${diffSpan}</li>`;
-                });
-                
-                let totalSynergyValue = 0;
-                if(equipped && equipped.sockets) {
-                    for (const gem of equipped.sockets) {
-                        if (gem && gem.synergy) {
-                            totalSynergyValue += gem.synergy.value;
-                        }
-                    }
-                }
-                 if (totalSynergyValue > 0) {
-                    const synergyPercentage = (totalSynergyValue * 100).toFixed(1);
-                    html += `<li class="stat-special">Special: +${synergyPercentage}% DPS to Click Dmg</li>`;
-                }
-
-                html += '</ul>';
-                return html;
-            }
-
-            const ring1HTML = createComparisonHTML(equippedItem);
-            const ring2HTML = createComparisonHTML(equippedItem2);
-
-            return `${headerHTML}
-                    <div class="tooltip-ring-comparison">
-                        <div>
-                            <h5>vs. ${equippedItem ? equippedItem.name : "Ring 1"}</h5>
-                            ${ring1HTML}
-                        </div>
-                        <div>
-                            <h5>vs. ${equippedItem2 ? equippedItem2.name : "Ring 2"}</h5>
-                            ${ring2HTML}
-                        </div>
-                    </div>`;
-        }
-        
-        let statsHTML = '<ul>';
-        if (!equippedItem) {
-            for (const statKey in combinedHoveredStats) {
-                const statInfo = Object.values(STATS).find(s => s.key === statKey) || { name: statKey, type: 'flat' };
-                const isPercent = statInfo.type === 'percent';
-                const value = combinedHoveredStats[statKey];
-                const statValue = isPercent ? `${value.toFixed(1)}%` : formatNumber(value);
-                statsHTML += `<li>+${statValue} ${statInfo.name}</li>`;
-            }
-        } else {
-            const combinedEquippedStats = getCombinedItemStats(equippedItem);
-            const allStatKeys = new Set([...Object.keys(combinedHoveredStats), ...Object.keys(combinedEquippedStats)]);
-            
-            allStatKeys.forEach(statKey => {
-                const hoveredValue = combinedHoveredStats[statKey] || 0;
-                const equippedValue = combinedEquippedStats[statKey] || 0;
-                const difference = hoveredValue - equippedValue;
-                
-                const statInfo = Object.values(STATS).find(s => s.key === statKey) || { name: statKey, type: 'flat' };
-                const statName = statInfo.name;
-                const isPercent = statInfo.type === 'percent';
-                
-                const valueStr = isPercent ? `${hoveredValue.toFixed(1)}%` : formatNumber(hoveredValue);
-
-                let diffSpan = '';
-                if (Math.abs(difference) > 0.001) { 
-                    const diffClass = difference > 0 ? 'stat-better' : 'stat-worse'; 
-                    const sign = difference > 0 ? '+' : '';
-                    const diffStr = isPercent ? `${difference.toFixed(1)}%` : formatNumber(difference);
-                    diffSpan = ` <span class="${diffClass}">(${sign}${diffStr})</span>`; 
-                }
-                
-                statsHTML += `<li>${statName}: ${valueStr}${diffSpan}</li>`;
-            });
-        }
-        
-        let totalSynergyValue = 0;
-        if (hoveredItem.sockets) {
-            for (const gem of hoveredItem.sockets) {
-                if (gem && gem.synergy) {
-                     if (gem.synergy.source === 'dps' && gem.synergy.target === 'clickDamage') {
-                        totalSynergyValue += gem.synergy.value;
-                    }
-                }
-            }
-        }
-
-        if (totalSynergyValue > 0) {
-            const synergyPercentage = (totalSynergyValue * 100).toFixed(1);
-            statsHTML += `<li class="stat-special">Special: +${synergyPercentage}% DPS to Click Dmg</li>`;
-        }
-
-        statsHTML += '</ul>';
-        return headerHTML + statsHTML;
-    }
-
     function setupItemTooltipListeners() {
         const showTooltip = (item, element) => {
             if (!item) return;
-
-            if (!item.baseId) {
-                const baseName = item.name.split(' ').slice(1).join(' ');
-                const foundKey = Object.keys(ITEMS).find(key => ITEMS[key].name === baseName);
-                if (foundKey) item.baseId = foundKey;
-            }
 
             elements.tooltipEl.className = 'hidden';
             elements.tooltipEl.classList.add(item.rarity);
@@ -1186,15 +1012,15 @@ document.addEventListener('DOMContentLoaded', () => {
             if (isShiftPressed && item.baseId) {
                 const itemBase = ITEMS[item.baseId];
                 if (itemBase) {
-                    elements.tooltipEl.innerHTML = ui.createLootTableTooltipHTML(itemBase);
+                    if (itemBase.type === 'ring') {
+                        elements.tooltipEl.innerHTML = ui.createLootComparisonTooltipHTML(itemBase, gameState.equipment.ring1, gameState.equipment.ring2);
+                    } else {
+                        const equippedItem = gameState.equipment[itemBase.type];
+                        elements.tooltipEl.innerHTML = ui.createLootComparisonTooltipHTML(itemBase, equippedItem);
+                    }
                 }
             } else {
-                if (item.type === 'ring') {
-                    elements.tooltipEl.innerHTML = createTooltipHTML(item, gameState.equipment.ring1, gameState.equipment.ring2);
-                } else {
-                    const equippedItem = gameState.equipment[item.type];
-                    elements.tooltipEl.innerHTML = createTooltipHTML(item, equippedItem);
-                }
+                elements.tooltipEl.innerHTML = ui.createTooltipHTML(item);
             }
 
             const rect = element.getBoundingClientRect();
@@ -1203,57 +1029,48 @@ document.addEventListener('DOMContentLoaded', () => {
             elements.tooltipEl.classList.remove('hidden');
         };
 
-        elements.inventorySlotsEl.addEventListener('mouseover', (event) => {
+        const onMouseOver = (event) => {
             if (!(event.target instanceof Element)) return;
-            const itemWrapper = event.target.closest('.item-wrapper');
-            if (!(itemWrapper instanceof HTMLElement)) return;
-            const indexStr = itemWrapper.dataset.index;
-            if (indexStr === null || indexStr === undefined) return;
-            const index = parseInt(indexStr, 10);
-            showTooltip(gameState.inventory[index], itemWrapper);
-        });
-        elements.inventorySlotsEl.addEventListener('mouseout', () => elements.tooltipEl.classList.add('hidden'));
+            const wrapper = event.target.closest('.item-wrapper');
+            if (!(wrapper instanceof HTMLElement)) return;
+            const id = wrapper.dataset.id;
+            if (!id) return;
+
+            const item = [...gameState.inventory, ...Object.values(gameState.equipment)].find(i => i && String(i.id) === id);
+            if(item) {
+                showTooltip(item, wrapper);
+            }
+        };
+
+        const onMouseOut = () => elements.tooltipEl.classList.add('hidden');
+
+        elements.inventorySlotsEl.addEventListener('mouseover', onMouseOver);
+        elements.inventorySlotsEl.addEventListener('mouseout', onMouseOut);
     
         const equipmentSlots = document.getElementById('equipment-paperdoll');
         equipmentSlots.addEventListener('mouseover', (event) => {
             if (!(event.target instanceof Element)) return;
             const slotEl = event.target.closest('.equipment-slot');
             if (!(slotEl instanceof HTMLElement)) return;
-            const slotName = slotEl.id.replace('slot-', '');
-            showTooltip(gameState.equipment[slotName], slotEl);
+            const item = gameState.equipment[slotEl.id.replace('slot-','')];
+            showTooltip(item, slotEl);
         });
-        equipmentSlots.addEventListener('mouseout', () => elements.tooltipEl.classList.add('hidden'));
+        equipmentSlots.addEventListener('mouseout', onMouseOut);
         
-        elements.forgeInventorySlotsEl.addEventListener('mouseover', (event) => {
-            if (!(event.target instanceof Element)) return;
-            const wrapper = event.target.closest('.item-wrapper');
-            if (!(wrapper instanceof HTMLElement)) return;
-
-            const location = wrapper.dataset.location;
-            let item = null;
-
-            if (location === 'equipment') {
-                const slot = wrapper.dataset.slot;
-                if(slot) item = gameState.equipment[slot];
-            } else {
-                const indexStr = wrapper.dataset.index;
-                 if (indexStr) {
-                    const index = parseInt(indexStr, 10);
-                    item = gameState.inventory[index];
-                }
-            }
-            showTooltip(item, wrapper);
-        });
-        elements.forgeInventorySlotsEl.addEventListener('mouseout', () => elements.tooltipEl.classList.add('hidden'));
+        elements.forgeInventorySlotsEl.addEventListener('mouseover', onMouseOver);
+        elements.forgeInventorySlotsEl.addEventListener('mouseout', onMouseOut);
+        
+        elements.prestigeInventorySlotsEl.addEventListener('mouseover', onMouseOver);
+        elements.prestigeInventorySlotsEl.addEventListener('mouseout', onMouseOut);
     }
     
     function setupGemTooltipListeners(){
         const showGemTooltip = (e) => {
              if (!(e.target instanceof Element)) return;
-            const gemWrapper = e.target.closest('div.gem');
+            const gemWrapper = e.target.closest('div.gem-wrapper');
             if (!(gemWrapper instanceof HTMLElement)) return;
 
-            const gemId = gemWrapper.dataset.gemId;
+            const gemId = gemWrapper.dataset.id;
             if (!gemId) return;
 
             const gem = gameState.gems.find(g => String(g.id) === gemId) || craftingGems.find(g => String(g.id) === gemId);
@@ -1272,7 +1089,23 @@ document.addEventListener('DOMContentLoaded', () => {
         elements.gemSlotsEl.addEventListener('mouseover', showGemTooltip);
         elements.gemSlotsEl.addEventListener('mouseout', () => elements.tooltipEl.classList.add('hidden'));
         
-        elements.gemCraftingSlotsContainer.addEventListener('mouseover', showGemTooltip);
+        elements.gemCraftingSlotsContainer.addEventListener('mouseover', (e) => {
+            if (!(e.target instanceof Element)) return;
+            const gemWrapper = e.target.closest('.gem');
+            if (!(gemWrapper instanceof HTMLElement)) return; 
+            const id = gemWrapper.dataset.gemId;
+            const gem = craftingGems.find(g => String(g.id) === id);
+            if (!gem) return;
+
+            elements.tooltipEl.className = 'hidden';
+            elements.tooltipEl.classList.add('gem-quality');
+            elements.tooltipEl.innerHTML = ui.createGemTooltipHTML(gem);
+
+            const rect = gemWrapper.getBoundingClientRect();
+            elements.tooltipEl.style.left = `${rect.right + 5}px`;
+            elements.tooltipEl.style.top = `${rect.top}px`;
+            elements.tooltipEl.classList.remove('hidden');
+        });
         elements.gemCraftingSlotsContainer.addEventListener('mouseout', () => elements.tooltipEl.classList.add('hidden'));
     }
     
@@ -1425,28 +1258,28 @@ document.addEventListener('DOMContentLoaded', () => {
             prestigeSelections = [];
             elements.prestigeSelectionEl.classList.remove('hidden');
             elements.prestigeButton.classList.add('hidden');
-            const allItems = [...Object.values(gameState.equipment).filter(i => i), ...gameState.inventory];
-            elements.prestigeInventorySlotsEl.innerHTML = '';
-            if (allItems.length === 0) {
-                 elements.prestigeInventorySlotsEl.innerHTML = '<p>You have no items to keep. All stats will be absorbed from your empty inventory.</p>';
-            }
-            allItems.forEach(item => {
-                const itemEl = document.createElement('div');
-                itemEl.innerHTML = ui.createItemHTML(item, false);
-                itemEl.onclick = () => {
-                    const itemCard = itemEl.querySelector('.item');
-                    if (!itemCard) return;
-                    if (prestigeSelections.includes(item.id)) {
-                        prestigeSelections = prestigeSelections.filter(id => id !== item.id);
-                        itemCard.classList.remove('selected-for-prestige');
-                    } else if (prestigeSelections.length < 3) {
-                        prestigeSelections.push(item.id);
-                        itemCard.classList.add('selected-for-prestige');
-                    }
-                };
-                elements.prestigeInventorySlotsEl.appendChild(itemEl);
-            });
+            updateAll();
         });
+
+        elements.prestigeInventorySlotsEl.addEventListener('click', (event) => {
+            if (!(event.target instanceof Element)) return;
+            const wrapper = event.target.closest('.item-wrapper');
+            if (!(wrapper instanceof HTMLElement)) return;
+            const id = wrapper.dataset.id;
+            if (!id) return;
+            const item = [...Object.values(gameState.equipment), ...gameState.inventory].find(i => i && String(i.id) === id);
+            if (!item) return;
+
+            const selectionIndex = prestigeSelections.indexOf(item.id);
+
+            if (selectionIndex > -1) {
+                prestigeSelections.splice(selectionIndex, 1);
+            } else if (prestigeSelections.length < 3) {
+                prestigeSelections.push(item.id);
+            }
+            updateAll();
+        });
+
 
         document.getElementById('confirm-prestige-btn').addEventListener('click', () => {
             if (prestigeSelections.length > 3) {
@@ -1455,9 +1288,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             
             const allCurrentItems = [...Object.values(gameState.equipment).filter(i => i), ...gameState.inventory];
-            
             const itemsToAbsorb = allCurrentItems.filter(item => prestigeSelections.includes(item.id));
-
             const newAbsorbedStats = {};
             const newAbsorbedSynergies = [];
 
@@ -1481,14 +1312,7 @@ document.addEventListener('DOMContentLoaded', () => {
                  logMessage(elements.gameLogEl, `No items were selected to absorb.`, 'uncommon');
             }
 
-
-            const heroToKeep = {
-                level: 1,
-                xp: 0,
-                attributePoints: 0,
-                attributes: { strength: 0, agility: 0, luck: 0 }
-            };
-
+            const heroToKeep = { level: 1, xp: 0, attributePoints: 0, attributes: { strength: 0, agility: 0, luck: 0 } };
             const oldAbsorbedStats = gameState.absorbedStats || {};
             const finalAbsorbedStats = { ...oldAbsorbedStats };
             for(const statKey in newAbsorbedStats) {
@@ -1526,35 +1350,58 @@ document.addEventListener('DOMContentLoaded', () => {
             logMessage(elements.gameLogEl, `PRESTIGE! You are reborn with greater power. Your next goal is Level ${gameState.nextPrestigeLevel}.`, 'legendary');
             elements.prestigeSelectionEl.classList.add('hidden');
             elements.prestigeButton.classList.remove('hidden');
+            prestigeSelections = [];
             recalculateStats();
             startNewMonster();
             updateAll();
             autoSave();
         });
     }
+    
+    function migrateInventoryToGrid(oldInventory) {
+        console.log("Old save detected. Migrating inventory to grid format...");
+        const newGridInventory = [];
+        
+        for (const item of oldInventory) {
+            if (typeof item.x === 'number' && item.x >= 0) {
+                newGridInventory.push(item);
+                continue;
+            }
+
+            let baseItem = ITEMS[item.baseId];
+            if (!baseItem) {
+                 const baseName = item.name.split(' ').slice(1).join(' ');
+                 const foundKey = Object.keys(ITEMS).find(key => ITEMS[key].name === baseName);
+                 if (foundKey) {
+                    baseItem = ITEMS[foundKey];
+                    item.baseId = foundKey;
+                 }
+            }
+
+            if(baseItem) {
+                item.width = baseItem.width;
+                item.height = baseItem.height;
+            } else {
+                console.warn("Could not find base item for", item, "during migration. Defaulting to 1x1.");
+                item.width = 1;
+                item.height = 1;
+            }
+
+            const spot = findEmptySpot(item.width, item.height, newGridInventory);
+            if (spot) {
+                item.x = spot.x;
+                item.y = spot.y;
+                newGridInventory.push(item);
+            } else {
+                console.error("Could not find a spot for item during migration:", item);
+            }
+        }
+        
+        return newGridInventory;
+    }
 
     function main() {
-        const baseElements = ui.initDOMElements();
-        elements = {
-            ...baseElements,
-            toggleLootLogBtn: document.getElementById('toggle-loot-log-btn'),
-            lootView: document.getElementById('loot-view'),
-            gameLogContainer: document.getElementById('game-log-container'),
-            ringSelectionModalBackdrop: document.getElementById('ring-selection-modal-backdrop'),
-            ringSelectionSlot1: document.getElementById('ring-selection-slot1'),
-            ringSelectionSlot2: document.getElementById('ring-selection-slot2'),
-            ringSelectionCancelBtn: document.getElementById('ring-selection-cancel-btn'),
-            offlineProgressModalBackdrop: document.getElementById('offline-progress-modal-backdrop'),
-            offlineProgressCloseBtn: document.getElementById('offline-progress-close-btn'),
-            offlineTime: document.getElementById('offline-time'),
-            offlineGold: document.getElementById('offline-gold'),
-            offlineXp: document.getElementById('offline-xp'),
-            offlineScrap: document.getElementById('offline-scrap'),
-            offlineRewards: document.getElementById('offline-rewards'),
-            forgeInventorySlotsEl: document.getElementById('forge-inventory-slots'),
-            forgeSelectedItemEl: document.getElementById('forge-selected-item'),
-            forgeRerollBtn: document.getElementById('forge-reroll-btn'),
-        };
+        elements = ui.initDOMElements();
         
         const savedData = localStorage.getItem('idleRPGSaveData');
         if (savedData) {
@@ -1575,7 +1422,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 currentRealmIndex: loadedState.currentRealmIndex || 0,
                 currentRunCompletedLevels: loadedState.currentRunCompletedLevels || [], 
                 legacyItems: [],
+                inventoryGridInitialized: loadedState.inventoryGridInitialized || false,
             };
+            
+            if (!gameState.inventoryGridInitialized) {
+                gameState.inventory = migrateInventoryToGrid(gameState.inventory);
+                gameState.inventoryGridInitialized = true;
+                logMessage(elements.gameLogEl, "Your inventory has been updated to the new grid system!", "uncommon");
+                autoSave();
+            }
 
             if (gameState.nextPrestigeLevel === undefined) {
                 gameState.nextPrestigeLevel = 100;

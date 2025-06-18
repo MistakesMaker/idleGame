@@ -2,6 +2,63 @@
 
 import { REALMS } from './data/realms.js';
 
+export const INVENTORY_GRID = {
+    WIDTH: 8,
+    HEIGHT: 1000
+};
+
+/**
+ * Checks if a proposed area in the grid is occupied by any existing items.
+ * This is a helper function for findEmptySpot and is not exported.
+ * @param {number} x - The starting column (0-indexed).
+ * @param {number} y - The starting row (0-indexed).
+ * @param {number} width - The width of the area to check.
+ * @param {number} height - The height of the area to check.
+ * @param {Array<object>} inventory - The player's inventory array.
+ * @returns {boolean} True if any part of the area is occupied, false otherwise.
+ */
+function isOccupied(x, y, width, height, inventory) {
+    // Check if the item goes out of the grid's right boundary
+    if (x + width > INVENTORY_GRID.WIDTH) {
+        return true;
+    }
+
+    // Check for collision with every other item in the inventory
+    for (const item of inventory) {
+        if (
+            item.x < x + width &&
+            item.x + item.width > x &&
+            item.y < y + height &&
+            item.y + item.height > y
+        ) {
+            return true; // Collision detected
+        }
+    }
+
+    return false; // No collision
+}
+
+/**
+ * Finds the first available empty spot in the inventory grid for an item of a given size.
+ * @param {number} itemWidth - The width of the item to place.
+ * @param {number} itemHeight - The height of the item to place.
+ * @param {Array<object>} inventory - The player's current inventory array.
+ * @returns {{x: number, y: number}|null} The coordinates of the top-left corner of the empty spot, or null if no spot is found.
+ */
+export function findEmptySpot(itemWidth, itemHeight, inventory) {
+    // Iterate through each cell of the grid as a potential top-left corner
+    for (let y = 0; y < INVENTORY_GRID.HEIGHT; y++) {
+        for (let x = 0; x <= INVENTORY_GRID.WIDTH - itemWidth; x++) {
+            // Check if this spot is free
+            if (!isOccupied(x, y, itemWidth, itemHeight, inventory)) {
+                return { x, y }; // Found a spot
+            }
+        }
+    }
+    return null; // No spot found in the entire grid
+}
+
+
 /**
  * Prepends a message to the game log element and auto-scrolls if appropriate.
  * @param {HTMLElement} gameLogEl - The game log container element.

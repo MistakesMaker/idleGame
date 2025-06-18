@@ -12,6 +12,8 @@
 * type: The general category, used for the name (e.g., a "Ruby" is a T1 Gem).
 * tier: All base gems are Tier 1.
 * icon: The path to the gem's image.
+* width: The item's width in grid cells.
+* height: The item's height in grid cells.
 * stat & value: The single stat this base gem provides.
 */
 
@@ -25,6 +27,7 @@ export const GEMS = {
         type: 'ruby',
         tier: 1,
         icon: 'images/gems/ruby_1.png',
+        width: 1, height: 1,
         stats: { [STATS.CLICK_DAMAGE.key]: 5 }
     },
     BASE_SAPPHIRE: {
@@ -33,6 +36,7 @@ export const GEMS = {
         type: 'sapphire',
         tier: 1,
         icon: 'images/gems/sapphire_1.png',
+        width: 1, height: 1,
         stats: { [STATS.DPS.key]: 10 }
     },
     BASE_EMERALD: {
@@ -41,6 +45,7 @@ export const GEMS = {
         type: 'emerald',
         tier: 1,
         icon: 'images/gems/emerald_1.png',
+        width: 1, height: 1,
         stats: { [STATS.GOLD_GAIN.key]: 5 }
     },
     BASE_TOPAZ: {
@@ -49,6 +54,7 @@ export const GEMS = {
         type: 'topaz',
         tier: 1,
         icon: 'images/gems/topaz_1.png',
+        width: 1, height: 1,
         stats: { [STATS.MAGIC_FIND.key]: 3 }
     },
     BASE_AMETHYST: {
@@ -57,6 +63,7 @@ export const GEMS = {
         type: 'amethyst',
         tier: 1,
         icon: 'images/gems/amethyst_1.png',
+        width: 1, height: 1,
         synergy: {
             source: 'dps',
             target: 'clickDamage',

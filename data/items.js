@@ -9,6 +9,8 @@ import { STATS } from './stat_pools.js';
 * name: The display name of the item.
 * type: The equipment slot this item uses.
 * icon: The path to the item's image.
+* width: The item's width in grid cells for the inventory.
+* height: The item's height in grid cells for the inventory.
 * possibleStats: An array of stat objects that can roll on this item.
 * isUnique: (Optional) If true, this item is considered a "unique" or "boss" item.
 *           This can be used to exclude it from certain loot pools, like loot crates.
@@ -25,35 +27,40 @@ export const ITEMS = {
         id: 'RUSTY_SWORD',
         name: "Rusty Sword",
         type: 'sword',
-        icon: 'images/icons/rusty_sword.png', 
+        icon: 'images/icons/rusty_sword.png',
+        width: 2, height: 3,
         possibleStats: [ { key: STATS.CLICK_DAMAGE.key, min: 1, max: 15 } ]
     },
     IRON_SHORTSWORD: {
         id: 'IRON_SHORTSWORD',
         name: "Iron Shortsword",
         type: 'sword',
-        icon: 'images/icons/iron_shortsword.png', 
+        icon: 'images/icons/iron_shortsword.png',
+        width: 2, height: 3,
         possibleStats: [ { key: STATS.CLICK_DAMAGE.key, min: 10, max: 30 } ]
     },
     STEEL_LONGSWORD: {
         id: 'STEEL_LONGSWORD',
         name: "Steel Longsword",
         type: 'sword',
-        icon: 'images/icons/steel_longsword.png', 
+        icon: 'images/icons/steel_longsword.png',
+        width: 2, height: 3,
         possibleStats: [ { key: STATS.CLICK_DAMAGE.key, min: 25, max: 75 } ]
     },
     MITHRIL_SCIMITAR: {
         id: 'MITHRIL_SCIMITAR',
         name: "Mithril Scimitar",
         type: 'sword',
-        icon: 'images/icons/mithril_scimitar.png', 
+        icon: 'images/icons/mithril_scimitar.png',
+        width: 2, height: 3,
         possibleStats: [ { key: STATS.CLICK_DAMAGE.key, min: 50, max: 150 } ]
     },
     SERRATED_DAGGER: {
         id: 'SERRATED_DAGGER',
         name: "Serrated Dagger",
         type: 'sword',
-        icon: 'images/icons/serrated_dagger.png', 
+        icon: 'images/icons/serrated_dagger.png',
+        width: 2, height: 3,
         possibleStats: [
             { key: STATS.CLICK_DAMAGE.key, min: 40, max: 120 },
             { key: STATS.DPS.key, min: 80, max: 240 }
@@ -64,6 +71,7 @@ export const ITEMS = {
         name: "Gladiator's Longsword",
         type: 'sword',
         icon: 'images/icons/gladiators_longsword.png',
+        width: 2, height: 3,
         isUnique: true,
         canHaveSockets: true,
         maxSockets: 3,
@@ -77,6 +85,7 @@ export const ITEMS = {
         name: "Orcish Cleaver",
         type: 'sword',
         icon: 'images/icons/orcish_cleaver.png',
+        width: 2, height: 3,
         isUnique: true,
         canHaveSockets: true,
         maxSockets: 2,
@@ -90,6 +99,7 @@ export const ITEMS = {
         name: "Runic Blade",
         type: 'sword',
         icon: 'images/icons/runic_blade.png',
+        width: 2, height: 3,
         isUnique: true,
         canHaveSockets: true,
         maxSockets: 3,
@@ -103,6 +113,7 @@ export const ITEMS = {
         name: "Blade of the Spectre",
         type: 'sword',
         icon: 'images/icons/blade_of_the_spectre.png',
+        width: 2, height: 3,
         isUnique: true,
         canHaveSockets: true,
         maxSockets: 3,
@@ -116,6 +127,7 @@ export const ITEMS = {
         name: "Dragonfang",
         type: 'sword',
         icon: 'images/icons/dragonfang.png',
+        width: 2, height: 3,
         isUnique: true,
         canHaveSockets: true,
         maxSockets: 3,
@@ -134,6 +146,7 @@ export const ITEMS = {
         name: "Wooden Shield",
         type: 'shield',
         icon: 'images/icons/wooden_shield.png',
+        width: 2, height: 3,
         possibleStats: [ { key: STATS.DPS.key, min: 5, max: 25 } ]
     },
     BRONZE_BUCKLER: {
@@ -141,6 +154,7 @@ export const ITEMS = {
         name: "Bronze Buckler",
         type: 'shield',
         icon: 'images/icons/bronze_buckler.png',
+        width: 2, height: 3,
         possibleStats: [ { key: STATS.DPS.key, min: 20, max: 60 } ]
     },
     IRON_KITESHIELD: {
@@ -148,6 +162,7 @@ export const ITEMS = {
         name: "Iron Kiteshield",
         type: 'shield',
         icon: 'images/icons/kiteshield.png',
+        width: 2, height: 3,
         possibleStats: [ { key: STATS.DPS.key, min: 50, max: 100 } ]
     },
     STEEL_HEATER: {
@@ -155,6 +170,7 @@ export const ITEMS = {
         name: "Steel Heater",
         type: 'shield',
         icon: 'images/icons/steel_heater.png',
+        width: 2, height: 3,
         possibleStats: [ { key: STATS.DPS.key, min: 120, max: 160 } ]
     },
     TOWER_SHIELD: {
@@ -162,6 +178,7 @@ export const ITEMS = {
         name: "Tower Shield",
         type: 'shield',
         icon: 'images/icons/tower_shield.png',
+        width: 2, height: 3,
         canHaveSockets: true,
         maxSockets: 1,
         possibleStats: [ { key: STATS.DPS.key, min: 250, max: 750 } ]
@@ -171,6 +188,7 @@ export const ITEMS = {
         name: "Bone Shield",
         type: 'shield',
         icon: 'images/icons/bone_shield.png',
+        width: 2, height: 3,
         isUnique: true,
         canHaveSockets: true,
         maxSockets: 2,
@@ -184,6 +202,7 @@ export const ITEMS = {
         name: "Spiked Bulwark",
         type: 'shield',
         icon: 'images/icons/spiked_bulwark.png',
+        width: 2, height: 3,
         isUnique: true,
         canHaveSockets: true,
         maxSockets: 3,
@@ -197,6 +216,7 @@ export const ITEMS = {
         name: "Aegis of the Guardian",
         type: 'shield',
         icon: 'images/icons/aegis_of_the_guardian.png',
+        width: 2, height: 3,
         isUnique: true,
         canHaveSockets: true,
         maxSockets: 3,
@@ -210,6 +230,7 @@ export const ITEMS = {
         name: "Mirrored Shield",
         type: 'shield',
         icon: 'images/icons/mirrored_shield.png',
+        width: 2, height: 3,
         isUnique: true,
         canHaveSockets: true,
         maxSockets: 3,
@@ -223,6 +244,7 @@ export const ITEMS = {
         name: "Dragonscale Ward",
         type: 'shield',
         icon: 'images/icons/dragonscale_ward.png',
+        width: 2, height: 3,
         isUnique: true,
         canHaveSockets: true,
         maxSockets: 3,
@@ -241,6 +263,7 @@ export const ITEMS = {
         name: "Leather Cap",
         type: 'helmet',
         icon: 'images/icons/helmet.png',
+        width: 2, height: 2,
         possibleStats: [ { key: STATS.GOLD_GAIN.key, min: 1, max: 8 } ]
     },
     IRON_HELM: {
@@ -248,6 +271,7 @@ export const ITEMS = {
         name: "Iron Helm",
         type: 'helmet',
         icon: 'images/icons/helmet.png',
+        width: 2, height: 2,
         possibleStats: [ { key: STATS.GOLD_GAIN.key, min: 5, max: 15 } ]
     },
     STEEL_FULL_HELM: {
@@ -255,6 +279,7 @@ export const ITEMS = {
         name: "Steel Full Helm",
         type: 'helmet',
         icon: 'images/icons/helmet.png',
+        width: 2, height: 2,
         possibleStats: [ { key: STATS.GOLD_GAIN.key, min: 12, max: 36 } ]
     },
     MAGE_HOOD: {
@@ -262,6 +287,7 @@ export const ITEMS = {
         name: "Mage Hood",
         type: 'helmet',
         icon: 'images/icons/helmet.png',
+        width: 2, height: 2,
         canHaveSockets: true,
         maxSockets: 2,
         possibleStats: [
@@ -274,6 +300,7 @@ export const ITEMS = {
         name: "Royal Circlet",
         type: 'helmet',
         icon: 'images/icons/helmet.png',
+        width: 2, height: 2,
         canHaveSockets: true,
         maxSockets: 2,
         possibleStats: [
@@ -286,6 +313,7 @@ export const ITEMS = {
         name: "Helm of Valor",
         type: 'helmet',
         icon: 'images/icons/helmet.png',
+        width: 2, height: 2,
         isUnique: true,
         canHaveSockets: true,
         maxSockets: 2,
@@ -299,6 +327,7 @@ export const ITEMS = {
         name: "Skull Helm",
         type: 'helmet',
         icon: 'images/icons/helmet.png',
+        width: 2, height: 2,
         isUnique: true,
         canHaveSockets: true,
         maxSockets: 2,
@@ -312,6 +341,7 @@ export const ITEMS = {
         name: "Shadow Cowl",
         type: 'helmet',
         icon: 'images/icons/helmet.png',
+        width: 2, height: 2,
         isUnique: true,
         canHaveSockets: true,
         maxSockets: 2,
@@ -325,6 +355,7 @@ export const ITEMS = {
         name: "Crown of Wisdom",
         type: 'helmet',
         icon: 'images/icons/helmet.png',
+        width: 2, height: 2,
         isUnique: true,
         canHaveSockets: true,
         maxSockets: 2,
@@ -338,6 +369,7 @@ export const ITEMS = {
         name: "Dragonbone Headdress",
         type: 'helmet',
         icon: 'images/icons/helmet.png',
+        width: 2, height: 2,
         isUnique: true,
         canHaveSockets: true,
         maxSockets: 2,
@@ -355,6 +387,7 @@ export const ITEMS = {
         name: "Leather Tunic",
         type: 'platebody',
         icon: 'images/icons/platebody.png',
+        width: 2, height: 3,
         possibleStats: [ { key: STATS.DPS.key, min: 5, max: 15 } ]
     },
     CHAINMAIL_HAUBERK: {
@@ -362,6 +395,7 @@ export const ITEMS = {
         name: "Chainmail Hauberk",
         type: 'platebody',
         icon: 'images/icons/platebody.png',
+        width: 2, height: 3,
         possibleStats: [ { key: STATS.DPS.key, min: 12, max: 36 } ]
     },
     IRON_PLATEBODY: {
@@ -369,6 +403,7 @@ export const ITEMS = {
         name: "Iron Platebody",
         type: 'platebody',
         icon: 'images/icons/platebody.png',
+        width: 2, height: 3,
         possibleStats: [ { key: STATS.DPS.key, min: 30, max: 90 } ]
     },
     STEEL_PLATEMAIL: {
@@ -376,6 +411,7 @@ export const ITEMS = {
         name: "Steel Platemail",
         type: 'platebody',
         icon: 'images/icons/platebody.png',
+        width: 2, height: 3,
         possibleStats: [ { key: STATS.DPS.key, min: 80, max: 240 } ]
     },
     MITHRIL_CHAINMAIL: {
@@ -383,6 +419,7 @@ export const ITEMS = {
         name: "Mithril Chainmail",
         type: 'platebody',
         icon: 'images/icons/platebody.png',
+        width: 2, height: 3,
         possibleStats: [ { key: STATS.DPS.key, min: 200, max: 600 } ]
     },
     APPRENTICE_ROBE: { // Existing item
@@ -390,6 +427,7 @@ export const ITEMS = {
         name: "Apprentice Robe",
         type: 'platebody',
         icon: 'images/icons/platebody.png',
+        width: 2, height: 3,
         possibleStats: [ { key: STATS.GOLD_GAIN.key, min: 5, max: 25 } ]
     },
     ROBE_OF_THE_ARCHMAGE: {
@@ -397,6 +435,7 @@ export const ITEMS = {
         name: "Robe of the Archmage",
         type: 'platebody',
         icon: 'images/icons/platebody.png',
+        width: 2, height: 3,
         canHaveSockets: true,
         maxSockets: 1,
         possibleStats: [
@@ -409,6 +448,7 @@ export const ITEMS = {
         name: "Ghastly Robes",
         type: 'platebody',
         icon: 'images/icons/platebody.png',
+        width: 2, height: 3,
         isUnique: true,
         canHaveSockets: true,
         maxSockets: 3,
@@ -422,6 +462,7 @@ export const ITEMS = {
         name: "Carapace of the Scarab",
         type: 'platebody',
         icon: 'images/icons/platebody.png',
+        width: 2, height: 3,
         isUnique: true,
         canHaveSockets: true,
         maxSockets: 3,
@@ -435,6 +476,7 @@ export const ITEMS = {
         name: "Dragonhide Vest",
         type: 'platebody',
         icon: 'images/icons/platebody.png',
+        width: 2, height: 3,
         isUnique: true,
         canHaveSockets: true,
         maxSockets: 3,
@@ -453,6 +495,7 @@ export const ITEMS = {
         name: "Leather Trousers",
         type: 'platelegs',
         icon: 'images/icons/platelegs.png',
+        width: 2, height: 3,
         possibleStats: [ { key: STATS.DPS.key, min: 3, max: 10 } ]
     },
     CHAINMAIL_LEGGINGS: {
@@ -460,6 +503,7 @@ export const ITEMS = {
         name: "Chainmail Leggings",
         type: 'platelegs',
         icon: 'images/icons/platelegs.png',
+        width: 2, height: 3,
         possibleStats: [ { key: STATS.DPS.key, min: 10, max: 30 } ]
     },
     IRON_PLATELEGS: {
@@ -467,6 +511,7 @@ export const ITEMS = {
         name: "Iron Platelegs",
         type: 'platelegs',
         icon: 'images/icons/platelegs.png',
+        width: 2, height: 3,
         possibleStats: [ { key: STATS.DPS.key, min: 25, max: 50 } ]
     },
     STEEL_GREAVES: {
@@ -474,6 +519,7 @@ export const ITEMS = {
         name: "Steel Greaves",
         type: 'platelegs',
         icon: 'images/icons/platelegs.png',
+        width: 2, height: 3,
         possibleStats: [ { key: STATS.DPS.key, min: 70, max: 210 } ]
     },
     MAGE_PANTS: {
@@ -481,6 +527,7 @@ export const ITEMS = {
         name: "Mage Pants",
         type: 'platelegs',
         icon: 'images/icons/platelegs.png',
+        width: 2, height: 3,
         canHaveSockets: true,
         maxSockets: 3,
         possibleStats: [
@@ -493,6 +540,7 @@ export const ITEMS = {
         name: "Knight's Platelegs",
         type: 'platelegs',
         icon: 'images/icons/platelegs.png',
+        width: 2, height: 3,
         canHaveSockets: true,
         maxSockets: 1,
         possibleStats: [ { key: STATS.DPS.key, min: 25, max: 120 } ]
@@ -502,6 +550,7 @@ export const ITEMS = {
         name: "Greaves of Haste",
         type: 'platelegs',
         icon: 'images/icons/platelegs.png',
+        width: 2, height: 3,
         isUnique: true,
         canHaveSockets: true,
         maxSockets: 3,
@@ -515,6 +564,7 @@ export const ITEMS = {
         name: "Bone Legplates",
         type: 'platelegs',
         icon: 'images/icons/platelegs.png',
+        width: 2, height: 3,
         isUnique: true,
         canHaveSockets: true,
         maxSockets: 3,
@@ -528,6 +578,7 @@ export const ITEMS = {
         name: "Sandstrider Leggings",
         type: 'platelegs',
         icon: 'images/icons/platelegs.png',
+        width: 2, height: 3,
         isUnique: true,
         canHaveSockets: true,
         maxSockets: 3,
@@ -541,6 +592,7 @@ export const ITEMS = {
         name: "Dragonbone Greaves",
         type: 'platelegs',
         icon: 'images/icons/platelegs.png',
+        width: 2, height: 3,
         isUnique: true,
         canHaveSockets: true,
         maxSockets: 3,
@@ -559,6 +611,7 @@ export const ITEMS = {
         name: "Simple Pendant",
         type: 'necklace',
         icon: 'images/icons/necklace.png',
+        width: 2, height: 2,
         possibleStats: [ { key: STATS.GOLD_GAIN.key, min: 2, max: 6 } ]
     },
     SILVER_LOCKET: {
@@ -566,6 +619,7 @@ export const ITEMS = {
         name: "Silver Locket",
         type: 'necklace',
         icon: 'images/icons/necklace.png',
+        width: 2, height: 2,
         possibleStats: [ { key: STATS.GOLD_GAIN.key, min: 5, max: 15 } ]
     },
     RUBY_AMULET: {
@@ -573,6 +627,7 @@ export const ITEMS = {
         name: "Ruby Amulet",
         type: 'necklace',
         icon: 'images/icons/necklace.png',
+        width: 2, height: 2,
         possibleStats: [ { key: STATS.CLICK_DAMAGE.key, min: 10, max: 30 } ]
     },
     SAPPHIRE_AMULET: {
@@ -580,6 +635,7 @@ export const ITEMS = {
         name: "Sapphire Amulet",
         type: 'necklace',
         icon: 'images/icons/necklace.png',
+        width: 2, height: 2,
         possibleStats: [ { key: STATS.DPS.key, min: 20, max: 60 } ]
     },
     EMERALD_CHARM: {
@@ -587,6 +643,7 @@ export const ITEMS = {
         name: "Emerald Charm",
         type: 'necklace',
         icon: 'images/icons/necklace.png',
+        width: 2, height: 2,
         possibleStats: [ { key: STATS.GOLD_GAIN.key, min: 15, max: 45 } ]
     },
     TOPAZ_TALISMAN: {
@@ -594,6 +651,7 @@ export const ITEMS = {
         name: "Topaz Talisman",
         type: 'necklace',
         icon: 'images/icons/necklace.png',
+        width: 2, height: 2,
         possibleStats: [ { key: STATS.MAGIC_FIND.key, min: 10, max: 30 } ]
     },
     AMULET_OF_THE_VIPER: {
@@ -601,6 +659,7 @@ export const ITEMS = {
         name: "Amulet of the Viper",
         type: 'necklace',
         icon: 'images/icons/necklace.png',
+        width: 2, height: 2,
         isUnique: true,
         canHaveSockets: true,
         maxSockets: 3,
@@ -614,6 +673,7 @@ export const ITEMS = {
         name: "Bloodstone Pendant",
         type: 'necklace',
         icon: 'images/icons/necklace.png',
+        width: 2, height: 2,
         isUnique: true,
         canHaveSockets: true,
         maxSockets: 3,
@@ -627,6 +687,7 @@ export const ITEMS = {
         name: "Amulet of Power",
         type: 'necklace',
         icon: 'images/icons/necklace.png',
+        width: 2, height: 2,
         isUnique: true,
         possibleStats: [
             { key: STATS.CLICK_DAMAGE.key, min: 15, max: 75 },
@@ -638,6 +699,7 @@ export const ITEMS = {
         name: "Eye of the Dragon",
         type: 'necklace',
         icon: 'images/icons/necklace.png',
+        width: 2, height: 2,
         isUnique: true,
         canHaveSockets: true, // A rare socketed accessory
         maxSockets: 1,
@@ -657,6 +719,7 @@ export const ITEMS = {
         name: "Iron Ring",
         type: 'ring',
         icon: 'images/icons/ring.png',
+        width: 1, height: 1,
         possibleStats: [ { key: STATS.DPS.key, min: 3, max: 9 } ]
     },
     SILVER_RING: {
@@ -664,6 +727,7 @@ export const ITEMS = {
         name: "Silver Ring",
         type: 'ring',
         icon: 'images/icons/ring.png',
+        width: 1, height: 1,
         possibleStats: [ { key: STATS.GOLD_GAIN.key, min: 3, max: 9 } ]
     },
     GOLD_RING: {
@@ -671,6 +735,7 @@ export const ITEMS = {
         name: "Gold Ring",
         type: 'ring',
         icon: 'images/icons/ring.png',
+        width: 1, height: 1,
         possibleStats: [ { key: STATS.GOLD_GAIN.key, min: 10, max: 30 } ]
     },
     BAND_OF_MIGHT: {
@@ -678,6 +743,7 @@ export const ITEMS = {
         name: "Band of Might",
         type: 'ring',
         icon: 'images/icons/ring.png',
+        width: 1, height: 1,
         possibleStats: [ { key: STATS.CLICK_DAMAGE.key, min: 15, max: 45 } ]
     },
     BAND_OF_AGILITY: {
@@ -685,6 +751,7 @@ export const ITEMS = {
         name: "Band of Agility",
         type: 'ring',
         icon: 'images/icons/ring.png',
+        width: 1, height: 1,
         possibleStats: [ { key: STATS.DPS.key, min: 30, max: 90 } ]
     },
     RING_OF_WEALTH: { // Existing item
@@ -692,6 +759,7 @@ export const ITEMS = {
         name: "Ring of Wealth",
         type: 'ring',
         icon: 'images/icons/ring.png',
+        width: 1, height: 1,
         possibleStats: [ { key: STATS.GOLD_GAIN.key, min: 10, max: 50 } ]
     },
     OBSIDIAN_BAND: {
@@ -699,6 +767,7 @@ export const ITEMS = {
         name: "Obsidian Band",
         type: 'ring',
         icon: 'images/icons/ring.png',
+        width: 1, height: 1,
         isUnique: true,
         possibleStats: [
             { key: STATS.CLICK_DAMAGE.key, min: 50, max: 150 },
@@ -710,6 +779,7 @@ export const ITEMS = {
         name: "Signet of the Leech",
         type: 'ring',
         icon: 'images/icons/ring.png',
+        width: 1, height: 1,
         isUnique: true,
         possibleStats: [
             { key: STATS.DPS.key, min: 200, max: 600 },
@@ -721,6 +791,7 @@ export const ITEMS = {
         name: "Seal of the King",
         type: 'ring',
         icon: 'images/icons/ring.png',
+        width: 1, height: 1,
         isUnique: true,
         possibleStats: [
             { key: STATS.GOLD_GAIN.key, min: 40, max: 120 },
@@ -732,6 +803,7 @@ export const ITEMS = {
         name: "Dragonfire Loop",
         type: 'ring',
         icon: 'images/icons/ring.png',
+        width: 1, height: 1,
         isUnique: true,
         canHaveSockets: true, // A rare socketed accessory
         maxSockets: 1,
@@ -751,6 +823,7 @@ export const ITEMS = {
         name: "Simple Sash",
         type: 'belt',
         icon: 'images/icons/belt.png',
+        width: 2, height: 1,
         possibleStats: [ { key: STATS.DPS.key, min: 2, max: 6 } ]
     },
     LEATHER_BELT: {
@@ -758,6 +831,7 @@ export const ITEMS = {
         name: "Leather Belt",
         type: 'belt',
         icon: 'images/icons/belt.png',
+        width: 2, height: 1,
         possibleStats: [ { key: STATS.DPS.key, min: 5, max: 15 } ]
     },
     STUDDED_LEATHER_BELT: {
@@ -765,6 +839,7 @@ export const ITEMS = {
         name: "Studded Leather Belt",
         type: 'belt',
         icon: 'images/icons/belt.png',
+        width: 2, height: 1,
         possibleStats: [ { key: STATS.DPS.key, min: 12, max: 36 } ]
     },
     IRON_GIRDLE: {
@@ -772,6 +847,7 @@ export const ITEMS = {
         name: "Iron Girdle",
         type: 'belt',
         icon: 'images/icons/belt.png',
+        width: 2, height: 1,
         possibleStats: [ { key: STATS.DPS.key, min: 30, max: 90 } ]
     },
     SASH_OF_THE_SORCERER: {
@@ -779,6 +855,7 @@ export const ITEMS = {
         name: "Sash of the Sorcerer",
         type: 'belt',
         icon: 'images/icons/belt.png',
+        width: 2, height: 1,
         possibleStats: [
             { key: STATS.GOLD_GAIN.key, min: 20, max: 60 },
             { key: STATS.MAGIC_FIND.key, min: 5, max: 15 },
@@ -789,6 +866,7 @@ export const ITEMS = {
         name: "Mighty Belt",
         type: 'belt',
         icon: 'images/icons/belt.png',
+        width: 2, height: 1,
         possibleStats: [ { key: STATS.DPS.key, min: 10, max: 80 } ]
     },
     PLAGUE_STITCHED_CINCH: {
@@ -796,6 +874,7 @@ export const ITEMS = {
         name: "Plague-Stitched Cinch",
         type: 'belt',
         icon: 'images/icons/belt.png',
+        width: 2, height: 1,
         isUnique: true,
         possibleStats: [
             { key: STATS.DPS.key, min: 150, max: 450 },
@@ -807,6 +886,7 @@ export const ITEMS = {
         name: "Belt of the Giant",
         type: 'belt',
         icon: 'images/icons/belt.png',
+        width: 2, height: 1,
         isUnique: true,
         possibleStats: [
             { key: STATS.DPS.key, min: 200, max: 600 },
@@ -818,6 +898,7 @@ export const ITEMS = {
         name: "Sunstone Buckle",
         type: 'belt',
         icon: 'images/icons/belt.png',
+        width: 2, height: 1,
         isUnique: true,
         possibleStats: [
             { key: STATS.DPS.key, min: 300, max: 900 },
@@ -829,6 +910,7 @@ export const ITEMS = {
         name: "Dragonscale Belt",
         type: 'belt',
         icon: 'images/icons/belt.png',
+        width: 2, height: 1,
         isUnique: true,
         canHaveSockets: true, // A rare socketed accessory
         maxSockets: 1,

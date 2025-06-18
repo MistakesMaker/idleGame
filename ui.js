@@ -1,7 +1,7 @@
 // --- START OF FILE ui.js ---
 
 import { STATS } from './data/stat_pools.js';
-import { getXpForNextLevel, getUpgradeCost, formatNumber, findSubZoneByLevel, getCombinedItemStats } from './utils.js';
+import { getXpForNextLevel, getUpgradeCost, formatNumber, findSubZoneByLevel, getCombinedItemStats, findEmptySpot } from './utils.js';
 import { ITEMS } from './data/items.js';
 
 /**
@@ -64,13 +64,79 @@ export function initDOMElements() {
         forgeInventorySlotsEl: document.getElementById('forge-inventory-slots'),
         forgeSelectedItemEl: document.getElementById('forge-selected-item'),
         forgeRerollBtn: document.getElementById('forge-reroll-btn'),
+        offlineProgressModalBackdrop: document.getElementById('offline-progress-modal-backdrop'),
+        offlineProgressCloseBtn: document.getElementById('offline-progress-close-btn'),
+        offlineTime: document.getElementById('offline-time'),
+        offlineGold: document.getElementById('offline-gold'),
+        offlineXp: document.getElementById('offline-xp'),
+        offlineScrap: document.getElementById('offline-scrap'),
+        offlineRewards: document.getElementById('offline-rewards'),
+        ringSelectionModalBackdrop: document.getElementById('ring-selection-modal-backdrop'),
+        ringSelectionSlot1: document.getElementById('ring-selection-slot1'),
+        ringSelectionSlot2: document.getElementById('ring-selection-slot2'),
+        ringSelectionCancelBtn: document.getElementById('ring-selection-cancel-btn'),
     };
+}
+
+
+/**
+ * Renders a list of items or gems into a grid container.
+ * @param {HTMLElement} containerEl - The grid container element.
+ * @param {Array<object>} items - The array of items or gems to render.
+ * @param {object} options - Configuration options.
+ */
+export function renderGrid(containerEl, items, options = {}) {
+    const { calculatePositions = false, type = 'item', selectedItem = null, salvageSelections = [], prestigeSelections = [] } = options;
+    
+    containerEl.innerHTML = '';
+    const tempPlacement = []; 
+    let maxRow = 0;
+
+    for (const item of items) {
+        const wrapper = document.createElement('div');
+        wrapper.className = type === 'gem' ? 'gem-wrapper' : 'item-wrapper';
+        
+        const id = type === 'gem' ? item.id : item.id;
+        wrapper.dataset.id = String(id);
+        
+        let pos;
+        if (calculatePositions) {
+            pos = findEmptySpot(item.width, item.height, tempPlacement);
+            if (pos) {
+                tempPlacement.push({ ...item, ...pos });
+            }
+        } else {
+            pos = { x: item.x, y: item.y };
+        }
+
+        if (pos && pos.x !== -1) {
+            wrapper.style.gridColumn = `${pos.x + 1} / span ${item.width}`;
+            wrapper.style.gridRow = `${pos.y + 1} / span ${item.height}`;
+            
+            const currentMaxRow = pos.y + item.height;
+            if (currentMaxRow > maxRow) {
+                maxRow = currentMaxRow;
+            }
+
+            wrapper.innerHTML = type === 'gem' ? createGemHTML(item) : createItemHTML(item);
+            
+            if (item.locked) wrapper.classList.add('locked-item');
+            if (selectedItem && selectedItem.id === item.id) wrapper.classList.add('selected-for-forge');
+            if (salvageSelections.some(sel => sel.id === item.id)) wrapper.classList.add('selected-for-salvage');
+            if (prestigeSelections.includes(item.id)) wrapper.classList.add('selected-for-prestige');
+            
+            containerEl.appendChild(wrapper);
+        }
+    }
+
+    // Set the grid's total rows to fit all items, ensuring the background draws correctly.
+    containerEl.style.gridTemplateRows = `repeat(${Math.max(10, maxRow)}, var(--grid-cell-size))`;
 }
 
 /**
  * Updates the entire game UI based on the current state.
  */
-export function updateUI(elements, gameState, playerStats, currentMonster, salvageMode, craftingGems = [], selectedItemForForge = null) {
+export function updateUI(elements, gameState, playerStats, currentMonster, salvageMode, craftingGems = [], selectedItemForForge = null, prestigeSelections = []) {
     const {
         goldStatEl, scrapStatEl, heroXpTextEl, clickDamageStatEl, dpsStatEl, absorbedStatsListEl,
         monsterHealthTextEl, upgradeClickCostEl, upgradeDpsCostEl, heroLevelEl,
@@ -79,51 +145,16 @@ export function updateUI(elements, gameState, playerStats, currentMonster, salva
         prestigeRequirementTextEl, currentLevelEl, autoProgressCheckboxEl, monsterHealthBarEl,
         upgradeClickLevelEl, upgradeDpsLevelEl, inventorySlotsEl, lootMonsterNameEl,
         lootTableDisplayEl, prestigeButton, gemSlotsEl, gemCraftingSlotsContainer, gemCraftBtn,
-        forgeInventorySlotsEl, forgeSelectedItemEl, forgeRerollBtn
+        forgeInventorySlotsEl, forgeSelectedItemEl, forgeRerollBtn, prestigeInventorySlotsEl
     } = elements;
 
+    // --- Stats and Hero Info ---
     const xpToNextLevel = getXpForNextLevel(gameState.hero.level);
     goldStatEl.textContent = formatNumber(gameState.gold);
     scrapStatEl.textContent = formatNumber(gameState.scrap);
     heroXpTextEl.textContent = `${formatNumber(gameState.hero.xp)} / ${formatNumber(xpToNextLevel)}`;
     clickDamageStatEl.textContent = formatNumber(playerStats.totalClickDamage);
     dpsStatEl.textContent = formatNumber(playerStats.totalDps);
-    
-    absorbedStatsListEl.innerHTML = '';
-    const absorbedStats = gameState.absorbedStats || {};
-    for (const statKey in absorbedStats) {
-        if (absorbedStats[statKey] > 0) {
-            const statInfo = Object.values(STATS).find(s => s.key === statKey) || { name: `${statKey.charAt(0).toUpperCase() + statKey.slice(1)}`, type: 'flat' };
-            const isPercent = statInfo.type === 'percent';
-            const value = absorbedStats[statKey];
-            const displayValue = isPercent ? `${value.toFixed(2)}%` : formatNumber(value);
-
-            let iconClass = 'fa-question-circle'; 
-            if (statKey === STATS.CLICK_DAMAGE.key) iconClass = 'fa-hand-rock';
-            if (statKey === STATS.DPS.key) iconClass = 'fa-sword';
-            if (statKey === STATS.GOLD_GAIN.key) iconClass = 'fa-coins';
-            if (statKey === STATS.MAGIC_FIND.key) iconClass = 'fa-star';
-
-            const statEl = document.createElement('p');
-            statEl.innerHTML = `<i class="fas ${iconClass}"></i> ${statInfo.name}: <span>${displayValue}</span>`;
-            absorbedStatsListEl.appendChild(statEl);
-        }
-    }
-
-    const absorbedSynergies = gameState.absorbedSynergies || [];
-    for (const synergy of absorbedSynergies) {
-        if (synergy.value > 0) {
-            const statEl = document.createElement('p');
-            statEl.innerHTML = `<i class="fas fa-link"></i> Absorbed Special: <span>+${(synergy.value * 100).toFixed(2)}% of DPS to Click Dmg</span>`;
-            absorbedStatsListEl.appendChild(statEl);
-        }
-    }
-
-    monsterHealthTextEl.textContent = `${formatNumber(Math.ceil(Math.max(0, gameState.monster.hp)))} / ${formatNumber(gameState.monster.maxHp)}`;
-    const clickCost = getUpgradeCost('clickDamage', gameState.upgrades.clickDamage);
-    const dpsCost = getUpgradeCost('dps', gameState.upgrades.dps);
-    upgradeClickCostEl.textContent = formatNumber(clickCost);
-    upgradeDpsCostEl.textContent = formatNumber(dpsCost);
     heroLevelEl.textContent = gameState.hero.level.toString();
     heroXpBarEl.style.width = `${(gameState.hero.xp / xpToNextLevel) * 100}%`;
     attributePointsEl.textContent = gameState.hero.attributePoints.toString();
@@ -136,45 +167,53 @@ export function updateUI(elements, gameState, playerStats, currentMonster, salva
     (/** @type {HTMLButtonElement} */ (addLuckBtn)).disabled = !havePoints;
     bonusGoldStatEl.textContent = playerStats.bonusGold.toFixed(1);
     magicFindStatEl.textContent = playerStats.magicFind.toFixed(1);
-    prestigeCountStatEl.textContent = (gameState.prestigeCount || 0).toString();
-    currentLevelEl.textContent = gameState.currentFightingLevel.toString();
-    (/** @type {HTMLInputElement} */ (autoProgressCheckboxEl)).checked = gameState.isAutoProgressing;
+
+    // --- Monster Info ---
+    monsterHealthTextEl.textContent = `${formatNumber(Math.ceil(Math.max(0, gameState.monster.hp)))} / ${formatNumber(gameState.monster.maxHp)}`;
     const healthPercent = (gameState.monster.hp / gameState.monster.maxHp) * 100;
     monsterHealthBarEl.style.width = `${healthPercent}%`;
     if (healthPercent < 30) monsterHealthBarEl.style.background = 'linear-gradient(to right, #e74c3c, #c0392b)';
     else if (healthPercent < 60) monsterHealthBarEl.style.background = 'linear-gradient(to right, #f39c12, #e67e22)';
     else monsterHealthBarEl.style.background = 'linear-gradient(to right, #2ecc71, #27ae60)';
+
+    // --- Upgrades ---
+    const clickCost = getUpgradeCost('clickDamage', gameState.upgrades.clickDamage);
+    const dpsCost = getUpgradeCost('dps', gameState.upgrades.dps);
+    upgradeClickCostEl.textContent = formatNumber(clickCost);
+    upgradeDpsCostEl.textContent = formatNumber(dpsCost);
     upgradeClickLevelEl.textContent = `Lvl ${gameState.upgrades.clickDamage}`;
     upgradeDpsLevelEl.textContent = `Lvl ${gameState.upgrades.dps}`;
     document.getElementById('upgrade-click-damage').classList.toggle('disabled', gameState.gold < clickCost);
     document.getElementById('upgrade-dps').classList.toggle('disabled', gameState.gold < dpsCost);
     (/** @type {HTMLButtonElement} */ (document.getElementById('buy-loot-crate-btn'))).disabled = gameState.scrap < 50;
-    inventorySlotsEl.innerHTML = '';
-    if (gameState.inventory.length > 0) {
-        gameState.inventory.forEach((item, index) => {
-            const itemWrapper = document.createElement('div');
-            itemWrapper.className = 'item-wrapper';
-            itemWrapper.dataset.index = index.toString();
-            itemWrapper.innerHTML = createItemHTML(item, false);
-            if (salvageMode.active && salvageMode.selections.includes(index)) {
-                const itemDiv = itemWrapper.querySelector('.item');
-                if (itemDiv) itemDiv.classList.add('selected-for-salvage');
-            }
-            inventorySlotsEl.appendChild(itemWrapper);
-        });
-    } else {
-        inventorySlotsEl.innerHTML = `<p style="text-align:center; width:100%;">No items.</p>`;
+    
+    // --- Grid Renders ---
+    renderGrid(inventorySlotsEl, gameState.inventory, { salvageSelections: salvageMode.selections });
+    renderGrid(gemSlotsEl, gameState.gems, { type: 'gem', calculatePositions: true });
+    
+    const allForgeItems = [...Object.values(gameState.equipment).filter(Boolean), ...gameState.inventory];
+    renderGrid(forgeInventorySlotsEl, allForgeItems, { calculatePositions: true, selectedItem: selectedItemForForge });
+
+    if (prestigeButton.classList.contains('hidden')) { // Only render prestige grid when it's visible
+        const allPrestigeItems = [...Object.values(gameState.equipment).filter(Boolean), ...gameState.inventory];
+        renderGrid(prestigeInventorySlotsEl, allPrestigeItems, { calculatePositions: true, prestigeSelections });
     }
+
+    if (selectedItemForForge) {
+        forgeSelectedItemEl.innerHTML = `<div class="item-wrapper">${createItemHTML(selectedItemForForge)}</div>`;
+    } else {
+        forgeSelectedItemEl.innerHTML = `<p>Select an item to begin.</p>`;
+    }
+    (/** @type {HTMLButtonElement} */ (forgeRerollBtn)).disabled = !selectedItemForForge || gameState.scrap < 50;
+    
+    // --- Paperdoll Equipment ---
     for (const slotName in gameState.equipment) {
         const slotEl = document.getElementById(`slot-${slotName}`);
         if (!slotEl) continue;
         const item = gameState.equipment[slotName];
         slotEl.innerHTML = '';
         if (item) {
-            const itemDiv = document.createElement('div');
-            itemDiv.innerHTML = createItemHTML(item, true); 
-            itemDiv.dataset.slotName = slotName;
-            slotEl.appendChild(itemDiv);
+            slotEl.innerHTML = createItemHTML(item);
         } else {
             const placeholder = document.createElement('img');
             placeholder.src = getItemIcon(slotName.replace(/\d/g, ''));
@@ -182,19 +221,8 @@ export function updateUI(elements, gameState, playerStats, currentMonster, salva
             slotEl.appendChild(placeholder);
         }
     }
-
-    gemSlotsEl.innerHTML = '';
-    if (gameState.gems && gameState.gems.length > 0) {
-        gameState.gems.forEach((gem) => {
-            const gemDiv = document.createElement('div');
-            gemDiv.innerHTML = createGemHTML(gem);
-            const firstChild = gemDiv.firstChild;
-            if(firstChild) gemSlotsEl.appendChild(firstChild);
-        });
-    } else {
-        gemSlotsEl.innerHTML = '<p>No gems yet. Find them as rare drops!</p>';
-    }
-
+    
+    // --- Gem Crafting ---
     const craftingSlots = gemCraftingSlotsContainer.querySelectorAll('.gem-crafting-slot');
     craftingSlots.forEach((slot, index) => {
         slot.innerHTML = '';
@@ -203,23 +231,46 @@ export function updateUI(elements, gameState, playerStats, currentMonster, salva
         }
     });
     (/** @type {HTMLButtonElement} */ (gemCraftBtn)).disabled = craftingGems.length !== 2 || gameState.scrap < 100;
-
-
+    
+    // --- Presets & Prestige ---
     document.querySelectorAll('.preset-btn').forEach((btn, index) => {
         btn.textContent = gameState.presets[index].name;
         btn.classList.toggle('active', index === gameState.activePresetIndex);
     });
     
-    // --- PRESTIGE UI UPDATE ---
-    const nextPrestigeLevel = gameState.nextPrestigeLevel || 100;
-    if (prestigeRequirementTextEl) {
-        // <<< THIS IS THE FIX. Update the descriptive text.
-        prestigeRequirementTextEl.innerHTML = `Defeat the boss at Level <b>${nextPrestigeLevel}</b> to Prestige.`;
+    absorbedStatsListEl.innerHTML = '';
+    const absorbedStats = gameState.absorbedStats || {};
+    Object.entries(absorbedStats).forEach(([statKey, value]) => {
+        if (value > 0) {
+            const statInfo = Object.values(STATS).find(s => s.key === statKey) || { name: `${statKey.charAt(0).toUpperCase() + statKey.slice(1)}`, type: 'flat' };
+            const isPercent = statInfo.type === 'percent';
+            const displayValue = isPercent ? `${value.toFixed(2)}%` : formatNumber(value);
+            let iconClass = 'fa-question-circle'; 
+            if (statKey === STATS.CLICK_DAMAGE.key) iconClass = 'fa-hand-rock';
+            if (statKey === STATS.DPS.key) iconClass = 'fa-sword';
+            if (statKey === STATS.GOLD_GAIN.key) iconClass = 'fa-coins';
+            if (statKey === STATS.MAGIC_FIND.key) iconClass = 'fa-star';
+            const statEl = document.createElement('p');
+            statEl.innerHTML = `<i class="fas ${iconClass}"></i> ${statInfo.name}: <span>${displayValue}</span>`;
+            absorbedStatsListEl.appendChild(statEl);
+        }
+    });
+    const absorbedSynergies = gameState.absorbedSynergies || [];
+    for (const synergy of absorbedSynergies) {
+        if (synergy.value > 0) {
+            const statEl = document.createElement('p');
+            statEl.innerHTML = `<i class="fas fa-link"></i> Absorbed Special: <span>+${(synergy.value * 100).toFixed(2)}% of DPS to Click Dmg</span>`;
+            absorbedStatsListEl.appendChild(statEl);
+        }
     }
-    // <<< THIS IS THE FIX. Check the current run's completed levels array.
+    const nextPrestigeLevel = gameState.nextPrestigeLevel || 100;
+    prestigeCountStatEl.textContent = (gameState.prestigeCount || 0).toString();
+    prestigeRequirementTextEl.innerHTML = `Defeat the boss at Level <b>${nextPrestigeLevel}</b> to Prestige.`;
     (/** @type {HTMLButtonElement} */ (prestigeButton)).disabled = !gameState.currentRunCompletedLevels.includes(nextPrestigeLevel);
 
-
+    // --- Map and Monster Info ---
+    currentLevelEl.textContent = gameState.currentFightingLevel.toString();
+    (/** @type {HTMLInputElement} */ (autoProgressCheckboxEl)).checked = gameState.isAutoProgressing;
     const monsterDef = currentMonster.data;
     if (monsterDef) {
         lootMonsterNameEl.textContent = currentMonster.name;
@@ -231,71 +282,61 @@ export function updateUI(elements, gameState, playerStats, currentMonster, salva
                 const entryDiv = document.createElement('div');
                 entryDiv.className = 'loot-table-entry';
                 entryDiv.dataset.lootIndex = index.toString(); 
-                entryDiv.innerHTML = `
-                    <img src="${entry.item.icon}" class="loot-item-icon" alt="${entry.item.name}">
-                    <div class="loot-item-details">
-                        <div class="item-name">${entry.item.name}</div>
-                        <div class="drop-chance">${itemChance.toFixed(2)}% chance</div>
-                    </div>
-                `;
+                entryDiv.innerHTML = `<img src="${entry.item.icon}" class="loot-item-icon" alt="${entry.item.name}"><div class="loot-item-details"><div class="item-name">${entry.item.name}</div><div class="drop-chance">${itemChance.toFixed(2)}% chance</div></div>`;
                 lootTableDisplayEl.appendChild(entryDiv);
             });
         } else {
             lootTableDisplayEl.innerHTML = '<p>This monster has no special drops.</p>';
         }
     }
+}
 
-    // --- FORGE UI UPDATE ---
-    forgeInventorySlotsEl.innerHTML = '';
-    
-    const allPlayerItems = [
-        ...Object.entries(gameState.equipment)
-            .filter(([slot, item]) => item && item.stats)
-            .map(([slot, item]) => ({ ...item, location: 'equipment', slot: slot })),
-        ...gameState.inventory
-            .map((item, index) => ({ ...item, location: 'inventory', index: index }))
-            .filter(item => item && item.stats)
-    ];
+/**
+ * Creates the full HTML for an item's tooltip, including details, stats, and sockets.
+ */
+export function createTooltipHTML(item) {
+    if (!item) return '';
+    let headerHTML = `<div class="item-header"><span>${item.name}</span></div>`;
+    headerHTML += `<div style="font-size: 0.9em; color: #95a5a6; margin-bottom: 5px;">${item.rarity.charAt(0).toUpperCase() + item.rarity.slice(1)} ${item.type.charAt(0).toUpperCase() + item.type.slice(1)}</div>`;
 
-    allPlayerItems.sort((a, b) => {
-        const aIsEquipped = a.location === 'equipment';
-        const bIsEquipped = b.location === 'equipment';
-        if (aIsEquipped !== bIsEquipped) return aIsEquipped ? -1 : 1;
-        if (a.locked !== b.locked) return a.locked ? -1 : 1;
-        return 0;
-    });
+    const combinedStats = getCombinedItemStats(item);
+    let statsHTML = '<ul>';
+    for (const statKey in combinedStats) {
+        const statInfo = Object.values(STATS).find(s => s.key === statKey) || { name: statKey, type: 'flat' };
+        const statName = statInfo.name;
+        const value = combinedStats[statKey];
+        const statValue = statInfo.type === 'percent' ? `${value.toFixed(1)}%` : formatNumber(value);
+        statsHTML += `<li>+${statValue} ${statName}</li>`;
+    }
 
-    if (allPlayerItems.length > 0) {
-        allPlayerItems.forEach(item => {
-            const itemWrapper = document.createElement('div');
-            itemWrapper.className = 'item-wrapper';
-            itemWrapper.dataset.location = item.location;
-            if (item.location === 'equipment') {
-                itemWrapper.dataset.slot = item.slot;
+    let totalSynergyValue = 0;
+    if (item.sockets) {
+        for (const gem of item.sockets) {
+            if (gem && gem.synergy && gem.synergy.source === 'dps' && gem.synergy.target === 'clickDamage') {
+                totalSynergyValue += gem.synergy.value;
+            }
+        }
+    }
+    if (totalSynergyValue > 0) {
+        const synergyPercentage = (totalSynergyValue * 100).toFixed(1);
+        statsHTML += `<li class="stat-special">Special: +${synergyPercentage}% DPS to Click Dmg</li>`;
+    }
+    statsHTML += '</ul>';
+
+    let socketsHTML = '';
+    if (item.sockets) {
+        socketsHTML += `<div class="item-sockets" style="margin-top: 10px; padding-left:0; justify-content:center; position: static; transform: none;">`;
+        item.sockets.forEach(gem => {
+            if (gem) {
+                socketsHTML += `<div class="socket"><img src="${gem.icon}" alt="${gem.name}"></div>`;
             } else {
-                itemWrapper.dataset.index = item.index.toString();
+                socketsHTML += '<div class="socket"></div>';
             }
-            
-            itemWrapper.innerHTML = createItemHTML(item, false);
-            
-            if (selectedItemForForge && selectedItemForForge.id === item.id) {
-                const itemDiv = itemWrapper.querySelector('.item');
-                if (itemDiv) itemDiv.classList.add('selected-for-forge');
-            }
-
-            forgeInventorySlotsEl.appendChild(itemWrapper);
         });
-    } else {
-        forgeInventorySlotsEl.innerHTML = `<p>No forgable equipment to display.</p>`;
+        socketsHTML += '</div>';
     }
 
-    if (selectedItemForForge) {
-        forgeSelectedItemEl.innerHTML = createItemHTML(selectedItemForForge, false);
-    } else {
-        forgeSelectedItemEl.innerHTML = `<p>Select an item to begin.</p>`;
-    }
-
-    (/** @type {HTMLButtonElement} */ (forgeRerollBtn)).disabled = !selectedItemForForge || gameState.scrap < 50;
+    return headerHTML + statsHTML + socketsHTML;
 }
 
 export function createGemTooltipHTML(gem) {
@@ -315,7 +356,7 @@ export function createGemTooltipHTML(gem) {
     }
 
     if (gem.synergy) {
-        statsHTML += `<li class="stat-special" style="margin: 5px 0;">Special: +${gem.synergy.value * 100}% of total DPS to Click Dmg</li>`;
+        statsHTML += `<li class="stat-special" style="margin: 5px 0;">Special: +${(gem.synergy.value * 100).toFixed(2)}% of total DPS to Click Dmg</li>`;
     }
 
     if (statsHTML === '<ul>') {
@@ -325,7 +366,6 @@ export function createGemTooltipHTML(gem) {
     statsHTML += '</ul>';
     return headerHTML + statsHTML;
 }
-
 
 export function createLootTableTooltipHTML(itemBase) {
     let statsHTML = '<ul>';
@@ -430,12 +470,14 @@ export function createLootComparisonTooltipHTML(potentialItem, equippedItem, equ
             </div>`;
 }
 
-
-export function createItemHTML(item, isEquipped = false) {
+/**
+ * Creates the HTML for an item's icon-centric view in the grid.
+ */
+export function createItemHTML(item) {
     if (!item) return '';
     let socketsHTML = '';
     if (item.sockets) {
-        socketsHTML += `<div class="item-sockets ${isEquipped ? 'equipped-sockets' : ''}">`;
+        socketsHTML += `<div class="item-sockets">`;
         item.sockets.forEach(gem => {
             if (gem) {
                 socketsHTML += `<div class="socket"><img src="${gem.icon}" alt="${gem.name}"></div>`;
@@ -447,66 +489,22 @@ export function createItemHTML(item, isEquipped = false) {
     }
 
     const iconSrc = item.icon || getItemIcon(item.type);
+    const lockHTML = item.locked ? `<i class="fas fa-lock lock-icon"></i>` : '';
 
-    if (isEquipped) {
-        // This logic now correctly shows only the icon and sockets for equipped items.
-        return `<img src="${iconSrc}" class="item-icon"> ${socketsHTML}`;
-    }
-
-    const lockHTML = item.locked !== undefined ? `<i class="fas ${item.locked ? 'fa-lock' : 'fa-lock-open'} lock-icon"></i>` : '';
-    
-    const combinedStats = getCombinedItemStats(item);
-    let statsHTML = '<ul>';
-    for (const statKey in combinedStats) {
-        const statInfo = Object.values(STATS).find(s => s.key === statKey);
-        const statName = statInfo ? statInfo.name : statKey;
-        const value = combinedStats[statKey];
-        const statValue = statInfo && statInfo.type === 'percent' ? `${value.toFixed(1)}%` : formatNumber(value);
-        statsHTML += `<li>+${statValue} ${statName}</li>`;
-    }
-
-    let totalSynergyValue = 0;
-    if (item.sockets) {
-        for (const gem of item.sockets) {
-            if (gem && gem.synergy && gem.synergy.source === 'dps' && gem.synergy.target === 'clickDamage') {
-                totalSynergyValue += gem.synergy.value;
-            }
-        }
-    }
-    if (totalSynergyValue > 0) {
-        const synergyPercentage = (totalSynergyValue * 100).toFixed(1);
-        statsHTML += `<li class="stat-special">Special: +${synergyPercentage}% DPS to Click Dmg</li>`;
-    }
-
-    statsHTML += '</ul>';
-    
-    const lockedClass = item.locked ? 'locked-item' : '';
-    
-    return `<div class="item ${item.rarity} ${lockedClass}">
+    return `<div class="item ${item.rarity}">
+                <img src="${iconSrc}" class="item-icon" alt="${item.name}">
+                ${socketsHTML}
                 ${lockHTML}
-                <div class="item-header">
-                    <span>${item.name}</span>
-                </div>
-                ${statsHTML}
-                ${socketsHTML} 
-                <img src="${iconSrc}" class="item-bg-icon" alt="">
             </div>`;
 }
 
 export function createGemHTML(gem) {
-    const gemEl = document.createElement('div');
-    gemEl.className = 'gem';
-    gemEl.dataset.gemId = String(gem.id);
-    gemEl.innerHTML = `<img src="${gem.icon}" alt="${gem.name}">`;
-    return gemEl.outerHTML;
+    if (!gem) return '';
+    return `<div class="gem" data-gem-id="${String(gem.id)}">
+                <img src="${gem.icon}" alt="${gem.name}">
+            </div>`;
 }
 
-/**
- * Gets the appropriate icon path for an item type.
- * This is now primarily a fallback for items without a specific icon.
- * @param {string} type - The item type (e.g., 'sword', 'shield').
- * @returns {string} The path to the icon image.
- */
 export function getItemIcon(type) {
     switch (type) {
         case 'sword': return 'images/icons/sword.png';

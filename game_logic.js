@@ -1,8 +1,9 @@
 // --- START OF FILE game_logic.js ---
 
 import { MONSTERS } from './data/monsters.js';
+import { ITEMS } from './data/items.js';
 import { rarities } from './game.js';
-import { isBossLevel, isBigBossLevel, isMiniBossLevel, findSubZoneByLevel, formatNumber } from './utils.js';
+import { isBossLevel, isBigBossLevel, isMiniBossLevel, findSubZoneByLevel, formatNumber, findEmptySpot } from './utils.js';
 
 /**
  * Generates a new item based on rarity, level, and a base item definition.
@@ -19,8 +20,12 @@ export function generateItem(rarity, itemLevel, itemBase) {
         baseId: itemBase.id,
         name: `${rarity.charAt(0).toUpperCase() + rarity.slice(1)} ${itemBase.name}`,
         type: itemBase.type.toLowerCase(),
-        icon: itemBase.icon, // <-- THIS IS THE CORRECT, DEFINITIVE FIX.
+        icon: itemBase.icon,
         rarity: rarity,
+        width: itemBase.width,
+        height: itemBase.height,
+        x: -1, // Not placed in grid yet
+        y: -1, // Not placed in grid yet
         stats: {},
         locked: false,
         rerollAttempts: 0 // Initialize the failsafe counter
@@ -118,8 +123,19 @@ export function dropLoot(currentMonster, gameState, playerStats) {
     else rarity = 'common';
 
     const item = generateItem(rarity, gameState.currentFightingLevel, itemBaseToDrop);
-    gameState.inventory.push(item);
-    return item;
+    
+    // Find a spot in the grid for the new item
+    const spot = findEmptySpot(item.width, item.height, gameState.inventory);
+    
+    if (spot) {
+        item.x = spot.x;
+        item.y = spot.y;
+        gameState.inventory.push(item);
+        return item;
+    } else {
+        // Inventory is full, can't add the item.
+        return null;
+    }
 }
 
 /**
@@ -168,6 +184,9 @@ export function monsterDefeated(gameState, playerStats, currentMonster) {
             const isGem = droppedItem.tier >= 1;
             const rarityClass = isGem ? 'epic' : droppedItem.rarity;
             logMessages.push(`The ${currentMonster.name} dropped something! <span class="${rarityClass}" style="font-weight:bold;">${droppedItem.name}</span>`);
+        } else {
+            // A drop was rolled, but dropLoot returned null. This means the inventory is full.
+            logMessages.push(`The ${currentMonster.name} dropped an item, but your inventory is full!`, 'rare');
         }
     }
     

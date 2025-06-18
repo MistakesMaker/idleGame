@@ -139,14 +139,20 @@
                     <button class="salvage-rarity-btn" data-rarity="uncommon">Salvage Uncommon</button>
                     <button class="salvage-rarity-btn" data-rarity="rare">Salvage Rare</button>
                 </div>
-                <div id="inventory-slots"><p>Defeat bosses for loot!</p></div>
+                <div class="grid-scroll-container">
+                    <div id="inventory-slots" class="item-grid">
+                        <!-- Items will be positioned here by JS -->
+                    </div>
+                </div>
             </div>
 
             <div id="gems-view" class="view">
                 <h3>Gems</h3>
                 <p>Click a gem to select it for socketing. Then, click an item with an empty socket to insert the gem.</p>
-                <div id="gem-slots">
-                    <!-- Gems will be dynamically inserted here -->
+                <div class="grid-scroll-container">
+                    <div id="gem-slots" class="item-grid">
+                        <!-- Gems will be dynamically inserted here -->
+                    </div>
                 </div>
                 <div id="gem-crafter" style="margin-top: 20px;">
                     <h4>Gemcutting</h4>
@@ -169,8 +175,10 @@
                     </div>
                     <button id="forge-reroll-btn" disabled>Reroll Stats (50 Scrap)</button>
                 </div>
-                <div id="forge-inventory-slots">
-                    <!-- Player's inventory and equipment will appear here -->
+                <div class="grid-scroll-container">
+                    <div id="forge-inventory-slots" class="item-grid">
+                        <!-- Player's inventory and equipment will appear here -->
+                    </div>
                 </div>
             </div>
         </div>
@@ -216,7 +224,9 @@
                 <button id="prestige-button" disabled>Prestige Now</button>
                 <div id="prestige-selection" class="hidden">
                     <h4>Select up to 3 Items to keep through Prestige</h4>
-                    <div id="prestige-inventory-slots"></div>
+                    <div class="grid-scroll-container">
+                        <div id="prestige-inventory-slots" class="item-grid"></div>
+                    </div>
                     <button id="confirm-prestige-btn">Confirm Prestige</button>
                 </div>
             </div>
