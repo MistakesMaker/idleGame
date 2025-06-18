@@ -73,7 +73,6 @@ export function initDOMElements() {
         ringSelectionSlot1: document.getElementById('ring-selection-slot1'),
         ringSelectionSlot2: document.getElementById('ring-selection-slot2'),
         ringSelectionCancelBtn: document.getElementById('ring-selection-cancel-btn'),
-        // --- ADDED MISSING PRESTIGE ELEMENTS ---
         prestigeFullscreenPanel: document.getElementById('prestige-fullscreen-panel'),
         prestigeInventorySlotsEl: document.getElementById('prestige-inventory-slots'),
         prestigeBackButton: document.getElementById('prestige-back-btn'),
@@ -474,6 +473,9 @@ export function createLootComparisonTooltipHTML(potentialItem, equippedItem, equ
 /**
  * Creates the HTML for an item's icon-centric view in the grid.
  */
+/**
+ * Creates the HTML for an item's icon-centric view in the grid.
+ */
 export function createItemHTML(item) {
     if (!item) return '';
     let socketsHTML = '';
@@ -490,7 +492,10 @@ export function createItemHTML(item) {
     }
 
     const iconSrc = item.icon || getItemIcon(item.type);
-    const lockHTML = item.locked ? `<i class="fas fa-lock lock-icon"></i>` : '';
+    
+    // --- THIS IS THE FIX ---
+    // The lock icon is now correctly included in the returned HTML string.
+    const lockHTML = item.locked !== undefined ? `<i class="fas ${item.locked ? 'fa-lock' : 'fa-lock-open'} lock-icon"></i>` : '';
 
     return `<div class="item ${item.rarity}">
                 <img src="${iconSrc}" class="item-icon" alt="${item.name}">
