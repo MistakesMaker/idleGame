@@ -27,7 +27,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let selectedGemForSocketing = null;
     let craftingGems = [];
     let selectedItemForForge = null;
-    let isResetting = false; // <-- FIX: Add the flag here
+    let isResetting = false; 
 
     /** @type {DOMElements} */
     let elements = {};
@@ -280,7 +280,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function saveOnExit() {
-        // <-- FIX: Check the flag before saving
         if (isResetting) return;
         gameState.lastSaveTimestamp = Date.now();
         localStorage.setItem('idleRPGSaveData', JSON.stringify(gameState));
@@ -288,7 +287,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function resetGame() {
         if (confirm("Are you sure? This will delete your save permanently.")) {
-            // <-- FIX: Set the flag to true
             isResetting = true;
             window.removeEventListener('beforeunload', saveOnExit);
             localStorage.removeItem('idleRPGSaveData');
@@ -442,14 +440,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
         } else {
             const highestCompleted = ui.getHighestCompletedLevelInSubZone(gameState.completedLevels, subZone);
-            let nextLevel = Math.min(highestCompleted + 1, finalLevel);
+            
+            // --- FIX: Correctly determine the level to start/continue at ---
+            const nextLevelToTry = Math.min(highestCompleted + 1, finalLevel);
+            const isNewZone = highestCompleted < startLevel;
+            const levelToStart = isNewZone ? startLevel : nextLevelToTry;
 
             const continueButton = document.createElement('button');
-            continueButton.textContent = (highestCompleted < startLevel) ? `Start at Lvl ${startLevel}` : `Continue at Lvl ${nextLevel}`;
-            continueButton.onclick = () => startCombat(nextLevel, true);
+            continueButton.textContent = isNewZone ? `Start at Lvl ${startLevel}` : `Continue at Lvl ${levelToStart}`;
+            continueButton.onclick = () => startCombat(levelToStart, true);
             elements.modalBodyEl.appendChild(continueButton);
 
-            if (highestCompleted >= startLevel && highestCompleted < finalLevel) {
+            if (!isNewZone && highestCompleted < finalLevel) {
                 const restartButton = document.createElement('button');
                 restartButton.textContent = `Restart at Lvl ${startLevel}`;
                 restartButton.onclick = () => startCombat(startLevel, true);
@@ -1454,13 +1456,11 @@ document.addEventListener('DOMContentLoaded', () => {
             
             const allCurrentItems = [...Object.values(gameState.equipment).filter(i => i), ...gameState.inventory];
             
-            // --- FIX: Filter items to only include the ones selected by the player ---
             const itemsToAbsorb = allCurrentItems.filter(item => prestigeSelections.includes(item.id));
 
             const newAbsorbedStats = {};
             const newAbsorbedSynergies = [];
 
-            // --- FIX: Loop over the *filtered* list of items to absorb ---
             for (const item of itemsToAbsorb) {
                 const combinedStats = getCombinedItemStats(item);
                 for (const statKey in combinedStats) {
@@ -1475,7 +1475,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
 
-            // --- FIX: Update the log message to be accurate ---
             if (itemsToAbsorb.length > 0) {
                 logMessage(elements.gameLogEl, `Absorbed stats from ${itemsToAbsorb.length} selected items!`, 'epic');
             } else {
@@ -1521,7 +1520,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 nextPrestigeLevel: currentPrestigeLevel + 25,
                 hero: heroToKeep,
                 currentFightingLevel: 1,
-                currentRunCompletedLevels: [], // <-- NEW: Reset the current run tracker
+                currentRunCompletedLevels: [], 
             };
 
             logMessage(elements.gameLogEl, `PRESTIGE! You are reborn with greater power. Your next goal is Level ${gameState.nextPrestigeLevel}.`, 'legendary');
@@ -1574,7 +1573,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 presets: loadedState.presets || baseState.presets, 
                 isAutoProgressing: loadedState.isAutoProgressing !== undefined ? loadedState.isAutoProgressing : true, 
                 currentRealmIndex: loadedState.currentRealmIndex || 0,
-                currentRunCompletedLevels: loadedState.currentRunCompletedLevels || [], // <-- NEW: Load the run tracker
+                currentRunCompletedLevels: loadedState.currentRunCompletedLevels || [], 
                 legacyItems: [],
             };
 
