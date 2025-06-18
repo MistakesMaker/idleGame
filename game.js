@@ -27,6 +27,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let selectedGemForSocketing = null;
     let craftingGems = [];
     let selectedItemForForge = null;
+    let isResetting = false; // <-- FIX: Add the flag here
 
     /** @type {DOMElements} */
     let elements = {};
@@ -279,12 +280,16 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function saveOnExit() {
+        // <-- FIX: Check the flag before saving
+        if (isResetting) return;
         gameState.lastSaveTimestamp = Date.now();
         localStorage.setItem('idleRPGSaveData', JSON.stringify(gameState));
     }
 
     function resetGame() {
         if (confirm("Are you sure? This will delete your save permanently.")) {
+            // <-- FIX: Set the flag to true
+            isResetting = true;
             window.removeEventListener('beforeunload', saveOnExit);
             localStorage.removeItem('idleRPGSaveData');
             window.location.reload();
@@ -1449,10 +1454,14 @@ document.addEventListener('DOMContentLoaded', () => {
             
             const allCurrentItems = [...Object.values(gameState.equipment).filter(i => i), ...gameState.inventory];
             
+            // --- FIX: Filter items to only include the ones selected by the player ---
+            const itemsToAbsorb = allCurrentItems.filter(item => prestigeSelections.includes(item.id));
+
             const newAbsorbedStats = {};
             const newAbsorbedSynergies = [];
 
-            for (const item of allCurrentItems) {
+            // --- FIX: Loop over the *filtered* list of items to absorb ---
+            for (const item of itemsToAbsorb) {
                 const combinedStats = getCombinedItemStats(item);
                 for (const statKey in combinedStats) {
                     newAbsorbedStats[statKey] = (newAbsorbedStats[statKey] || 0) + combinedStats[statKey];
@@ -1466,7 +1475,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
 
-            logMessage(elements.gameLogEl, `Absorbed stats from all ${allCurrentItems.length} items!`, 'epic');
+            // --- FIX: Update the log message to be accurate ---
+            if (itemsToAbsorb.length > 0) {
+                logMessage(elements.gameLogEl, `Absorbed stats from ${itemsToAbsorb.length} selected items!`, 'epic');
+            } else {
+                 logMessage(elements.gameLogEl, `No items were selected to absorb.`, 'uncommon');
+            }
+
 
             const heroToKeep = {
                 level: 1,
