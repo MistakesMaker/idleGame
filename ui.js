@@ -22,8 +22,6 @@ export function initDOMElements() {
         monsterHealthTextEl: document.getElementById('monster-health-text'),
         inventorySlotsEl: document.getElementById('inventory-slots'),
         gameLogEl: document.getElementById('game-log'),
-        prestigeSelectionEl: document.getElementById('prestige-selection'),
-        prestigeInventorySlotsEl: document.getElementById('prestige-inventory-slots'),
         prestigeButton: document.getElementById('prestige-button'),
         monsterImageEl: document.getElementById('monster-image'),
         popupContainerEl: document.getElementById('popup-container'),
@@ -75,6 +73,11 @@ export function initDOMElements() {
         ringSelectionSlot1: document.getElementById('ring-selection-slot1'),
         ringSelectionSlot2: document.getElementById('ring-selection-slot2'),
         ringSelectionCancelBtn: document.getElementById('ring-selection-cancel-btn'),
+        // --- ADDED MISSING PRESTIGE ELEMENTS ---
+        prestigeFullscreenPanel: document.getElementById('prestige-fullscreen-panel'),
+        prestigeInventorySlotsEl: document.getElementById('prestige-inventory-slots'),
+        prestigeBackButton: document.getElementById('prestige-back-btn'),
+        confirmPrestigeButton: document.getElementById('confirm-prestige-btn'),
     };
 }
 
@@ -128,8 +131,6 @@ export function renderGrid(containerEl, items, options = {}) {
             containerEl.appendChild(wrapper);
         }
     }
-
-    // Set the grid's total rows to fit all items, ensuring the background draws correctly.
     containerEl.style.gridTemplateRows = `repeat(${Math.max(10, maxRow)}, var(--grid-cell-size))`;
 }
 
@@ -194,7 +195,7 @@ export function updateUI(elements, gameState, playerStats, currentMonster, salva
     const allForgeItems = [...Object.values(gameState.equipment).filter(Boolean), ...gameState.inventory];
     renderGrid(forgeInventorySlotsEl, allForgeItems, { calculatePositions: true, selectedItem: selectedItemForForge });
 
-    if (prestigeButton.classList.contains('hidden')) { // Only render prestige grid when it's visible
+    if (!elements.prestigeFullscreenPanel.classList.contains('hidden')) { 
         const allPrestigeItems = [...Object.values(gameState.equipment).filter(Boolean), ...gameState.inventory];
         renderGrid(prestigeInventorySlotsEl, allPrestigeItems, { calculatePositions: true, prestigeSelections });
     }

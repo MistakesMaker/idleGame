@@ -220,15 +220,21 @@
                         <!-- Absorbed stats will be dynamically inserted here -->
                      </div>
                 </div>
-
                 <button id="prestige-button" disabled>Prestige Now</button>
-                <div id="prestige-selection" class="hidden">
-                    <h4>Select up to 3 Items to keep through Prestige</h4>
-                    <div class="grid-scroll-container">
-                        <div id="prestige-inventory-slots" class="item-grid"></div>
-                    </div>
+            </div>
+        </div>
+
+        <!-- NEW: Fullscreen Prestige Panel -->
+        <div id="prestige-fullscreen-panel" class="hidden">
+            <div id="prestige-header">
+                <h2>Choose Your Legacy (Select up to 3 items)</h2>
+                <div class="button-group">
+                    <button id="prestige-back-btn">Go Back</button>
                     <button id="confirm-prestige-btn">Confirm Prestige</button>
                 </div>
+            </div>
+             <div class="grid-scroll-container">
+                <div id="prestige-inventory-slots" class="item-grid"></div>
             </div>
         </div>
     </div>
