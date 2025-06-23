@@ -168,9 +168,11 @@ export function getUpgradeCost(upgradeType, level) {
 export function findSubZoneByLevel(level) {
     for (const realm of REALMS) {
         for (const zoneId in realm.zones) {
-            for (const subZoneId in realm.zones[zoneId].subZones) {
-                const subZone = realm.zones[zoneId].subZones[subZoneId];
+            const zone = realm.zones[zoneId];
+            for (const subZoneId in zone.subZones) {
+                const subZone = zone.subZones[subZoneId];
                 if (level >= subZone.levelRange[0] && level <= subZone.levelRange[1]) {
+                    subZone.parentZone = zone; // Add a reference to the parent zone
                     return subZone;
                 }
             }

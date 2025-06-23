@@ -10,6 +10,7 @@ export const REALMS = [
             "green_meadows": {
                 name: "Green Meadows",
                 mapImage: "images/map_meadows_zoomed.png",
+                monsterAreaBg: "images/backgrounds/green_meadows.png",
                 coords: { top: '78%', left: '20%' },
                 icon: 'images/icons/green_meadows.png',
                 subZones: {
@@ -26,6 +27,7 @@ export const REALMS = [
             "orc_volcano": {
                 name: "Orc Volcano",
                 mapImage: "images/map_volcano_zoomed.png",
+                monsterAreaBg: "images/backgrounds/orc_volcano.png",
                 coords: { top: '30%', left: '38%' },
                 icon: 'images/icons/orc_volcano.png',
                 subZones: {
@@ -42,6 +44,7 @@ export const REALMS = [
             "undead_desert": {
                 name: "Undead Desert",
                 mapImage: "images/map_desert_zoomed.png",
+                monsterAreaBg: "images/backgrounds/undead_desert.png",
                 coords: { top: '70%', left: '75%' },
                 icon: 'images/icons/undead_desert.png',
                 subZones: {
@@ -58,6 +61,7 @@ export const REALMS = [
             "final_dungeon": {
                 name: "Final Dungeon",
                 mapImage: "images/map_dungeon_zoomed.png",
+                monsterAreaBg: "images/backgrounds/final_dungeon.png",
                 coords: { top: '22%', left: '78%' },
                 icon: 'images/icons/final_dungeon.png',
                 subZones: {
@@ -76,11 +80,12 @@ export const REALMS = [
     {
         name: "The Underdark",
         mapImage: "images/underground_world_map.png", 
-        requiredLevel: 401, // <-- IMPORTANT: Level requirement updated
+        requiredLevel: 401,
         zones: {
              "crystal_caves": {
                 name: "Crystal Caverns",
                 mapImage: "images/map_caves_zoomed.png",
+                monsterAreaBg: "images/backgrounds/bg_caves.png",
                 coords: { top: '70%', left: '25%' },
                 icon: 'images/icons/ring.png',
                 subZones: {
@@ -94,10 +99,10 @@ export const REALMS = [
                     "crystal_heart": { name: "Crystal Heart", levelRange: [500, 500], monsterPool: [MONSTERS.RULER_OF_ORCS], coords: {top: '15%', left: '70%'}, isBoss: true }
                 }
             },
-            // Note: The following zones are templates. You can create unique monsters for them later.
             "fungal_forest": {
                 name: "Fungal Forest",
                 mapImage: "images/map_fungal_zoomed.png",
+                monsterAreaBg: "images/backgrounds/bg_fungal.png",
                 coords: { top: '40%', left: '50%' },
                 icon: 'images/icons/necklace.png',
                 subZones: {
@@ -114,6 +119,7 @@ export const REALMS = [
             "drow_city": {
                 name: "Drow City",
                 mapImage: "images/map_drow_zoomed.png",
+                monsterAreaBg: "images/backgrounds/bg_drow.png",
                 coords: { top: '25%', left: '75%' },
                 icon: 'images/icons/belt.png',
                 subZones: {

@@ -20,6 +20,7 @@ export function initDOMElements() {
         currentLevelEl: document.getElementById('current-level'),
         monsterHealthBarEl: document.getElementById('monster-health-bar'),
         monsterHealthTextEl: document.getElementById('monster-health-text'),
+        monsterAreaEl: document.getElementById('monster-area'),
         inventorySlotsEl: document.getElementById('inventory-slots'),
         gameLogEl: document.getElementById('game-log'),
         prestigeButton: document.getElementById('prestige-button'),

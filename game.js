@@ -233,6 +233,15 @@ document.addEventListener('DOMContentLoaded', () => {
         gameState.monster = newMonsterState;
         (/** @type {HTMLImageElement} */ (elements.monsterImageEl)).src = currentMonster.data.image;
         elements.monsterNameEl.textContent = currentMonster.name;
+
+        // Set zone-specific background
+        const subZone = findSubZoneByLevel(gameState.currentFightingLevel);
+        if (subZone && subZone.parentZone) {
+            elements.monsterAreaEl.style.backgroundImage = `url('${subZone.parentZone.monsterAreaBg}')`;
+        } else {
+             // Fallback for the very first level or if something goes wrong
+            elements.monsterAreaEl.style.backgroundImage = `url('${REALMS[0].zones.green_meadows.monsterAreaBg}')`;
+        }
     }
 
     function attack(baseDamage, isClick = false) {
@@ -477,6 +486,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 currentMap = 'world';
                 renderMap();
                 renderRealmTabs();
+                startNewMonster(); // Update background when changing realms
                 autoSave();
             };
             elements.realmTabsContainerEl.appendChild(tab);
