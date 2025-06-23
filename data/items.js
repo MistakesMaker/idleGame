@@ -49,11 +49,11 @@ export const ITEMS = {
     },
     MITHRIL_SCIMITAR: {
         id: 'MITHRIL_SCIMITAR',
-        name: "Mithril Scimitar",
+        name: "Diamond scimitar", //renamed
         type: 'sword',
         icon: 'images/icons/mithril_scimitar.png',
         width: 2, height: 3,
-        possibleStats: [ { key: STATS.CLICK_DAMAGE.key, min: 50, max: 150 } ]
+        possibleStats: [ { key: STATS.CLICK_DAMAGE.key, min: 500, max: 15000 } ]
     },
     SERRATED_DAGGER: {
         id: 'SERRATED_DAGGER',
