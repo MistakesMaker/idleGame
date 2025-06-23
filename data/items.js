@@ -63,7 +63,7 @@ export const ITEMS = {
         width: 2, height: 3,
         possibleStats: [
             { key: STATS.CLICK_DAMAGE.key, min: 40, max: 120 },
-            { key: STATS.DPS.key, min: 80, max: 240 }
+            { key: STATS.DPS.key, min: 800, max: 2400 }
         ]
     },
     GLADIATORS_LONGSWORD: { // Existing unique
@@ -77,7 +77,7 @@ export const ITEMS = {
         maxSockets: 3,
         possibleStats: [
             { key: STATS.CLICK_DAMAGE.key, min: 20, max: 100 },
-            { key: STATS.DPS.key, min: 50, max: 250 }
+            { key: STATS.DPS.key, min: 500, max: 2500 }
         ]
     },
     ORCISH_CLEAVER: {
@@ -105,7 +105,7 @@ export const ITEMS = {
         maxSockets: 3,
         possibleStats: [
             { key: STATS.CLICK_DAMAGE.key, min: 150, max: 450 },
-            { key: STATS.DPS.key, min: 300, max: 900 }
+            { key: STATS.DPS.key, min: 3000, max: 9000 }
         ]
     },
     BLADE_OF_THE_SPECTRE: {
@@ -133,7 +133,7 @@ export const ITEMS = {
         maxSockets: 3,
         possibleStats: [
             { key: STATS.CLICK_DAMAGE.key, min: 500, max: 1500 },
-            { key: STATS.DPS.key, min: 1000, max: 3000 }
+            { key: STATS.DPS.key, min: 10000, max: 30000 }
         ]
     },
 
@@ -147,7 +147,7 @@ export const ITEMS = {
         type: 'shield',
         icon: 'images/icons/wooden_shield.png',
         width: 2, height: 3,
-        possibleStats: [ { key: STATS.DPS.key, min: 5, max: 25 } ]
+        possibleStats: [ { key: STATS.DPS.key, min: 50, max: 250 } ]
     },
     BRONZE_BUCKLER: {
         id: 'BRONZE_BUCKLER',
@@ -155,7 +155,7 @@ export const ITEMS = {
         type: 'shield',
         icon: 'images/icons/bronze_buckler.png',
         width: 2, height: 3,
-        possibleStats: [ { key: STATS.DPS.key, min: 20, max: 60 } ]
+        possibleStats: [ { key: STATS.DPS.key, min: 200, max: 600 } ]
     },
     IRON_KITESHIELD: {
         id: 'IRON_KITESHIELD',
@@ -163,7 +163,7 @@ export const ITEMS = {
         type: 'shield',
         icon: 'images/icons/iron_kiteshield.png',
         width: 2, height: 3,
-        possibleStats: [ { key: STATS.DPS.key, min: 50, max: 100 } ]
+        possibleStats: [ { key: STATS.DPS.key, min: 500, max: 1000 } ]
     },
     STEEL_HEATER: {
         id: 'STEEL_HEATER',
@@ -171,7 +171,7 @@ export const ITEMS = {
         type: 'shield',
         icon: 'images/icons/steel_heater.png',
         width: 2, height: 3,
-        possibleStats: [ { key: STATS.DPS.key, min: 120, max: 160 } ]
+        possibleStats: [ { key: STATS.DPS.key, min: 1200, max: 1600 } ]
     },
     TOWER_SHIELD: {
         id: 'TOWER_SHIELD',
@@ -181,7 +181,7 @@ export const ITEMS = {
         width: 2, height: 3,
         canHaveSockets: true,
         maxSockets: 1,
-        possibleStats: [ { key: STATS.DPS.key, min: 250, max: 750 } ]
+        possibleStats: [ { key: STATS.DPS.key, min: 2500, max: 7500 } ]
     },
     BONE_SHIELD: {
         id: 'BONE_SHIELD',
@@ -193,7 +193,7 @@ export const ITEMS = {
         canHaveSockets: true,
         maxSockets: 2,
         possibleStats: [
-            { key: STATS.DPS.key, min: 100, max: 300 },
+            { key: STATS.DPS.key, min: 1000, max: 3000 },
             { key: STATS.GOLD_GAIN.key, min: 5, max: 15 },
         ]
     },
@@ -207,7 +207,7 @@ export const ITEMS = {
         canHaveSockets: true,
         maxSockets: 3,
         possibleStats: [
-            { key: STATS.DPS.key, min: 200, max: 600 },
+            { key: STATS.DPS.key, min: 2000, max: 6000 },
             { key: STATS.CLICK_DAMAGE.key, min: 50, max: 150 },
         ]
     },
@@ -221,7 +221,7 @@ export const ITEMS = {
         canHaveSockets: true,
         maxSockets: 3,
         possibleStats: [
-            { key: STATS.DPS.key, min: 300, max: 900 },
+            { key: STATS.DPS.key, min: 3000, max: 9000 },
             { key: STATS.MAGIC_FIND.key, min: 10, max: 25 },
         ]
     },
@@ -235,7 +235,7 @@ export const ITEMS = {
         canHaveSockets: true,
         maxSockets: 3,
         possibleStats: [
-            { key: STATS.DPS.key, min: 400, max: 1200 },
+            { key: STATS.DPS.key, min: 4000, max: 12000 },
             { key: STATS.GOLD_GAIN.key, min: 20, max: 50 },
         ]
     },
@@ -249,7 +249,7 @@ export const ITEMS = {
         canHaveSockets: true,
         maxSockets: 3,
         possibleStats: [
-            { key: STATS.DPS.key, min: 1200, max: 3600 },
+            { key: STATS.DPS.key, min: 12000, max: 36000 },
             { key: STATS.MAGIC_FIND.key, min: 15, max: 45 },
         ]
     },
@@ -318,7 +318,7 @@ export const ITEMS = {
         canHaveSockets: true,
         maxSockets: 2,
         possibleStats: [
-            { key: STATS.DPS.key, min: 100, max: 300 },
+            { key: STATS.DPS.key, min: 1000, max: 3000 },
             { key: STATS.GOLD_GAIN.key, min: 10, max: 30 },
         ]
     },
@@ -346,7 +346,7 @@ export const ITEMS = {
         canHaveSockets: true,
         maxSockets: 2,
         possibleStats: [
-            { key: STATS.DPS.key, min: 250, max: 750 },
+            { key: STATS.DPS.key, min: 2500, max: 7500 },
             { key: STATS.MAGIC_FIND.key, min: 15, max: 45 },
         ]
     },
@@ -374,7 +374,7 @@ export const ITEMS = {
         canHaveSockets: true,
         maxSockets: 2,
         possibleStats: [
-            { key: STATS.DPS.key, min: 800, max: 2400 },
+            { key: STATS.DPS.key, min: 8000, max: 24000 },
             { key: STATS.GOLD_GAIN.key, min: 30, max: 90 },
         ]
     },
@@ -388,7 +388,7 @@ export const ITEMS = {
         type: 'platebody',
         icon: 'images/icons/leather_tunic.png',
         width: 2, height: 3,
-        possibleStats: [ { key: STATS.DPS.key, min: 5, max: 15 } ]
+        possibleStats: [ { key: STATS.DPS.key, min: 50, max: 150 } ]
     },
     CHAINMAIL_HAUBERK: {
         id: 'CHAINMAIL_HAUBERK',
@@ -396,7 +396,7 @@ export const ITEMS = {
         type: 'platebody',
         icon: 'images/icons/chainmail_hauberk.png',
         width: 2, height: 3,
-        possibleStats: [ { key: STATS.DPS.key, min: 12, max: 36 } ]
+        possibleStats: [ { key: STATS.DPS.key, min: 120, max: 360 } ]
     },
     IRON_PLATEBODY: {
         id: 'IRON_PLATEBODY',
@@ -404,7 +404,7 @@ export const ITEMS = {
         type: 'platebody',
         icon: 'images/icons/iron_platebody.png',
         width: 2, height: 3,
-        possibleStats: [ { key: STATS.DPS.key, min: 30, max: 90 } ]
+        possibleStats: [ { key: STATS.DPS.key, min: 300, max: 900 } ]
     },
     STEEL_PLATEMAIL: {
         id: 'STEEL_PLATEMAIL',
@@ -412,7 +412,7 @@ export const ITEMS = {
         type: 'platebody',
         icon: 'images/icons/steel_platemail.png',
         width: 2, height: 3,
-        possibleStats: [ { key: STATS.DPS.key, min: 80, max: 240 } ]
+        possibleStats: [ { key: STATS.DPS.key, min: 800, max: 2400 } ]
     },
     MITHRIL_CHAINMAIL: {
         id: 'MITHRIL_CHAINMAIL',
@@ -420,7 +420,7 @@ export const ITEMS = {
         type: 'platebody',
         icon: 'images/icons/mithril_chainmail.png',
         width: 2, height: 3,
-        possibleStats: [ { key: STATS.DPS.key, min: 200, max: 600 } ]
+        possibleStats: [ { key: STATS.DPS.key, min: 2000, max: 6000 } ]
     },
     APPRENTICE_ROBE: { // Existing item
         id: 'APPRENTICE_ROBE',
@@ -453,7 +453,7 @@ export const ITEMS = {
         canHaveSockets: true,
         maxSockets: 3,
         possibleStats: [
-            { key: STATS.DPS.key, min: 250, max: 750 },
+            { key: STATS.DPS.key, min: 2500, max: 7500 },
             { key: STATS.MAGIC_FIND.key, min: 15, max: 45 },
         ]
     },
@@ -467,7 +467,7 @@ export const ITEMS = {
         canHaveSockets: true,
         maxSockets: 3,
         possibleStats: [
-            { key: STATS.DPS.key, min: 400, max: 1200 },
+            { key: STATS.DPS.key, min: 4000, max: 12000 },
             { key: STATS.GOLD_GAIN.key, min: 20, max: 60 },
         ]
     },
@@ -481,7 +481,7 @@ export const ITEMS = {
         canHaveSockets: true,
         maxSockets: 3,
         possibleStats: [
-            { key: STATS.DPS.key, min: 1000, max: 3000 },
+            { key: STATS.DPS.key, min: 10000, max: 30000 },
             { key: STATS.CLICK_DAMAGE.key, min: 250, max: 750 },
         ]
     },
@@ -496,7 +496,7 @@ export const ITEMS = {
         type: 'platelegs',
         icon: 'images/icons/leather_trousers.png',
         width: 2, height: 3,
-        possibleStats: [ { key: STATS.DPS.key, min: 3, max: 10 } ]
+        possibleStats: [ { key: STATS.DPS.key, min: 30, max: 100 } ]
     },
     CHAINMAIL_LEGGINGS: {
         id: 'CHAINMAIL_LEGGINGS',
@@ -504,7 +504,7 @@ export const ITEMS = {
         type: 'platelegs',
         icon: 'images/icons/chainmail_leggings.png',
         width: 2, height: 3,
-        possibleStats: [ { key: STATS.DPS.key, min: 10, max: 30 } ]
+        possibleStats: [ { key: STATS.DPS.key, min: 100, max: 300 } ]
     },
     IRON_PLATELEGS: {
         id: 'IRON_PLATELEGS',
@@ -512,7 +512,7 @@ export const ITEMS = {
         type: 'platelegs',
         icon: 'images/icons/iron_platelegs.png',
         width: 2, height: 3,
-        possibleStats: [ { key: STATS.DPS.key, min: 25, max: 50 } ]
+        possibleStats: [ { key: STATS.DPS.key, min: 250, max: 500 } ]
     },
     STEEL_GREAVES: {
         id: 'STEEL_GREAVES',
@@ -520,7 +520,7 @@ export const ITEMS = {
         type: 'platelegs',
         icon: 'images/icons/steel_greaves.png',
         width: 2, height: 3,
-        possibleStats: [ { key: STATS.DPS.key, min: 70, max: 210 } ]
+        possibleStats: [ { key: STATS.DPS.key, min: 700, max: 2100 } ]
     },
     MAGE_PANTS: {
         id: 'MAGE_PANTS',
@@ -543,7 +543,7 @@ export const ITEMS = {
         width: 2, height: 3,
         canHaveSockets: true,
         maxSockets: 1,
-        possibleStats: [ { key: STATS.DPS.key, min: 25, max: 120 } ]
+        possibleStats: [ { key: STATS.DPS.key, min: 250, max: 1200 } ]
     },
     GREAVES_OF_HASTE: {
         id: 'GREAVES_OF_HASTE',
@@ -555,7 +555,7 @@ export const ITEMS = {
         canHaveSockets: true,
         maxSockets: 3,
         possibleStats: [
-            { key: STATS.DPS.key, min: 300, max: 900 },
+            { key: STATS.DPS.key, min: 3000, max: 9000 },
             { key: STATS.CLICK_DAMAGE.key, min: 50, max: 150 },
         ]
     },
@@ -569,7 +569,7 @@ export const ITEMS = {
         canHaveSockets: true,
         maxSockets: 3,
         possibleStats: [
-            { key: STATS.DPS.key, min: 350, max: 1050 },
+            { key: STATS.DPS.key, min: 3500, max: 10500 },
             { key: STATS.MAGIC_FIND.key, min: 10, max: 30 },
         ]
     },
@@ -583,7 +583,7 @@ export const ITEMS = {
         canHaveSockets: true,
         maxSockets: 3,
         possibleStats: [
-            { key: STATS.DPS.key, min: 500, max: 1500 },
+            { key: STATS.DPS.key, min: 5000, max: 15000 },
             { key: STATS.GOLD_GAIN.key, min: 25, max: 75 },
         ]
     },
@@ -597,7 +597,7 @@ export const ITEMS = {
         canHaveSockets: true,
         maxSockets: 3,
         possibleStats: [
-            { key: STATS.DPS.key, min: 900, max: 2700 },
+            { key: STATS.DPS.key, min: 9000, max: 27000 },
             { key: STATS.GOLD_GAIN.key, min: 30, max: 90 },
         ]
     },
@@ -636,7 +636,7 @@ export const ITEMS = {
         type: 'necklace',
         icon: 'images/icons/sapphire_amulet.png',
         width: 2, height: 2,
-        possibleStats: [ { key: STATS.DPS.key, min: 20, max: 60 } ]
+        possibleStats: [ { key: STATS.DPS.key, min: 200, max: 600 } ]
     },
     EMERALD_CHARM: {
         id: 'EMERALD_CHARM',
@@ -664,7 +664,7 @@ export const ITEMS = {
         canHaveSockets: true,
         maxSockets: 3,
         possibleStats: [
-            { key: STATS.DPS.key, min: 150, max: 450 },
+            { key: STATS.DPS.key, min: 1500, max: 4500 },
             { key: STATS.MAGIC_FIND.key, min: 10, max: 30 },
         ]
     },
@@ -679,7 +679,7 @@ export const ITEMS = {
         maxSockets: 3,
         possibleStats: [
             { key: STATS.CLICK_DAMAGE.key, min: 100, max: 300 },
-            { key: STATS.DPS.key, min: 200, max: 600 },
+            { key: STATS.DPS.key, min: 2000, max: 6000 },
         ]
     },
     AMULET_OF_POWER: { // Existing item
@@ -691,7 +691,7 @@ export const ITEMS = {
         isUnique: true,
         possibleStats: [
             { key: STATS.CLICK_DAMAGE.key, min: 15, max: 75 },
-            { key: STATS.DPS.key, min: 30, max: 150 }
+            { key: STATS.DPS.key, min: 300, max: 1500 }
         ]
     },
     EYE_OF_THE_DRAGON: {
@@ -705,7 +705,7 @@ export const ITEMS = {
         maxSockets: 1,
         possibleStats: [
             { key: STATS.CLICK_DAMAGE.key, min: 400, max: 1200 },
-            { key: STATS.DPS.key, min: 800, max: 2400 },
+            { key: STATS.DPS.key, min: 8000, max: 24000 },
             { key: STATS.MAGIC_FIND.key, min: 20, max: 60 },
         ]
     },
@@ -720,7 +720,7 @@ export const ITEMS = {
         type: 'ring',
         icon: 'images/icons/iron_ring.png',
         width: 1, height: 1,
-        possibleStats: [ { key: STATS.DPS.key, min: 3, max: 9 } ]
+        possibleStats: [ { key: STATS.DPS.key, min: 30, max: 90 } ]
     },
     SILVER_RING: {
         id: 'SILVER_RING',
@@ -752,7 +752,7 @@ export const ITEMS = {
         type: 'ring',
         icon: 'images/icons/band_of_agility.png',
         width: 1, height: 1,
-        possibleStats: [ { key: STATS.DPS.key, min: 30, max: 90 } ]
+        possibleStats: [ { key: STATS.DPS.key, min: 300, max: 900 } ]
     },
     RING_OF_WEALTH: { // Existing item
         id: 'RING_OF_WEALTH',
@@ -771,7 +771,7 @@ export const ITEMS = {
         isUnique: true,
         possibleStats: [
             { key: STATS.CLICK_DAMAGE.key, min: 50, max: 150 },
-            { key: STATS.DPS.key, min: 100, max: 300 },
+            { key: STATS.DPS.key, min: 1000, max: 3000 },
         ]
     },
     SIGNET_OF_THE_LEECH: {
@@ -782,7 +782,7 @@ export const ITEMS = {
         width: 1, height: 1,
         isUnique: true,
         possibleStats: [
-            { key: STATS.DPS.key, min: 200, max: 600 },
+            { key: STATS.DPS.key, min: 2000, max: 6000 },
             { key: STATS.MAGIC_FIND.key, min: 10, max: 30 },
         ]
     },
@@ -809,7 +809,7 @@ export const ITEMS = {
         maxSockets: 1,
         possibleStats: [
             { key: STATS.CLICK_DAMAGE.key, min: 300, max: 900 },
-            { key: STATS.DPS.key, min: 600, max: 1800 },
+            { key: STATS.DPS.key, min: 6000, max: 18000 },
             { key: STATS.GOLD_GAIN.key, min: 25, max: 75 },
         ]
     },
@@ -824,7 +824,7 @@ export const ITEMS = {
         type: 'belt',
         icon: 'images/icons/simple_sash.png', //alrdy added picture
         width: 2, height: 1,
-        possibleStats: [ { key: STATS.DPS.key, min: 2, max: 6 } ]
+        possibleStats: [ { key: STATS.DPS.key, min: 20, max: 60 } ]
     },
     LEATHER_BELT: {
         id: 'LEATHER_BELT',
@@ -832,7 +832,7 @@ export const ITEMS = {
         type: 'belt',
         icon: 'images/icons/leather_belt.png',
         width: 2, height: 1,
-        possibleStats: [ { key: STATS.DPS.key, min: 5, max: 15 } ]
+        possibleStats: [ { key: STATS.DPS.key, min: 50, max: 150 } ]
     },
     STUDDED_LEATHER_BELT: {
         id: 'STUDDED_LEATHER_BELT',
@@ -840,7 +840,7 @@ export const ITEMS = {
         type: 'belt',
         icon: 'images/icons/studded_leather_belt.png',
         width: 2, height: 1,
-        possibleStats: [ { key: STATS.DPS.key, min: 12, max: 36 } ]
+        possibleStats: [ { key: STATS.DPS.key, min: 120, max: 360 } ]
     },
     IRON_GIRDLE: {
         id: 'IRON_GIRDLE',
@@ -848,7 +848,7 @@ export const ITEMS = {
         type: 'belt',
         icon: 'images/icons/iron_girdle.png',
         width: 2, height: 1,
-        possibleStats: [ { key: STATS.DPS.key, min: 30, max: 90 } ]
+        possibleStats: [ { key: STATS.DPS.key, min: 300, max: 900 } ]
     },
     SASH_OF_THE_SORCERER: {
         id: 'SASH_OF_THE_SORCERER',
@@ -867,7 +867,7 @@ export const ITEMS = {
         type: 'belt',
         icon: 'images/icons/mighty_belt.png',
         width: 2, height: 1,
-        possibleStats: [ { key: STATS.DPS.key, min: 10, max: 80 } ]
+        possibleStats: [ { key: STATS.DPS.key, min: 100, max: 800 } ]
     },
     PLAGUE_STITCHED_CINCH: {
         id: 'PLAGUE_STITCHED_CINCH',
@@ -877,7 +877,7 @@ export const ITEMS = {
         width: 2, height: 1,
         isUnique: true,
         possibleStats: [
-            { key: STATS.DPS.key, min: 150, max: 450 },
+            { key: STATS.DPS.key, min: 1500, max: 4500 },
             { key: STATS.MAGIC_FIND.key, min: 10, max: 30 },
         ]
     },
@@ -889,7 +889,7 @@ export const ITEMS = {
         width: 2, height: 1,
         isUnique: true,
         possibleStats: [
-            { key: STATS.DPS.key, min: 200, max: 600 },
+            { key: STATS.DPS.key, min: 2000, max: 6000 },
             { key: STATS.CLICK_DAMAGE.key, min: 50, max: 150 },
         ]
     },
@@ -901,7 +901,7 @@ export const ITEMS = {
         width: 2, height: 1,
         isUnique: true,
         possibleStats: [
-            { key: STATS.DPS.key, min: 300, max: 900 },
+            { key: STATS.DPS.key, min: 3000, max: 9000 },
             { key: STATS.GOLD_GAIN.key, min: 20, max: 60 },
         ]
     },
@@ -915,7 +915,7 @@ export const ITEMS = {
         canHaveSockets: true, // A rare socketed accessory
         maxSockets: 1,
         possibleStats: [
-            { key: STATS.DPS.key, min: 800, max: 2400 },
+            { key: STATS.DPS.key, min: 8000, max: 24000 },
             { key: STATS.CLICK_DAMAGE.key, min: 200, max: 600 },
         ]
     }

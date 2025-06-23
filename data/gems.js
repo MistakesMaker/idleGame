@@ -37,7 +37,7 @@ export const GEMS = {
         tier: 1,
         icon: 'images/gems/sapphire_1.png',
         width: 1, height: 1,
-        stats: { [STATS.DPS.key]: 10 }
+        stats: { [STATS.DPS.key]: 100 }
     },
     BASE_EMERALD: {
         id: 'BASE_EMERALD',
