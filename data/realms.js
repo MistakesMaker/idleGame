@@ -10,9 +10,9 @@ export const REALMS = [
             "green_meadows": {
                 name: "Green Meadows",
                 mapImage: "images/map_meadows_zoomed.png",
-                monsterAreaBg: "images/backgrounds/green_meadows.png",
+                monsterAreaBg: "images/backgrounds/bg_green_meadows.png",
                 coords: { top: '78%', left: '20%' },
-                icon: 'images/icons/bg_green_meadows.png',
+                icon: 'images/icons/green_meadows.png',
                 subZones: {
                     "verdant_fields": { name: "Verdant Fields", levelRange: [1, 24], monsterPool: [MONSTERS.SLIME, MONSTERS.GOBLIN, MONSTERS.WILD_BOAR], coords: {top: '80%', left: '15%'} },
                     "general_outpost": { name: "General's Outpost", levelRange: [25, 25], monsterPool: [MONSTERS.SLIME_GENERAL], coords: {top: '60%', left: '25%'}, isBoss: true },
@@ -27,9 +27,9 @@ export const REALMS = [
             "orc_volcano": {
                 name: "Orc Volcano",
                 mapImage: "images/map_volcano_zoomed.png",
-                monsterAreaBg: "images/backgrounds/orc_volcano.png",
+                monsterAreaBg: "images/backgrounds/bg_orc_volcano.png",
                 coords: { top: '30%', left: '38%' },
-                icon: 'images/icons/bg_orc_volcano.png',
+                icon: 'images/icons/orc_volcano.png',
                 subZones: {
                     "ashfall_plains": { name: "Ashfall Plains", levelRange: [101, 124], monsterPool: [MONSTERS.ORC, MONSTERS.MAGMA_SLIME], coords: {top: '80%', left: '20%'} },
                     "orc_watchtower": { name: "Orc Watchtower", levelRange: [125, 125], monsterPool: [MONSTERS.GIANT_ORC], coords: {top: '80%', left: '50%'}, isBoss: true },
