@@ -10,7 +10,7 @@ export const REALMS = [
             "green_meadows": {
                 name: "Green Meadows",
                 mapImage: "images/map_meadows_zoomed.png",
-                monsterAreaBg: "images/Backgrounds/bg_green_meadows.png",
+                monsterAreaBg: "images/backgrounds/bg_green_meadows.png",
                 coords: { top: '78%', left: '20%' },
                 icon: 'images/icons/green_meadows.png',
                 subZones: {
