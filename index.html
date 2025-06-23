@@ -54,7 +54,6 @@
                 <button class="tab-button" data-view="inventory-view">Inventory</button>
                 <button class="tab-button" data-view="gems-view">Gems</button>
                 <button class="tab-button" data-view="forge-view">Forge</button>
-                <button class="tab-button" data-view="permanent-upgrades-view">Upgrades</button>
             </div>
 
             <div id="map-view" class="view active">
@@ -182,20 +181,10 @@
                     </div>
                 </div>
             </div>
-
-            <div id="permanent-upgrades-view" class="view">
-                <h3>Permanent Upgrades</h3>
-                <p>Spend Gold on powerful upgrades that are never lost on Prestige!</p>
-                <div class="permanent-upgrades-scroll-container">
-                    <div id="permanent-upgrades-container">
-                        <!-- Upgrades will be dynamically inserted here by JS -->
-                    </div>
-                </div>
-            </div>
         </div>
 
-        <!-- Right Panel -->
-        <div class="panel right-panel">
+        <!-- Actions Panel (Formerly Right Panel) -->
+        <div class="panel actions-panel">
             <h2>Actions</h2>
             
             <div id="currency-display">
@@ -235,7 +224,19 @@
             </div>
         </div>
 
-        <!-- NEW: Fullscreen Prestige Panel -->
+        <!-- NEW Permanent Upgrades Panel -->
+        <div class="panel upgrades-panel">
+             <h3>Permanent Upgrades</h3>
+             <p>Upgrades that are never lost on Prestige!</p>
+             <div class="permanent-upgrades-scroll-container">
+                 <div id="permanent-upgrades-container">
+                     <!-- Upgrades will be dynamically inserted here by JS -->
+                 </div>
+             </div>
+        </div>
+
+
+        <!-- Fullscreen Prestige Panel -->
         <div id="prestige-fullscreen-panel" class="hidden">
             <div id="prestige-header">
                 <h2>Choose Your Legacy (Select up to 3 items)</h2>

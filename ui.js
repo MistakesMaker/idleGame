@@ -159,9 +159,6 @@ export function updateUI(elements, gameState, playerStats, currentMonster, salva
     heroLevelEl.textContent = gameState.hero.level.toString();
     heroXpBarEl.style.width = `${(gameState.hero.xp / xpToNextLevel) * 100}%`;
     attributePointsEl.textContent = gameState.hero.attributePoints.toString();
-    attrStrengthEl.textContent = gameState.hero.attributes.strength.toString();
-    attrAgilityEl.textContent = gameState.hero.attributes.agility.toString();
-    attrLuckEl.textContent = gameState.hero.attributes.luck.toString();
     const havePoints = gameState.hero.attributePoints > 0;
     (/** @type {HTMLButtonElement} */ (addStrengthBtn)).disabled = !havePoints;
     (/** @type {HTMLButtonElement} */ (addAgilityBtn)).disabled = !havePoints;
@@ -372,7 +369,7 @@ export function createLootTableTooltipHTML(itemBase) {
     let statsHTML = '<ul>';
     itemBase.possibleStats.forEach(statInfo => {
         const statName = Object.values(STATS).find(s => s.key === statInfo.key)?.name || statInfo.key;
-        statsHTML += `<li>+ ${statName}: ${statInfo.min} - ${statInfo.max}</li>`;
+        statsHTML += `<li>+ ${statInfo.min} - ${statInfo.max}</li>`;
     });
     statsHTML += '</ul>';
 
