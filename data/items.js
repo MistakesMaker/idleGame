@@ -822,7 +822,7 @@ export const ITEMS = {
         id: 'SIMPLE_SASH',
         name: "Simple Sash",
         type: 'belt',
-        icon: 'images/icons/simple_sash.png',
+        icon: 'images/icons/simple_sash.png', //alrdy added picture
         width: 2, height: 1,
         possibleStats: [ { key: STATS.DPS.key, min: 2, max: 6 } ]
     },
