@@ -2,6 +2,7 @@
 
 import { MONSTERS } from './data/monsters.js';
 import { ITEMS } from './data/items.js';
+import { GEMS } from './data/gems.js';
 import { rarities } from './game.js';
 import { isBossLevel, isBigBossLevel, isMiniBossLevel, findSubZoneByLevel, formatNumber, findEmptySpot } from './utils.js';
 
@@ -184,6 +185,17 @@ export function monsterDefeated(gameState, playerStats, currentMonster) {
             const isGem = droppedItem.tier >= 1;
             const rarityClass = isGem ? 'epic' : droppedItem.rarity;
             logMessages.push(`The ${currentMonster.name} dropped something! <span class="${rarityClass}" style="font-weight:bold;">${droppedItem.name}</span>`);
+            
+            // Gem Find roll
+            if (playerStats.gemFindChance > 0 && Math.random() * 100 < playerStats.gemFindChance) {
+                const gemKeys = Object.keys(GEMS);
+                const randomGemKey = gemKeys[Math.floor(Math.random() * gemKeys.length)];
+                const gemBase = GEMS[randomGemKey];
+                const newGem = { ...gemBase, id: Date.now() + Math.random() };
+                gameState.gems.push(newGem);
+                logMessages.push(`Bonus Drop! You found a <span class="epic" style="font-weight:bold;">${newGem.name}</span>!`);
+            }
+
         } else {
             // A drop was rolled, but dropLoot returned null. This means the inventory is full.
             logMessages.push(`The ${currentMonster.name} dropped an item, but your inventory is full!`, 'rare');

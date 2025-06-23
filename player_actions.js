@@ -5,6 +5,7 @@ import { REALMS } from './data/realms.js';
 import { getXpForNextLevel, getUpgradeCost, findEmptySpot } from './utils.js';
 import { GEMS } from './data/gems.js';
 import { ITEMS } from './data/items.js';
+import { PERMANENT_UPGRADES } from './data/upgrades.js';
 
 /**
  * Re-packs the inventory to remove any gaps.
@@ -244,9 +245,10 @@ export function buyLootCrate(gameState, generateItemFn) {
  * Salvages selected items for scrap.
  * @param {object} gameState - The main game state object.
  * @param {object} salvageMode - The salvage mode state, containing selections.
+ * @param {object} playerStats - The calculated player stats, for scrap bonus.
  * @returns {{count: number, scrapGained: number}}
  */
-export function salvageSelectedItems(gameState, salvageMode) {
+export function salvageSelectedItems(gameState, salvageMode, playerStats) {
     if (salvageMode.selections.length === 0) {
         return { count: 0, scrapGained: 0 };
     }
@@ -260,6 +262,8 @@ export function salvageSelectedItems(gameState, salvageMode) {
         totalScrapGained += Math.ceil(Math.pow(4, rarityIndex));
     });
     
+    totalScrapGained = Math.floor(totalScrapGained * playerStats.scrapBonus);
+    
     gameState.inventory = gameState.inventory.filter(item => !idsToSalvage.has(item.id));
     gameState.scrap += totalScrapGained;
 
@@ -271,8 +275,11 @@ export function salvageSelectedItems(gameState, salvageMode) {
 
 /**
  * Salvages all non-locked items of a specific rarity.
+ * @param {object} gameState - The main game state object.
+ * @param {string} rarityToSalvage - The rarity to salvage.
+ * @param {object} playerStats - The calculated player stats, for scrap bonus.
  */
-export function salvageByRarity(gameState, rarityToSalvage) {
+export function salvageByRarity(gameState, rarityToSalvage, playerStats) {
     let scrapGained = 0;
     let itemsSalvagedCount = 0;
     const itemsToKeep = [];
@@ -288,6 +295,7 @@ export function salvageByRarity(gameState, rarityToSalvage) {
     });
 
     if (itemsSalvagedCount > 0) {
+        scrapGained = Math.floor(scrapGained * playerStats.scrapBonus);
         gameState.inventory = itemsToKeep;
         gameState.scrap += scrapGained;
         // Compact the inventory after salvaging
@@ -521,4 +529,32 @@ export function rerollItemStats(gameState, itemToReroll) {
     } else {
         return { success: true, message: `Successfully rerolled ${itemToReroll.name}! (Attempt #${itemToReroll.rerollAttempts})` };
     }
+}
+
+/**
+ * Buys a level of a permanent upgrade.
+ * @param {object} gameState The main game state object.
+ * @param {string} upgradeId The ID of the upgrade to purchase.
+ * @returns {{success: boolean, message: string, newLevel: number|null}}
+ */
+export function buyPermanentUpgrade(gameState, upgradeId) {
+    const upgrade = PERMANENT_UPGRADES[upgradeId];
+    if (!upgrade) {
+        return { success: false, message: "Upgrade not found.", newLevel: null };
+    }
+
+    const currentLevel = gameState.permanentUpgrades[upgradeId] || 0;
+    if (currentLevel >= upgrade.maxLevel) {
+        return { success: false, message: "This upgrade is already at its max level.", newLevel: null };
+    }
+
+    const cost = Math.floor(upgrade.baseCost * Math.pow(upgrade.costScalar, currentLevel));
+    if (gameState.gold < cost) {
+        return { success: false, message: "Not enough gold!", newLevel: null };
+    }
+
+    gameState.gold -= cost;
+    gameState.permanentUpgrades[upgradeId]++;
+    
+    return { success: true, message: `Purchased ${upgrade.name}!`, newLevel: gameState.permanentUpgrades[upgradeId] };
 }

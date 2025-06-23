@@ -54,6 +54,7 @@
                 <button class="tab-button" data-view="inventory-view">Inventory</button>
                 <button class="tab-button" data-view="gems-view">Gems</button>
                 <button class="tab-button" data-view="forge-view">Forge</button>
+                <button class="tab-button" data-view="permanent-upgrades-view">Upgrades</button>
             </div>
 
             <div id="map-view" class="view active">
@@ -178,6 +179,16 @@
                 <div class="grid-scroll-container">
                     <div id="forge-inventory-slots" class="item-grid">
                         <!-- Player's inventory and equipment will appear here -->
+                    </div>
+                </div>
+            </div>
+
+            <div id="permanent-upgrades-view" class="view">
+                <h3>Permanent Upgrades</h3>
+                <p>Spend Gold on powerful upgrades that are never lost on Prestige!</p>
+                <div class="permanent-upgrades-scroll-container">
+                    <div id="permanent-upgrades-container">
+                        <!-- Upgrades will be dynamically inserted here by JS -->
                     </div>
                 </div>
             </div>

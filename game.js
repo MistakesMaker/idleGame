@@ -3,6 +3,7 @@ import { REALMS } from './data/realms.js';
 import { MONSTERS } from './data/monsters.js';
 import { ITEMS } from './data/items.js';
 import { STATS } from './data/stat_pools.js';
+import { PERMANENT_UPGRADES } from './data/upgrades.js';
 import { logMessage, formatNumber, getUpgradeCost, findSubZoneByLevel, findFirstLevelOfZone, isBossLevel, isBigBossLevel, getCombinedItemStats, isMiniBossLevel, findEmptySpot } from './utils.js';
 import * as ui from './ui.js';
 import * as player from './player_actions.js';
@@ -43,6 +44,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const defaultEquipmentState = { sword: null, shield: null, helmet: null, necklace: null, platebody: null, platelegs: null, ring1: null, ring2: null, belt: null };
 
     function getDefaultGameState() {
+        const defaultPermUpgrades = {};
+        for (const key in PERMANENT_UPGRADES) {
+            defaultPermUpgrades[key] = 0;
+        }
+
         return {
             gold: 0, scrap: 0, upgrades: { clickDamage: 0, dps: 0 }, maxLevel: 1, currentFightingLevel: 1,
             monster: { hp: 10, maxHp: 10 },
@@ -70,19 +76,36 @@ document.addEventListener('DOMContentLoaded', () => {
             isFarming: true,
             isAutoProgressing: true,
             currentRealmIndex: 0,
-            lastSaveTimestamp: null
+            lastSaveTimestamp: null,
+            permanentUpgrades: defaultPermUpgrades,
         };
     }
 
     function recalculateStats() {
         const hero = gameState.hero;
         const absorbed = gameState.absorbedStats || {};
+        const permUpgrades = gameState.permanentUpgrades || {};
+        const permUpgradeDefs = PERMANENT_UPGRADES;
+
+        // Calculate bonuses from permanent upgrades first
+        const permanentUpgradeBonuses = {
+            gold: (permUpgrades.GOLD_MASTERY || 0) * permUpgradeDefs.GOLD_MASTERY.bonusPerLevel,
+            magicFind: (permUpgrades.LOOT_HOARDER || 0) * permUpgradeDefs.LOOT_HOARDER.bonusPerLevel,
+            critChance: (permUpgrades.CRITICAL_POWER || 0) * permUpgradeDefs.CRITICAL_POWER.bonusPerLevel,
+            critDamage: (permUpgrades.CRITICAL_DAMAGE || 0) * permUpgradeDefs.CRITICAL_DAMAGE.bonusPerLevel,
+            prestigePower: (permUpgrades.PRESTIGE_POWER || 0) * permUpgradeDefs.PRESTIGE_POWER.bonusPerLevel,
+            scrap: (permUpgrades.SCRAP_SCAVENGER || 0) * permUpgradeDefs.SCRAP_SCAVENGER.bonusPerLevel,
+            gemFind: (permUpgrades.GEM_FIND || 0) * permUpgradeDefs.GEM_FIND.bonusPerLevel,
+            bossDamage: (permUpgrades.BOSS_HUNTER || 0) * permUpgradeDefs.BOSS_HUNTER.bonusPerLevel,
+            multiStrike: (permUpgrades.SWIFT_STRIKES || 0) * permUpgradeDefs.SWIFT_STRIKES.bonusPerLevel,
+            legacyKeeper: (permUpgrades.LEGACY_KEEPER || 0) * permUpgradeDefs.LEGACY_KEEPER.bonusPerLevel,
+        };
 
         const newCalculatedStats = {
             baseClickDamage: 1,
             baseDps: 0,
-            bonusGold: 0,
-            magicFind: 0,
+            bonusGold: permanentUpgradeBonuses.gold,
+            magicFind: permanentUpgradeBonuses.magicFind,
         };
 
         for (const statKey in absorbed) {
@@ -134,6 +157,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const finalBonusGold = newCalculatedStats.bonusGold + luckBonusGold;
         const finalMagicFind = newCalculatedStats.magicFind + luckBonusMagicFind;
 
+        // Apply prestige power bonus
+        const prestigeMultiplier = 1 + ((permanentUpgradeBonuses.prestigePower * (gameState.prestigeCount || 0)) / 100);
+        finalClickDamage *= prestigeMultiplier;
+        finalDps *= prestigeMultiplier;
+
         let totalSynergyValue = 0;
         const allSynergies = [...equippedSynergyGems, ...(gameState.absorbedSynergies || [])];
         for (const synergy of allSynergies) {
@@ -152,6 +180,14 @@ document.addEventListener('DOMContentLoaded', () => {
             totalDps: finalDps,
             bonusGold: finalBonusGold,
             magicFind: finalMagicFind,
+            // Add new permanent stats
+            critChance: permanentUpgradeBonuses.critChance,
+            critDamage: 1 + (permanentUpgradeBonuses.critDamage / 100), // Store as multiplier, e.g., 1.5 for 50%
+            multiStrikeChance: permanentUpgradeBonuses.multiStrike,
+            bossDamageBonus: 1 + (permanentUpgradeBonuses.bossDamage / 100),
+            scrapBonus: 1 + (permanentUpgradeBonuses.scrap / 100),
+            gemFindChance: permanentUpgradeBonuses.gemFind,
+            legacyKeeperBonus: permanentUpgradeBonuses.legacyKeeper,
         };
 
         if (socket && socket.connected) {
@@ -199,12 +235,50 @@ document.addEventListener('DOMContentLoaded', () => {
         elements.monsterNameEl.textContent = currentMonster.name;
     }
 
+    function attack(baseDamage, isClick = false) {
+        if (gameState.monster.hp <= 0) return;
+
+        let finalDamage = baseDamage;
+        const level = gameState.currentFightingLevel;
+        const isAnyBoss = isBossLevel(level) || isBigBossLevel(level) || isMiniBossLevel(level);
+
+        // Apply boss damage bonus
+        if (isAnyBoss) {
+            finalDamage *= playerStats.bossDamageBonus;
+        }
+
+        // Roll for crit
+        const isCrit = Math.random() * 100 < playerStats.critChance;
+        if (isCrit) {
+            finalDamage *= playerStats.critDamage;
+        }
+        
+        // Apply damage
+        gameState.monster.hp -= finalDamage;
+
+        if (isClick) {
+            ui.showDamagePopup(elements.popupContainerEl, finalDamage, isCrit);
+        } else {
+            ui.showDpsPopup(elements.popupContainerEl, finalDamage, isCrit);
+        }
+
+        // Roll for multi-strike
+        if (Math.random() * 100 < playerStats.multiStrikeChance) {
+            // Apply a second, identical hit
+            gameState.monster.hp -= finalDamage;
+             if (isClick) {
+                ui.showDamagePopup(elements.popupContainerEl, finalDamage, isCrit, true);
+            } else {
+                ui.showDpsPopup(elements.popupContainerEl, finalDamage, isCrit, true);
+            }
+        }
+    }
+
     function clickMonster() {
         if (gameState.monster.hp <= 0) return;
-        gameState.monster.hp -= playerStats.totalClickDamage;
+        attack(playerStats.totalClickDamage, true);
         elements.monsterImageEl.classList.add('monster-hit');
         setTimeout(() => elements.monsterImageEl.classList.remove('monster-hit'), 200);
-        ui.showDamagePopup(elements.popupContainerEl, playerStats.totalClickDamage);
         if (gameState.monster.hp <= 0) {
             handleMonsterDefeated();
         }
@@ -213,8 +287,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function gameLoop() {
         if (playerStats.totalDps > 0 && gameState.monster.hp > 0) {
-            gameState.monster.hp -= playerStats.totalDps;
-            ui.showDpsPopup(elements.popupContainerEl, playerStats.totalDps);
+            attack(playerStats.totalDps, false);
             if (gameState.monster.hp <= 0) {
                 handleMonsterDefeated();
             }
@@ -236,6 +309,7 @@ document.addEventListener('DOMContentLoaded', () => {
         ui.updateUI(elements, gameState, playerStats, currentMonster, salvageMode, craftingGems, selectedItemForForge, prestigeSelections);
         renderMap();
         renderRealmTabs();
+        renderPermanentUpgrades();
         
         if (selectedGemForSocketing) {
             document.querySelectorAll('.selected-gem').forEach(el => el.classList.remove('selected-gem'));
@@ -409,6 +483,44 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    function renderPermanentUpgrades() {
+        const container = elements.permanentUpgradesContainerEl;
+        container.innerHTML = '';
+
+        for (const key in PERMANENT_UPGRADES) {
+            const upgrade = PERMANENT_UPGRADES[key];
+            const currentLevel = gameState.permanentUpgrades[key] || 0;
+            const cost = Math.floor(upgrade.baseCost * Math.pow(upgrade.costScalar, currentLevel));
+            const isMaxed = currentLevel >= upgrade.maxLevel;
+            
+            let bonus = upgrade.bonusPerLevel * currentLevel;
+            if (upgrade.id === 'PRESTIGE_POWER') {
+                bonus *= (gameState.prestigeCount || 0);
+            }
+            
+            const card = document.createElement('div');
+            card.className = 'permanent-upgrade-card';
+            if (gameState.gold < cost && !isMaxed) card.classList.add('disabled');
+            if (isMaxed) card.classList.add('maxed');
+
+            const description = upgrade.description.replace('{value}', bonus.toFixed(1));
+
+            card.innerHTML = `
+                <div class="upgrade-icon"><i class="${upgrade.icon}"></i></div>
+                <div class="upgrade-details">
+                    <h4>${upgrade.name}</h4>
+                    <p>${description}</p>
+                    <div class="upgrade-level">Level: ${currentLevel} / ${upgrade.maxLevel}</div>
+                </div>
+                <div class="upgrade-buy-section">
+                    ${isMaxed ? 'MAXED' : `<div class="upgrade-cost">${formatNumber(cost)} Gold</div>`}
+                    <button class="buy-permanent-upgrade-btn" data-upgrade-id="${upgrade.id}" ${gameState.gold < cost || isMaxed ? 'disabled' : ''}>Buy</button>
+                </div>
+            `;
+            container.appendChild(card);
+        }
+    }
+
     function showSubZoneModal(subZone) {
         elements.modalTitleEl.textContent = subZone.name;
         elements.modalBodyEl.innerHTML = '';
@@ -513,7 +625,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const goldPerSecond = goldPerKill * killsPerSecond;
         const xpPerSecond = xpPerKill * killsPerSecond;
 
-        const AVERAGE_SCRAP_VALUE = 2;
+        const AVERAGE_SCRAP_VALUE = 2 * playerStats.scrapBonus;
         const dropsPerSecond = (monsterDropChance / 100) * killsPerSecond;
         const scrapPerSecond = dropsPerSecond * AVERAGE_SCRAP_VALUE;
 
@@ -622,7 +734,7 @@ document.addEventListener('DOMContentLoaded', () => {
              updateAll();
         });
         document.getElementById('confirm-salvage-btn').addEventListener('click', () => {
-            const result = player.salvageSelectedItems(gameState, salvageMode);
+            const result = player.salvageSelectedItems(gameState, salvageMode, playerStats);
             if (result.count > 0) {
                  logMessage(elements.gameLogEl, `Salvaged ${result.count} items for a total of ${formatNumber(result.scrapGained)} Scrap.`, 'uncommon');
             } else {
@@ -648,7 +760,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('salvage-by-rarity-controls').addEventListener('click', (e) => {
             if (!(e.target instanceof HTMLElement) || !e.target.dataset.rarity) return;
             const rarity = e.target.dataset.rarity;
-            const result = player.salvageByRarity(gameState, rarity);
+            const result = player.salvageByRarity(gameState, rarity, playerStats);
             if (result.count > 0) {
                 logMessage(elements.gameLogEl, `Salvaged ${result.count} ${rarity} items for ${formatNumber(result.scrapGained)} Scrap.`, 'uncommon');
                 updateAll();
@@ -994,6 +1106,26 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
+        elements.permanentUpgradesContainerEl.addEventListener('click', (e) => {
+            if (!(e.target instanceof Element)) return;
+            const buyButton = (e.target).closest('.buy-permanent-upgrade-btn');
+            if (!buyButton || !(buyButton instanceof HTMLButtonElement) || buyButton.disabled) return;
+
+            const upgradeId = buyButton.dataset.upgradeId;
+            if (!upgradeId) return;
+
+            const result = player.buyPermanentUpgrade(gameState, upgradeId);
+
+            if (result.success) {
+                logMessage(elements.gameLogEl, `Purchased Level ${result.newLevel} of ${PERMANENT_UPGRADES[upgradeId].name}!`, 'epic');
+                recalculateStats();
+                updateAll();
+                autoSave();
+            } else {
+                logMessage(elements.gameLogEl, result.message, 'rare');
+            }
+        });
+
         setupItemTooltipListeners();
         setupGemTooltipListeners();
         setupStatTooltipListeners();
@@ -1316,6 +1448,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function setupPrestigeListeners() {
         elements.prestigeButton.addEventListener('click', () => {
+            const maxSelections = 3 + playerStats.legacyKeeperBonus;
+            elements.prestigeFullscreenPanel.querySelector('h2').textContent = `Choose Your Legacy (Select up to ${maxSelections} items)`;
             prestigeSelections = [];
             elements.prestigeFullscreenPanel.classList.remove('hidden');
             updateAll();
@@ -1336,18 +1470,20 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!item) return;
 
             const selectionIndex = prestigeSelections.indexOf(item.id);
+            const maxSelections = 3 + playerStats.legacyKeeperBonus;
 
             if (selectionIndex > -1) {
                 prestigeSelections.splice(selectionIndex, 1);
-            } else if (prestigeSelections.length < 3) {
+            } else if (prestigeSelections.length < maxSelections) {
                 prestigeSelections.push(item.id);
             }
             updateAll();
         });
 
         elements.confirmPrestigeButton.addEventListener('click', () => {
-            if (prestigeSelections.length > 3) {
-                alert("You can only select up to 3 items!");
+            const maxSelections = 3 + playerStats.legacyKeeperBonus;
+            if (prestigeSelections.length > maxSelections) {
+                alert(`You can only select up to ${maxSelections} items!`);
                 return;
             }
             
@@ -1400,6 +1536,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             gameState = {
                 ...baseState,
+                permanentUpgrades: gameState.permanentUpgrades, // Keep permanent upgrades
                 absorbedStats: finalAbsorbedStats,
                 absorbedSynergies: finalAbsorbedSynergies,
                 prestigeCount: oldPrestigeCount + 1,
@@ -1486,6 +1623,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 currentRunCompletedLevels: loadedState.currentRunCompletedLevels || [], 
                 legacyItems: [],
                 inventoryGridInitialized: loadedState.inventoryGridInitialized || false,
+                permanentUpgrades: { ...baseState.permanentUpgrades, ...(loadedState.permanentUpgrades || {}) }
             };
             
             if (!gameState.inventoryGridInitialized) {

@@ -77,6 +77,7 @@ export function initDOMElements() {
         prestigeInventorySlotsEl: document.getElementById('prestige-inventory-slots'),
         prestigeBackButton: document.getElementById('prestige-back-btn'),
         confirmPrestigeButton: document.getElementById('confirm-prestige-btn'),
+        permanentUpgradesContainerEl: document.getElementById('permanent-upgrades-container'),
     };
 }
 
@@ -525,12 +526,26 @@ export function getItemIcon(type) {
     }
 }
 
-export function showDamagePopup(popupContainerEl, damage) {
+export function showDamagePopup(popupContainerEl, damage, isCrit = false, isMultiStrike = false) {
     const popup = document.createElement('div');
-    popup.textContent = `-${formatNumber(damage)}`;
+    let content = `-${formatNumber(damage)}`;
+    if (isMultiStrike) {
+        content += ' (Multi!)';
+    }
+    popup.textContent = content;
     popup.className = 'damage-popup';
-    popup.style.left = `${40 + Math.random() * 20}%`;
-    popup.style.top = `${40 + Math.random() * 20}%`;
+    if (isCrit) {
+        popup.classList.add('crit');
+    }
+    if (isMultiStrike) {
+        // Use a slightly different starting position for multi-strikes to avoid overlap
+        popup.style.left = `${50 + Math.random() * 20}%`;
+        popup.style.top = `${20 + Math.random() * 20}%`;
+    } else {
+        popup.style.left = `${40 + Math.random() * 20}%`;
+        popup.style.top = `${40 + Math.random() * 20}%`;
+    }
+    
     popupContainerEl.appendChild(popup);
     setTimeout(() => popup.remove(), 1000);
 }
@@ -545,12 +560,26 @@ export function showGoldPopup(popupContainerEl, gold) {
     setTimeout(() => popup.remove(), 1500);
 }
 
-export function showDpsPopup(popupContainerEl, damage) {
+export function showDpsPopup(popupContainerEl, damage, isCrit = false, isMultiStrike = false) {
     const popup = document.createElement('div');
-    popup.textContent = `-${formatNumber(damage)}`;
+    let content = `-${formatNumber(damage)}`;
+    if (isMultiStrike) {
+        content += ' (Multi!)';
+    }
+    popup.textContent = content;
     popup.className = 'dps-popup';
-    popup.style.left = `${30 + Math.random() * 40}%`;
-    popup.style.top = `${45 + Math.random() * 20}%`;
+    if (isCrit) {
+        popup.classList.add('crit');
+    }
+
+    if (isMultiStrike) {
+        popup.style.left = `${40 + Math.random() * 40}%`;
+        popup.style.top = `${35 + Math.random() * 20}%`;
+    } else {
+        popup.style.left = `${30 + Math.random() * 40}%`;
+        popup.style.top = `${45 + Math.random() * 20}%`;
+    }
+
     popupContainerEl.appendChild(popup);
     setTimeout(() => popup.remove(), 800);
 }
