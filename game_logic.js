@@ -156,7 +156,7 @@ export function monsterDefeated(gameState, playerStats, currentMonster) {
 
     // --- REWARD CALCULATION (NEW POLYNOMIAL MODEL) ---
     const tier = Math.floor((level - 1) / 10);
-    const difficultyResetFactor = 2;
+    const difficultyResetFactor = 1;
     const effectiveLevel = level - (tier * difficultyResetFactor);
 
     // Gold Calculation
