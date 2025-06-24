@@ -222,11 +222,21 @@ export function monsterDefeated(gameState, playerStats, currentMonster) {
         }
     }
     
-    // --- Check for Slimey Sword unique effect ---
+    // --- Check for Slimey Sword unique effect (with STACKING) ---
     const equippedSword = gameState.equipment.sword;
     const swordBase = equippedSword ? ITEMS[equippedSword.baseId] : null;
+    let slimeSplitChance = 0;
 
-    if (swordBase && swordBase.uniqueEffect === 'slimeSplit' && Math.random() < 0.10) {
+    // Check if one is equipped
+    if (swordBase && swordBase.uniqueEffect === 'slimeSplit') {
+        slimeSplitChance = 0.10; // 10% base chance
+    }
+    
+    // Add stacks from absorbed effects
+    const absorbedStacks = gameState.absorbedUniqueEffects?.slimeSplit || 0;
+    slimeSplitChance += (absorbedStacks * 0.10);
+
+    if (slimeSplitChance > 0 && Math.random() < slimeSplitChance) {
         logMessages.push('The defeated monster splits into a <span class="legendary">Golden Slime!</span>', 'legendary');
         gameState.specialEncounter = {
             type: 'GOLDEN_SLIME',

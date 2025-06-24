@@ -268,6 +268,19 @@ export function updateUI(elements, gameState, playerStats, currentMonster, salva
             absorbedStatsListEl.appendChild(statEl);
         }
     }
+    
+    // --- FIX for displaying stacked unique effects ---
+    const absorbedUniqueEffects = gameState.absorbedUniqueEffects || {};
+    for (const [effectKey, stackCount] of Object.entries(absorbedUniqueEffects)) {
+        const effectData = UNIQUE_EFFECTS[effectKey];
+        if (effectData) {
+            const stackText = stackCount > 1 ? ` (x${stackCount})` : '';
+            const statEl = document.createElement('p');
+            statEl.innerHTML = `<i class="fas fa-magic"></i> Absorbed Unique: <span>${effectData.name}${stackText}</span>`;
+            absorbedStatsListEl.appendChild(statEl);
+        }
+    }
+
     const nextPrestigeLevel = gameState.nextPrestigeLevel || 100;
     prestigeCountStatEl.textContent = (gameState.prestigeCount || 0).toString();
     prestigeRequirementTextEl.innerHTML = `Defeat the boss at Level <b>${nextPrestigeLevel}</b> to Prestige.`;

@@ -59,6 +59,7 @@ document.addEventListener('DOMContentLoaded', () => {
             legacyItems: [],
             absorbedStats: {},
             absorbedSynergies: [],
+            absorbedUniqueEffects: {}, // Changed to an object for stacking
             prestigeCount: 0,
             nextPrestigeLevel: 100,
             specialEncounter: null,
@@ -1516,6 +1517,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const itemsToAbsorb = allCurrentItems.filter(item => prestigeSelections.includes(item.id));
             const newAbsorbedStats = {};
             const newAbsorbedSynergies = [];
+            const newAbsorbedUniqueEffects = [];
 
             for (const item of itemsToAbsorb) {
                 const combinedStats = getCombinedItemStats(item);
@@ -1528,6 +1530,10 @@ document.addEventListener('DOMContentLoaded', () => {
                             newAbsorbedSynergies.push(gem.synergy);
                         }
                     }
+                }
+                const itemBase = ITEMS[item.baseId];
+                if (itemBase && itemBase.uniqueEffect) {
+                    newAbsorbedUniqueEffects.push(itemBase.uniqueEffect);
                 }
             }
 
@@ -1555,6 +1561,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
             
+            // --- NEW Stacking Logic for Unique Effects ---
+            const oldAbsorbedUniqueEffects = gameState.absorbedUniqueEffects || {};
+            const finalAbsorbedUniqueEffects = { ...oldAbsorbedUniqueEffects };
+            for (const effectKey of newAbsorbedUniqueEffects) {
+                finalAbsorbedUniqueEffects[effectKey] = (finalAbsorbedUniqueEffects[effectKey] || 0) + 1;
+            }
+
             // --- FIX: Reset Hero Attributes on Prestige ---
             const spentPoints = heroToPrestige.attributes.strength + heroToPrestige.attributes.agility + heroToPrestige.attributes.luck;
             const newTotalAttributePoints = heroToPrestige.attributePoints + spentPoints;
@@ -1575,6 +1588,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 permanentUpgrades: gameState.permanentUpgrades, // Keep permanent upgrades
                 absorbedStats: finalAbsorbedStats,
                 absorbedSynergies: finalAbsorbedSynergies,
+                absorbedUniqueEffects: finalAbsorbedUniqueEffects,
                 prestigeCount: oldPrestigeCount + 1,
                 completedLevels: gameState.completedLevels,
                 maxLevel: 1, 
@@ -1643,6 +1657,17 @@ document.addEventListener('DOMContentLoaded', () => {
         if (savedData) {
             const loadedState = JSON.parse(savedData);
             const baseState = getDefaultGameState();
+            
+            // Convert old array-based unique effects to new object-based one for old saves
+            let uniqueEffects = loadedState.absorbedUniqueEffects || {};
+            if (Array.isArray(uniqueEffects)) {
+                const newEffectsObject = {};
+                for (const effectKey of uniqueEffects) {
+                    newEffectsObject[effectKey] = (newEffectsObject[effectKey] || 0) + 1;
+                }
+                uniqueEffects = newEffectsObject;
+            }
+            
             gameState = { 
                 ...baseState, 
                 ...loadedState,
@@ -1652,6 +1677,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 equipment: { ...baseState.equipment, ...(loadedState.equipment || {}) }, 
                 absorbedStats: { ...(loadedState.absorbedStats || {}) }, 
                 absorbedSynergies: loadedState.absorbedSynergies || [],
+                absorbedUniqueEffects: uniqueEffects,
                 monster: { ...baseState.monster, ...(loadedState.monster || {}) }, 
                 presets: loadedState.presets || baseState.presets, 
                 isAutoProgressing: loadedState.isAutoProgressing !== undefined ? loadedState.isAutoProgressing : true, 
