@@ -1532,7 +1532,7 @@ document.addEventListener('DOMContentLoaded', () => {
                  logMessage(elements.gameLogEl, `No items were selected to absorb.`, 'uncommon');
             }
 
-            const heroToKeep = gameState.hero; // Keep the existing hero object
+            const heroToPrestige = gameState.hero;
             const oldAbsorbedStats = gameState.absorbedStats || {};
             const finalAbsorbedStats = { ...oldAbsorbedStats };
             for(const statKey in newAbsorbedStats) {
@@ -1549,6 +1549,17 @@ document.addEventListener('DOMContentLoaded', () => {
                     finalAbsorbedSynergies.push({ ...newSynergy });
                 }
             }
+            
+            // --- FIX: Reset Hero Attributes on Prestige ---
+            const spentPoints = heroToPrestige.attributes.strength + heroToPrestige.attributes.agility + heroToPrestige.attributes.luck;
+            const newTotalAttributePoints = heroToPrestige.attributePoints + spentPoints;
+
+            const prestgedHeroState = {
+                ...heroToPrestige, // Keep level and XP
+                attributePoints: newTotalAttributePoints, // Refund all points
+                attributes: { strength: 0, agility: 0, luck: 0 } // Reset attributes
+            };
+            // --- END FIX ---
 
             const oldPrestigeCount = gameState.prestigeCount || 0;
             const currentPrestigeLevel = gameState.nextPrestigeLevel || 100;
@@ -1563,7 +1574,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 completedLevels: gameState.completedLevels,
                 maxLevel: 1, 
                 nextPrestigeLevel: currentPrestigeLevel + 100,
-                hero: heroToKeep,
+                hero: prestgedHeroState, // Use the new, reset hero state
                 currentFightingLevel: 1,
                 currentRunCompletedLevels: [], 
             };
