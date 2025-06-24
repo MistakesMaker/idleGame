@@ -268,19 +268,6 @@ export function updateUI(elements, gameState, playerStats, currentMonster, salva
             absorbedStatsListEl.appendChild(statEl);
         }
     }
-    
-    // --- FIX for displaying stacked unique effects ---
-    const absorbedUniqueEffects = gameState.absorbedUniqueEffects || {};
-    for (const [effectKey, stackCount] of Object.entries(absorbedUniqueEffects)) {
-        const effectData = UNIQUE_EFFECTS[effectKey];
-        if (effectData) {
-            const stackText = stackCount > 1 ? ` (x${stackCount})` : '';
-            const statEl = document.createElement('p');
-            statEl.innerHTML = `<i class="fas fa-magic"></i> Absorbed Unique: <span>${effectData.name}${stackText}</span>`;
-            absorbedStatsListEl.appendChild(statEl);
-        }
-    }
-
     const nextPrestigeLevel = gameState.nextPrestigeLevel || 100;
     prestigeCountStatEl.textContent = (gameState.prestigeCount || 0).toString();
     prestigeRequirementTextEl.innerHTML = `Defeat the boss at Level <b>${nextPrestigeLevel}</b> to Prestige.`;
@@ -396,7 +383,7 @@ export function createTooltipHTML(item) {
 }
 
 /**
- * Creates the HTML for an item comparison tooltip.
+ * Creates the HTML for an item comparison tooltip, now with numerical diffs.
  * @param {object} hoveredItem - The item being hovered over.
  * @param {object|null} equippedItem - The currently equipped item for comparison.
  * @param {object|null} [equippedItem2=null] - The second equipped item (for rings).
@@ -407,60 +394,68 @@ export function createItemComparisonTooltipHTML(hoveredItem, equippedItem, equip
     const isUnique = hoveredItemBase?.isUnique;
     const uniqueClass = isUnique ? 'unique-item-name' : '';
     let headerHTML = `<div class="item-header"><span class="${hoveredItem.rarity} ${uniqueClass}">${hoveredItem.name}</span></div>`;
+    headerHTML += `<div style="font-size: 0.9em; color: #95a5a6; margin-bottom: 5px;">${hoveredItem.rarity.charAt(0).toUpperCase() + hoveredItem.rarity.slice(1)} ${hoveredItem.type.charAt(0).toUpperCase() + hoveredItem.type.slice(1)}</div>`;
 
-    const createComparisonBlock = (itemForComparison, itemToCompareAgainst) => {
-        let block = `<div><h5>Equipped: <span class="${itemToCompareAgainst.rarity} ${ITEMS[itemToCompareAgainst.baseId]?.isUnique ? 'unique-item-name' : ''}">${itemToCompareAgainst.name}</span></h5>`;
+    // Helper to generate a stat list with diffs
+    const createComparisonList = (itemForDisplay, itemToCompare) => {
+        const displayStats = getCombinedItemStats(itemForDisplay);
+        const compareStats = getCombinedItemStats(itemToCompare);
+        const allStatKeys = new Set([...Object.keys(displayStats), ...Object.keys(compareStats)]);
 
-        const hoveredStats = getCombinedItemStats(itemForComparison);
-        const equippedStats = getCombinedItemStats(itemToCompareAgainst);
-        const allStatKeys = new Set([...Object.keys(hoveredStats), ...Object.keys(equippedStats)]);
-        
         let statsHTML = '<ul>';
         allStatKeys.forEach(statKey => {
-            const hoveredValue = hoveredStats[statKey] || 0;
-            const equippedValue = equippedStats[statKey] || 0;
-            const diff = hoveredValue - equippedValue;
-            
+            const displayValue = displayStats[statKey] || 0;
+            const compareValue = compareStats[statKey] || 0;
+            const diff = displayValue - compareValue;
+
             const statInfo = Object.values(STATS).find(s => s.key === statKey) || { name: statKey, type: 'flat' };
-            const statName = statInfo.name;
             const isPercent = statInfo.type === 'percent';
             
-            const valueStr = isPercent ? `${hoveredValue.toFixed(1)}%` : formatNumber(hoveredValue);
+            const valueStr = isPercent ? `${displayValue.toFixed(1)}%` : formatNumber(displayValue);
             
             let diffSpan = '';
-            if (Math.abs(diff) > 0.001) {
+            if (itemToCompare && Math.abs(diff) > 0.001) {
                 const diffClass = diff > 0 ? 'stat-better' : 'stat-worse';
                 const sign = diff > 0 ? '+' : '';
                 const diffStr = isPercent ? `${diff.toFixed(1)}%` : formatNumber(diff);
                 diffSpan = ` <span class="${diffClass}">(${sign}${diffStr})</span>`;
             }
-            statsHTML += `<li>${statName}: ${valueStr}${diffSpan}</li>`;
+            statsHTML += `<li>${statInfo.name}: ${valueStr}${diffSpan}</li>`;
         });
         statsHTML += '</ul>';
-        block += statsHTML;
-        
-        let uniqueEffectHTML = '';
-        const equippedBase = ITEMS[itemToCompareAgainst.baseId];
-        if (equippedBase?.uniqueEffect) {
-            const effectData = UNIQUE_EFFECTS[equippedBase.uniqueEffect];
-            if (effectData) {
-                uniqueEffectHTML = `<div class="tooltip-unique-effect"><h4>${effectData.name}</h4><p>${effectData.description}</p></div>`;
-            }
-        }
-        block += uniqueEffectHTML + '</div>';
-        return block;
+        return statsHTML;
     };
 
-    const hoveredBlock = `<div><h5>Comparing</h5>${createDetailedItemStatBlockHTML(hoveredItem)}</div>`;
-
-    if (hoveredItem.type === 'ring') {
-        const equippedBlock1 = equippedItem ? createComparisonBlock(hoveredItem, equippedItem) : `<div><h5>Ring 1</h5><ul><li>(Empty Slot)</li></ul></div>`;
-        const equippedBlock2 = equippedItem2 ? createComparisonBlock(hoveredItem, equippedItem2) : `<div><h5>Ring 2</h5><ul><li>(Empty Slot)</li></ul></div>`;
-        return `${headerHTML}<div class="tooltip-ring-comparison">${hoveredBlock}${equippedBlock1}${equippedBlock2}</div>`;
-    } else {
-        const equippedBlock = equippedItem ? createComparisonBlock(hoveredItem, equippedItem) : `<div><h5>Equipped</h5><ul><li>(Empty Slot)</li></ul></div>`;
-        return `${headerHTML}<div class="tooltip-comparison-container">${hoveredBlock}${equippedBlock}</div>`;
+    let comparisonHTML = createComparisonList(hoveredItem, equippedItem);
+    
+    let uniqueEffectHTML = '';
+    if (hoveredItemBase && hoveredItemBase.uniqueEffect) {
+        const effectData = UNIQUE_EFFECTS[hoveredItemBase.uniqueEffect];
+        if (effectData) {
+            uniqueEffectHTML = `<div class="tooltip-unique-effect"><h4>${effectData.name}</h4><p>${effectData.description}</p></div>`;
+        }
     }
+    
+    // Special handling for rings
+    if (hoveredItem.type === 'ring') {
+        let ring1Comparison = createComparisonList(hoveredItem, equippedItem);
+        let ring2Comparison = createComparisonList(hoveredItem, equippedItem2);
+
+        comparisonHTML = `
+            <div class="tooltip-ring-comparison">
+                <div>
+                    <h5>vs. ${equippedItem ? equippedItem.name : "Ring 1"}</h5>
+                    ${ring1Comparison}
+                </div>
+                <div>
+                    <h5>vs. ${equippedItem2 ? equippedItem2.name : "Ring 2"}</h5>
+                    ${ring2Comparison}
+                </div>
+            </div>`;
+    }
+
+
+    return headerHTML + comparisonHTML + uniqueEffectHTML;
 }
 
 
