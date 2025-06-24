@@ -155,7 +155,7 @@ export function monsterDefeated(gameState, playerStats, currentMonster) {
 
     // --- REWARD CALCULATION (NEW POLYNOMIAL MODEL) ---
     const tier = Math.floor((level - 1) / 10);
-    const difficultyResetFactor = 4;
+    const difficultyResetFactor = 2;
     const effectiveLevel = level - (tier * difficultyResetFactor);
 
     // Gold Calculation
@@ -256,7 +256,7 @@ export function generateMonster(level) {
     const healthPower = 2.4;     // The exponent. >2 gives an accelerating curve. <2 gives a decelerating curve. 2.4 is a good middle ground.
     
     const tier = Math.floor((level - 1) / 10);
-    const difficultyResetFactor = 4;
+    const difficultyResetFactor = 2;
     const effectiveLevel = level - (tier * difficultyResetFactor);
 
     // The new formula: A small base + a polynomial part.
