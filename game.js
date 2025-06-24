@@ -586,7 +586,6 @@ document.addEventListener('DOMContentLoaded', () => {
         elements.modalBackdropEl.classList.remove('hidden');
     }
 
-    // --- FIX: This function now correctly wraps the item in a styled container ---
     function showRingSelectionModal(pendingRing) {
         const { ringSelectionModalBackdrop, ringSelectionSlot1, ringSelectionSlot2 } = elements;
         
@@ -1160,61 +1159,6 @@ document.addEventListener('DOMContentLoaded', () => {
         setupPrestigeListeners();
     }
     
-    // This is a helper function to create comparison tooltips for existing items
-    function createItemComparisonTooltipHTML(hoveredItem, equippedItem, equippedItem2 = null) {
-        let headerHTML = `<div class="item-header"><span class="${hoveredItem.rarity}">${hoveredItem.name}</span></div>`;
-
-        const createComparisonHTML = (equipped) => {
-            if (!equipped) return '<ul><li>(Empty Slot)</li></ul>';
-            
-            const combinedHoveredStats = getCombinedItemStats(hoveredItem);
-            const combinedEquippedStats = getCombinedItemStats(equipped);
-            const allStatKeys = new Set([...Object.keys(combinedHoveredStats), ...Object.keys(combinedEquippedStats)]);
-            let html = '<ul>';
-
-            allStatKeys.forEach(statKey => {
-                const hoveredValue = combinedHoveredStats[statKey] || 0;
-                const equippedValue = combinedEquippedStats[statKey] || 0;
-                const diff = hoveredValue - equippedValue;
-
-                const statInfo = Object.values(STATS).find(s => s.key === statKey) || { name: statKey, type: 'flat' };
-                const statName = statInfo.name;
-                const isPercent = statInfo.type === 'percent';
-
-                const valueStr = isPercent ? `${hoveredValue.toFixed(1)}%` : formatNumber(hoveredValue);
-                
-                let diffSpan = '';
-                if (Math.abs(diff) > 0.001) {
-                    const diffClass = diff > 0 ? 'stat-better' : 'stat-worse';
-                    const sign = diff > 0 ? '+' : '';
-                    const diffStr = isPercent ? `${diff.toFixed(1)}%` : formatNumber(diff);
-                    diffSpan = ` <span class="${diffClass}">(${sign}${diffStr})</span>`;
-                }
-                html += `<li>${statName}: ${valueStr}${diffSpan}</li>`;
-            });
-            html += '</ul>';
-            return html;
-        }
-
-        if (hoveredItem.type === 'ring') {
-            const ring1HTML = createComparisonHTML(equippedItem);
-            const ring2HTML = createComparisonHTML(equippedItem2);
-            return `${headerHTML}
-                    <div class="tooltip-ring-comparison">
-                        <div>
-                            <h5>vs. ${equippedItem ? equippedItem.name : "Ring 1"}</h5>
-                            ${ring1HTML}
-                        </div>
-                        <div>
-                            <h5>vs. ${equippedItem2 ? equippedItem2.name : "Ring 2"}</h5>
-                            ${ring2HTML}
-                        </div>
-                    </div>`;
-        } else {
-             return `${headerHTML}${createComparisonHTML(equippedItem)}`;
-        }
-    }
-    
     function setupItemTooltipListeners() {
         const showTooltip = (item, element) => {
             if (!item) return;
@@ -1223,7 +1167,6 @@ document.addEventListener('DOMContentLoaded', () => {
             elements.tooltipEl.classList.add(item.rarity);
 
             if (isShiftPressed) {
-                // When shift is held, show the base stat ranges for the item type
                 const itemBase = ITEMS[item.baseId];
                 if(itemBase) {
                      elements.tooltipEl.innerHTML = ui.createLootTableTooltipHTML(itemBase);
@@ -1231,12 +1174,11 @@ document.addEventListener('DOMContentLoaded', () => {
                      elements.tooltipEl.innerHTML = ui.createTooltipHTML(item);
                 }
             } else {
-                // Default behavior: show comparison tooltip
                 if (item.type === 'ring') {
-                    elements.tooltipEl.innerHTML = createItemComparisonTooltipHTML(item, gameState.equipment.ring1, gameState.equipment.ring2);
+                    elements.tooltipEl.innerHTML = ui.createItemComparisonTooltipHTML(item, gameState.equipment.ring1, gameState.equipment.ring2);
                 } else {
                     const equippedItem = gameState.equipment[item.type];
-                    elements.tooltipEl.innerHTML = createItemComparisonTooltipHTML(item, equippedItem);
+                    elements.tooltipEl.innerHTML = ui.createItemComparisonTooltipHTML(item, equippedItem);
                 }
             }
 
@@ -1376,10 +1318,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 elements.tooltipEl.classList.add('gem-quality');
             }
             else if (isShiftPressed) {
-                // Show base ranges on shift
                 elements.tooltipEl.innerHTML = ui.createLootTableTooltipHTML(itemBase);
             } else {
-                // Default to comparison
                 if (itemBase.type === 'ring') {
                     elements.tooltipEl.innerHTML = ui.createLootComparisonTooltipHTML(itemBase, gameState.equipment.ring1, gameState.equipment.ring2);
                 } else {
