@@ -296,17 +296,19 @@ export function updateUI(elements, gameState, playerStats, currentMonster, salva
 }
 
 /**
- * Creates the full HTML for an item's tooltip, including details, stats, and sockets.
+ * Creates the full HTML block for an item's stats and unique effects.
+ * This is a helper function to avoid duplicating code between tooltip functions.
+ * @param {object|null} item - The item to create the block for.
+ * @returns {string} The generated HTML string.
  */
-export function createTooltipHTML(item) {
-    if (!item) return '';
+function createDetailedItemStatBlockHTML(item) {
+    if (!item) {
+        return '<ul><li>(Empty Slot)</li></ul>';
+    }
+
     const itemBase = ITEMS[item.baseId];
-    const isUnique = itemBase && itemBase.isUnique;
-
-    const uniqueClass = isUnique ? 'unique-item-name' : '';
-    let headerHTML = `<div class="item-header"><span class="${item.rarity} ${uniqueClass}">${item.name}</span></div>`;
-    headerHTML += `<div style="font-size: 0.9em; color: #95a5a6; margin-bottom: 5px;">${item.rarity.charAt(0).toUpperCase() + item.rarity.slice(1)} ${item.type.charAt(0).toUpperCase() + item.type.slice(1)}</div>`;
-
+    
+    // Build the stat list from COMBINED stats (item + gems)
     const combinedStats = getCombinedItemStats(item);
     let statsHTML = '<ul>';
     for (const statKey in combinedStats) {
@@ -316,7 +318,8 @@ export function createTooltipHTML(item) {
         const statValue = statInfo.type === 'percent' ? `${value.toFixed(1)}%` : formatNumber(value);
         statsHTML += `<li>+${statValue} ${statName}</li>`;
     }
-
+    
+    // Handle synergy from gems, as it's a special stat
     let totalSynergyValue = 0;
     if (item.sockets) {
         for (const gem of item.sockets) {
@@ -330,29 +333,38 @@ export function createTooltipHTML(item) {
         statsHTML += `<li class="stat-special">Special: +${synergyPercentage}% DPS to Click Dmg</li>`;
     }
     statsHTML += '</ul>';
-    
-    let socketedGemsHTML = '';
-    const filledSockets = item.sockets ? item.sockets.filter(gem => gem !== null) : [];
-    if (filledSockets.length > 0) {
-        socketedGemsHTML += '<div class="tooltip-socketed-gems">';
-        socketedGemsHTML += '<h4>Socketed Gems</h4><ul>';
-        filledSockets.forEach(gem => {
-            let gemStatString = '';
-            if (gem.stats) {
-                gemStatString = Object.entries(gem.stats).map(([key, value]) => {
-                    const statInfo = Object.values(STATS).find(s => s.key === key) || { name: key, type: 'flat' };
-                    const statValue = statInfo.type === 'percent' ? `+${value.toFixed(1)}%` : `+${formatNumber(value)}`;
-                    return `${statValue} ${statInfo.name}`;
-                }).join(', ');
-            }
-            if (gem.synergy) {
-                const synergyPercent = (gem.synergy.value * 100).toFixed(1);
-                gemStatString += (gemStatString ? ', ' : '') + `+${synergyPercent}% DPS to Click Dmg`;
-            }
-            socketedGemsHTML += `<li><img src="${gem.icon}" class="socketed-gem-icon"> ${gem.name}: <span class="gem-stat-bonus">${gemStatString}</span></li>`;
-        });
-        socketedGemsHTML += '</ul></div>';
+
+    // Section for unique effect
+    let uniqueEffectHTML = '';
+    if (itemBase && itemBase.uniqueEffect) {
+        const effectData = UNIQUE_EFFECTS[itemBase.uniqueEffect];
+        if (effectData) {
+            uniqueEffectHTML = `
+                <div class="tooltip-unique-effect">
+                    <h4>${effectData.name}</h4>
+                    <p>${effectData.description}</p>
+                </div>
+            `;
+        }
     }
+
+    return statsHTML + uniqueEffectHTML;
+}
+
+
+/**
+ * Creates the full HTML for an item's tooltip, including details, stats, and sockets.
+ */
+export function createTooltipHTML(item) {
+    if (!item) return '';
+    const itemBase = ITEMS[item.baseId];
+    const isUnique = itemBase && itemBase.isUnique;
+
+    const uniqueClass = isUnique ? 'unique-item-name' : '';
+    let headerHTML = `<div class="item-header"><span class="${item.rarity} ${uniqueClass}">${item.name}</span></div>`;
+    headerHTML += `<div style="font-size: 0.9em; color: #95a5a6; margin-bottom: 5px;">${item.rarity.charAt(0).toUpperCase() + item.rarity.slice(1)} ${item.type.charAt(0).toUpperCase() + item.type.slice(1)}</div>`;
+
+    const detailedBlock = createDetailedItemStatBlockHTML(item);
 
     let socketsHTML = '';
     if (item.sockets) {
@@ -367,21 +379,77 @@ export function createTooltipHTML(item) {
         socketsHTML += '</div>';
     }
 
-    let uniqueEffectHTML = '';
-    if (itemBase && itemBase.uniqueEffect) {
-        const effectData = UNIQUE_EFFECTS[itemBase.uniqueEffect];
-        if (effectData) {
-            uniqueEffectHTML = `
-                <div class="tooltip-unique-effect">
-                    <h4>${effectData.name}</h4>
-                    <p>${effectData.description}</p>
-                </div>
-            `;
-        }
-    }
-
-    return headerHTML + statsHTML + socketedGemsHTML + socketsHTML + uniqueEffectHTML;
+    return headerHTML + detailedBlock + socketsHTML;
 }
+
+/**
+ * Creates the HTML for an item comparison tooltip.
+ * @param {object} hoveredItem - The item being hovered over.
+ * @param {object|null} equippedItem - The currently equipped item for comparison.
+ * @param {object|null} [equippedItem2=null] - The second equipped item (for rings).
+ * @returns {string} The generated HTML string.
+ */
+export function createItemComparisonTooltipHTML(hoveredItem, equippedItem, equippedItem2 = null) {
+    const hoveredItemBase = ITEMS[hoveredItem.baseId];
+    const isUnique = hoveredItemBase?.isUnique;
+    const uniqueClass = isUnique ? 'unique-item-name' : '';
+    let headerHTML = `<div class="item-header"><span class="${hoveredItem.rarity} ${uniqueClass}">${hoveredItem.name}</span></div>`;
+
+    const createComparisonBlock = (itemForComparison, itemToCompareAgainst) => {
+        let block = `<div><h5>Equipped: <span class="${itemToCompareAgainst.rarity} ${ITEMS[itemToCompareAgainst.baseId]?.isUnique ? 'unique-item-name' : ''}">${itemToCompareAgainst.name}</span></h5>`;
+
+        const hoveredStats = getCombinedItemStats(itemForComparison);
+        const equippedStats = getCombinedItemStats(itemToCompareAgainst);
+        const allStatKeys = new Set([...Object.keys(hoveredStats), ...Object.keys(equippedStats)]);
+        
+        let statsHTML = '<ul>';
+        allStatKeys.forEach(statKey => {
+            const hoveredValue = hoveredStats[statKey] || 0;
+            const equippedValue = equippedStats[statKey] || 0;
+            const diff = hoveredValue - equippedValue;
+            
+            const statInfo = Object.values(STATS).find(s => s.key === statKey) || { name: statKey, type: 'flat' };
+            const statName = statInfo.name;
+            const isPercent = statInfo.type === 'percent';
+            
+            const valueStr = isPercent ? `${hoveredValue.toFixed(1)}%` : formatNumber(hoveredValue);
+            
+            let diffSpan = '';
+            if (Math.abs(diff) > 0.001) {
+                const diffClass = diff > 0 ? 'stat-better' : 'stat-worse';
+                const sign = diff > 0 ? '+' : '';
+                const diffStr = isPercent ? `${diff.toFixed(1)}%` : formatNumber(diff);
+                diffSpan = ` <span class="${diffClass}">(${sign}${diffStr})</span>`;
+            }
+            statsHTML += `<li>${statName}: ${valueStr}${diffSpan}</li>`;
+        });
+        statsHTML += '</ul>';
+        block += statsHTML;
+        
+        let uniqueEffectHTML = '';
+        const equippedBase = ITEMS[itemToCompareAgainst.baseId];
+        if (equippedBase?.uniqueEffect) {
+            const effectData = UNIQUE_EFFECTS[equippedBase.uniqueEffect];
+            if (effectData) {
+                uniqueEffectHTML = `<div class="tooltip-unique-effect"><h4>${effectData.name}</h4><p>${effectData.description}</p></div>`;
+            }
+        }
+        block += uniqueEffectHTML + '</div>';
+        return block;
+    };
+
+    const hoveredBlock = `<div><h5>Comparing</h5>${createDetailedItemStatBlockHTML(hoveredItem)}</div>`;
+
+    if (hoveredItem.type === 'ring') {
+        const equippedBlock1 = equippedItem ? createComparisonBlock(hoveredItem, equippedItem) : `<div><h5>Ring 1</h5><ul><li>(Empty Slot)</li></ul></div>`;
+        const equippedBlock2 = equippedItem2 ? createComparisonBlock(hoveredItem, equippedItem2) : `<div><h5>Ring 2</h5><ul><li>(Empty Slot)</li></ul></div>`;
+        return `${headerHTML}<div class="tooltip-ring-comparison">${hoveredBlock}${equippedBlock1}${equippedBlock2}</div>`;
+    } else {
+        const equippedBlock = equippedItem ? createComparisonBlock(hoveredItem, equippedItem) : `<div><h5>Equipped</h5><ul><li>(Empty Slot)</li></ul></div>`;
+        return `${headerHTML}<div class="tooltip-comparison-container">${hoveredBlock}${equippedBlock}</div>`;
+    }
+}
+
 
 export function createGemTooltipHTML(gem) {
     const name = gem.name || `T${gem.tier} Gem`;
@@ -411,6 +479,11 @@ export function createGemTooltipHTML(gem) {
     return headerHTML + statsHTML;
 }
 
+/**
+ * Creates the HTML for a tooltip showing a base item's potential.
+ * @param {object} itemBase - The base item definition.
+ * @returns {string} The generated HTML string.
+ */
 export function createLootTableTooltipHTML(itemBase) {
     let statsHTML = '<ul>';
     itemBase.possibleStats.forEach(statInfo => {
@@ -451,98 +524,67 @@ export function createLootTableTooltipHTML(itemBase) {
             ${uniqueEffectHTML}`;
 }
 
+
+/**
+ * Creates the HTML for a tooltip that compares a potential loot drop with an equipped item.
+ * @param {object} potentialItem - The item base definition from the loot table.
+ * @param {object|null} equippedItem - The currently equipped item instance.
+ * @param {object|null} [equippedItem2=null] - The second equipped ring, if applicable.
+ * @returns {string} The generated HTML string for the tooltip.
+ */
 export function createLootComparisonTooltipHTML(potentialItem, equippedItem, equippedItem2 = null) {
-    if (potentialItem.type === 'ring' && (equippedItem || equippedItem2)) {
-        let potentialStatsHTML = '<ul>';
-        potentialItem.possibleStats.forEach(statInfo => {
-            const statName = Object.values(STATS).find(s => s.key === statInfo.key)?.name || statInfo.key;
-            potentialStatsHTML += `<li>+ ${statName}: ${statInfo.min} - ${statInfo.max}</li>`;
-        });
-        potentialStatsHTML += '</ul>';
+    const potentialIsUnique = potentialItem.isUnique ? 'unique-item-name' : '';
+    const headerHTML = `<div class="item-header"><span class="${potentialIsUnique}">${potentialItem.name}</span></div>`;
 
-        let equipped1StatsHTML = '<ul>';
-        if (equippedItem) {
-            for (const statKey in getCombinedItemStats(equippedItem)) {
-                const statInfo = Object.values(STATS).find(s => s.key === statKey);
-                const statName = statInfo ? statInfo.name : statKey;
-                equipped1StatsHTML += `<li>+${formatNumber(getCombinedItemStats(equippedItem)[statKey])} ${statName}</li>`;
-            }
-        } else {
-            equipped1StatsHTML += `<li>Nothing equipped</li>`;
-        }
-        equipped1StatsHTML += '</ul>';
-
-        let equipped2StatsHTML = '<ul>';
-        if (equippedItem2) {
-             for (const statKey in getCombinedItemStats(equippedItem2)) {
-                const statInfo = Object.values(STATS).find(s => s.key === statKey);
-                const statName = statInfo ? statInfo.name : statKey;
-                equipped2StatsHTML += `<li>+${formatNumber(getCombinedItemStats(equippedItem2)[statKey])} ${statName}</li>`;
-            }
-        } else {
-            equipped2StatsHTML += `<li>Nothing equipped</li>`;
-        }
-        equipped2StatsHTML += '</ul>';
-        
-        const potentialIsUnique = potentialItem.isUnique ? 'unique-item-name' : '';
-        const equipped1IsUnique = equippedItem && ITEMS[equippedItem.baseId].isUnique ? 'unique-item-name' : '';
-        const equipped2IsUnique = equippedItem2 && ITEMS[equippedItem2.baseId].isUnique ? 'unique-item-name' : '';
-
-
-        return `<div class="item-header"><span class="${potentialIsUnique}">${potentialItem.name}</span></div>
-                <div class="tooltip-comparison-section">
-                    <h5>Potential Drop</h5>
-                    ${potentialStatsHTML}
-                </div>
-                <div class="tooltip-ring-comparison">
-                     <div>
-                        <h5>vs. <span class="${equipped1IsUnique}">${equippedItem ? equippedItem.name : "Empty Slot"}</span></h5>
-                        ${equipped1StatsHTML}
-                    </div>
-                    <div>
-                        <h5>vs. <span class="${equipped2IsUnique}">${equippedItem2 ? equippedItem2.name : "Empty Slot"}</span></h5>
-                        ${equipped2StatsHTML}
-                    </div>
-                </div>`;
-    }
-
-    let equippedStatsHTML = '<ul>';
-    const combinedEquippedStats = getCombinedItemStats(equippedItem);
-    if (equippedItem) {
-        for (const statKey in combinedEquippedStats) {
-            const statInfo = Object.values(STATS).find(s => s.key === statKey);
-            const statName = statInfo ? statInfo.name : statKey;
-            equippedStatsHTML += `<li>+${formatNumber(combinedEquippedStats[statKey])} ${statName}</li>`;
-        }
-    } else {
-        equippedStatsHTML += `<li>Nothing equipped</li>`;
-    }
-    equippedStatsHTML += '</ul>';
-
+    // Block for the potential item's stat ranges
     let potentialStatsHTML = '<ul>';
     potentialItem.possibleStats.forEach(statInfo => {
         const statName = Object.values(STATS).find(s => s.key === statInfo.key)?.name || statInfo.key;
-        potentialStatsHTML += `<li>+ ${statName}: ${statInfo.min} - ${statInfo.max}</li>`;
+        potentialStatsHTML += `<li>+ ${statInfo.min} - ${statInfo.max} ${statName}</li>`;
     });
     potentialStatsHTML += '</ul>';
     
-    const potentialIsUnique = potentialItem.isUnique ? 'unique-item-name' : '';
-    const equippedIsUnique = equippedItem && ITEMS[equippedItem.baseId].isUnique ? 'unique-item-name' : '';
+    let uniqueEffectHTML = '';
+    if (potentialItem.uniqueEffect) {
+        const effectData = UNIQUE_EFFECTS[potentialItem.uniqueEffect];
+        if (effectData) {
+            uniqueEffectHTML = `
+                <div class="tooltip-unique-effect" style="margin-top: 5px; padding-top: 5px; border-top: 1px solid #f39c12;">
+                    <h4>${effectData.name}</h4>
+                    <p>${effectData.description}</p>
+                </div>
+            `;
+        }
+    }
+    const potentialBlock = `<div><h5>Potential Drop</h5>${potentialStatsHTML}${uniqueEffectHTML}</div>`;
 
-    return `<div class="item-header"><span class="${potentialIsUnique}">${potentialItem.name}</span></div>
-            <div class="tooltip-comparison-section">
-                <h5>Equipped: <span class="${equippedIsUnique}">${equippedItem ? equippedItem.name : 'None'}</span></h5>
-                ${equippedStatsHTML}
-            </div>
-            <div class="tooltip-comparison-section">
-                <h5>Potential Drop</h5>
-                ${potentialStatsHTML}
-            </div>`;
+
+    // Function to create a block for an equipped item
+    const createComparisonBlock = (item, title) => {
+        if (!item) {
+            return `<div><h5>${title}</h5><ul><li>(Empty Slot)</li></ul></div>`;
+        }
+        const itemBase = ITEMS[item.baseId];
+        const isUnique = itemBase && itemBase.isUnique;
+        const itemNameClass = isUnique ? 'unique-item-name' : '';
+        const itemRarityClass = item.rarity || 'common';
+
+        const blockTitle = `<h5>${title}: <span class="${itemRarityClass} ${itemNameClass}">${item.name}</span></h5>`;
+        const detailedStats = createDetailedItemStatBlockHTML(item);
+        return `<div>${blockTitle}${detailedStats}</div>`;
+    };
+
+    if (potentialItem.type === 'ring') {
+        const equippedBlock1 = createComparisonBlock(equippedItem, "Ring 1");
+        const equippedBlock2 = createComparisonBlock(equippedItem2, "Ring 2");
+        return `${headerHTML}<div class="tooltip-ring-comparison">${potentialBlock}${equippedBlock1}${equippedBlock2}</div>`;
+    } else {
+        const equippedBlock = createComparisonBlock(equippedItem, "Equipped");
+        return `${headerHTML}<div class="tooltip-comparison-container">${potentialBlock}${equippedBlock}</div>`;
+    }
 }
 
-/**
- * Creates the HTML for an item's icon-centric view in the grid.
- */
+
 /**
  * Creates the HTML for an item's icon-centric view in the grid.
  */
@@ -563,8 +605,6 @@ export function createItemHTML(item) {
 
     const iconSrc = item.icon || getItemIcon(item.type);
     
-    // --- THIS IS THE FIX ---
-    // The lock icon is now correctly included in the returned HTML string.
     const lockHTML = item.locked !== undefined ? `<i class="fas ${item.locked ? 'fa-lock' : 'fa-lock-open'} lock-icon"></i>` : '';
 
     return `<div class="item ${item.rarity}">
