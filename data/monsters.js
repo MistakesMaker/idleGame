@@ -76,10 +76,22 @@ export const MONSTERS = {
         image: 'images/monsters/slime_general.png',
         dropChance: 100,
         lootTable: [
+            { item: ITEMS.VISAGE_OF_THE_ABYSS, weight: 8 },
             { item: ITEMS.GLADIATORS_LONGSWORD, weight: 10 },
             { item: ITEMS.STEEL_LONGSWORD, weight: 20 },
             { item: ITEMS.IRON_KITESHIELD, weight: 20 },
             { item: ITEMS.CHAINMAIL_HAUBERK, weight: 15 },
+        ]
+    },
+    ROYAL_SLIME_VANGUARD: {
+        name: 'Royal Slime Vanguard',
+        image: 'images/monsters/slime_general.png',
+        dropChance: 100,
+        lootTable: [
+            { item: ITEMS.BAND_OF_ETERNAL_SORROW, weight: 8 },
+            { item: ITEMS.STEEL_LONGSWORD, weight: 20 },
+            { item: ITEMS.STEEL_HEATER, weight: 20 },
+            { item: ITEMS.STEEL_PLATEMAIL, weight: 15 },
         ]
     },
     KING_OF_SLIMES: {
@@ -87,6 +99,7 @@ export const MONSTERS = {
         image: 'images/monsters/king_of_slimes.png',
         dropChance: 100,
         lootTable: [
+            { item: ITEMS.HEART_OF_THE_VOLCANO, weight: 5 },
             { item: ITEMS.ROYAL_CIRCLET, weight: 10 },
             { item: ITEMS.SEAL_OF_THE_KING, weight: 5 },
             { item: ITEMS.GOLD_RING, weight: 20 },
@@ -293,8 +306,9 @@ export const MONSTERS = {
     DUNGEON_GUARDIAN: {
         name: 'Dungeon Guardian',
         image: 'images/boss.png',
-        dropChance: 50,
+        dropChance: 100,
         lootTable: [
+            { item: ITEMS.GIRDLE_OF_COLOSSAL_STRENGTH, weight: 8 },
             { item: ITEMS.RUNIC_BLADE, weight: 10 },
             { item: ITEMS.AMULET_OF_POWER, weight: 10 },
             { item: ITEMS.AEGIS_OF_THE_GUARDIAN, weight: 10 },

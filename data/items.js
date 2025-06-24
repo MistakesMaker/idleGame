@@ -1,5 +1,3 @@
-// --- START OF FILE data/items.js ---
-
 import { STATS } from './stat_pools.js';
 
 /*
@@ -21,7 +19,7 @@ import { STATS } from './stat_pools.js';
 
 export const ITEMS = {
     // ====================================================================================
-    // --- SWORDS --- (10 items)
+    // --- SWORDS --- (11 items)
     // ====================================================================================
     RUSTY_SWORD: {
         id: 'RUSTY_SWORD',
@@ -134,6 +132,21 @@ export const ITEMS = {
         possibleStats: [
             { key: STATS.CLICK_DAMAGE.key, min: 500, max: 1500 },
             { key: STATS.DPS.key, min: 10000, max: 30000 }
+        ]
+    },
+    HEART_OF_THE_VOLCANO: {
+        id: 'HEART_OF_THE_VOLCANO',
+        name: "Heart of the Volcano",
+        type: 'sword',
+        icon: 'images/icons/heart_of_the_volcano.png',
+        width: 2, height: 3,
+        isUnique: true,
+        canHaveSockets: true,
+        maxSockets: 3,
+        possibleStats: [
+            { key: STATS.CLICK_DAMAGE.key, min: 1000, max: 3000 },
+            { key: STATS.DPS.key, min: 25000, max: 75000 },
+            { key: STATS.GOLD_GAIN.key, min: 20, max: 60 },
         ]
     },
 
@@ -256,7 +269,7 @@ export const ITEMS = {
 
 
     // ====================================================================================
-    // --- HELMETS --- (10 items)
+    // --- HELMETS --- (11 items)
     // ====================================================================================
     LEATHER_CAP: {
         id: 'LEATHER_CAP',
@@ -376,6 +389,21 @@ export const ITEMS = {
         possibleStats: [
             { key: STATS.DPS.key, min: 8000, max: 24000 },
             { key: STATS.GOLD_GAIN.key, min: 30, max: 90 },
+        ]
+    },
+    VISAGE_OF_THE_ABYSS: {
+        id: 'VISAGE_OF_THE_ABYSS',
+        name: "Visage of the Abyss",
+        type: 'helmet',
+        icon: 'images/icons/visage_of_the_abyss.png',
+        width: 2, height: 2,
+        isUnique: true,
+        canHaveSockets: true,
+        maxSockets: 3,
+        possibleStats: [
+            { key: STATS.DPS.key, min: 10000, max: 30000 },
+            { key: STATS.GOLD_GAIN.key, min: 40, max: 120 },
+            { key: STATS.MAGIC_FIND.key, min: 25, max: 75 },
         ]
     },
     
@@ -712,7 +740,7 @@ export const ITEMS = {
 
 
     // ====================================================================================
-    // --- RINGS --- (10 items)
+    // --- RINGS --- (11 items)
     // ====================================================================================
     IRON_RING: {
         id: 'IRON_RING',
@@ -813,10 +841,24 @@ export const ITEMS = {
             { key: STATS.GOLD_GAIN.key, min: 25, max: 75 },
         ]
     },
+    BAND_OF_ETERNAL_SORROW: {
+        id: 'BAND_OF_ETERNAL_SORROW',
+        name: "Band of Eternal Sorrow",
+        type: 'ring',
+        icon: 'images/icons/band_of_eternal_sorrow.png',
+        width: 1, height: 1,
+        isUnique: true,
+        canHaveSockets: true,
+        maxSockets: 2,
+        possibleStats: [
+            { key: STATS.MAGIC_FIND.key, min: 50, max: 150 },
+            { key: STATS.GOLD_GAIN.key, min: 50, max: 150 },
+        ]
+    },
     
 
     // ====================================================================================
-    // --- BELTS --- (10 items)
+    // --- BELTS --- (11 items)
     // ====================================================================================
     SIMPLE_SASH: {
         id: 'SIMPLE_SASH',
@@ -917,6 +959,20 @@ export const ITEMS = {
         possibleStats: [
             { key: STATS.DPS.key, min: 8000, max: 24000 },
             { key: STATS.CLICK_DAMAGE.key, min: 200, max: 600 },
+        ]
+    },
+    GIRDLE_OF_COLOSSAL_STRENGTH: {
+        id: 'GIRDLE_OF_COLOSSAL_STRENGTH',
+        name: "Girdle of Colossal Strength",
+        type: 'belt',
+        icon: 'images/icons/girdle_of_colossal_strength.png',
+        width: 2, height: 1,
+        isUnique: true,
+        canHaveSockets: true,
+        maxSockets: 2,
+        possibleStats: [
+            { key: STATS.CLICK_DAMAGE.key, min: 500, max: 1500 },
+            { key: STATS.DPS.key, min: 10000, max: 30000 },
         ]
     }
 };
