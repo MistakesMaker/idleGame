@@ -222,30 +222,29 @@ export function monsterDefeated(gameState, playerStats, currentMonster) {
         }
     }
     
-    // --- Check for Slimey Sword unique effect (with STACKING) ---
+    // --- Check for unique effects ---
+    let slimeSplitChance = 0;
+    
+    // Check equipped item
     const equippedSword = gameState.equipment.sword;
     const swordBase = equippedSword ? ITEMS[equippedSword.baseId] : null;
-    let slimeSplitChance = 0;
-
-    // Check if one is equipped
     if (swordBase && swordBase.uniqueEffect === 'slimeSplit') {
-        slimeSplitChance = 0.10; // 10% base chance
+        slimeSplitChance += 10; // Base 10% chance
     }
-    
-    // Add stacks from absorbed effects
-    const absorbedStacks = gameState.absorbedUniqueEffects?.slimeSplit || 0;
-    slimeSplitChance += (absorbedStacks * 0.10);
 
-    if (slimeSplitChance > 0 && Math.random() < slimeSplitChance) {
+    // Check absorbed effects
+    if (gameState.absorbedUniqueEffects && gameState.absorbedUniqueEffects['slimeSplit']) {
+        slimeSplitChance += gameState.absorbedUniqueEffects['slimeSplit'] * 10;
+    }
+
+    if (slimeSplitChance > 0 && Math.random() * 100 < slimeSplitChance) {
         logMessages.push('The defeated monster splits into a <span class="legendary">Golden Slime!</span>', 'legendary');
         gameState.specialEncounter = {
             type: 'GOLDEN_SLIME',
             hp: previousMonsterMaxHp / 2,
             goldReward: goldGained * 3,
         };
-        // Don't progress level or do other post-defeat actions yet
     } else {
-        // --- Update state after rewards (only if not splitting) ---
         if (gameState.isAutoProgressing) {
             const nextLevel = level + 1;
             const nextSubZone = findSubZoneByLevel(nextLevel);

@@ -245,29 +245,54 @@ export function updateUI(elements, gameState, playerStats, currentMonster, salva
     
     absorbedStatsListEl.innerHTML = '';
     const absorbedStats = gameState.absorbedStats || {};
-    Object.entries(absorbedStats).forEach(([statKey, value]) => {
-        if (value > 0) {
-            const statInfo = Object.values(STATS).find(s => s.key === statKey) || { name: `${statKey.charAt(0).toUpperCase() + statKey.slice(1)}`, type: 'flat' };
-            const isPercent = statInfo.type === 'percent';
-            const displayValue = isPercent ? `${value.toFixed(2)}%` : formatNumber(value);
-            let iconClass = 'fa-question-circle'; 
-            if (statKey === STATS.CLICK_DAMAGE.key) iconClass = 'fa-hand-rock';
-            if (statKey === STATS.DPS.key) iconClass = 'fa-sword';
-            if (statKey === STATS.GOLD_GAIN.key) iconClass = 'fa-coins';
-            if (statKey === STATS.MAGIC_FIND.key) iconClass = 'fa-star';
-            const statEl = document.createElement('p');
-            statEl.innerHTML = `<i class="fas ${iconClass}"></i> ${statInfo.name}: <span>${displayValue}</span>`;
-            absorbedStatsListEl.appendChild(statEl);
-        }
-    });
-    const absorbedSynergies = gameState.absorbedSynergies || [];
-    for (const synergy of absorbedSynergies) {
-        if (synergy.value > 0) {
-            const statEl = document.createElement('p');
-            statEl.innerHTML = `<i class="fas fa-link"></i> Absorbed Special: <span>+${(synergy.value * 100).toFixed(2)}% of DPS to Click Dmg</span>`;
+
+    const prestigeStatsToShow = {
+        [STATS.DPS.key]: { icon: 'fa-sword', label: 'DPS' },
+        [STATS.CLICK_DAMAGE.key]: { icon: 'fa-hand-rock', label: 'Click Dmg' },
+        [STATS.GOLD_GAIN.key]: { icon: 'fa-coins', label: '% Gold Gain' },
+        [STATS.MAGIC_FIND.key]: { icon: 'fa-star', label: '% Magic Find' },
+    };
+
+    for (const [key, config] of Object.entries(prestigeStatsToShow)) {
+        if (absorbedStats[key] > 0) {
+            const isPercent = STATS[Object.keys(STATS).find(k => STATS[k].key === key)].type === 'percent';
+            const value = isPercent ? `${absorbedStats[key].toFixed(2)}%` : formatNumber(absorbedStats[key]);
+            
+            const statEl = document.createElement('div');
+            statEl.className = 'prestige-stat-entry';
+            statEl.innerHTML = `
+                <i class="fas ${config.icon}"></i>
+                <div class="prestige-stat-text">
+                    <div>${config.label}:</div>
+                    <div>${value}</div>
+                </div>
+            `;
             absorbedStatsListEl.appendChild(statEl);
         }
     }
+    
+    const absorbedUniqueEffects = gameState.absorbedUniqueEffects || {};
+    for (const [effectKey, count] of Object.entries(absorbedUniqueEffects)) {
+        if (count > 0) {
+            const effectData = UNIQUE_EFFECTS[effectKey];
+            if (effectData) {
+                const stackText = count > 1 ? ` (x${count})` : '';
+                const effectEl = document.createElement('div');
+                effectEl.className = 'prestige-stat-entry';
+                effectEl.innerHTML = `
+                    <i class="fas fa-magic"></i>
+                    <div class="prestige-stat-text">
+                        <div>Absorbed Unique:</div>
+                        <div>${effectData.name}${stackText}</div>
+                    </div>
+                `;
+                effectEl.title = effectData.description;
+                absorbedStatsListEl.appendChild(effectEl);
+            }
+        }
+    }
+
+
     const nextPrestigeLevel = gameState.nextPrestigeLevel || 100;
     prestigeCountStatEl.textContent = (gameState.prestigeCount || 0).toString();
     prestigeRequirementTextEl.innerHTML = `Defeat the boss at Level <b>${nextPrestigeLevel}</b> to Prestige.`;
@@ -399,7 +424,7 @@ export function createItemComparisonTooltipHTML(hoveredItem, equippedItem, equip
     // Helper to generate a stat list with diffs
     const createComparisonList = (itemForDisplay, itemToCompare) => {
         const displayStats = getCombinedItemStats(itemForDisplay);
-        const compareStats = getCombinedItemStats(itemToCompare);
+        const compareStats = itemToCompare ? getCombinedItemStats(itemToCompare) : {};
         const allStatKeys = new Set([...Object.keys(displayStats), ...Object.keys(compareStats)]);
 
         let statsHTML = '<ul>';
