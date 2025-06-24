@@ -26,7 +26,7 @@ export const MONSTERS = {
     SLIME: {
         name: 'Slime',
         image: 'images/monsters/slime.png',
-        dropChance: 5,
+        dropChance: 20,
         lootTable: [
             { item: ITEMS.RUSTY_SWORD, weight: 1 },
             { item: ITEMS.LEATHER_CAP, weight: 1 },
@@ -36,7 +36,7 @@ export const MONSTERS = {
     GOBLIN: {
         name: 'Goblin',
         image: 'images/monsters/goblin.png',
-        dropChance: 3.0,
+        dropChance: 20,
         lootTable: [
             { item: ITEMS.IRON_SHORTSWORD, weight: 1 },
             { item: ITEMS.WOODEN_SHIELD, weight: 1 },
@@ -46,7 +46,7 @@ export const MONSTERS = {
     BAT: {
         name: 'Bat',
         image: 'images/monsters/bat.png',
-        dropChance: 2.0,
+        dropChance: 20,
         lootTable: [
             { item: ITEMS.SIMPLE_PENDANT, weight: 1 },
             { item: ITEMS.IRON_RING, weight: 1 },
@@ -56,16 +56,16 @@ export const MONSTERS = {
     WILD_BOAR: {
         name: 'Wild Boar',
         image: 'images/monsters/wild_boar.png', 
-        dropChance: 2.5,
+        dropChance: 20,
         lootTable: [
-            { item: ITEMS.LEATHER_TROUSERS, weight: 10 },
-            { item: ITEMS.SIMPLE_SASH, weight: 8 },
+            { item: ITEMS.LEATHER_TROUSERS, weight: 1 },
+            { item: ITEMS.SIMPLE_SASH, weight: 1 },
         ]
     },
     WOLF: {
         name: 'Wolf',
         image: 'images/monsters/wolf.png', 
-        dropChance: 2.8,
+        dropChance: 20,
         lootTable: [
             { item: ITEMS.SERRATED_DAGGER, weight: 2 },
             { item: ITEMS.LEATHER_TUNIC, weight: 10 },
