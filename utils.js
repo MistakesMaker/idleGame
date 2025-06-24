@@ -141,8 +141,8 @@ export function isBigBossLevel(level) {
  * @returns {number} The XP required for the next level.
  */
 export function getXpForNextLevel(level) {
-    // FIX: Increased the exponent from 1.5 to 1.6 to slow down leveling progression.
-    return Math.floor(100 * Math.pow(level, 1.7));
+    // FIX: Increased the exponent from 1.5 to 1.9 to slow down leveling progression.
+    return Math.floor(100 * Math.pow(level, 1.9));
 }
 
 /**
