@@ -66,16 +66,17 @@ export function findEmptySpot(itemWidth, itemHeight, inventory) {
  * @param {string} [className=''] - An optional CSS class for the message paragraph.
  */
 export function logMessage(gameLogEl, message, className = '') {
-    // Check if the user is scrolled to the bottom before adding the new message.
-    // In a reversed flex-column, being "at the bottom" means scrollTop is 0.
-    const isScrolledToBottom = gameLogEl.scrollTop === 0;
+    // Due to flex-direction: column-reverse, the "bottom" is when scrollTop is 0.
+    // We use a small threshold (< 5) instead of a strict === 0 check to account
+    // for any minor scrolling or browser rendering quirks.
+    const isScrolledToBottom = gameLogEl.scrollTop < 5;
 
     const p = document.createElement('p');
     p.innerHTML = message;
     if (className) p.classList.add(className);
     gameLogEl.prepend(p);
 
-    // If they were at the bottom, automatically scroll to the new message.
+    // If the user was already at the bottom, keep them there.
     if (isScrolledToBottom) {
         gameLogEl.scrollTop = 0;
     }
