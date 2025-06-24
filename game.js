@@ -1522,7 +1522,6 @@ document.addEventListener('DOMContentLoaded', () => {
                  logMessage(elements.gameLogEl, `No items were selected to absorb.`, 'uncommon');
             }
 
-            const heroToKeep = { level: 1, xp: 0, attributePoints: 0, attributes: { strength: 0, agility: 0, luck: 0 } };
             const oldAbsorbedStats = gameState.absorbedStats || {};
             const finalAbsorbedStats = { ...oldAbsorbedStats };
             for(const statKey in newAbsorbedStats) {
@@ -1553,7 +1552,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 completedLevels: gameState.completedLevels,
                 maxLevel: 1, 
                 nextPrestigeLevel: currentPrestigeLevel + 25,
-                hero: heroToKeep,
+                hero: gameState.hero, // Keep the existing hero object
                 currentFightingLevel: 1,
                 currentRunCompletedLevels: [], 
             };
