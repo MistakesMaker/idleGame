@@ -580,11 +580,21 @@ document.addEventListener('DOMContentLoaded', () => {
         elements.modalBackdropEl.classList.remove('hidden');
     }
 
+    // --- FIX: This function now correctly wraps the item in a styled container ---
     function showRingSelectionModal(pendingRing) {
         const { ringSelectionModalBackdrop, ringSelectionSlot1, ringSelectionSlot2 } = elements;
         
-        ringSelectionSlot1.innerHTML = ui.createItemHTML(gameState.equipment.ring1);
-        ringSelectionSlot2.innerHTML = ui.createItemHTML(gameState.equipment.ring2);
+        const createRingHTML = (ring) => {
+            if (!ring) return '';
+            const wrapper = document.createElement('div');
+            wrapper.className = 'item-wrapper';
+            if(ring.rarity) wrapper.classList.add(ring.rarity);
+            wrapper.innerHTML = ui.createItemHTML(ring);
+            return wrapper.outerHTML;
+        }
+
+        ringSelectionSlot1.innerHTML = createRingHTML(gameState.equipment.ring1);
+        ringSelectionSlot2.innerHTML = createRingHTML(gameState.equipment.ring2);
 
         ringSelectionModalBackdrop.classList.remove('hidden');
     }
@@ -1522,6 +1532,7 @@ document.addEventListener('DOMContentLoaded', () => {
                  logMessage(elements.gameLogEl, `No items were selected to absorb.`, 'uncommon');
             }
 
+            const heroToKeep = gameState.hero; // Keep the existing hero object
             const oldAbsorbedStats = gameState.absorbedStats || {};
             const finalAbsorbedStats = { ...oldAbsorbedStats };
             for(const statKey in newAbsorbedStats) {
@@ -1551,8 +1562,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 prestigeCount: oldPrestigeCount + 1,
                 completedLevels: gameState.completedLevels,
                 maxLevel: 1, 
-                nextPrestigeLevel: currentPrestigeLevel + 25,
-                hero: gameState.hero, // Keep the existing hero object
+                nextPrestigeLevel: currentPrestigeLevel + 100,
+                hero: heroToKeep,
                 currentFightingLevel: 1,
                 currentRunCompletedLevels: [], 
             };

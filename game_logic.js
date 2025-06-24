@@ -20,9 +20,9 @@ export function generateItem(rarity, itemLevel, itemBase) {
         id: Date.now() + Math.random(),
         baseId: itemBase.id,
         name: `${rarity.charAt(0).toUpperCase() + rarity.slice(1)} ${itemBase.name}`,
+        rarity: rarity,
         type: itemBase.type.toLowerCase(),
         icon: itemBase.icon,
-        rarity: rarity,
         width: itemBase.width,
         height: itemBase.height,
         x: -1, // Not placed in grid yet
@@ -146,7 +146,6 @@ export function monsterDefeated(gameState, playerStats, currentMonster) {
     const level = gameState.currentFightingLevel;
     const logMessages = [];
 
-    // --- FIX: Add level to BOTH permanent and current run trackers ---
     if (!gameState.completedLevels.includes(level)) {
         gameState.completedLevels.push(level);
     }
@@ -154,17 +153,26 @@ export function monsterDefeated(gameState, playerStats, currentMonster) {
         gameState.currentRunCompletedLevels.push(level);
     }
 
-    // --- REWARD CALCULATION (Reverted to old tier-based system) ---
+    // --- REWARD CALCULATION (NEW POLYNOMIAL MODEL) ---
     const tier = Math.floor((level - 1) / 10);
     const difficultyResetFactor = 4;
     const effectiveLevel = level - (tier * difficultyResetFactor);
-    const goldExponent = 1.17;
-    const baseGold = 15;
-    let goldGained = Math.ceil(baseGold * Math.pow(goldExponent, effectiveLevel) * (1 + (playerStats.bonusGold / 100)));
-    let xpGained = gameState.currentFightingLevel * 5;
+
+    // Gold Calculation
+    const baseGold = 10;
+    const goldFactor = 3;
+    const goldPower = 2.1;
+    let goldGained = baseGold + (goldFactor * Math.pow(effectiveLevel, goldPower));
+    goldGained = Math.ceil(goldGained * (1 + (playerStats.bonusGold / 100)));
+
+    // XP Calculation
+    const baseXp = 20;
+    const xpPower = 1.4;
+    let xpGained = baseXp * Math.pow(level, xpPower); // XP scales with the actual level, not effectiveLevel
+
     let droppedItem = null;
 
-    // Apply boss multipliers
+    // Apply boss multipliers to rewards
     if (isBigBossLevel(level)) {
         xpGained *= 5;
         goldGained *= 5;
@@ -175,6 +183,9 @@ export function monsterDefeated(gameState, playerStats, currentMonster) {
         xpGained *= 2;
         goldGained *= 2;
     }
+    
+    xpGained = Math.ceil(xpGained);
+    goldGained = Math.ceil(goldGained);
 
     logMessages.push(`You defeated the ${currentMonster.name} and gained ${formatNumber(goldGained)} gold and ${formatNumber(xpGained)} XP.`);
 
@@ -237,12 +248,21 @@ export function generateMonster(level) {
         monsterData = MONSTERS.SLIME;
     }
 
-    // --- REVERTED TO OLD TIER-BASED SCALING ---
-    const baseExponent = 1.15;
+    // --- NEW: POLYNOMIAL SCALING ---
+    // This model provides a smoother difficulty curve than the old exponential formula.
+    // It prevents the massive HP spikes in the late game.
+    // We can tune these values to adjust the overall difficulty.
+    const baseHealthFactor = 4;  // A multiplier for the polynomial part of the formula.
+    const healthPower = 2.4;     // The exponent. >2 gives an accelerating curve. <2 gives a decelerating curve. 2.4 is a good middle ground.
+    
     const tier = Math.floor((level - 1) / 10);
     const difficultyResetFactor = 4;
     const effectiveLevel = level - (tier * difficultyResetFactor);
-    let monsterHealth = Math.ceil(10 * Math.pow(baseExponent, effectiveLevel));
+
+    // The new formula: A small base + a polynomial part.
+    // This scales much more gracefully into high levels.
+    let monsterHealth = 10 + (baseHealthFactor * Math.pow(effectiveLevel, healthPower));
+
 
     // Apply explicit multipliers ONLY for designated boss levels.
     if (isBigBossLevel(level)) {
@@ -253,6 +273,9 @@ export function generateMonster(level) {
         monsterHealth *= 2.5;
     }
     
+    // Final rounding to keep numbers clean
+    monsterHealth = Math.ceil(monsterHealth);
+
     const newMonster = { name: monsterData.name, data: monsterData };
     const newMonsterState = { hp: monsterHealth, maxHp: monsterHealth };
     
