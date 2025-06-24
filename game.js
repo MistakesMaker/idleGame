@@ -61,6 +61,7 @@ document.addEventListener('DOMContentLoaded', () => {
             absorbedSynergies: [],
             prestigeCount: 0,
             nextPrestigeLevel: 100,
+            specialEncounter: null,
             hero: {
                 level: 1, xp: 0, attributePoints: 0,
                 attributes: { strength: 0, agility: 0, luck: 0 }
@@ -228,19 +229,23 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function startNewMonster() {
-        const { newMonster, newMonsterState } = logic.generateMonster(gameState.currentFightingLevel);
+        const { newMonster, newMonsterState } = logic.generateMonster(gameState.currentFightingLevel, gameState.specialEncounter);
         currentMonster = newMonster;
         gameState.monster = newMonsterState;
         (/** @type {HTMLImageElement} */ (elements.monsterImageEl)).src = currentMonster.data.image;
         elements.monsterNameEl.textContent = currentMonster.name;
 
         // Set zone-specific background
-        const subZone = findSubZoneByLevel(gameState.currentFightingLevel);
-        if (subZone && subZone.parentZone) {
-            elements.monsterAreaEl.style.backgroundImage = `url('${subZone.parentZone.monsterAreaBg}')`;
+        if (currentMonster.data.isSpecial) {
+            elements.monsterAreaEl.style.backgroundImage = `url('images/backgrounds/bg_treasure_realm.png')`;
         } else {
-             // Fallback for the very first level or if something goes wrong
-            elements.monsterAreaEl.style.backgroundImage = `url('${REALMS[0].zones.green_meadows.monsterAreaBg}')`;
+            const subZone = findSubZoneByLevel(gameState.currentFightingLevel);
+            if (subZone && subZone.parentZone) {
+                elements.monsterAreaEl.style.backgroundImage = `url('${subZone.parentZone.monsterAreaBg}')`;
+            } else {
+                 // Fallback for the very first level or if something goes wrong
+                elements.monsterAreaEl.style.backgroundImage = `url('${REALMS[0].zones.green_meadows.monsterAreaBg}')`;
+            }
         }
     }
 
@@ -1654,7 +1659,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 currentRunCompletedLevels: loadedState.currentRunCompletedLevels || [], 
                 legacyItems: [],
                 inventoryGridInitialized: loadedState.inventoryGridInitialized || false,
-                permanentUpgrades: { ...baseState.permanentUpgrades, ...(loadedState.permanentUpgrades || {}) }
+                permanentUpgrades: { ...baseState.permanentUpgrades, ...(loadedState.permanentUpgrades || {}) },
+                specialEncounter: loadedState.specialEncounter || null,
             };
             
             if (!gameState.inventoryGridInitialized) {

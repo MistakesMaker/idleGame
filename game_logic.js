@@ -145,6 +145,7 @@ export function dropLoot(currentMonster, gameState, playerStats) {
 export function monsterDefeated(gameState, playerStats, currentMonster) {
     const level = gameState.currentFightingLevel;
     const logMessages = [];
+    const previousMonsterMaxHp = gameState.monster.maxHp;
 
     if (!gameState.completedLevels.includes(level)) {
         gameState.completedLevels.push(level);
@@ -172,57 +173,79 @@ export function monsterDefeated(gameState, playerStats, currentMonster) {
 
     let droppedItem = null;
 
-    // Apply boss multipliers to rewards
-    if (isBigBossLevel(level)) {
-        xpGained *= 5;
-        goldGained *= 5;
-    } else if (isBossLevel(level)) {
-        xpGained *= 3;
-        goldGained *= 3;
-    } else if (isMiniBossLevel(level)) {
-        xpGained *= 2;
-        goldGained *= 2;
-    }
-    
-    xpGained = Math.ceil(xpGained);
-    goldGained = Math.ceil(goldGained);
+    // Handle special monster rewards (Golden Slime)
+    if (currentMonster.data.isSpecial && currentMonster.data.id === 'GOLDEN_SLIME') {
+        goldGained = gameState.specialEncounter.goldReward || 0;
+        xpGained = 0; // No XP from Golden Slime
+        logMessages.push(`You defeated the Golden Slime and gained a massive bonus of ${formatNumber(goldGained)} gold!`);
+        gameState.specialEncounter = null; // Clear the special encounter
+    } else {
+        // Apply regular boss multipliers to rewards
+        if (isBigBossLevel(level)) {
+            xpGained *= 5;
+            goldGained *= 5;
+        } else if (isBossLevel(level)) {
+            xpGained *= 3;
+            goldGained *= 3;
+        } else if (isMiniBossLevel(level)) {
+            xpGained *= 2;
+            goldGained *= 2;
+        }
+        
+        xpGained = Math.ceil(xpGained);
+        goldGained = Math.ceil(goldGained);
 
-    logMessages.push(`You defeated the ${currentMonster.name} and gained ${formatNumber(goldGained)} gold and ${formatNumber(xpGained)} XP.`);
+        logMessages.push(`You defeated the ${currentMonster.name} and gained ${formatNumber(goldGained)} gold and ${formatNumber(xpGained)} XP.`);
 
-    const dropRoll = Math.random() * 100;
-    if (dropRoll < currentMonster.data.dropChance) {
-        droppedItem = dropLoot(currentMonster, gameState, playerStats);
-        if (droppedItem) {
-            const isGem = droppedItem.tier >= 1;
-            const rarityClass = isGem ? 'epic' : droppedItem.rarity;
-            logMessages.push(`The ${currentMonster.name} dropped something! <span class="${rarityClass}" style="font-weight:bold;">${droppedItem.name}</span>`);
-            
-            // Gem Find roll
-            if (playerStats.gemFindChance > 0 && Math.random() * 100 < playerStats.gemFindChance) {
-                const gemKeys = Object.keys(GEMS);
-                const randomGemKey = gemKeys[Math.floor(Math.random() * gemKeys.length)];
-                const gemBase = GEMS[randomGemKey];
-                const newGem = { ...gemBase, id: Date.now() + Math.random() };
-                gameState.gems.push(newGem);
-                logMessages.push(`Bonus Drop! You found a <span class="epic" style="font-weight:bold;">${newGem.name}</span>!`);
+        const dropRoll = Math.random() * 100;
+        if (dropRoll < currentMonster.data.dropChance) {
+            droppedItem = dropLoot(currentMonster, gameState, playerStats);
+            if (droppedItem) {
+                const isGem = droppedItem.tier >= 1;
+                const rarityClass = isGem ? 'epic' : droppedItem.rarity;
+                logMessages.push(`The ${currentMonster.name} dropped something! <span class="${rarityClass}" style="font-weight:bold;">${droppedItem.name}</span>`);
+                
+                // Gem Find roll
+                if (playerStats.gemFindChance > 0 && Math.random() * 100 < playerStats.gemFindChance) {
+                    const gemKeys = Object.keys(GEMS);
+                    const randomGemKey = gemKeys[Math.floor(Math.random() * gemKeys.length)];
+                    const gemBase = GEMS[randomGemKey];
+                    const newGem = { ...gemBase, id: Date.now() + Math.random() };
+                    gameState.gems.push(newGem);
+                    logMessages.push(`Bonus Drop! You found a <span class="epic" style="font-weight:bold;">${newGem.name}</span>!`);
+                }
+
+            } else {
+                // A drop was rolled, but dropLoot returned null. This means the inventory is full.
+                logMessages.push(`The ${currentMonster.name} dropped an item, but your inventory is full!`, 'rare');
             }
-
-        } else {
-            // A drop was rolled, but dropLoot returned null. This means the inventory is full.
-            logMessages.push(`The ${currentMonster.name} dropped an item, but your inventory is full!`, 'rare');
         }
     }
     
-    // --- Update state after rewards ---
-    gameState.gold += goldGained;
+    // --- Check for Slimey Sword unique effect ---
+    const equippedSword = gameState.equipment.sword;
+    const swordBase = equippedSword ? ITEMS[equippedSword.baseId] : null;
 
-    if (gameState.isAutoProgressing) {
-        const nextLevel = level + 1;
-        const nextSubZone = findSubZoneByLevel(nextLevel);
-        if (nextSubZone) {
-            gameState.currentFightingLevel = nextLevel;
+    if (swordBase && swordBase.uniqueEffect === 'slimeSplit' && Math.random() < 0.10) {
+        logMessages.push('The defeated monster splits into a <span class="legendary">Golden Slime!</span>', 'legendary');
+        gameState.specialEncounter = {
+            type: 'GOLDEN_SLIME',
+            hp: previousMonsterMaxHp / 2,
+            goldReward: goldGained * 3,
+        };
+        // Don't progress level or do other post-defeat actions yet
+    } else {
+        // --- Update state after rewards (only if not splitting) ---
+        if (gameState.isAutoProgressing) {
+            const nextLevel = level + 1;
+            const nextSubZone = findSubZoneByLevel(nextLevel);
+            if (nextSubZone) {
+                gameState.currentFightingLevel = nextLevel;
+            }
         }
     }
+
+    gameState.gold += goldGained;
 
     if (gameState.currentFightingLevel > gameState.maxLevel) {
         gameState.maxLevel = gameState.currentFightingLevel;
@@ -234,43 +257,51 @@ export function monsterDefeated(gameState, playerStats, currentMonster) {
 /**
  * Generates a new monster based on the current fighting level.
  */
-export function generateMonster(level) {
+export function generateMonster(level, specialEncounter = null) {
     let monsterData;
+    let monsterHealth;
 
-    const subZone = findSubZoneByLevel(level);
-
-    if (subZone && subZone.monsterPool && subZone.monsterPool.length > 0) {
-        // Select a random monster from the pool defined in realms.js
-        monsterData = subZone.monsterPool[Math.floor(Math.random() * subZone.monsterPool.length)];
+    // --- NEW: Handle Special Encounters first ---
+    if (specialEncounter && specialEncounter.type === 'GOLDEN_SLIME') {
+        monsterData = {
+            id: 'GOLDEN_SLIME',
+            name: 'Golden Slime',
+            image: 'images/monsters/golden_slime.png',
+            dropChance: 0, // No item drops
+            lootTable: [],
+            isSpecial: true,
+        };
+        monsterHealth = specialEncounter.hp;
     } else {
-        // Fallback if no sub-zone or monster pool is defined for the current level
-        console.error("No sub-zone or monster pool found for level:", level, ". Falling back to Slime.");
-        monsterData = MONSTERS.SLIME;
-    }
+        const subZone = findSubZoneByLevel(level);
 
-    // --- NEW: POLYNOMIAL SCALING ---
-    // This model provides a smoother difficulty curve than the old exponential formula.
-    // It prevents the massive HP spikes in the late game.
-    // We can tune these values to adjust the overall difficulty.
-    const baseHealthFactor = 4;  // A multiplier for the polynomial part of the formula.
-    const healthPower = 2.4;     // The exponent. >2 gives an accelerating curve. <2 gives a decelerating curve. 2.4 is a good middle ground.
-    
-    const tier = Math.floor((level - 1) / 10);
-    const difficultyResetFactor = 2;
-    const effectiveLevel = level - (tier * difficultyResetFactor);
+        if (subZone && subZone.monsterPool && subZone.monsterPool.length > 0) {
+            // Select a random monster from the pool defined in realms.js
+            monsterData = subZone.monsterPool[Math.floor(Math.random() * subZone.monsterPool.length)];
+        } else {
+            // Fallback if no sub-zone or monster pool is defined for the current level
+            console.error("No sub-zone or monster pool found for level:", level, ". Falling back to Slime.");
+            monsterData = MONSTERS.SLIME;
+        }
 
-    // The new formula: A small base + a polynomial part.
-    // This scales much more gracefully into high levels.
-    let monsterHealth = 10 + (baseHealthFactor * Math.pow(effectiveLevel, healthPower));
+        // --- NEW: POLYNOMIAL SCALING ---
+        const baseHealthFactor = 4;
+        const healthPower = 2.4;
+        
+        const tier = Math.floor((level - 1) / 10);
+        const difficultyResetFactor = 2;
+        const effectiveLevel = level - (tier * difficultyResetFactor);
 
+        monsterHealth = 10 + (baseHealthFactor * Math.pow(effectiveLevel, healthPower));
 
-    // Apply explicit multipliers ONLY for designated boss levels.
-    if (isBigBossLevel(level)) {
-        monsterHealth *= 10;
-    } else if (isBossLevel(level)) {
-        monsterHealth *= 5;
-    } else if (isMiniBossLevel(level)) {
-        monsterHealth *= 2.5;
+        // Apply explicit multipliers ONLY for designated boss levels.
+        if (isBigBossLevel(level)) {
+            monsterHealth *= 10;
+        } else if (isBossLevel(level)) {
+            monsterHealth *= 5;
+        } else if (isMiniBossLevel(level)) {
+            monsterHealth *= 2.5;
+        }
     }
     
     // Final rounding to keep numbers clean

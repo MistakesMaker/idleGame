@@ -251,7 +251,7 @@ body.salvage-mode-active .item-grid .item-wrapper:not(.locked-item) { animation:
 #item-tooltip .item-header .rare { color: #3498db; border: none; box-shadow: none; text-shadow: none; }
 #item-tooltip .item-header .epic { color: #9b59b6; border: none; box-shadow: none; text-shadow: none; }
 #item-tooltip .item-header .legendary { color: #f39c12; border: none; box-shadow: none; text-shadow: none; animation: none; }
-#item-tooltip .item-header.gem-tooltip { color: #e74c3c; border: none; box-shadow: none; text-shadow: 0 0 5px #c0392b; }
+#item-tooltip .item-header .gem-tooltip { color: #e74c3c; border: none; box-shadow: none; text-shadow: 0 0 5px #c0392b; }
 #item-tooltip .stat-better { color: #2ecc71; font-weight: bold; }
 #item-tooltip .stat-worse { color: #e74c3c; font-weight: bold; }
 .tooltip-shift-hint { font-size: 0.8em; color: #7f8c8d; font-style: normal; font-weight: normal; }
@@ -259,6 +259,39 @@ body.salvage-mode-active .item-grid .item-wrapper:not(.locked-item) { animation:
 .tooltip-comparison-section { margin-top: 8px; padding-top: 8px; border-top: 1px solid #4a637e; }
 .tooltip-comparison-section h5 { margin: 0 0 5px 0; font-size: 0.9em; color: #95a5a6; }
 .tooltip-comparison-section ul { font-size: 0.85em; }
+
+.unique-item-name { color: #f39c12 !important; text-shadow: 0 0 5px #f39c12; }
+
+.tooltip-unique-effect {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid #f39c12;
+}
+.tooltip-unique-effect h4 {
+    margin: 0 0 5px 0;
+    color: #f39c12;
+    text-shadow: 0 0 5px #f39c12;
+}
+.tooltip-unique-effect p {
+    margin: 0;
+    font-size: 0.9em;
+    color: #ecf0f1;
+}
+.tooltip-socketed-gems {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid #9b59b6;
+}
+.tooltip-socketed-gems h4 {
+    margin: 0 0 5px 0;
+    color: #9b59b6;
+    text-shadow: 0 0 5px #9b59b6;
+}
+.tooltip-socketed-gems ul { padding: 0; margin: 0; list-style: none; }
+.tooltip-socketed-gems li { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+.socketed-gem-icon { width: 16px; height: 16px; }
+.gem-stat-bonus { color: #2ecc71; }
+
 
 #stat-tooltip { position: fixed; width: auto; min-width: 240px; background-color: rgba(10, 15, 20, 0.95); border: 1px solid #7f8c8d; border-radius: 8px; box-shadow: 0 6px 12px rgba(0,0,0,0.5); padding: 15px; z-index: 9999; pointer-events: none; backdrop-filter: blur(5px); font-size: 0.95em; line-height: 1.5; }
 #stat-tooltip h4 { margin: 0 0 10px 0; padding-bottom: 5px; border-bottom: 1px solid #4a637e; }

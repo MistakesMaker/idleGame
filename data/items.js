@@ -12,6 +12,7 @@ import { STATS } from './stat_pools.js';
 * possibleStats: An array of stat objects that can roll on this item.
 * isUnique: (Optional) If true, this item is considered a "unique" or "boss" item.
 *           This can be used to exclude it from certain loot pools, like loot crates.
+* uniqueEffect: (Optional) A string identifier for a special, hard-coded item effect.
 * canHaveSockets: (Optional) If true, this item is eligible to roll for sockets.
 * maxSockets: (Optional) If canHaveSockets is true, this defines the maximum number of
 *             sockets this item base can have.
@@ -141,6 +142,7 @@ export const ITEMS = {
         icon: 'images/icons/slimey_sword.png',
         width: 2, height: 3,
         isUnique: true,
+        uniqueEffect: 'slimeSplit',
         canHaveSockets: true,
         maxSockets: 3,
         possibleStats: [

@@ -3,6 +3,7 @@
 import { STATS } from './data/stat_pools.js';
 import { getXpForNextLevel, getUpgradeCost, formatNumber, findSubZoneByLevel, getCombinedItemStats, findEmptySpot } from './utils.js';
 import { ITEMS } from './data/items.js';
+import { UNIQUE_EFFECTS } from './data/unique_effects.js';
 
 /**
  * Gathers all necessary DOM elements from the page.
@@ -171,6 +172,8 @@ export function updateUI(elements, gameState, playerStats, currentMonster, salva
     magicFindStatEl.textContent = playerStats.magicFind.toFixed(1);
 
     // --- Monster Info ---
+    const isSpecialMonster = currentMonster && currentMonster.data.isSpecial;
+    currentLevelEl.textContent = isSpecialMonster ? '??' : gameState.currentFightingLevel.toString();
     monsterHealthTextEl.textContent = `${formatNumber(Math.ceil(Math.max(0, gameState.monster.hp)))} / ${formatNumber(gameState.monster.maxHp)}`;
     const healthPercent = (gameState.monster.hp / gameState.monster.maxHp) * 100;
     monsterHealthBarEl.style.width = `${healthPercent}%`;
@@ -271,7 +274,6 @@ export function updateUI(elements, gameState, playerStats, currentMonster, salva
     (/** @type {HTMLButtonElement} */ (prestigeButton)).disabled = !gameState.currentRunCompletedLevels.includes(nextPrestigeLevel);
 
     // --- Map and Monster Info ---
-    currentLevelEl.textContent = gameState.currentFightingLevel.toString();
     (/** @type {HTMLInputElement} */ (autoProgressCheckboxEl)).checked = gameState.isAutoProgressing;
     const monsterDef = currentMonster.data;
     if (monsterDef) {
@@ -298,7 +300,11 @@ export function updateUI(elements, gameState, playerStats, currentMonster, salva
  */
 export function createTooltipHTML(item) {
     if (!item) return '';
-    let headerHTML = `<div class="item-header"><span>${item.name}</span></div>`;
+    const itemBase = ITEMS[item.baseId];
+    const isUnique = itemBase && itemBase.isUnique;
+
+    const uniqueClass = isUnique ? 'unique-item-name' : '';
+    let headerHTML = `<div class="item-header"><span class="${item.rarity} ${uniqueClass}">${item.name}</span></div>`;
     headerHTML += `<div style="font-size: 0.9em; color: #95a5a6; margin-bottom: 5px;">${item.rarity.charAt(0).toUpperCase() + item.rarity.slice(1)} ${item.type.charAt(0).toUpperCase() + item.type.slice(1)}</div>`;
 
     const combinedStats = getCombinedItemStats(item);
@@ -324,6 +330,29 @@ export function createTooltipHTML(item) {
         statsHTML += `<li class="stat-special">Special: +${synergyPercentage}% DPS to Click Dmg</li>`;
     }
     statsHTML += '</ul>';
+    
+    let socketedGemsHTML = '';
+    const filledSockets = item.sockets ? item.sockets.filter(gem => gem !== null) : [];
+    if (filledSockets.length > 0) {
+        socketedGemsHTML += '<div class="tooltip-socketed-gems">';
+        socketedGemsHTML += '<h4>Socketed Gems</h4><ul>';
+        filledSockets.forEach(gem => {
+            let gemStatString = '';
+            if (gem.stats) {
+                gemStatString = Object.entries(gem.stats).map(([key, value]) => {
+                    const statInfo = Object.values(STATS).find(s => s.key === key) || { name: key, type: 'flat' };
+                    const statValue = statInfo.type === 'percent' ? `+${value.toFixed(1)}%` : `+${formatNumber(value)}`;
+                    return `${statValue} ${statInfo.name}`;
+                }).join(', ');
+            }
+            if (gem.synergy) {
+                const synergyPercent = (gem.synergy.value * 100).toFixed(1);
+                gemStatString += (gemStatString ? ', ' : '') + `+${synergyPercent}% DPS to Click Dmg`;
+            }
+            socketedGemsHTML += `<li><img src="${gem.icon}" class="socketed-gem-icon"> ${gem.name}: <span class="gem-stat-bonus">${gemStatString}</span></li>`;
+        });
+        socketedGemsHTML += '</ul></div>';
+    }
 
     let socketsHTML = '';
     if (item.sockets) {
@@ -338,7 +367,20 @@ export function createTooltipHTML(item) {
         socketsHTML += '</div>';
     }
 
-    return headerHTML + statsHTML + socketsHTML;
+    let uniqueEffectHTML = '';
+    if (itemBase && itemBase.uniqueEffect) {
+        const effectData = UNIQUE_EFFECTS[itemBase.uniqueEffect];
+        if (effectData) {
+            uniqueEffectHTML = `
+                <div class="tooltip-unique-effect">
+                    <h4>${effectData.name}</h4>
+                    <p>${effectData.description}</p>
+                </div>
+            `;
+        }
+    }
+
+    return headerHTML + statsHTML + socketedGemsHTML + socketsHTML + uniqueEffectHTML;
 }
 
 export function createGemTooltipHTML(gem) {
@@ -373,7 +415,7 @@ export function createLootTableTooltipHTML(itemBase) {
     let statsHTML = '<ul>';
     itemBase.possibleStats.forEach(statInfo => {
         const statName = Object.values(STATS).find(s => s.key === statInfo.key)?.name || statInfo.key;
-        statsHTML += `<li>+ ${statInfo.min} - ${statInfo.max}</li>`;
+        statsHTML += `<li>+ ${statInfo.min} - ${statInfo.max} ${statName}</li>`;
     });
     statsHTML += '</ul>';
 
@@ -381,14 +423,32 @@ export function createLootTableTooltipHTML(itemBase) {
     if (itemBase.canHaveSockets) {
         socketsHTML = `<div class="item-sockets-tooltip">Sockets: 0 - ${itemBase.maxSockets}</div>`;
     }
+    
+    let uniqueEffectHTML = '';
+    if (itemBase && itemBase.uniqueEffect) {
+        const effectData = UNIQUE_EFFECTS[itemBase.uniqueEffect];
+        if (effectData) {
+            uniqueEffectHTML = `
+                <div class="tooltip-unique-effect" style="padding-top: 5px; margin-top: 5px; border-top: 1px solid #4a637e;">
+                    <h4>${effectData.name}</h4>
+                    <p>${effectData.description}</p>
+                </div>
+            `;
+        }
+    }
+    
+    const isUnique = itemBase && itemBase.isUnique;
+    const uniqueClass = isUnique ? 'unique-item-name' : '';
+    const headerHTML = `<div class="item-header"><span class="${uniqueClass}">${itemBase.name}</span></div>`;
 
-    return `<div class="item-header"><span>${itemBase.name}</span></div>
+    return `${headerHTML}
             <div class="possible-stats-header">
                 Possible Stats:
                 <span class="tooltip-shift-hint">Hold [SHIFT] to compare</span>
             </div>
             ${statsHTML}
-            ${socketsHTML}`;
+            ${socketsHTML}
+            ${uniqueEffectHTML}`;
 }
 
 export function createLootComparisonTooltipHTML(potentialItem, equippedItem, equippedItem2 = null) {
@@ -423,19 +483,24 @@ export function createLootComparisonTooltipHTML(potentialItem, equippedItem, equ
             equipped2StatsHTML += `<li>Nothing equipped</li>`;
         }
         equipped2StatsHTML += '</ul>';
+        
+        const potentialIsUnique = potentialItem.isUnique ? 'unique-item-name' : '';
+        const equipped1IsUnique = equippedItem && ITEMS[equippedItem.baseId].isUnique ? 'unique-item-name' : '';
+        const equipped2IsUnique = equippedItem2 && ITEMS[equippedItem2.baseId].isUnique ? 'unique-item-name' : '';
 
-        return `<div class="item-header"><span>${potentialItem.name}</span></div>
+
+        return `<div class="item-header"><span class="${potentialIsUnique}">${potentialItem.name}</span></div>
                 <div class="tooltip-comparison-section">
                     <h5>Potential Drop</h5>
                     ${potentialStatsHTML}
                 </div>
                 <div class="tooltip-ring-comparison">
                      <div>
-                        <h5>vs. ${equippedItem ? equippedItem.name : "Empty Slot"}</h5>
+                        <h5>vs. <span class="${equipped1IsUnique}">${equippedItem ? equippedItem.name : "Empty Slot"}</span></h5>
                         ${equipped1StatsHTML}
                     </div>
                     <div>
-                        <h5>vs. ${equippedItem2 ? equippedItem2.name : "Empty Slot"}</h5>
+                        <h5>vs. <span class="${equipped2IsUnique}">${equippedItem2 ? equippedItem2.name : "Empty Slot"}</span></h5>
                         ${equipped2StatsHTML}
                     </div>
                 </div>`;
@@ -461,9 +526,12 @@ export function createLootComparisonTooltipHTML(potentialItem, equippedItem, equ
     });
     potentialStatsHTML += '</ul>';
     
-    return `<div class="item-header"><span>${potentialItem.name}</span></div>
+    const potentialIsUnique = potentialItem.isUnique ? 'unique-item-name' : '';
+    const equippedIsUnique = equippedItem && ITEMS[equippedItem.baseId].isUnique ? 'unique-item-name' : '';
+
+    return `<div class="item-header"><span class="${potentialIsUnique}">${potentialItem.name}</span></div>
             <div class="tooltip-comparison-section">
-                <h5>Equipped: ${equippedItem ? equippedItem.name : 'None'}</h5>
+                <h5>Equipped: <span class="${equippedIsUnique}">${equippedItem ? equippedItem.name : 'None'}</span></h5>
                 ${equippedStatsHTML}
             </div>
             <div class="tooltip-comparison-section">
