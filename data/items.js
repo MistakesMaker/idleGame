@@ -134,11 +134,11 @@ export const ITEMS = {
             { key: STATS.DPS.key, min: 10000, max: 30000 }
         ]
     },
-    HEART_OF_THE_VOLCANO: {
+    HEART_OF_THE_VOLCANO: {// unique drop from lvl100
         id: 'HEART_OF_THE_VOLCANO',
-        name: "Heart of the Volcano",
+        name: "Slimey Sword",
         type: 'sword',
-        icon: 'images/icons/heart_of_the_volcano.png',
+        icon: 'images/icons/slimey_sword.png',
         width: 2, height: 3,
         isUnique: true,
         canHaveSockets: true,
@@ -391,11 +391,11 @@ export const ITEMS = {
             { key: STATS.GOLD_GAIN.key, min: 30, max: 90 },
         ]
     },
-    VISAGE_OF_THE_ABYSS: {
+    VISAGE_OF_THE_ABYSS: { // unique drop from lvl 25
         id: 'VISAGE_OF_THE_ABYSS',
-        name: "Visage of the Abyss",
+        name: "Slimey strawhat", //renamed
         type: 'helmet',
-        icon: 'images/icons/visage_of_the_abyss.png',
+        icon: 'images/icons/slimey_strawhat.png',
         width: 2, height: 2,
         isUnique: true,
         canHaveSockets: true,
@@ -841,11 +841,11 @@ export const ITEMS = {
             { key: STATS.GOLD_GAIN.key, min: 25, max: 75 },
         ]
     },
-    BAND_OF_ETERNAL_SORROW: {
+    BAND_OF_ETERNAL_SORROW: {// unique drop from lvl 75
         id: 'BAND_OF_ETERNAL_SORROW',
-        name: "Band of Eternal Sorrow",
+        name: "Slimy ring",
         type: 'ring',
-        icon: 'images/icons/band_of_eternal_sorrow.png',
+        icon: 'images/icons/slimey_ring.png',
         width: 1, height: 1,
         isUnique: true,
         canHaveSockets: true,
@@ -961,11 +961,11 @@ export const ITEMS = {
             { key: STATS.CLICK_DAMAGE.key, min: 200, max: 600 },
         ]
     },
-    GIRDLE_OF_COLOSSAL_STRENGTH: {
+    GIRDLE_OF_COLOSSAL_STRENGTH: {// unique drop from lvl 50
         id: 'GIRDLE_OF_COLOSSAL_STRENGTH',
-        name: "Girdle of Colossal Strength",
+        name: "Slimey belt", //renamed
         type: 'belt',
-        icon: 'images/icons/girdle_of_colossal_strength.png',
+        icon: 'images/icons/slimey_belt.png',
         width: 2, height: 1,
         isUnique: true,
         canHaveSockets: true,
