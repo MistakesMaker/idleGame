@@ -140,12 +140,13 @@ document.addEventListener('DOMContentLoaded', () => {
         
         const strengthBonusClickFlat = hero.attributes.strength * 0.5;
         const strengthBonusClickPercent = hero.attributes.strength * 0.2;
+        const agilityBonusDpsFlat = hero.attributes.agility * 1; // --- CHANGE: Agility now adds flat DPS
         const agilityBonusDpsPercent = hero.attributes.agility * 0.3;
 
         let clickDamageSubtotal = newCalculatedStats.baseClickDamage + strengthBonusClickFlat;
         clickDamageSubtotal *= (1 + (strengthBonusClickPercent / 100));
 
-        let dpsSubtotal = newCalculatedStats.baseDps;
+        let dpsSubtotal = newCalculatedStats.baseDps + agilityBonusDpsFlat; // --- CHANGE: Agility flat DPS added here
         dpsSubtotal *= (1 + (agilityBonusDpsPercent / 100));
 
         const clickUpgradeBonusPercent = gameState.upgrades.clickDamage * 1;
@@ -155,9 +156,9 @@ document.addEventListener('DOMContentLoaded', () => {
         let finalDps = dpsSubtotal * (1 + (dpsUpgradeBonusPercent / 100));
 
         const luckBonusGold = hero.attributes.luck * 0.5;
-        const luckBonusMagicFind = hero.attributes.luck * 0.2;
+        // const luckBonusMagicFind = hero.attributes.luck * 0.2; // --- CHANGE: Removed Magic Find from Luck
         const finalBonusGold = newCalculatedStats.bonusGold + luckBonusGold;
-        const finalMagicFind = newCalculatedStats.magicFind + luckBonusMagicFind;
+        const finalMagicFind = newCalculatedStats.magicFind; // Magic Find is no longer affected by Luck
 
         // Apply prestige power bonus
         const prestigeMultiplier = 1 + ((permanentUpgradeBonuses.prestigePower * (gameState.prestigeCount || 0)) / 100);
@@ -237,8 +238,8 @@ document.addEventListener('DOMContentLoaded', () => {
         elements.monsterNameEl.textContent = currentMonster.name;
 
         // Set zone-specific background
-        if (currentMonster.data.isSpecial && currentMonster.data.id === 'GOLDEN_SLIME') {
-            elements.monsterAreaEl.style.backgroundImage = `url('images/backgrounds/bg_golden_slime.png')`;
+        if (currentMonster.data.isSpecial) {
+            elements.monsterAreaEl.style.backgroundImage = `url('images/backgrounds/bg_treasure_realm.png')`;
         } else {
             const subZone = findSubZoneByLevel(gameState.currentFightingLevel);
             if (subZone && subZone.parentZone) {
@@ -1159,6 +1160,61 @@ document.addEventListener('DOMContentLoaded', () => {
         setupPrestigeListeners();
     }
     
+    // This is a helper function to create comparison tooltips for existing items
+    function createItemComparisonTooltipHTML(hoveredItem, equippedItem, equippedItem2 = null) {
+        let headerHTML = `<div class="item-header"><span class="${hoveredItem.rarity}">${hoveredItem.name}</span></div>`;
+
+        const createComparisonHTML = (equipped) => {
+            if (!equipped) return '<ul><li>(Empty Slot)</li></ul>';
+            
+            const combinedHoveredStats = getCombinedItemStats(hoveredItem);
+            const combinedEquippedStats = getCombinedItemStats(equipped);
+            const allStatKeys = new Set([...Object.keys(combinedHoveredStats), ...Object.keys(combinedEquippedStats)]);
+            let html = '<ul>';
+
+            allStatKeys.forEach(statKey => {
+                const hoveredValue = combinedHoveredStats[statKey] || 0;
+                const equippedValue = combinedEquippedStats[statKey] || 0;
+                const diff = hoveredValue - equippedValue;
+
+                const statInfo = Object.values(STATS).find(s => s.key === statKey) || { name: statKey, type: 'flat' };
+                const statName = statInfo.name;
+                const isPercent = statInfo.type === 'percent';
+
+                const valueStr = isPercent ? `${hoveredValue.toFixed(1)}%` : formatNumber(hoveredValue);
+                
+                let diffSpan = '';
+                if (Math.abs(diff) > 0.001) {
+                    const diffClass = diff > 0 ? 'stat-better' : 'stat-worse';
+                    const sign = diff > 0 ? '+' : '';
+                    const diffStr = isPercent ? `${diff.toFixed(1)}%` : formatNumber(diff);
+                    diffSpan = ` <span class="${diffClass}">(${sign}${diffStr})</span>`;
+                }
+                html += `<li>${statName}: ${valueStr}${diffSpan}</li>`;
+            });
+            html += '</ul>';
+            return html;
+        }
+
+        if (hoveredItem.type === 'ring') {
+            const ring1HTML = createComparisonHTML(equippedItem);
+            const ring2HTML = createComparisonHTML(equippedItem2);
+            return `${headerHTML}
+                    <div class="tooltip-ring-comparison">
+                        <div>
+                            <h5>vs. ${equippedItem ? equippedItem.name : "Ring 1"}</h5>
+                            ${ring1HTML}
+                        </div>
+                        <div>
+                            <h5>vs. ${equippedItem2 ? equippedItem2.name : "Ring 2"}</h5>
+                            ${ring2HTML}
+                        </div>
+                    </div>`;
+        } else {
+             return `${headerHTML}${createComparisonHTML(equippedItem)}`;
+        }
+    }
+    
     function setupItemTooltipListeners() {
         const showTooltip = (item, element) => {
             if (!item) return;
@@ -1167,6 +1223,7 @@ document.addEventListener('DOMContentLoaded', () => {
             elements.tooltipEl.classList.add(item.rarity);
 
             if (isShiftPressed) {
+                // When shift is held, show the base stat ranges for the item type
                 const itemBase = ITEMS[item.baseId];
                 if(itemBase) {
                      elements.tooltipEl.innerHTML = ui.createLootTableTooltipHTML(itemBase);
@@ -1174,11 +1231,12 @@ document.addEventListener('DOMContentLoaded', () => {
                      elements.tooltipEl.innerHTML = ui.createTooltipHTML(item);
                 }
             } else {
+                // Default behavior: show comparison tooltip
                 if (item.type === 'ring') {
-                    elements.tooltipEl.innerHTML = ui.createItemComparisonTooltipHTML(item, gameState.equipment.ring1, gameState.equipment.ring2);
+                    elements.tooltipEl.innerHTML = createItemComparisonTooltipHTML(item, gameState.equipment.ring1, gameState.equipment.ring2);
                 } else {
                     const equippedItem = gameState.equipment[item.type];
-                    elements.tooltipEl.innerHTML = ui.createItemComparisonTooltipHTML(item, equippedItem);
+                    elements.tooltipEl.innerHTML = createItemComparisonTooltipHTML(item, equippedItem);
                 }
             }
 
@@ -1271,8 +1329,8 @@ document.addEventListener('DOMContentLoaded', () => {
     function setupStatTooltipListeners() {
         const statTooltipContent = {
             strength: { title: 'Strength', description: 'Increases your raw power. Each point provides:', effects: ['<b>+0.5</b> Flat Click Damage', '<b>+0.2%</b> Total Click Damage'] },
-            agility: { title: 'Agility', description: 'Improves your hero\'s combat prowess. Each point provides:', effects: ['<b>+0.3%</b> Total DPS'] },
-            luck: { title: 'Luck', description: 'Increases your fortune in the dungeon. Each point provides:', effects: ['<b>+0.5%</b> Gold Gain', '<b>+0.2%</b> Magic Find (better item rarity)'] }
+            agility: { title: 'Agility', description: 'Improves your hero\'s combat prowess. Each point provides:', effects: ['<b>+1</b> Flat DPS', '<b>+0.3%</b> Total DPS'] },
+            luck: { title: 'Luck', description: 'Increases your fortune in the dungeon. Each point provides:', effects: ['<b>+0.5%</b> Gold Gain'] }
         };
         const attributesArea = document.getElementById('attributes-area');
         attributesArea.addEventListener('mouseover', (event) => {
@@ -1318,8 +1376,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 elements.tooltipEl.classList.add('gem-quality');
             }
             else if (isShiftPressed) {
+                // Show base ranges on shift
                 elements.tooltipEl.innerHTML = ui.createLootTableTooltipHTML(itemBase);
             } else {
+                // Default to comparison
                 if (itemBase.type === 'ring') {
                     elements.tooltipEl.innerHTML = ui.createLootComparisonTooltipHTML(itemBase, gameState.equipment.ring1, gameState.equipment.ring2);
                 } else {
@@ -1594,6 +1654,17 @@ document.addEventListener('DOMContentLoaded', () => {
         if (savedData) {
             const loadedState = JSON.parse(savedData);
             const baseState = getDefaultGameState();
+            
+            // Convert old array-based unique effects to new object-based one for old saves
+            let uniqueEffects = loadedState.absorbedUniqueEffects || {};
+            if (Array.isArray(uniqueEffects)) {
+                const newEffectsObject = {};
+                for (const effectKey of uniqueEffects) {
+                    newEffectsObject[effectKey] = (newEffectsObject[effectKey] || 0) + 1;
+                }
+                uniqueEffects = newEffectsObject;
+            }
+            
             gameState = { 
                 ...baseState, 
                 ...loadedState,
@@ -1603,7 +1674,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 equipment: { ...baseState.equipment, ...(loadedState.equipment || {}) }, 
                 absorbedStats: { ...(loadedState.absorbedStats || {}) }, 
                 absorbedSynergies: loadedState.absorbedSynergies || [],
-                absorbedUniqueEffects: loadedState.absorbedUniqueEffects || {},
+                absorbedUniqueEffects: uniqueEffects,
                 monster: { ...baseState.monster, ...(loadedState.monster || {}) }, 
                 presets: loadedState.presets || baseState.presets, 
                 isAutoProgressing: loadedState.isAutoProgressing !== undefined ? loadedState.isAutoProgressing : true, 
@@ -1625,18 +1696,6 @@ document.addEventListener('DOMContentLoaded', () => {
             if (gameState.nextPrestigeLevel === undefined) {
                 gameState.nextPrestigeLevel = 100;
             }
-
-            // Migration for old saves that stored unique effects as an array
-            if (Array.isArray(gameState.absorbedUniqueEffects)) {
-                console.log("Old unique effects format detected. Migrating...");
-                const newEffectsObject = {};
-                for (const effectKey of gameState.absorbedUniqueEffects) {
-                    newEffectsObject[effectKey] = (newEffectsObject[effectKey] || 0) + 1;
-                }
-                gameState.absorbedUniqueEffects = newEffectsObject;
-                autoSave();
-            }
-
 
             calculateOfflineProgress();
         } else {
