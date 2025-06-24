@@ -162,13 +162,13 @@ export function monsterDefeated(gameState, playerStats, currentMonster) {
     // Gold Calculation
     const baseGold = 10;
     const goldFactor = 3;
-    const goldPower = 2.1;
+    const goldPower = 2.0;
     let goldGained = baseGold + (goldFactor * Math.pow(effectiveLevel, goldPower));
     goldGained = Math.ceil(goldGained * (1 + (playerStats.bonusGold / 100)));
 
     // XP Calculation
     const baseXp = 20;
-    const xpPower = 1.4;
+    const xpPower = 1.2;
     let xpGained = baseXp * Math.pow(level, xpPower); // XP scales with the actual level, not effectiveLevel
 
     let droppedItem = null;
@@ -182,14 +182,14 @@ export function monsterDefeated(gameState, playerStats, currentMonster) {
     } else {
         // Apply regular boss multipliers to rewards
         if (isBigBossLevel(level)) {
-            xpGained *= 5;
-            goldGained *= 5;
-        } else if (isBossLevel(level)) {
             xpGained *= 3;
             goldGained *= 3;
-        } else if (isMiniBossLevel(level)) {
+        } else if (isBossLevel(level)) {
             xpGained *= 2;
             goldGained *= 2;
+        } else if (isMiniBossLevel(level)) {
+            xpGained *= 1.5;
+            goldGained *= 1.5;
         }
         
         xpGained = Math.ceil(xpGained);
