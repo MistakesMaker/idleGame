@@ -400,7 +400,7 @@ export const ITEMS = {
     },
     VISAGE_OF_THE_ABYSS: { // unique drop from lvl 25
         id: 'VISAGE_OF_THE_ABYSS',
-        name: "Slimey strawhat", //renamed
+        name: "Slimey Strawhat",
         type: 'helmet',
         icon: 'images/icons/slimey_strawhat.png',
         width: 2, height: 2,
@@ -408,9 +408,9 @@ export const ITEMS = {
         canHaveSockets: true,
         maxSockets: 3,
         possibleStats: [
-            { key: STATS.DPS.key, min: 10000, max: 30000 },
-            { key: STATS.GOLD_GAIN.key, min: 40, max: 120 },
-            { key: STATS.MAGIC_FIND.key, min: 25, max: 75 },
+            { key: STATS.DPS.key, min: 1000, max: 3000 },
+            { key: STATS.GOLD_GAIN.key, min: 10, max: 30 },
+            { key: STATS.MAGIC_FIND.key, min: 5, max: 15 },
         ]
     },
     
@@ -850,7 +850,7 @@ export const ITEMS = {
     },
     BAND_OF_ETERNAL_SORROW: {// unique drop from lvl 75
         id: 'BAND_OF_ETERNAL_SORROW',
-        name: "Slimy ring",
+        name: "Slimy Ring",
         type: 'ring',
         icon: 'images/icons/slimey_ring.png',
         width: 1, height: 1,
@@ -858,8 +858,8 @@ export const ITEMS = {
         canHaveSockets: true,
         maxSockets: 2,
         possibleStats: [
-            { key: STATS.MAGIC_FIND.key, min: 50, max: 150 },
-            { key: STATS.GOLD_GAIN.key, min: 50, max: 150 },
+            { key: STATS.MAGIC_FIND.key, min: 25, max: 75 },
+            { key: STATS.GOLD_GAIN.key, min: 25, max: 75 },
         ]
     },
     
@@ -970,7 +970,7 @@ export const ITEMS = {
     },
     GIRDLE_OF_COLOSSAL_STRENGTH: {// unique drop from lvl 50
         id: 'GIRDLE_OF_COLOSSAL_STRENGTH',
-        name: "Slimey belt", //renamed
+        name: "Slimey Belt",
         type: 'belt',
         icon: 'images/icons/slimey_belt.png',
         width: 2, height: 1,
@@ -978,8 +978,8 @@ export const ITEMS = {
         canHaveSockets: true,
         maxSockets: 2,
         possibleStats: [
-            { key: STATS.CLICK_DAMAGE.key, min: 500, max: 1500 },
-            { key: STATS.DPS.key, min: 10000, max: 30000 },
+            { key: STATS.CLICK_DAMAGE.key, min: 50, max: 150 },
+            { key: STATS.DPS.key, min: 2500, max: 7500 },
         ]
     }
 };
