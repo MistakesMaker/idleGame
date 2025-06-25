@@ -118,7 +118,7 @@ export const ITEMS = {
         maxSockets: 3,
         possibleStats: [
             { key: STATS.CLICK_DAMAGE.key, min: 200, max: 600 },
-            { key: STATS.MAGIC_FIND.key, min: 10, max: 30 }
+            { key: STATS.MAGIC_FIND.key, min: 1, max: 3 }
         ]
     },
     DRAGONFANG: {
@@ -242,7 +242,7 @@ export const ITEMS = {
         maxSockets: 3,
         possibleStats: [
             { key: STATS.DPS.key, min: 3000, max: 9000 },
-            { key: STATS.MAGIC_FIND.key, min: 10, max: 25 },
+            { key: STATS.MAGIC_FIND.key, min: 1, max: 2.5 },
         ]
     },
     MIRRORED_SHIELD: {
@@ -270,7 +270,7 @@ export const ITEMS = {
         maxSockets: 3,
         possibleStats: [
             { key: STATS.DPS.key, min: 12000, max: 36000 },
-            { key: STATS.MAGIC_FIND.key, min: 15, max: 45 },
+            { key: STATS.MAGIC_FIND.key, min: 1.5, max: 3 },
         ]
     },
 
@@ -312,7 +312,7 @@ export const ITEMS = {
         maxSockets: 2,
         possibleStats: [
             { key: STATS.GOLD_GAIN.key, min: 20, max: 60 },
-            { key: STATS.MAGIC_FIND.key, min: 5, max: 15 },
+            { key: STATS.MAGIC_FIND.key, min: 0.5, max: 1.5 },
         ]
     },
     ROYAL_CIRCLET: {
@@ -325,7 +325,7 @@ export const ITEMS = {
         maxSockets: 2,
         possibleStats: [
             { key: STATS.GOLD_GAIN.key, min: 30, max: 90 },
-            { key: STATS.MAGIC_FIND.key, min: 10, max: 30 },
+            { key: STATS.MAGIC_FIND.key, min: 1, max: 3 },
         ]
     },
     HELM_OF_VALOR: {
@@ -353,7 +353,7 @@ export const ITEMS = {
         maxSockets: 2,
         possibleStats: [
             { key: STATS.CLICK_DAMAGE.key, min: 50, max: 150 },
-            { key: STATS.MAGIC_FIND.key, min: 10, max: 30 },
+            { key: STATS.MAGIC_FIND.key, min: 1, max: 3 },
         ]
     },
     SHADOW_COWL: {
@@ -367,7 +367,7 @@ export const ITEMS = {
         maxSockets: 2,
         possibleStats: [
             { key: STATS.DPS.key, min: 2500, max: 7500 },
-            { key: STATS.MAGIC_FIND.key, min: 15, max: 45 },
+            { key: STATS.MAGIC_FIND.key, min: 1.5, max: 3 },
         ]
     },
     CROWN_OF_WISDOM: {
@@ -381,7 +381,7 @@ export const ITEMS = {
         maxSockets: 2,
         possibleStats: [
             { key: STATS.GOLD_GAIN.key, min: 50, max: 150 },
-            { key: STATS.MAGIC_FIND.key, min: 20, max: 60 },
+            { key: STATS.MAGIC_FIND.key, min: 2, max: 6 },
         ]
     },
     DRAGONBONE_HEADDRESS: {
@@ -410,7 +410,7 @@ export const ITEMS = {
         possibleStats: [
             { key: STATS.DPS.key, min: 10000, max: 30000 },
             { key: STATS.GOLD_GAIN.key, min: 40, max: 120 },
-            { key: STATS.MAGIC_FIND.key, min: 25, max: 75 },
+            { key: STATS.MAGIC_FIND.key, min: 2.5, max: 7 },
         ]
     },
     
@@ -475,7 +475,7 @@ export const ITEMS = {
         maxSockets: 1,
         possibleStats: [
             { key: STATS.GOLD_GAIN.key, min: 30, max: 90 },
-            { key: STATS.MAGIC_FIND.key, min: 10, max: 30 },
+            { key: STATS.MAGIC_FIND.key, min: 1, max: 3 },
         ]
     },
     GHASTLY_ROBES: {
@@ -489,7 +489,7 @@ export const ITEMS = {
         maxSockets: 3,
         possibleStats: [
             { key: STATS.DPS.key, min: 2500, max: 7500 },
-            { key: STATS.MAGIC_FIND.key, min: 15, max: 45 },
+            { key: STATS.MAGIC_FIND.key, min: 1.5, max: 4 },
         ]
     },
     CARAPACE_OF_THE_SCARAB: {
@@ -567,7 +567,7 @@ export const ITEMS = {
         maxSockets: 3,
         possibleStats: [
             { key: STATS.GOLD_GAIN.key, min: 15, max: 45 },
-            { key: STATS.MAGIC_FIND.key, min: 5, max: 15 },
+            { key: STATS.MAGIC_FIND.key, min: 5, max: 5 },
         ]
     },
     KNIGHTS_PLATELEGS: { // Existing item
@@ -605,7 +605,7 @@ export const ITEMS = {
         maxSockets: 3,
         possibleStats: [
             { key: STATS.DPS.key, min: 3500, max: 10500 },
-            { key: STATS.MAGIC_FIND.key, min: 10, max: 30 },
+            { key: STATS.MAGIC_FIND.key, min: 1, max: 3 },
         ]
     },
     SANDSTRIDER_LEGGINGS: {
@@ -687,7 +687,7 @@ export const ITEMS = {
         type: 'necklace',
         icon: 'images/icons/topaz_talisman.png',
         width: 2, height: 2,
-        possibleStats: [ { key: STATS.MAGIC_FIND.key, min: 10, max: 30 } ]
+        possibleStats: [ { key: STATS.MAGIC_FIND.key, min: 10, max: 15 } ]
     },
     AMULET_OF_THE_VIPER: {
         id: 'AMULET_OF_THE_VIPER',
@@ -700,7 +700,7 @@ export const ITEMS = {
         maxSockets: 3,
         possibleStats: [
             { key: STATS.DPS.key, min: 1500, max: 4500 },
-            { key: STATS.MAGIC_FIND.key, min: 10, max: 30 },
+            { key: STATS.MAGIC_FIND.key, min: 1, max: 3 },
         ]
     },
     BLOODSTONE_PENDANT: {
@@ -741,7 +741,7 @@ export const ITEMS = {
         possibleStats: [
             { key: STATS.CLICK_DAMAGE.key, min: 400, max: 1200 },
             { key: STATS.DPS.key, min: 8000, max: 24000 },
-            { key: STATS.MAGIC_FIND.key, min: 20, max: 60 },
+            { key: STATS.MAGIC_FIND.key, min: 2, max: 6 },
         ]
     },
 
@@ -818,7 +818,7 @@ export const ITEMS = {
         isUnique: true,
         possibleStats: [
             { key: STATS.DPS.key, min: 2000, max: 6000 },
-            { key: STATS.MAGIC_FIND.key, min: 10, max: 30 },
+            { key: STATS.MAGIC_FIND.key, min: 1, max: 3 },
         ]
     },
     SEAL_OF_THE_KING: {
@@ -830,7 +830,7 @@ export const ITEMS = {
         isUnique: true,
         possibleStats: [
             { key: STATS.GOLD_GAIN.key, min: 40, max: 120 },
-            { key: STATS.MAGIC_FIND.key, min: 15, max: 45 },
+            { key: STATS.MAGIC_FIND.key, min: 1.5, max: 4.5 },
         ]
     },
     DRAGONFIRE_LOOP: {
@@ -858,7 +858,7 @@ export const ITEMS = {
         canHaveSockets: true,
         maxSockets: 2,
         possibleStats: [
-            { key: STATS.MAGIC_FIND.key, min: 50, max: 150 },
+            { key: STATS.MAGIC_FIND.key, min: 1, max: 1.5 },
             { key: STATS.GOLD_GAIN.key, min: 50, max: 150 },
         ]
     },
@@ -907,7 +907,7 @@ export const ITEMS = {
         width: 2, height: 1,
         possibleStats: [
             { key: STATS.GOLD_GAIN.key, min: 20, max: 60 },
-            { key: STATS.MAGIC_FIND.key, min: 5, max: 15 },
+            { key: STATS.MAGIC_FIND.key, min: 1, max: 1.5 },
         ]
     },
     MIGHTY_BELT: { // Existing item
@@ -927,7 +927,7 @@ export const ITEMS = {
         isUnique: true,
         possibleStats: [
             { key: STATS.DPS.key, min: 1500, max: 4500 },
-            { key: STATS.MAGIC_FIND.key, min: 10, max: 30 },
+            { key: STATS.MAGIC_FIND.key, min: 1, max: 3},
         ]
     },
     BELT_OF_THE_GIANT: {
