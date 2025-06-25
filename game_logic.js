@@ -272,14 +272,7 @@ export function generateMonster(level, specialEncounter = null) {
 
     // --- NEW: Handle Special Encounters first ---
     if (specialEncounter && specialEncounter.type === 'GOLDEN_SLIME') {
-        monsterData = {
-            id: 'GOLDEN_SLIME',
-            name: 'Golden Slime',
-            image: 'images/monsters/golden_slime.png',
-            dropChance: 0, // No item drops
-            lootTable: [],
-            isSpecial: true,
-        };
+        monsterData = MONSTERS.GOLDEN_SLIME;
         monsterHealth = specialEncounter.hp;
     } else {
         const subZone = findSubZoneByLevel(level);

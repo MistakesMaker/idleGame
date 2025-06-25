@@ -124,7 +124,7 @@ export const MONSTERS = {
             { item: ITEMS.GLADIATORS_LONGSWORD, weight: 10 },
             { item: ITEMS.STEEL_LONGSWORD, weight: 20 },
             { item: ITEMS.IRON_KITESHIELD, weight: 20 },
-            { item: ITEMS.CHAINMAIL_HAUBERK, weight: 15 },
+            { item: ITEMS.VISAGE_OF_THE_ABYSS, weight: 5 },
         ]
     },
     KING_OF_SLIMES: {
@@ -134,10 +134,33 @@ export const MONSTERS = {
         lootTable: [
             { item: ITEMS.ROYAL_CIRCLET, weight: 10 },
             { item: ITEMS.SEAL_OF_THE_KING, weight: 5 },
-            { item: ITEMS.GOLD_RING, weight: 20 },
+            { item: ITEMS.HEART_OF_THE_VOLCANO, weight: 5 },
             { item: ITEMS.STEEL_LONGSWORD, weight: 15 },
             { item: GEMS.BASE_EMERALD, weight: 8 },
         ]
+    },
+    ROYAL_GRIFFIN: {
+        name: 'Royal Griffin',
+        image: 'images/monsters/griffin_chick.png', // Using chick image for now
+        dropChance: 100,
+        isBoss: true,
+        lootTable: [
+            { item: ITEMS.AMULET_OF_POWER, weight: 10 },
+            { item: ITEMS.RING_OF_WEALTH, weight: 10 },
+            { item: ITEMS.BAND_OF_ETERNAL_SORROW, weight: 5 },
+        ]
+    },
+
+    // ====================================================================================
+    // --- Special Monsters ---
+    // ====================================================================================
+    GOLDEN_SLIME: {
+        id: 'GOLDEN_SLIME',
+        name: 'Golden Slime',
+        image: 'images/monsters/golden_slime.png',
+        dropChance: 0, // No item drops
+        lootTable: [],
+        isSpecial: true,
     },
 
     // ====================================================================================
@@ -662,7 +685,7 @@ export const MONSTERS = {
         dropChance: 100,
         lootTable: [
             { item: ITEMS.RUNIC_BLADE, weight: 10 },
-            { item: ITEMS.AMULET_OF_POWER, weight: 10 },
+            { item: ITEMS.GIRDLE_OF_COLOSSAL_STRENGTH, weight: 5 },
             { item: ITEMS.AEGIS_OF_THE_GUARDIAN, weight: 10 },
             { item: ITEMS.TOWER_SHIELD, weight: 20 },
             { item: GEMS.BASE_EMERALD, weight: 8 },
