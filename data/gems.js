@@ -28,7 +28,7 @@ export const GEMS = {
         tier: 1,
         icon: 'images/gems/ruby_1.png',
         width: 1, height: 1,
-        stats: { [STATS.CLICK_DAMAGE.key]: 50 }
+        stats: { [STATS.CLICK_DAMAGE.key]: 500 }
     },
     BASE_SAPPHIRE: {
         id: 'BASE_SAPPHIRE',
