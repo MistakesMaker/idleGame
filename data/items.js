@@ -20,7 +20,7 @@ import { STATS } from './stat_pools.js';
 
 export const ITEMS = {
     // ====================================================================================
-    // --- SWORDS --- (11 items)
+    // --- SWORDS --- (10 items)
     // ====================================================================================
     RUSTY_SWORD: {
         id: 'RUSTY_SWORD',
@@ -48,11 +48,11 @@ export const ITEMS = {
     },
     MITHRIL_SCIMITAR: {
         id: 'MITHRIL_SCIMITAR',
-        name: "Diamond scimitar", //renamed
+        name: "Mithril scimitar", //renamed
         type: 'sword',
         icon: 'images/icons/mithril_scimitar.png',
         width: 2, height: 3,
-        possibleStats: [ { key: STATS.CLICK_DAMAGE.key, min: 500, max: 15000 } ]
+        possibleStats: [ { key: STATS.CLICK_DAMAGE.key, min: 100, max: 1000 } ]
     },
     SERRATED_DAGGER: {
         id: 'SERRATED_DAGGER',
@@ -135,6 +135,11 @@ export const ITEMS = {
             { key: STATS.DPS.key, min: 10000, max: 30000 }
         ]
     },
+
+    // ====================================================================================
+    // --- UNIQUE SWORDS --- (1 item)
+    // ====================================================================================
+
     HEART_OF_THE_VOLCANO: {// unique drop from lvl100
         id: 'HEART_OF_THE_VOLCANO',
         name: "Slimey Sword",
