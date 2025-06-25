@@ -77,8 +77,13 @@ export function initDOMElements() {
         ringSelectionCancelBtn: document.getElementById('ring-selection-cancel-btn'),
         prestigeFullscreenPanel: document.getElementById('prestige-fullscreen-panel'),
         prestigeInventorySlotsEl: document.getElementById('prestige-inventory-slots'),
+        prestigeEquipmentPaperdollEl: document.getElementById('prestige-equipment-paperdoll'),
         prestigeBackButton: document.getElementById('prestige-back-btn'),
         confirmPrestigeButton: document.getElementById('confirm-prestige-btn'),
+        prestigeTitleEl: document.getElementById('prestige-title'),
+        prestigeSlotUnlockModalBackdrop: document.getElementById('prestige-slot-unlock-modal-backdrop'),
+        prestigeSlotUnlockPaperdollEl: document.getElementById('prestige-slot-unlock-paperdoll'),
+        prestigeSlotUnlockCancelBtn: document.getElementById('prestige-slot-unlock-cancel-btn'),
         permanentUpgradesContainerEl: document.getElementById('permanent-upgrades-container'),
     };
 }
@@ -91,7 +96,7 @@ export function initDOMElements() {
  * @param {object} options - Configuration options.
  */
 export function renderGrid(containerEl, items, options = {}) {
-    const { calculatePositions = false, type = 'item', selectedItem = null, salvageSelections = [], prestigeSelections = [] } = options;
+    const { calculatePositions = false, type = 'item', selectedItem = null, salvageSelections = [] } = options;
     
     containerEl.innerHTML = '';
     const tempPlacement = []; 
@@ -128,7 +133,6 @@ export function renderGrid(containerEl, items, options = {}) {
             if (item.locked) wrapper.classList.add('locked-item');
             if (selectedItem && selectedItem.id === item.id) wrapper.classList.add('selected-for-forge');
             if (salvageSelections.some(sel => sel.id === item.id)) wrapper.classList.add('selected-for-salvage');
-            if (prestigeSelections.includes(item.id)) wrapper.classList.add('selected-for-prestige');
             
             containerEl.appendChild(wrapper);
         }
@@ -139,7 +143,7 @@ export function renderGrid(containerEl, items, options = {}) {
 /**
  * Updates the entire game UI based on the current state.
  */
-export function updateUI(elements, gameState, playerStats, currentMonster, salvageMode, craftingGems = [], selectedItemForForge = null, prestigeSelections = []) {
+export function updateUI(elements, gameState, playerStats, currentMonster, salvageMode, craftingGems = [], selectedItemForForge = null, prestigeSelection = null) {
     const {
         goldStatEl, scrapStatEl, heroXpTextEl, clickDamageStatEl, dpsStatEl, absorbedStatsListEl,
         monsterHealthTextEl, upgradeClickCostEl, upgradeDpsCostEl, heroLevelEl,
@@ -148,7 +152,8 @@ export function updateUI(elements, gameState, playerStats, currentMonster, salva
         prestigeRequirementTextEl, currentLevelEl, autoProgressCheckboxEl, monsterHealthBarEl,
         upgradeClickLevelEl, upgradeDpsLevelEl, inventorySlotsEl, lootMonsterNameEl,
         lootTableDisplayEl, prestigeButton, gemSlotsEl, gemCraftingSlotsContainer, gemCraftBtn,
-        forgeInventorySlotsEl, forgeSelectedItemEl, forgeRerollBtn, prestigeInventorySlotsEl
+        forgeInventorySlotsEl, forgeSelectedItemEl, forgeRerollBtn, prestigeInventorySlotsEl,
+        prestigeEquipmentPaperdollEl, prestigeTitleEl
     } = elements;
 
     // --- Stats and Hero Info ---
@@ -198,11 +203,6 @@ export function updateUI(elements, gameState, playerStats, currentMonster, salva
     
     const allForgeItems = [...Object.values(gameState.equipment).filter(Boolean), ...gameState.inventory];
     renderGrid(forgeInventorySlotsEl, allForgeItems, { calculatePositions: true, selectedItem: selectedItemForForge });
-
-    if (!elements.prestigeFullscreenPanel.classList.contains('hidden')) { 
-        const allPrestigeItems = [...Object.values(gameState.equipment).filter(Boolean), ...gameState.inventory];
-        renderGrid(prestigeInventorySlotsEl, allPrestigeItems, { calculatePositions: true, prestigeSelections });
-    }
 
     if (selectedItemForForge) {
         forgeSelectedItemEl.innerHTML = `<div class="item-wrapper">${createItemHTML(selectedItemForForge)}</div>`;
@@ -297,6 +297,31 @@ export function updateUI(elements, gameState, playerStats, currentMonster, salva
     prestigeCountStatEl.textContent = (gameState.prestigeCount || 0).toString();
     prestigeRequirementTextEl.innerHTML = `Defeat the boss at Level <b>${nextPrestigeLevel}</b> to Prestige.`;
     (/** @type {HTMLButtonElement} */ (prestigeButton)).disabled = !gameState.currentRunCompletedLevels.includes(nextPrestigeLevel);
+
+    // --- Prestige Panel Render ---
+    if (!elements.prestigeFullscreenPanel.classList.contains('hidden')) {
+        renderGrid(prestigeInventorySlotsEl, gameState.inventory, {});
+
+        prestigeTitleEl.textContent = `Choose Your Legacy (1 / ${gameState.unlockedPrestigeSlots.length} Selected)`;
+
+        for (const slotName in gameState.equipment) {
+            const slotEl = prestigeEquipmentPaperdollEl.querySelector(`#prestige-slot-${slotName}`);
+            if (!slotEl) continue;
+
+            // Render item
+            const item = gameState.equipment[slotName];
+            slotEl.innerHTML = item ? createItemHTML(item) : '<div class="prestige-lock-overlay"></div>';
+            if (!item) {
+                 slotEl.innerHTML += '<div class="prestige-lock-overlay"></div>';
+            }
+
+            // Handle lock state
+            slotEl.classList.toggle('prestige-unlocked', gameState.unlockedPrestigeSlots.includes(slotName));
+            
+            // Handle selection state
+            slotEl.classList.toggle('selected-for-prestige', prestigeSelection === slotName);
+        }
+    }
 
     // --- Map and Monster Info ---
     (/** @type {HTMLInputElement} */ (autoProgressCheckboxEl)).checked = gameState.isAutoProgressing;
@@ -776,4 +801,32 @@ export function getHighestCompletedLevelInSubZone(completedLevels, subZone) {
         }
     }
     return highest;
+}
+
+/**
+ * Renders the paperdoll for the prestige slot unlock modal.
+ * @param {HTMLElement} paperdollEl - The paperdoll container element.
+ * @param {Array<string>} unlockedSlots - List of already unlocked prestige slots.
+ */
+export function renderPrestigeSlotUnlockModal(paperdollEl, unlockedSlots) {
+    paperdollEl.innerHTML = '';
+    const allSlots = ['helmet', 'necklace', 'platebody', 'platelegs', 'belt', 'sword', 'shield', 'ring1', 'ring2'];
+
+    allSlots.forEach(slotName => {
+        const slotDiv = document.createElement('div');
+        slotDiv.id = `unlock-slot-${slotName}`;
+        slotDiv.className = 'equipment-slot';
+        slotDiv.dataset.slotName = slotName;
+
+        const placeholder = document.createElement('img');
+        placeholder.src = getItemIcon(slotName.replace(/\d/g, ''));
+        placeholder.className = 'placeholder-icon';
+        slotDiv.appendChild(placeholder);
+        
+        if (unlockedSlots.includes(slotName)) {
+            slotDiv.classList.add('prestige-unlocked');
+        }
+
+        paperdollEl.appendChild(slotDiv);
+    });
 }

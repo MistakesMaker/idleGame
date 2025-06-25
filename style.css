@@ -205,6 +205,7 @@ button:disabled { background: #7f8c8d; cursor: not-allowed; border-bottom: 2px s
 
 @keyframes legendary-glow { from { box-shadow: 0 0 5px #f39c12; } to { box-shadow: 0 0 20px #f0b75a; } }
 .selected-for-prestige { box-shadow: 0 0 15px #f1c40f !important; }
+.equipment-slot.selected-for-prestige { box-shadow: 0 0 15px #f1c40f !important; }
 .item-wrapper.selected-for-prestige .item { border-color: #f1c40f; }
 .hidden { display: none !important; }
 #prestige-button:not(:disabled) { animation: pulse 2s infinite; background: linear-gradient(145deg, #f1c40f, #e67e22); border-bottom: 2px solid #d35400; }
@@ -386,6 +387,60 @@ h5 .legendary { color: #f39c12; }
     background: linear-gradient(145deg, #f1c40f, #e67e22);
     border-bottom-color: #d35400;
 }
+#prestige-main-content {
+    display: flex;
+    gap: 20px;
+    flex-grow: 1;
+    min-height: 0;
+}
+#prestige-equipment-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+#prestige-equipment-paperdoll {
+    flex-grow: 1;
+    position: relative;
+    background-image: url('images/paperdoll-bg.png');
+    background-size: contain;
+    background-position: center;
+    background-repeat: no-repeat;
+    aspect-ratio: 400 / 600;
+}
+#prestige-inventory-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+#prestige-inventory-container h4 { text-align: center; }
+#prestige-inventory-slots { pointer-events: none; } /* Make inventory read-only */
+
+.prestige-lock-overlay {
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    color: #e74c3c;
+    font-size: 3em;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 5;
+    border-radius: 8px;
+    cursor: not-allowed;
+    transition: all 0.2s ease;
+}
+.prestige-lock-overlay::before {
+    font-family: "Font Awesome 5 Free";
+    font-weight: 900;
+    content: "\f023"; /* fa-lock */
+}
+#prestige-equipment-paperdoll .equipment-slot.prestige-unlocked .prestige-lock-overlay {
+    display: none;
+}
+#prestige-equipment-paperdoll .equipment-slot:not(.prestige-unlocked) .item-icon {
+    display: none; /* Hide item in locked slot */
+}
+
 
 /* --- NEW: PERMANENT UPGRADES PANEL --- */
 .upgrades-panel h3, .upgrades-panel p {
@@ -501,4 +556,66 @@ h5 .legendary { color: #f39c12; }
 
 .permanent-upgrade-card.maxed .buy-permanent-upgrade-btn {
     display: none;
+}
+
+/* --- NEW: PRESTIGE SLOT UNLOCK MODAL --- */
+#prestige-slot-unlock-modal-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.85);
+    z-index: 10003;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+#prestige-slot-unlock-modal {
+    background-color: #2c3e50;
+    padding: 25px;
+    border-radius: 12px;
+    border: 2px solid #f1c40f;
+    box-shadow: 0 0 20px rgba(241, 196, 15, 0.5);
+    width: 90%;
+    max-width: 500px;
+    text-align: center;
+}
+#prestige-slot-unlock-modal h3 { margin-top: 0; }
+#prestige-slot-unlock-modal p { margin: 15px 0 25px 0; }
+#prestige-slot-unlock-paperdoll {
+    position: relative;
+    width: 100%;
+    max-width: 400px;
+    aspect-ratio: 400 / 600;
+    margin: 0 auto;
+    background-image: url('images/paperdoll-bg.png');
+    background-size: contain;
+    background-position: center;
+    background-repeat: no-repeat;
+}
+#prestige-slot-unlock-paperdoll .equipment-slot .item-icon { display: none; }
+#prestige-slot-unlock-paperdoll .equipment-slot.prestige-unlocked {
+    cursor: not-allowed;
+    filter: grayscale(80%) brightness(0.6);
+}
+#prestige-slot-unlock-paperdoll .equipment-slot.prestige-unlocked:hover {
+    border-color: #4a637e;
+}
+#prestige-slot-unlock-paperdoll .equipment-slot:not(.prestige-unlocked)::after {
+    font-family: "Font Awesome 5 Free";
+    font-weight: 900;
+    content: "\f3c5"; /* map-marker-alt */
+    font-size: 2em;
+    color: #f1c40f;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+#prestige-slot-unlock-paperdoll .equipment-slot:not(.prestige-unlocked):hover::after {
+    opacity: 1;
+}
+#prestige-slot-unlock-cancel-btn {
+    margin-top: 20px;
+    background: #c0392b;
+    border-bottom-color: #922b21;
 }

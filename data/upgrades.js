@@ -118,15 +118,15 @@ export const PERMANENT_UPGRADES = {
         bonusPerLevel: 0.1, // +0.1% per level
         maxLevel: 25, // Capped at 2.5%
     },
-    LEGACY_KEEPER: {
-        id: 'LEGACY_KEEPER',
-        name: "Legacy Keeper",
-        description: "Carry over <span>{value}</span> additional item(s) through Prestige.",
-        icon: 'fas fa-archive',
-        baseCost: 1000000, // Starts very expensive
-        costScalar: 10,  // Cost scales extremely fast
+    LEGACY_SLOT_UNLOCK: {
+        id: 'LEGACY_SLOT_UNLOCK',
+        name: "Legacy Slot Unlock",
+        description: "Gain a token to choose an additional equipment slot to make available for Prestige. You have unlocked <span>{value}</span> extra slots.",
+        icon: 'fas fa-key',
+        baseCost: 1000000,
+        costScalar: 5,
         bonusType: 'FLAT',
-        bonusPerLevel: 1, // +1 item slot per level
-        maxLevel: 7, // Capped at 10 total items (3 base + 7 from this)
+        bonusPerLevel: 1,
+        maxLevel: 8, // 9 total slots - 1 (sword) = 8 unlockable
     },
 };

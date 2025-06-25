@@ -235,22 +235,43 @@
              </div>
         </div>
 
-
-        <!-- Fullscreen Prestige Panel -->
-        <div id="prestige-fullscreen-panel" class="hidden">
-            <div id="prestige-header">
-                <h2>Choose Your Legacy (Select up to 3 items)</h2>
-                <div class="button-group">
-                    <button id="prestige-back-btn">Go Back</button>
-                    <button id="confirm-prestige-btn">Confirm Prestige</button>
+    </div>
+    
+    <!-- Fullscreen Prestige Panel -->
+    <div id="prestige-fullscreen-panel" class="hidden">
+        <div id="prestige-header">
+            <h2 id="prestige-title">Choose Your Legacy</h2>
+            <div class="button-group">
+                <button id="prestige-back-btn">Go Back</button>
+                <button id="confirm-prestige-btn">Confirm Prestige</button>
+            </div>
+        </div>
+        <div id="prestige-main-content">
+            <div id="prestige-equipment-container">
+                <h4>Select Equipped Item to Preserve</h4>
+                <div id="prestige-equipment-paperdoll">
+                    <!-- This will be a copy of the equipment paperdoll -->
+                    <div id="prestige-slot-helmet" class="equipment-slot"><div class="prestige-lock-overlay"></div></div>
+                    <div id="prestige-slot-necklace" class="equipment-slot"><div class="prestige-lock-overlay"></div></div>
+                    <div id="prestige-slot-platebody" class="equipment-slot"><div class="prestige-lock-overlay"></div></div>
+                    <div id="prestige-slot-platelegs" class="equipment-slot"><div class="prestige-lock-overlay"></div></div>
+                    <div id="prestige-slot-belt" class="equipment-slot"><div class="prestige-lock-overlay"></div></div>
+                    <div id="prestige-slot-sword" class="equipment-slot"><div class="prestige-lock-overlay"></div></div>
+                    <div id="prestige-slot-shield" class="equipment-slot"><div class="prestige-lock-overlay"></div></div>
+                    <div id="prestige-slot-ring1" class="equipment-slot"><div class="prestige-lock-overlay"></div></div>
+                    <div id="prestige-slot-ring2" class="equipment-slot"><div class="prestige-lock-overlay"></div></div>
                 </div>
             </div>
-             <div class="grid-scroll-container">
-                <div id="prestige-inventory-slots" class="item-grid"></div>
+            <div id="prestige-inventory-container">
+                 <h4>(Inventory is for reference only)</h4>
+                 <div class="grid-scroll-container">
+                    <div id="prestige-inventory-slots" class="item-grid"></div>
+                </div>
             </div>
         </div>
     </div>
-    
+
+
     <div id="raid-container"></div>
     <div id="save-indicator" class="hidden">Game Saved!</div>
     <div id="item-tooltip" class="hidden"></div>
@@ -278,6 +299,17 @@
                 </div>
             </div>
             <button id="ring-selection-cancel-btn">Cancel</button>
+        </div>
+    </div>
+    
+    <div id="prestige-slot-unlock-modal-backdrop" class="hidden">
+        <div id="prestige-slot-unlock-modal">
+            <h3 id="prestige-slot-unlock-title">Choose a Legacy Slot to Unlock</h3>
+            <p>Select one of the locked slots below to make it available for all future Prestiges.</p>
+            <div id="prestige-slot-unlock-paperdoll">
+                 <!-- A paperdoll for selecting a slot to unlock will be inserted here by JS -->
+            </div>
+            <button id="prestige-slot-unlock-cancel-btn">Cancel</button>
         </div>
     </div>
 
