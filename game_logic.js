@@ -295,21 +295,29 @@ export function generateMonster(level, specialEncounter = null) {
 
         // --- NEW: POLYNOMIAL SCALING ---
         const baseHealthFactor = 4;
-        const healthPower = 2.6; // <-- THE FIX IS APPLIED HERE
+        const healthPower = 2.6;
         
         const tier = Math.floor((level - 1) / 10);
-        const difficultyResetFactor = 2;
+        const difficultyResetFactor = 1;
         const effectiveLevel = level - (tier * difficultyResetFactor);
 
         monsterHealth = 10 + (baseHealthFactor * Math.pow(effectiveLevel, healthPower));
 
+        // --- CHANGE: Added a linear "World Tier" HP multiplier for difficulty spikes ---
+        const worldTier = Math.floor((level - 1) / 100);
+        if (worldTier > 0) {
+            const spikeMultiplier = 4; // Each world tier adds 400% of base HP. (e.g., 1+4=5x, 1+8=9x, etc.)
+            const worldTierMultiplier = 1 + (worldTier * spikeMultiplier);
+            monsterHealth *= worldTierMultiplier;
+        }
+
         // Apply explicit multipliers ONLY for designated boss levels.
         if (isBigBossLevel(level)) {
-            monsterHealth *= 10;
-        } else if (isBossLevel(level)) {
             monsterHealth *= 5;
+        } else if (isBossLevel(level)) {
+            monsterHealth *= 3;
         } else if (isMiniBossLevel(level)) {
-            monsterHealth *= 2.5;
+            monsterHealth *= 2;
         }
     }
     
