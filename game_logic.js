@@ -295,7 +295,7 @@ export function generateMonster(level, specialEncounter = null) {
 
         // --- NEW: POLYNOMIAL SCALING ---
         const baseHealthFactor = 4;
-        const healthPower = 2.6;
+        const healthPower = 2.4;
         
         const tier = Math.floor((level - 1) / 10);
         const difficultyResetFactor = 1;
