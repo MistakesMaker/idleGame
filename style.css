@@ -236,6 +236,7 @@ button:disabled { background: #7f8c8d; cursor: not-allowed; border-bottom: 2px s
 
 .lock-icon { position: absolute; top: 5px; right: 5px; font-size: 1.1em; color: #bdc3c7; text-shadow: 1px 1px 2px #000; padding: 5px; z-index: 10; transition: all 0.2s ease; opacity: 0.7; }
 .lock-icon:hover { color: #f1c40f; transform: scale(1.2); opacity: 1; }
+#equipment-paperdoll .lock-icon { display: none; }
 .item-wrapper.locked-item .item { box-shadow: 0 0 10px #7f8c8d, inset 0 0 8px rgba(0,0,0,0.7); }
 body.salvage-mode-active .item-grid .item-wrapper:not(.locked-item) { animation: salvage-pulse 1.5s infinite alternate; }
 @keyframes salvage-pulse { from { box-shadow: 0 0 5px rgba(231, 76, 60, 0.5); } to   { box-shadow: 0 0 15px rgba(231, 76, 60, 1); } }
