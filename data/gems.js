@@ -28,7 +28,7 @@ export const GEMS = {
         tier: 1,
         icon: 'images/gems/ruby_1.png',
         width: 1, height: 1,
-        stats: { [STATS.CLICK_DAMAGE.key]: 5 }
+        stats: { [STATS.CLICK_DAMAGE.key]: 50 }
     },
     BASE_SAPPHIRE: {
         id: 'BASE_SAPPHIRE',
@@ -37,7 +37,7 @@ export const GEMS = {
         tier: 1,
         icon: 'images/gems/sapphire_1.png',
         width: 1, height: 1,
-        stats: { [STATS.DPS.key]: 100 }
+        stats: { [STATS.DPS.key]: 1000 }
     },
     BASE_EMERALD: {
         id: 'BASE_EMERALD',
@@ -55,7 +55,7 @@ export const GEMS = {
         tier: 1,
         icon: 'images/gems/topaz_1.png',
         width: 1, height: 1,
-        stats: { [STATS.MAGIC_FIND.key]: 3 }
+        stats: { [STATS.MAGIC_FIND.key]: 1 }
     },
     BASE_AMETHYST: {
         id: 'BASE_AMETHYST',
