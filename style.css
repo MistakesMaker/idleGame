@@ -407,6 +407,7 @@ h5 .legendary { color: #f39c12; }
     background-color: rgba(0, 0, 0, 0.7);
     filter: grayscale(1);
     cursor: not-allowed;
+    pointer-events: none;
 }
 #prestige-equipment-side .equipment-slot.prestige-locked:hover {
     border-color: #4a637e;
@@ -441,7 +442,6 @@ h5 .legendary { color: #f39c12; }
     justify-content: center;
     gap: 20px;
     width: 100%;
-    flex-shrink: 0; /* Prevent buttons from shrinking */
 }
 #cancel-prestige-btn {
     background: #7f8c8d;
