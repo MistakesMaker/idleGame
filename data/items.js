@@ -119,7 +119,6 @@ const greenMeadowsItems = {
         type: 'sword',
         icon: 'images/icons/gladiators_longsword.png',
         width: 2, height: 3,
-        isUnique: true,
         canHaveSockets: true,
         maxSockets: 3,
         possibleStats: [

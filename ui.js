@@ -12,6 +12,12 @@ import { UNIQUE_EFFECTS } from './data/unique_effects.js';
  * @returns {boolean} True if the item is a unique boss drop, false otherwise.
  */
 function isBossUnique(itemId) {
+    // First, check if the item itself is defined as a unique.
+    const itemBase = ITEMS[itemId];
+    if (!itemBase || !itemBase.isUnique) {
+        return false;
+    }
+
     let dropCount = 0;
     let fromBoss = false;
 
@@ -24,10 +30,11 @@ function isBossUnique(itemId) {
             }
         }
         if (dropCount > 1) {
-            return false; // Optimization: if we find it twice, it can't be unique.
+            return false; // Optimization: if we find it twice, it can't be a unique drop.
         }
     }
 
+    // Now, it must be a unique item that drops from exactly one source, and that source must be a boss.
     return dropCount === 1 && fromBoss;
 }
 
