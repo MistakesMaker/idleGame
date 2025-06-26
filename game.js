@@ -236,16 +236,22 @@ document.addEventListener('DOMContentLoaded', () => {
         const { newMonster, newMonsterState } = logic.generateMonster(gameState.currentFightingLevel, gameState.specialEncounter);
         currentMonster = newMonster;
         gameState.monster = newMonsterState;
-        
+    
         const monsterImageEl = (/** @type {HTMLImageElement} */ (elements.monsterImageEl));
         monsterImageEl.src = currentMonster.data.image;
         monsterImageEl.classList.toggle('boss-image', !!currentMonster.data.isBoss);
-        
+    
         elements.monsterNameEl.textContent = currentMonster.name;
-
-        if (currentMonster.data.isSpecial) {
+    
+        // Background logic
+        if (currentMonster.data.background) {
+            // Use the monster's specific background if it exists
+            elements.monsterAreaEl.style.backgroundImage = `url('${currentMonster.data.background}')`;
+        } else if (currentMonster.data.isSpecial) {
+            // Fallback for special monsters without a specific background
             elements.monsterAreaEl.style.backgroundImage = `url('images/backgrounds/bg_treasure_realm.png')`;
         } else {
+            // Default logic for regular zone monsters
             const subZone = findSubZoneByLevel(gameState.currentFightingLevel);
             if (subZone && subZone.parentZone) {
                 elements.monsterAreaEl.style.backgroundImage = `url('${subZone.parentZone.monsterAreaBg}')`;

@@ -745,6 +745,7 @@ const otherMonsters = {
         dropChance: 0, // No item drops
         lootTable: [],
         isSpecial: true,
+        background: 'images/backgrounds/bg_golden_slime.png'
     },
     DUNGEON_GUARDIAN: {
         name: 'Dungeon Guardian',
