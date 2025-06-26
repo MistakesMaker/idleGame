@@ -362,7 +362,12 @@ export function updateUI(elements, gameState, playerStats, currentMonster, salva
     (/** @type {HTMLInputElement} */ (autoProgressCheckboxEl)).checked = gameState.isAutoProgressing;
     const monsterDef = currentMonster.data;
     if (monsterDef) {
-        lootMonsterNameEl.textContent = currentMonster.name;
+        // --- NEW: Kill Count Display Logic ---
+        const monsterKey = Object.keys(MONSTERS).find(key => MONSTERS[key] === monsterDef);
+        const killCount = (monsterKey && gameState.monsterKillCounts && gameState.monsterKillCounts[monsterKey]) ? gameState.monsterKillCounts[monsterKey] : 0;
+        lootMonsterNameEl.innerHTML = `${currentMonster.name} <span style="font-size: 0.7em; color: #bdc3c7;">(Kill Count: ${formatNumber(killCount)})</span>`;
+        // --- END: Kill Count Display Logic ---
+
         lootTableDisplayEl.innerHTML = '';
         if(monsterDef.lootTable && monsterDef.lootTable.length > 0) {
             const totalWeight = monsterDef.lootTable.reduce((sum, entry) => sum + entry.weight, 0);

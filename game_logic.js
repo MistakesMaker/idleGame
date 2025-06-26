@@ -147,6 +147,16 @@ export function monsterDefeated(gameState, playerStats, currentMonster) {
     const logMessages = [];
     const previousMonsterMaxHp = gameState.monster.maxHp;
 
+    // --- NEW: Kill Count Logic ---
+    const monsterKey = Object.keys(MONSTERS).find(key => MONSTERS[key] === currentMonster.data);
+    if (monsterKey) {
+        if (!gameState.monsterKillCounts) {
+            gameState.monsterKillCounts = {};
+        }
+        gameState.monsterKillCounts[monsterKey] = (gameState.monsterKillCounts[monsterKey] || 0) + 1;
+    }
+    // --- END: Kill Count Logic ---
+
     if (!gameState.completedLevels.includes(level)) {
         gameState.completedLevels.push(level);
     }
