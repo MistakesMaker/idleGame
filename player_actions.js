@@ -538,6 +538,11 @@ export function rerollItemStats(gameState, itemToReroll) {
  * @returns {{success: boolean, message: string, newLevel: number|null}}
  */
 export function buyPermanentUpgrade(gameState, upgradeId) {
+    // Legacy Keeper is handled separately in game.js via a modal
+    if (upgradeId === 'LEGACY_KEEPER') {
+        return { success: false, message: "This upgrade must be chosen from its special menu.", newLevel: null };
+    }
+
     const upgrade = PERMANENT_UPGRADES[upgradeId];
     if (!upgrade) {
         return { success: false, message: "Upgrade not found.", newLevel: null };

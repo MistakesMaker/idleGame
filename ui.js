@@ -75,11 +75,19 @@ export function initDOMElements() {
         ringSelectionSlot1: document.getElementById('ring-selection-slot1'),
         ringSelectionSlot2: document.getElementById('ring-selection-slot2'),
         ringSelectionCancelBtn: document.getElementById('ring-selection-cancel-btn'),
-        prestigeFullscreenPanel: document.getElementById('prestige-fullscreen-panel'),
-        prestigeInventorySlotsEl: document.getElementById('prestige-inventory-slots'),
-        prestigeBackButton: document.getElementById('prestige-back-btn'),
-        confirmPrestigeButton: document.getElementById('confirm-prestige-btn'),
         permanentUpgradesContainerEl: document.getElementById('permanent-upgrades-container'),
+
+        // New Prestige and Unlock Slot elements
+        prestigeView: document.getElementById('prestige-view'),
+        prestigeEquipmentPaperdoll: document.getElementById('prestige-equipment-paperdoll'),
+        prestigeInventoryDisplay: document.getElementById('prestige-inventory-display'),
+        confirmPrestigeButton: document.getElementById('confirm-prestige-btn'),
+        cancelPrestigeButton: document.getElementById('cancel-prestige-btn'),
+        prestigeSelectionCount: document.getElementById('prestige-selection-count'),
+        prestigeSelectionMax: document.getElementById('prestige-selection-max'),
+        unlockSlotModalBackdrop: document.getElementById('unlock-slot-modal-backdrop'),
+        unlockSlotPaperdoll: document.getElementById('unlock-slot-paperdoll'),
+        unlockSlotCancelBtn: document.getElementById('unlock-slot-cancel-btn'),
     };
 }
 
@@ -91,7 +99,7 @@ export function initDOMElements() {
  * @param {object} options - Configuration options.
  */
 export function renderGrid(containerEl, items, options = {}) {
-    const { calculatePositions = false, type = 'item', selectedItem = null, salvageSelections = [], prestigeSelections = [] } = options;
+    const { calculatePositions = false, type = 'item', selectedItem = null, salvageSelections = [], prestigeSlotSelections = [] } = options;
     
     containerEl.innerHTML = '';
     const tempPlacement = []; 
@@ -128,7 +136,6 @@ export function renderGrid(containerEl, items, options = {}) {
             if (item.locked) wrapper.classList.add('locked-item');
             if (selectedItem && selectedItem.id === item.id) wrapper.classList.add('selected-for-forge');
             if (salvageSelections.some(sel => sel.id === item.id)) wrapper.classList.add('selected-for-salvage');
-            if (prestigeSelections.includes(item.id)) wrapper.classList.add('selected-for-prestige');
             
             containerEl.appendChild(wrapper);
         }
@@ -139,7 +146,7 @@ export function renderGrid(containerEl, items, options = {}) {
 /**
  * Updates the entire game UI based on the current state.
  */
-export function updateUI(elements, gameState, playerStats, currentMonster, salvageMode, craftingGems = [], selectedItemForForge = null, prestigeSelections = []) {
+export function updateUI(elements, gameState, playerStats, currentMonster, salvageMode, craftingGems = [], selectedItemForForge = null, prestigeSlotSelections = []) {
     const {
         goldStatEl, scrapStatEl, heroXpTextEl, clickDamageStatEl, dpsStatEl, absorbedStatsListEl,
         monsterHealthTextEl, upgradeClickCostEl, upgradeDpsCostEl, heroLevelEl,
@@ -148,7 +155,8 @@ export function updateUI(elements, gameState, playerStats, currentMonster, salva
         prestigeRequirementTextEl, currentLevelEl, autoProgressCheckboxEl, monsterHealthBarEl,
         upgradeClickLevelEl, upgradeDpsLevelEl, inventorySlotsEl, lootMonsterNameEl,
         lootTableDisplayEl, prestigeButton, gemSlotsEl, gemCraftingSlotsContainer, gemCraftBtn,
-        forgeInventorySlotsEl, forgeSelectedItemEl, forgeRerollBtn, prestigeInventorySlotsEl
+        forgeInventorySlotsEl, forgeSelectedItemEl, forgeRerollBtn,
+        prestigeEquipmentPaperdoll, prestigeInventoryDisplay, prestigeSelectionCount, prestigeSelectionMax
     } = elements;
 
     // --- Stats and Hero Info ---
@@ -199,11 +207,6 @@ export function updateUI(elements, gameState, playerStats, currentMonster, salva
     const allForgeItems = [...Object.values(gameState.equipment).filter(Boolean), ...gameState.inventory];
     renderGrid(forgeInventorySlotsEl, allForgeItems, { calculatePositions: true, selectedItem: selectedItemForForge });
 
-    if (!elements.prestigeFullscreenPanel.classList.contains('hidden')) { 
-        const allPrestigeItems = [...Object.values(gameState.equipment).filter(Boolean), ...gameState.inventory];
-        renderGrid(prestigeInventorySlotsEl, allPrestigeItems, { calculatePositions: true, prestigeSelections });
-    }
-
     if (selectedItemForForge) {
         forgeSelectedItemEl.innerHTML = `<div class="item-wrapper">${createItemHTML(selectedItemForForge)}</div>`;
     } else {
@@ -237,15 +240,15 @@ export function updateUI(elements, gameState, playerStats, currentMonster, salva
     });
     (/** @type {HTMLButtonElement} */ (gemCraftBtn)).disabled = craftingGems.length !== 2 || gameState.scrap < 100;
     
-    // --- Presets & Prestige ---
+    // --- Presets ---
     document.querySelectorAll('.preset-btn').forEach((btn, index) => {
         btn.textContent = gameState.presets[index].name;
         btn.classList.toggle('active', index === gameState.activePresetIndex);
     });
     
+    // --- Prestige Area ---
     absorbedStatsListEl.innerHTML = '';
     const absorbedStats = gameState.absorbedStats || {};
-
     const prestigeStatsToShow = {
         [STATS.DPS.key]: { icon: 'fa-sword', label: 'DPS' },
         [STATS.CLICK_DAMAGE.key]: { icon: 'fa-hand-rock', label: 'Click Dmg' },
@@ -260,13 +263,7 @@ export function updateUI(elements, gameState, playerStats, currentMonster, salva
             
             const statEl = document.createElement('div');
             statEl.className = 'prestige-stat-entry';
-            statEl.innerHTML = `
-                <i class="fas ${config.icon}"></i>
-                <div class="prestige-stat-text">
-                    <div>${config.label}:</div>
-                    <div>${value}</div>
-                </div>
-            `;
+            statEl.innerHTML = `<i class="fas ${config.icon}"></i><div class="prestige-stat-text"><div>${config.label}:</div><div>${value}</div></div>`;
             absorbedStatsListEl.appendChild(statEl);
         }
     }
@@ -279,24 +276,49 @@ export function updateUI(elements, gameState, playerStats, currentMonster, salva
                 const stackText = count > 1 ? ` (x${count})` : '';
                 const effectEl = document.createElement('div');
                 effectEl.className = 'prestige-stat-entry';
-                effectEl.innerHTML = `
-                    <i class="fas fa-magic"></i>
-                    <div class="prestige-stat-text">
-                        <div>Absorbed Unique:</div>
-                        <div>${effectData.name}${stackText}</div>
-                    </div>
-                `;
+                effectEl.innerHTML = `<i class="fas fa-magic"></i><div class="prestige-stat-text"><div>Absorbed Unique:</div><div>${effectData.name}${stackText}</div></div>`;
                 effectEl.title = effectData.description;
                 absorbedStatsListEl.appendChild(effectEl);
             }
         }
     }
 
-
     const nextPrestigeLevel = gameState.nextPrestigeLevel || 100;
     prestigeCountStatEl.textContent = (gameState.prestigeCount || 0).toString();
     prestigeRequirementTextEl.innerHTML = `Defeat the boss at Level <b>${nextPrestigeLevel}</b> to Prestige.`;
     (/** @type {HTMLButtonElement} */ (prestigeButton)).disabled = !gameState.currentRunCompletedLevels.includes(nextPrestigeLevel);
+
+    // --- New Prestige View UI ---
+    if (elements.prestigeView.classList.contains('active')) {
+        renderGrid(prestigeInventoryDisplay, gameState.inventory);
+        
+        prestigeEquipmentPaperdoll.querySelectorAll('.equipment-slot').forEach(slotEl => {
+            const slotName = slotEl.id.replace('prestige-slot-', '');
+            const item = gameState.equipment[slotName];
+            slotEl.innerHTML = '';
+            
+            if (item) {
+                slotEl.innerHTML = createItemHTML(item);
+            } else {
+                const placeholder = document.createElement('img');
+                placeholder.src = getItemIcon(slotName.replace(/\d/g, ''));
+                placeholder.className = 'placeholder-icon';
+                slotEl.appendChild(placeholder);
+            }
+
+            const isUnlocked = gameState.unlockedPrestigeSlots.includes(slotName);
+            slotEl.classList.toggle('prestige-locked', !isUnlocked);
+            if (!isUnlocked) {
+                slotEl.innerHTML += `<i class="fas fa-lock prestige-lock-icon"></i>`;
+            }
+
+            slotEl.classList.toggle('selected-for-prestige', prestigeSlotSelections.includes(slotName));
+        });
+        const maxSelections = 1 + playerStats.legacyKeeperBonus;
+        prestigeSelectionCount.textContent = prestigeSlotSelections.length;
+        prestigeSelectionMax.textContent = maxSelections;
+    }
+
 
     // --- Map and Monster Info ---
     (/** @type {HTMLInputElement} */ (autoProgressCheckboxEl)).checked = gameState.isAutoProgressing;
@@ -322,9 +344,6 @@ export function updateUI(elements, gameState, playerStats, currentMonster, salva
 
 /**
  * Creates the full HTML block for an item's stats and unique effects.
- * This is a helper function to avoid duplicating code between tooltip functions.
- * @param {object|null} item - The item to create the block for.
- * @returns {string} The generated HTML string.
  */
 function createDetailedItemStatBlockHTML(item) {
     if (!item) {
@@ -332,8 +351,6 @@ function createDetailedItemStatBlockHTML(item) {
     }
 
     const itemBase = ITEMS[item.baseId];
-    
-    // Build the stat list from COMBINED stats (item + gems)
     const combinedStats = getCombinedItemStats(item);
     let statsHTML = '<ul>';
     for (const statKey in combinedStats) {
@@ -344,7 +361,6 @@ function createDetailedItemStatBlockHTML(item) {
         statsHTML += `<li>+${statValue} ${statName}</li>`;
     }
     
-    // Handle synergy from gems, as it's a special stat
     let totalSynergyValue = 0;
     if (item.sockets) {
         for (const gem of item.sockets) {
@@ -359,7 +375,6 @@ function createDetailedItemStatBlockHTML(item) {
     }
     statsHTML += '</ul>';
 
-    // Section for unique effect
     let uniqueEffectHTML = '';
     if (itemBase && itemBase.uniqueEffect) {
         const effectData = UNIQUE_EFFECTS[itemBase.uniqueEffect];
@@ -409,10 +424,6 @@ export function createTooltipHTML(item) {
 
 /**
  * Creates the HTML for an item comparison tooltip, now with numerical diffs.
- * @param {object} hoveredItem - The item being hovered over.
- * @param {object|null} equippedItem - The currently equipped item for comparison.
- * @param {object|null} [equippedItem2=null] - The second equipped item (for rings).
- * @returns {string} The generated HTML string.
  */
 export function createItemComparisonTooltipHTML(hoveredItem, equippedItem, equippedItem2 = null) {
     const hoveredItemBase = ITEMS[hoveredItem.baseId];
@@ -421,7 +432,6 @@ export function createItemComparisonTooltipHTML(hoveredItem, equippedItem, equip
     let headerHTML = `<div class="item-header"><span class="${hoveredItem.rarity} ${uniqueClass}">${hoveredItem.name}</span></div>`;
     headerHTML += `<div style="font-size: 0.9em; color: #95a5a6; margin-bottom: 5px;">${hoveredItem.rarity.charAt(0).toUpperCase() + hoveredItem.rarity.slice(1)} ${hoveredItem.type.charAt(0).toUpperCase() + hoveredItem.type.slice(1)}</div>`;
 
-    // Helper to generate a stat list with diffs
     const createComparisonList = (itemForDisplay, itemToCompare) => {
         const displayStats = getCombinedItemStats(itemForDisplay);
         const compareStats = itemToCompare ? getCombinedItemStats(itemToCompare) : {};
@@ -461,7 +471,6 @@ export function createItemComparisonTooltipHTML(hoveredItem, equippedItem, equip
         }
     }
     
-    // Special handling for rings
     if (hoveredItem.type === 'ring') {
         let ring1Comparison = createComparisonList(hoveredItem, equippedItem);
         let ring2Comparison = createComparisonList(hoveredItem, equippedItem2);
@@ -479,10 +488,8 @@ export function createItemComparisonTooltipHTML(hoveredItem, equippedItem, equip
             </div>`;
     }
 
-
     return headerHTML + comparisonHTML + uniqueEffectHTML;
 }
-
 
 export function createGemTooltipHTML(gem) {
     const name = gem.name || `T${gem.tier} Gem`;
@@ -512,11 +519,6 @@ export function createGemTooltipHTML(gem) {
     return headerHTML + statsHTML;
 }
 
-/**
- * Creates the HTML for a tooltip showing a base item's potential.
- * @param {object} itemBase - The base item definition.
- * @returns {string} The generated HTML string.
- */
 export function createLootTableTooltipHTML(itemBase) {
     let statsHTML = '<ul>';
     itemBase.possibleStats.forEach(statInfo => {
@@ -557,19 +559,10 @@ export function createLootTableTooltipHTML(itemBase) {
             ${uniqueEffectHTML}`;
 }
 
-
-/**
- * Creates the HTML for a tooltip that compares a potential loot drop with an equipped item.
- * @param {object} potentialItem - The item base definition from the loot table.
- * @param {object|null} equippedItem - The currently equipped item instance.
- * @param {object|null} [equippedItem2=null] - The second equipped ring, if applicable.
- * @returns {string} The generated HTML string for the tooltip.
- */
 export function createLootComparisonTooltipHTML(potentialItem, equippedItem, equippedItem2 = null) {
     const potentialIsUnique = potentialItem.isUnique ? 'unique-item-name' : '';
     const headerHTML = `<div class="item-header"><span class="${potentialIsUnique}">${potentialItem.name}</span></div>`;
 
-    // Block for the potential item's stat ranges
     let potentialStatsHTML = '<ul>';
     potentialItem.possibleStats.forEach(statInfo => {
         const statName = Object.values(STATS).find(s => s.key === statInfo.key)?.name || statInfo.key;
@@ -591,8 +584,6 @@ export function createLootComparisonTooltipHTML(potentialItem, equippedItem, equ
     }
     const potentialBlock = `<div><h5>Potential Drop</h5>${potentialStatsHTML}${uniqueEffectHTML}</div>`;
 
-
-    // Function to create a block for an equipped item
     const createComparisonBlock = (item, title) => {
         if (!item) {
             return `<div><h5>${title}</h5><ul><li>(Empty Slot)</li></ul></div>`;
@@ -680,7 +671,6 @@ export function showDamagePopup(popupContainerEl, damage, isCrit = false, isMult
         popup.classList.add('crit');
     }
     if (isMultiStrike) {
-        // Use a slightly different starting position for multi-strikes to avoid overlap
         popup.style.left = `${50 + Math.random() * 20}%`;
         popup.style.top = `${20 + Math.random() * 20}%`;
     } else {
@@ -776,4 +766,46 @@ export function getHighestCompletedLevelInSubZone(completedLevels, subZone) {
         }
     }
     return highest;
+}
+
+/**
+ * Shows the modal for unlocking a new legacy slot.
+ * @param {object} elements - The DOMElements object.
+ * @param {string[]} unlockedSlots - Array of currently unlocked slot names.
+ */
+export function showUnlockSlotModal(elements, unlockedSlots) {
+    const { unlockSlotPaperdoll, unlockSlotModalBackdrop } = elements;
+    
+    unlockSlotPaperdoll.querySelectorAll('.equipment-slot').forEach(slotEl => {
+        const slotName = slotEl.id.replace('unlock-slot-', '');
+        slotEl.innerHTML = `<img src="${getItemIcon(slotName.replace(/\d/g, ''))}" class="placeholder-icon">`;
+        slotEl.classList.toggle('prestige-unlocked', unlockedSlots.includes(slotName));
+    });
+
+    unlockSlotModalBackdrop.classList.remove('hidden');
+}
+
+/**
+ * Hides the modal for unlocking a new legacy slot.
+ * @param {object} elements - The DOMElements object.
+ */
+export function hideUnlockSlotModal(elements) {
+    elements.unlockSlotModalBackdrop.classList.add('hidden');
+}
+
+/**
+ * Switches the active view in the middle panel.
+ * @param {object} elements - The DOMElements object.
+ * @param {string} viewIdToShow - The ID of the view to make active.
+ */
+export function switchView(elements, viewIdToShow) {
+    const parentPanel = document.querySelector('.middle-panel');
+    parentPanel.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    parentPanel.querySelectorAll('.tab-button').forEach(t => t.classList.remove('active'));
+    
+    const viewElement = document.getElementById(viewIdToShow);
+    const tabElement = parentPanel.querySelector(`.tab-button[data-view="${viewIdToShow}"]`);
+
+    if (viewElement) viewElement.classList.add('active');
+    if (tabElement) tabElement.classList.add('active');
 }

@@ -181,6 +181,33 @@
                     </div>
                 </div>
             </div>
+
+            <div id="prestige-view" class="view">
+                <h3>Prestige</h3>
+                <p id="prestige-instructions">Select equipped items from unlocked slots to carry over. Unlock more slots with the 'Legacy Keeper' upgrade.</p>
+                <div id="prestige-main-content">
+                    <div id="prestige-equipment-side">
+                        <h4>Your Legacy (Equipped)</h4>
+                        <div id="prestige-equipment-paperdoll">
+                            <div id="prestige-slot-helmet" class="equipment-slot"></div><div id="prestige-slot-necklace" class="equipment-slot"></div>
+                            <div id="prestige-slot-platebody" class="equipment-slot"></div><div id="prestige-slot-platelegs" class="equipment-slot"></div>
+                            <div id="prestige-slot-belt" class="equipment-slot"></div><div id="prestige-slot-sword" class="equipment-slot"></div>
+                            <div id="prestige-slot-shield" class="equipment-slot"></div><div id="prestige-slot-ring1" class="equipment-slot"></div>
+                            <div id="prestige-slot-ring2" class="equipment-slot"></div>
+                        </div>
+                    </div>
+                    <div id="prestige-inventory-side">
+                        <h4>Lost to Time (Inventory)</h4>
+                        <div class="grid-scroll-container">
+                            <div id="prestige-inventory-display" class="item-grid"></div>
+                        </div>
+                    </div>
+                </div>
+                <div id="prestige-actions">
+                    <button id="cancel-prestige-btn">Cancel</button>
+                    <button id="confirm-prestige-btn">Confirm Prestige (<span id="prestige-selection-count">0</span>/<span id="prestige-selection-max">1</span>)</button>
+                </div>
+            </div>
         </div>
 
         <!-- Actions Panel (Formerly Right Panel) -->
@@ -234,21 +261,6 @@
                  </div>
              </div>
         </div>
-
-
-        <!-- Fullscreen Prestige Panel -->
-        <div id="prestige-fullscreen-panel" class="hidden">
-            <div id="prestige-header">
-                <h2>Choose Your Legacy (Select up to 3 items)</h2>
-                <div class="button-group">
-                    <button id="prestige-back-btn">Go Back</button>
-                    <button id="confirm-prestige-btn">Confirm Prestige</button>
-                </div>
-            </div>
-             <div class="grid-scroll-container">
-                <div id="prestige-inventory-slots" class="item-grid"></div>
-            </div>
-        </div>
     </div>
     
     <div id="raid-container"></div>
@@ -293,6 +305,24 @@
             <button id="offline-progress-close-btn">Continue</button>
         </div>
     </div>
+
+    <div id="unlock-slot-modal-backdrop" class="hidden">
+        <div id="unlock-slot-modal">
+            <h3>Unlock a Legacy Slot</h3>
+            <p>You have earned the right to unlock one more equipment slot to carry over during Prestige. Click a locked slot below to unlock it permanently.</p>
+            <div id="unlock-slot-paperdoll-container">
+                <div id="unlock-slot-paperdoll">
+                    <div id="unlock-slot-helmet" class="equipment-slot"></div><div id="unlock-slot-necklace" class="equipment-slot"></div>
+                    <div id="unlock-slot-platebody" class="equipment-slot"></div><div id="unlock-slot-platelegs" class="equipment-slot"></div>
+                    <div id="unlock-slot-belt" class="equipment-slot"></div><div id="unlock-slot-sword" class="equipment-slot"></div>
+                    <div id="unlock-slot-shield" class="equipment-slot"></div><div id="unlock-slot-ring1" class="equipment-slot"></div>
+                    <div id="unlock-slot-ring2" class="equipment-slot"></div>
+                </div>
+            </div>
+            <button id="unlock-slot-cancel-btn">Cancel</button>
+        </div>
+    </div>
+
 
     <!-- Scripts -->
     <script type="module" src="game.js"></script>

@@ -171,25 +171,17 @@ button:disabled { background: #7f8c8d; cursor: not-allowed; border-bottom: 2px s
 .equipment-slot { position: absolute; background-color: rgba(0, 0, 0, 0.5); border: 1px solid #4a637e; box-shadow: inset 0 0 10px rgba(0,0,0,0.7); border-radius: 8px; display: flex; justify-content: center; align-items: center; }
 .equipment-slot:hover { background-color: rgba(0, 0, 0, 0.3); border-color: #f1c40f; }
 
-/* --- NEW: Proportional Equipment Slot Sizes --- */
-/* Represents 2x2 items */
-#slot-helmet { width: 24%; height: 16%; top: 7%; left: 50%; transform: translateX(-50%); }
-/* Represents 2x2 items */
-#slot-necklace { width: 24%; height: 16%; top: 7%; right: 13%; }
-/* Represents 2x3 items */
-#slot-platebody { width: 24%; height: 24%; top: 24%; left: 50%; transform: translateX(-50%); }
-/* Represents 2x3 items */
-#slot-sword { width: 24%; height: 24%; top: 24%; left: 13%; }
-/* Represents 2x3 items */
-#slot-shield { width: 24%; height: 24%; top: 24%; right: 13%; }
-/* Represents 2x3 items */
-#slot-platelegs { width: 24%; height: 24%; top: 58%; left: 50%; transform: translateX(-50%); }
-/* Represents 2x1 items */
-#slot-belt { width: 24%; height: 8%; top: 49%; left: 50%; transform: translateX(-50%); }
-/* Represents 1x1 items */
-#slot-ring1 { width: 12%; height: 8%; top: 49%; left: 25%; }
-/* Represents 1x1 items */
-#slot-ring2 { width: 12%; height: 8%; top: 49%; right: 25%; }
+/* --- Proportional Equipment Slot Sizes --- */
+#slot-helmet, #prestige-slot-helmet, #unlock-slot-helmet { width: 24%; height: 16%; top: 7%; left: 50%; transform: translateX(-50%); }
+#slot-necklace, #prestige-slot-necklace, #unlock-slot-necklace { width: 24%; height: 16%; top: 7%; right: 13%; }
+#slot-platebody, #prestige-slot-platebody, #unlock-slot-platebody { width: 24%; height: 24%; top: 24%; left: 50%; transform: translateX(-50%); }
+#slot-sword, #prestige-slot-sword, #unlock-slot-sword { width: 24%; height: 24%; top: 24%; left: 13%; }
+#slot-shield, #prestige-slot-shield, #unlock-slot-shield { width: 24%; height: 24%; top: 24%; right: 13%; }
+#slot-platelegs, #prestige-slot-platelegs, #unlock-slot-platelegs { width: 24%; height: 24%; top: 58%; left: 50%; transform: translateX(-50%); }
+#slot-belt, #prestige-slot-belt, #unlock-slot-belt { width: 24%; height: 8%; top: 49%; left: 50%; transform: translateX(-50%); }
+#slot-ring1, #prestige-slot-ring1, #unlock-slot-ring1 { width: 12%; height: 8%; top: 49%; left: 25%; }
+#slot-ring2, #prestige-slot-ring2, #unlock-slot-ring2 { width: 12%; height: 8%; top: 49%; right: 25%; }
+
 
 .equipment-slot .item-icon { width: 90%; height: 90%; object-fit: contain; -webkit-user-drag: none; cursor: pointer; opacity: 1; }
 .equipment-slot .placeholder-icon { width: 60%; height: 60%; opacity: 0.5; filter: invert(100%) brightness(0.8); }
@@ -217,7 +209,7 @@ button:disabled { background: #7f8c8d; cursor: not-allowed; border-bottom: 2px s
 
 @keyframes legendary-glow { from { box-shadow: 0 0 5px #f39c12; } to { box-shadow: 0 0 20px #f0b75a; } }
 .selected-for-prestige { box-shadow: 0 0 15px #f1c40f !important; }
-.item-wrapper.selected-for-prestige .item { border-color: #f1c40f; }
+.equipment-slot.selected-for-prestige { border: 2px solid #f1c40f; box-shadow: 0 0 15px #f1c40f !important; }
 .hidden { display: none !important; }
 #prestige-button:not(:disabled) { animation: pulse 2s infinite; background: linear-gradient(145deg, #f1c40f, #e67e22); border-bottom: 2px solid #d35400; }
 @keyframes pulse { 0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(241, 196, 15, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(241, 196, 15, 0); } 100% { box-shadow: 0 0 0 0 rgba(241, 196, 15, 0); } }
@@ -275,7 +267,7 @@ body.salvage-mode-active .item-grid .item-wrapper:not(.locked-item) { animation:
 
 .tooltip-comparison-container, .tooltip-ring-comparison { display: flex; gap: 15px; }
 .tooltip-comparison-container > div, .tooltip-ring-comparison > div { flex: 1; }
-.tooltip-ring-comparison > div:first-child, .tooltip-comparison-container > div:first-child { 
+.tooltip-comparison-container > div:first-child, .tooltip-ring-comparison > div:first-child { 
     padding-right: 15px; 
     border-right: 1px solid #4a637e;
 }
@@ -364,34 +356,85 @@ h5 .legendary { color: #f39c12; }
 #forge-reroll-btn { width: 80%; padding: 15px; font-size: 1.2em; background: linear-gradient(145deg, #e67e22, #f39c12); border-bottom-color: #d35400; }
 .item-wrapper.selected-for-forge .item { border: 3px solid #f1c40f !important; }
 
-/* --- NEW: PRESTIGE FULLSCREEN PANEL --- */
-#prestige-fullscreen-panel {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(26, 26, 26, 0.98);
-    z-index: 5000;
+/* --- PRESTIGE VIEW --- */
+/* This is the key change to make the panel stretch */
+.middle-panel:has(#prestige-view.active) {
+    flex-grow: 0; /* Allow the panel to size based on its content, not flex rules */
+    flex-shrink: 0;
+    flex-basis: auto;
+    width: auto; /* Let width be determined by its children */
+}
+#prestige-view {
+    text-align: center;
+}
+#prestige-instructions {
+    margin-bottom: 15px;
+}
+#prestige-main-content {
+    display: flex;
+    flex-grow: 1;
+    gap: 20px;
+    min-height: 0;
+    justify-content: center;
+}
+#prestige-equipment-side {
+    flex: 0 0 420px; /* Don't shrink, fixed base width */
     display: flex;
     flex-direction: column;
-    padding: 20px;
 }
-#prestige-header {
+#prestige-equipment-paperdoll {
+    position: relative;
+    flex-grow: 1;
+    width: 100%;
+    max-width: 400px;
+    margin: 0 auto;
+    background-image: url('images/paperdoll-bg.png');
+    background-size: contain;
+    background-position: center;
+    background-repeat: no-repeat;
+}
+#prestige-equipment-side .equipment-slot {
+    cursor: pointer;
+    position: absolute;
+    transition: all 0.2s ease-in-out;
+}
+#prestige-equipment-side .equipment-slot.prestige-locked {
+    background-color: rgba(0, 0, 0, 0.7);
+    filter: grayscale(1);
+    cursor: not-allowed;
+}
+#prestige-equipment-side .equipment-slot.prestige-locked:hover {
+    border-color: #4a637e;
+}
+.prestige-lock-icon {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 3em;
+    color: rgba(236, 240, 241, 0.5);
+    pointer-events: none;
+}
+#prestige-inventory-side {
+    flex: 0 0 620px; /* Don't shrink, fixed base width for inventory grid */
     display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px;
-    flex-shrink: 0;
+    flex-direction: column;
 }
-#prestige-header h2 {
-    margin: 0;
+#prestige-inventory-side .grid-scroll-container {
+    flex-grow: 1;
+    margin-top: 0;
 }
-#prestige-header .button-group {
+#prestige-inventory-display .item-wrapper {
+    filter: grayscale(0.8) brightness(0.7);
+    cursor: not-allowed;
+}
+#prestige-actions {
+    margin-top: 15px;
     display: flex;
-    gap: 15px;
+    justify-content: center;
+    gap: 20px;
 }
-#prestige-back-btn {
+#cancel-prestige-btn {
     background: #7f8c8d;
     border-bottom-color: #6c7a7b;
 }
@@ -400,7 +443,7 @@ h5 .legendary { color: #f39c12; }
     border-bottom-color: #d35400;
 }
 
-/* --- NEW: PERMANENT UPGRADES PANEL --- */
+/* --- PERMANENT UPGRADES PANEL --- */
 .upgrades-panel h3, .upgrades-panel p {
     text-align: center;
 }
@@ -514,4 +557,78 @@ h5 .legendary { color: #f39c12; }
 
 .permanent-upgrade-card.maxed .buy-permanent-upgrade-btn {
     display: none;
+}
+
+/* --- UNLOCK SLOT MODAL --- */
+#unlock-slot-modal-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.85);
+    z-index: 10001;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+#unlock-slot-modal {
+    background-color: #2c3e50;
+    padding: 25px;
+    border-radius: 12px;
+    border: 2px solid #f1c40f;
+    box-shadow: 0 0 20px rgba(241, 196, 15, 0.5);
+    width: 90%;
+    max-width: 500px;
+    text-align: center;
+}
+#unlock-slot-paperdoll-container {
+    width: 100%;
+    max-width: 400px;
+    margin: 20px auto;
+}
+#unlock-slot-paperdoll {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 400 / 600;
+    background-image: url('images/paperdoll-bg.png');
+    background-size: contain;
+    background-position: center;
+    background-repeat: no-repeat;
+}
+#unlock-slot-paperdoll .equipment-slot {
+    position: absolute;
+}
+#unlock-slot-paperdoll .equipment-slot.prestige-unlocked {
+    filter: brightness(0.6) grayscale(0.5);
+    cursor: not-allowed;
+}
+#unlock-slot-paperdoll .equipment-slot.prestige-unlocked::after {
+    content: 'UNLOCKED';
+    position: absolute;
+    font-size: 1em;
+    color: #2ecc71;
+    text-shadow: 1px 1px 2px black;
+}
+#unlock-slot-paperdoll .equipment-slot:not(.prestige-unlocked) {
+    cursor: pointer;
+}
+#unlock-slot-paperdoll .equipment-slot:not(.prestige-unlocked)::after {
+    content: '\f09c'; /* fa-unlock */
+    font-family: "Font Awesome 5 Free";
+    font-weight: 900;
+    position: absolute;
+    font-size: 2.5em;
+    color: rgba(241, 196, 15, 0.7);
+    opacity: 0;
+    transition: all 0.2s ease;
+}
+#unlock-slot-paperdoll .equipment-slot:not(.prestige-unlocked):hover::after {
+    opacity: 1;
+    transform: scale(1.1);
+}
+#unlock-slot-cancel-btn {
+    margin-top: 15px;
+    background: #c0392b;
+    border-bottom-color: #922b21;
 }
