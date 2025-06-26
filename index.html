@@ -47,10 +47,10 @@
 
         <!-- Middle Panel: Map, Hero, Equipment, Inventory -->
         <div class="panel middle-panel">
-            <div class="tabs">
+            <div class="tabs main-tabs">
                 <button class="tab-button active" data-view="map-view">Map</button>
                 <button class="tab-button" data-view="hero-view">Hero</button>
-                <button class="tab-button" data-view="equipment-view">Equipment</button>
+                <button id="main-equipment-tab-btn" class="tab-button" data-view="equipment-view">Equipment</button>
                 <button class="tab-button" data-view="inventory-view">Inventory</button>
                 <button class="tab-button" data-view="gems-view">Gems</button>
                 <button class="tab-button" data-view="forge-view">Forge</button>
@@ -109,19 +109,35 @@
             </div>
 
             <div id="equipment-view" class="view">
-                <div id="equipment-view-content">
-                    <div id="preset-controls">
-                        <h4>Presets</h4>
-                        <button id="preset-btn-0" class="preset-btn">Preset 1</button>
-                        <button id="preset-btn-1" class="preset-btn">Preset 2</button>
-                        <button id="preset-btn-2" class="preset-btn">Preset 3</button>
+                <div class="equipment-view-content">
+                    <div id="equipment-controls-wrapper">
+                        <div id="preset-controls">
+                            <h4>Presets</h4>
+                            <button id="preset-btn-0" class="preset-btn">Preset 1</button>
+                            <button id="preset-btn-1" class="preset-btn">Preset 2</button>
+                            <button id="preset-btn-2" class="preset-btn">Preset 3</button>
+                        </div>
+                        <div id="prestige-controls" class="hidden">
+                            <h4>Prestige Mode</h4>
+                            <p>Equip items into your unlocked slots to preserve them.</p>
+                            <button id="confirm-prestige-btn">Confirm Prestige</button>
+                            <button id="prestige-cancel-btn">Cancel</button>
+                        </div>
+                        <div id="legacy-keeper-controls" class="hidden">
+                             <h4>Legacy Keeper</h4>
+                             <p>Select a new slot to permanently unlock.</p>
+                             <button id="legacy-keeper-save-btn">Save</button>
+                             <button id="legacy-keeper-cancel-btn">Cancel</button>
+                        </div>
                     </div>
-                    <div id="equipment-paperdoll">
-                        <div id="slot-helmet" class="equipment-slot"></div><div id="slot-necklace" class="equipment-slot"></div>
-                        <div id="slot-platebody" class="equipment-slot"></div><div id="slot-platelegs" class="equipment-slot"></div>
-                        <div id="slot-belt" class="equipment-slot"></div><div id="slot-sword" class="equipment-slot"></div>
-                        <div id="slot-shield" class="equipment-slot"></div><div id="slot-ring1" class="equipment-slot"></div>
-                        <div id="slot-ring2" class="equipment-slot"></div>
+                    <div class="equipment-paperdoll-wrapper">
+                        <div id="main-equipment-paperdoll" class="equipment-paperdoll-container">
+                            <div class="equipment-slot" data-slot-name="helmet"></div><div class="equipment-slot" data-slot-name="necklace"></div>
+                            <div class="equipment-slot" data-slot-name="platebody"></div><div class="equipment-slot" data-slot-name="platelegs"></div>
+                            <div class="equipment-slot" data-slot-name="belt"></div><div class="equipment-slot" data-slot-name="sword"></div>
+                            <div class="equipment-slot" data-slot-name="shield"></div><div class="equipment-slot" data-slot-name="ring1"></div>
+                            <div class="equipment-slot" data-slot-name="ring2"></div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -212,6 +228,7 @@
             <div id="prestige-area">
                 <h3>Prestige</h3>
                 <p id="prestige-requirement-text">Reach Max Level 100 to unlock Prestige.</p>
+                <p>Items in unlocked slots will be preserved.</p>
                 
                 <div id="prestige-stats-area">
                     <h4>Prestige Bonuses</h4>
@@ -233,21 +250,6 @@
                      <!-- Upgrades will be dynamically inserted here by JS -->
                  </div>
              </div>
-        </div>
-
-
-        <!-- Fullscreen Prestige Panel -->
-        <div id="prestige-fullscreen-panel" class="hidden">
-            <div id="prestige-header">
-                <h2>Choose Your Legacy (Select up to 3 items)</h2>
-                <div class="button-group">
-                    <button id="prestige-back-btn">Go Back</button>
-                    <button id="confirm-prestige-btn">Confirm Prestige</button>
-                </div>
-            </div>
-             <div class="grid-scroll-container">
-                <div id="prestige-inventory-slots" class="item-grid"></div>
-            </div>
         </div>
     </div>
     

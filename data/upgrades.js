@@ -121,12 +121,12 @@ export const PERMANENT_UPGRADES = {
     LEGACY_KEEPER: {
         id: 'LEGACY_KEEPER',
         name: "Legacy Keeper",
-        description: "Carry over <span>{value}</span> additional item(s) through Prestige.",
+        description: "Unlock a total of <span>{value}</span> equipment slot(s) to preserve through Prestige.",
         icon: 'fas fa-archive',
         baseCost: 1000000, // Starts very expensive
         costScalar: 10,  // Cost scales extremely fast
         bonusType: 'FLAT',
         bonusPerLevel: 1, // +1 item slot per level
-        maxLevel: 7, // Capped at 10 total items (3 base + 7 from this)
+        maxLevel: 9, // This will be dynamically calculated in game.js, but a placeholder is fine.
     },
 };

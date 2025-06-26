@@ -75,14 +75,25 @@ export function initDOMElements() {
         ringSelectionSlot1: document.getElementById('ring-selection-slot1'),
         ringSelectionSlot2: document.getElementById('ring-selection-slot2'),
         ringSelectionCancelBtn: document.getElementById('ring-selection-cancel-btn'),
-        prestigeFullscreenPanel: document.getElementById('prestige-fullscreen-panel'),
+        permanentUpgradesContainerEl: document.getElementById('permanent-upgrades-container'),
+
+        // Main Paperdoll
+        mainEquipmentPaperdoll: document.getElementById('main-equipment-paperdoll'),
+
+        // Prestige UI
+        prestigeUiPanel: document.getElementById('prestige-ui-panel'),
+        prestigeEquipmentPaperdoll: document.getElementById('prestige-equipment-paperdoll'),
         prestigeInventorySlotsEl: document.getElementById('prestige-inventory-slots'),
         prestigeBackButton: document.getElementById('prestige-back-btn'),
         confirmPrestigeButton: document.getElementById('confirm-prestige-btn'),
-        permanentUpgradesContainerEl: document.getElementById('permanent-upgrades-container'),
+
+        // Legacy Keeper UI
+        legacyKeeperPanel: document.getElementById('legacy-keeper-panel'),
+        legacyKeeperEquipmentPaperdoll: document.getElementById('legacy-keeper-equipment-paperdoll'),
+        legacyKeeperCancelBtn: document.getElementById('legacy-keeper-cancel-btn'),
+        legacyKeeperSaveBtn: document.getElementById('legacy-keeper-save-btn'),
     };
 }
-
 
 /**
  * Renders a list of items or gems into a grid container.
@@ -91,7 +102,7 @@ export function initDOMElements() {
  * @param {object} options - Configuration options.
  */
 export function renderGrid(containerEl, items, options = {}) {
-    const { calculatePositions = false, type = 'item', selectedItem = null, salvageSelections = [], prestigeSelections = [] } = options;
+    const { calculatePositions = false, type = 'item', selectedItem = null, salvageSelections = [] } = options;
     
     containerEl.innerHTML = '';
     const tempPlacement = []; 
@@ -128,7 +139,6 @@ export function renderGrid(containerEl, items, options = {}) {
             if (item.locked) wrapper.classList.add('locked-item');
             if (selectedItem && selectedItem.id === item.id) wrapper.classList.add('selected-for-forge');
             if (salvageSelections.some(sel => sel.id === item.id)) wrapper.classList.add('selected-for-salvage');
-            if (prestigeSelections.includes(item.id)) wrapper.classList.add('selected-for-prestige');
             
             containerEl.appendChild(wrapper);
         }
@@ -136,10 +146,62 @@ export function renderGrid(containerEl, items, options = {}) {
     containerEl.style.gridTemplateRows = `repeat(${Math.max(10, maxRow)}, var(--grid-cell-size))`;
 }
 
+
+/**
+ * Renders an equipment paperdoll with various states for its slots.
+ * @param {HTMLElement} containerEl - The paperdoll container element.
+ * @param {object} gameState - The main game state.
+ * @param {object} options - Configuration options.
+ */
+export function renderPaperdoll(containerEl, gameState, options = {}) {
+    const { unlockedSlots = [], selectedLegacySlots = [] } = options;
+
+    const slotElements = containerEl.querySelectorAll('.equipment-slot');
+
+    slotElements.forEach(slotEl => {
+        if (!(slotEl instanceof HTMLElement)) return; // Type guard for TypeScript
+
+        const slotName = slotEl.dataset.slotName;
+        if (!slotName) return;
+        
+        const item = gameState.equipment[slotName];
+
+        slotEl.innerHTML = '';
+        slotEl.classList.remove('locked', 'selected-for-legacy', 'permanently-unlocked');
+
+        const isPermanentlyUnlocked = (unlockedSlots.includes(slotName));
+        const isTemporarilySelected = selectedLegacySlots.includes(slotName);
+        
+        // This logic determines if the slot is clickable or shows a lock.
+        // For the main paperdoll, all slots are "unlocked".
+        // For Prestige/Legacy, only those passed in `unlockedSlots` are active.
+        if (isPermanentlyUnlocked || isTemporarilySelected) {
+             if (item) {
+                slotEl.innerHTML = createItemHTML(item);
+            } else {
+                const placeholder = document.createElement('img');
+                placeholder.src = getItemIcon(slotName.replace(/\d/g, ''));
+                placeholder.className = 'placeholder-icon';
+                slotEl.appendChild(placeholder);
+            }
+        } else {
+            slotEl.classList.add('locked');
+        }
+        
+        // Add specific classes for visual highlighting
+        if (isPermanentlyUnlocked && !isTemporarilySelected) {
+            slotEl.classList.add('permanently-unlocked');
+        }
+        if(isTemporarilySelected){
+             slotEl.classList.add('selected-for-legacy');
+        }
+    });
+}
+
 /**
  * Updates the entire game UI based on the current state.
  */
-export function updateUI(elements, gameState, playerStats, currentMonster, salvageMode, craftingGems = [], selectedItemForForge = null, prestigeSelections = []) {
+export function updateUI(elements, gameState, playerStats, currentMonster, salvageMode, craftingGems = [], selectedItemForForge = null) {
     const {
         goldStatEl, scrapStatEl, heroXpTextEl, clickDamageStatEl, dpsStatEl, absorbedStatsListEl,
         monsterHealthTextEl, upgradeClickCostEl, upgradeDpsCostEl, heroLevelEl,
@@ -148,7 +210,7 @@ export function updateUI(elements, gameState, playerStats, currentMonster, salva
         prestigeRequirementTextEl, currentLevelEl, autoProgressCheckboxEl, monsterHealthBarEl,
         upgradeClickLevelEl, upgradeDpsLevelEl, inventorySlotsEl, lootMonsterNameEl,
         lootTableDisplayEl, prestigeButton, gemSlotsEl, gemCraftingSlotsContainer, gemCraftBtn,
-        forgeInventorySlotsEl, forgeSelectedItemEl, forgeRerollBtn, prestigeInventorySlotsEl
+        forgeInventorySlotsEl, forgeSelectedItemEl, forgeRerollBtn
     } = elements;
 
     // --- Stats and Hero Info ---
@@ -199,11 +261,6 @@ export function updateUI(elements, gameState, playerStats, currentMonster, salva
     const allForgeItems = [...Object.values(gameState.equipment).filter(Boolean), ...gameState.inventory];
     renderGrid(forgeInventorySlotsEl, allForgeItems, { calculatePositions: true, selectedItem: selectedItemForForge });
 
-    if (!elements.prestigeFullscreenPanel.classList.contains('hidden')) { 
-        const allPrestigeItems = [...Object.values(gameState.equipment).filter(Boolean), ...gameState.inventory];
-        renderGrid(prestigeInventorySlotsEl, allPrestigeItems, { calculatePositions: true, prestigeSelections });
-    }
-
     if (selectedItemForForge) {
         forgeSelectedItemEl.innerHTML = `<div class="item-wrapper">${createItemHTML(selectedItemForForge)}</div>`;
     } else {
@@ -211,21 +268,10 @@ export function updateUI(elements, gameState, playerStats, currentMonster, salva
     }
     (/** @type {HTMLButtonElement} */ (forgeRerollBtn)).disabled = !selectedItemForForge || gameState.scrap < 50;
     
-    // --- Paperdoll Equipment ---
-    for (const slotName in gameState.equipment) {
-        const slotEl = document.getElementById(`slot-${slotName}`);
-        if (!slotEl) continue;
-        const item = gameState.equipment[slotName];
-        slotEl.innerHTML = '';
-        if (item) {
-            slotEl.innerHTML = createItemHTML(item);
-        } else {
-            const placeholder = document.createElement('img');
-            placeholder.src = getItemIcon(slotName.replace(/\d/g, ''));
-            placeholder.className = 'placeholder-icon';
-            slotEl.appendChild(placeholder);
-        }
-    }
+    // --- Main Paperdoll Equipment ---
+    renderPaperdoll(elements.mainEquipmentPaperdoll, gameState, { 
+        unlockedSlots: Object.keys(gameState.equipment)
+    });
     
     // --- Gem Crafting ---
     const craftingSlots = gemCraftingSlotsContainer.querySelectorAll('.gem-crafting-slot');
@@ -319,6 +365,42 @@ export function updateUI(elements, gameState, playerStats, currentMonster, salva
         }
     }
 }
+
+/**
+ * Renders the Prestige UI panel.
+ * @param {object} elements - The collection of DOM elements.
+ * @param {object} gameState - The main game state object.
+ */
+export function renderPrestigeUI(elements, gameState) {
+    const unlockedSlots = gameState.unlockedLegacySlots || ['sword'];
+    
+    // Render the paperdoll with currently unlocked legacy slots
+    renderPaperdoll(elements.prestigeEquipmentPaperdoll, gameState, {
+        unlockedSlots: unlockedSlots
+    });
+    
+    // Render the inventory for swapping
+    renderGrid(elements.prestigeInventorySlotsEl, gameState.inventory);
+}
+
+
+/**
+ * Renders the Legacy Keeper UI panel.
+ * @param {object} elements - The collection of DOM elements.
+ * @param {object} gameState - The main game state object.
+ * @param {string[]} tempSelections - An array of slot names temporarily selected by the user.
+ */
+export function renderLegacyKeeperUI(elements, gameState, tempSelections) {
+    const permanentlyUnlocked = gameState.unlockedLegacySlots || ['sword'];
+    
+    // Pass both the permanently unlocked slots and the temporary selections to the renderer.
+    // The renderer will handle showing them as "active" slots.
+    renderPaperdoll(elements.legacyKeeperEquipmentPaperdoll, gameState, {
+        unlockedSlots: [...permanentlyUnlocked, ...tempSelections],
+        selectedLegacySlots: tempSelections // This is used for the special highlighting
+    });
+}
+
 
 /**
  * Creates the full HTML block for an item's stats and unique effects.
