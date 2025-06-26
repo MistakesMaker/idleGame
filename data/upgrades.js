@@ -127,6 +127,6 @@ export const PERMANENT_UPGRADES = {
         costScalar: 10,  // Cost scales extremely fast
         bonusType: 'FLAT',
         bonusPerLevel: 1, // +1 item slot per level
-        maxLevel: 7, // Capped at 10 total items (3 base + 7 from this)
+        maxLevel: 8, 
     },
 };

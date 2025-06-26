@@ -531,6 +531,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function showSubZoneModal(subZone) {
         elements.modalTitleEl.textContent = subZone.name;
         elements.modalBodyEl.innerHTML = '';
+        elements.modalCloseBtnEl.classList.remove('hidden');
 
         const startLevel = subZone.levelRange[0];
         const finalLevel = subZone.levelRange[1];
@@ -1580,6 +1581,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function showUnlockConfirmationModal(slotName) {
         elements.modalTitleEl.textContent = 'Confirm Unlock';
         elements.modalBodyEl.innerHTML = `<p>Are you sure you want to permanently unlock the <b>${slotName.charAt(0).toUpperCase() + slotName.slice(1)}</b> legacy slot?</p>`;
+        elements.modalCloseBtnEl.classList.add('hidden');
 
         const confirmBtn = document.createElement('button');
         confirmBtn.textContent = 'Confirm';
