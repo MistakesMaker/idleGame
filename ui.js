@@ -3,7 +3,28 @@
 import { STATS } from './data/stat_pools.js';
 import { getXpForNextLevel, getUpgradeCost, formatNumber, findSubZoneByLevel, getCombinedItemStats, findEmptySpot } from './utils.js';
 import { ITEMS } from './data/items.js';
+import { MONSTERS } from './data/monsters.js';
 import { UNIQUE_EFFECTS } from './data/unique_effects.js';
+
+/**
+ * Checks if an item is a "boss unique" by seeing if it only drops from one monster in the entire game.
+ * @param {string} itemId The base ID of the item to check.
+ * @returns {boolean} True if the item is a unique drop, false otherwise.
+ */
+function isBossUnique(itemId) {
+    let dropCount = 0;
+    for (const monsterKey in MONSTERS) {
+        const monster = MONSTERS[monsterKey];
+        if (monster.lootTable && monster.lootTable.some(loot => loot.item.id === itemId)) {
+            dropCount++;
+        }
+        if (dropCount > 1) {
+            return false; // Optimization: if we find it twice, we can stop early.
+        }
+    }
+    return dropCount === 1;
+}
+
 
 /**
  * Gathers all necessary DOM elements from the page.
@@ -698,6 +719,46 @@ export function showGoldPopup(popupContainerEl, gold) {
     popupContainerEl.appendChild(popup);
     setTimeout(() => popup.remove(), 1500);
 }
+
+/**
+ * Creates a temporary image element and adds it to the monster area to show a visual item drop.
+ * @param {HTMLElement} popupContainerEl - The container inside the monster display area.
+ * @param {object} item - The dropped item object.
+ */
+export function showItemDropAnimation(popupContainerEl, item) {
+    if (!item || !item.icon) return;
+
+    const itemImg = document.createElement('img');
+    itemImg.src = item.icon;
+    itemImg.className = 'item-drop-animation';
+
+    if (isBossUnique(item.baseId)) {
+        itemImg.classList.add('sparkle-animation');
+    }
+
+    const startX = 40 + Math.random() * 20;
+    const startY = 40 + Math.random() * 20;
+    itemImg.style.left = `${startX}%`;
+    itemImg.style.top = `${startY}%`;
+
+    const horizontalDirection = Math.random() < 0.5 ? -1 : 1;
+    const peakX = (50 + Math.random() * 50) * horizontalDirection;
+    const peakY = -(150 + Math.random() * 50);
+    const endX = (100 + Math.random() * 50) * horizontalDirection;
+    const endY = 100;
+
+    itemImg.style.setProperty('--peak-x', `${peakX}px`);
+    itemImg.style.setProperty('--peak-y', `${peakY}px`);
+    itemImg.style.setProperty('--end-x', `${endX}px`);
+    itemImg.style.setProperty('--end-y', `${endY}px`);
+
+    popupContainerEl.appendChild(itemImg);
+
+    setTimeout(() => {
+        itemImg.remove();
+    }, 1500);
+}
+
 
 export function showDpsPopup(popupContainerEl, damage, isCrit = false, isMultiStrike = false) {
     const popup = document.createElement('div');

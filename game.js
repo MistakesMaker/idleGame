@@ -199,6 +199,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const result = logic.monsterDefeated(gameState, playerStats, currentMonster);
         result.logMessages.forEach(msg => logMessage(elements.gameLogEl, msg));
         ui.showGoldPopup(elements.popupContainerEl, result.goldGained);
+        
+        if (result.droppedItem) {
+            ui.showItemDropAnimation(elements.popupContainerEl, result.droppedItem);
+        }
+
         const levelUpLogs = player.gainXP(gameState, result.xpGained);
         levelUpLogs.forEach(msg => logMessage(elements.gameLogEl, msg, 'legendary'));
         const nextRealmIndex = gameState.currentRealmIndex + 1;
