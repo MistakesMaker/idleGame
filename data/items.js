@@ -285,7 +285,6 @@ const greenMeadowsItems = {
         type: 'necklace',
         icon: 'images/icons/amulet_of_power.png',
         width: 2, height: 2,
-        isUnique: true,
         possibleStats: [
             { key: STATS.CLICK_DAMAGE.key, min: 200, max: 250 },
             { key: STATS.DPS.key, min: 400, max: 750 }
