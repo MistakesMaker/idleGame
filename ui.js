@@ -290,7 +290,14 @@ export function updateUI(elements, gameState, playerStats, currentMonster, salva
 
     // --- New Prestige View UI ---
     if (elements.prestigeView.classList.contains('active')) {
-        renderGrid(prestigeInventoryDisplay, gameState.inventory);
+        // Filter the inventory to show only items that can fit in an unlocked prestige slot
+        const unlockedItemTypes = gameState.unlockedPrestigeSlots.map(slot => slot.replace(/\d/g, ''));
+        const filteredInventory = gameState.inventory.filter(item => {
+            const itemType = item.type.replace(/\d/g, '');
+            return unlockedItemTypes.includes(itemType);
+        });
+
+        renderGrid(prestigeInventoryDisplay, filteredInventory, { calculatePositions: true });
         
         prestigeEquipmentPaperdoll.querySelectorAll('.equipment-slot').forEach(slotEl => {
             const slotName = slotEl.id.replace('prestige-slot-', '');
@@ -312,11 +319,12 @@ export function updateUI(elements, gameState, playerStats, currentMonster, salva
                 slotEl.innerHTML += `<i class="fas fa-lock prestige-lock-icon"></i>`;
             }
 
-            slotEl.classList.toggle('selected-for-prestige', prestigeSlotSelections.includes(slotName));
+            slotEl.classList.remove('selected-for-prestige'); // Implicit selection now
         });
         const maxSelections = 1 + playerStats.legacyKeeperBonus;
-        prestigeSelectionCount.textContent = prestigeSlotSelections.length;
-        prestigeSelectionMax.textContent = maxSelections;
+        const currentSelections = gameState.unlockedPrestigeSlots.map(slot => gameState.equipment[slot]).filter(Boolean).length;
+        prestigeSelectionCount.textContent = currentSelections;
+        prestigeSelectionMax.textContent = gameState.unlockedPrestigeSlots.length;
     }
 
 

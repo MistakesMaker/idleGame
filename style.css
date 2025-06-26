@@ -357,12 +357,11 @@ h5 .legendary { color: #f39c12; }
 .item-wrapper.selected-for-forge .item { border: 3px solid #f1c40f !important; }
 
 /* --- PRESTIGE VIEW --- */
-/* This is the key change to make the panel stretch */
 .middle-panel:has(#prestige-view.active) {
-    flex-grow: 0; /* Allow the panel to size based on its content, not flex rules */
+    flex-grow: 0;
     flex-shrink: 0;
     flex-basis: auto;
-    width: auto; /* Let width be determined by its children */
+    width: auto;
 }
 #prestige-view {
     text-align: center;
@@ -378,7 +377,7 @@ h5 .legendary { color: #f39c12; }
     justify-content: center;
 }
 #prestige-equipment-side {
-    flex: 0 0 420px; /* Don't shrink, fixed base width */
+    flex: 0 0 420px;
     display: flex;
     flex-direction: column;
 }
@@ -416,17 +415,13 @@ h5 .legendary { color: #f39c12; }
     pointer-events: none;
 }
 #prestige-inventory-side {
-    flex: 0 0 620px; /* Don't shrink, fixed base width for inventory grid */
+    flex: 0 0 620px;
     display: flex;
     flex-direction: column;
 }
 #prestige-inventory-side .grid-scroll-container {
     flex-grow: 1;
     margin-top: 0;
-}
-#prestige-inventory-display .item-wrapper {
-    filter: grayscale(0.8) brightness(0.7);
-    cursor: not-allowed;
 }
 #prestige-actions {
     margin-top: 15px;

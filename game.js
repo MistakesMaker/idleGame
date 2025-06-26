@@ -20,7 +20,6 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentMonster = { name: "Slime", data: MONSTERS.SLIME };
     let playerStats = { baseClickDamage: 1, baseDps: 0, totalClickDamage: 1, totalDps: 0, bonusGold: 0, magicFind: 0 };
     let salvageMode = { active: false, selections: [] };
-    let prestigeSlotSelections = []; // Now stores slot names, e.g., ['sword', 'helmet']
     let saveTimeout;
     let isShiftPressed = false;
     let lastMousePosition = { x: 0, y: 0 };
@@ -29,7 +28,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let craftingGems = [];
     let selectedItemForForge = null;
     let isResetting = false; 
-    let pendingLegacyKeeperUpgrade = false; // To track if we're in the middle of unlocking a slot
+    let pendingLegacyKeeperUpgrade = false; 
 
     /** @type {DOMElements} */
     let elements = {};
@@ -57,7 +56,7 @@ document.addEventListener('DOMContentLoaded', () => {
             inventory: [],
             inventoryGridInitialized: true,
             gems: [],
-            unlockedPrestigeSlots: ['sword'], // Player starts with sword slot unlocked for prestige
+            unlockedPrestigeSlots: ['sword'], 
             absorbedStats: {},
             absorbedSynergies: [],
             absorbedUniqueEffects: {},
@@ -119,7 +118,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         const equippedSynergyGems = [];
-        const allItems = Object.values(gameState.equipment); // No longer includes legacyItems
+        const allItems = Object.values(gameState.equipment);
 
         for (const item of allItems) {
             if (item) {
@@ -313,7 +312,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function updateAll() {
-        ui.updateUI(elements, gameState, playerStats, currentMonster, salvageMode, craftingGems, selectedItemForForge, prestigeSlotSelections);
+        ui.updateUI(elements, gameState, playerStats, currentMonster, salvageMode, craftingGems, selectedItemForForge, []);
         renderMap();
         renderRealmTabs();
         renderPermanentUpgrades();
@@ -904,7 +903,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         elements.gemCraftingSlotsContainer.addEventListener('click', (e) => {
-            if (!(e.target instanceof HTMLElement)) return;
+            if (!(e.target instanceof Element)) return;
             const slot = e.target.closest('.gem-crafting-slot');
             if (!(slot instanceof HTMLElement)) return;
         
@@ -1057,7 +1056,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (!viewId) return;
 
                 tab.addEventListener('click', () => {
-                    // Do not allow switching away from prestige view
                     if (elements.prestigeView.classList.contains('active')) {
                         logMessage(elements.gameLogEl, "You must confirm or cancel prestige first.", "rare");
                         return;
@@ -1137,7 +1135,6 @@ document.addEventListener('DOMContentLoaded', () => {
             const upgradeId = buyButton.dataset.upgradeId;
             if (!upgradeId) return;
             
-            // Special handling for Legacy Keeper
             if (upgradeId === 'LEGACY_KEEPER') {
                 const upgrade = PERMANENT_UPGRADES[upgradeId];
                 const currentLevel = gameState.permanentUpgrades[upgradeId] || 0;
@@ -1437,53 +1434,57 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function setupPrestigeListeners() {
         elements.prestigeButton.addEventListener('click', () => {
-            prestigeSlotSelections = [];
             ui.switchView(elements, 'prestige-view');
             updateAll();
         });
     
         elements.cancelPrestigeButton.addEventListener('click', () => {
-            prestigeSlotSelections = [];
             ui.switchView(elements, 'map-view');
             updateAll();
         });
     
+        // Unequip from paperdoll
         elements.prestigeEquipmentPaperdoll.addEventListener('click', (event) => {
             if (!(event.target instanceof Element)) return;
             const slotEl = event.target.closest('.equipment-slot');
             if (!(slotEl instanceof HTMLElement)) return;
-            
             const slotName = slotEl.id.replace('prestige-slot-', '');
-    
-            // Check if the slot is unlocked for prestige
-            if (!gameState.unlockedPrestigeSlots.includes(slotName)) {
-                logMessage(elements.gameLogEl, "This equipment slot is not yet unlocked for Prestige.", 'rare');
-                return;
-            }
-            
-            // Check if there is an item in the slot to select
-            if (!gameState.equipment[slotName]) {
-                logMessage(elements.gameLogEl, "There's no item in this slot to select.", 'uncommon');
-                return;
-            }
-    
-            const selectionIndex = prestigeSlotSelections.indexOf(slotName);
-            const maxSelections = 1 + playerStats.legacyKeeperBonus;
-    
-            if (selectionIndex > -1) {
-                // Deselect
-                prestigeSlotSelections.splice(selectionIndex, 1);
-            } else if (prestigeSlotSelections.length < maxSelections) {
-                // Select
-                prestigeSlotSelections.push(slotName);
+            player.unequipItem(gameState, slotName);
+            recalculateStats();
+            updateAll();
+            autoSave();
+        });
+
+        // Equip from filtered inventory
+        elements.prestigeInventoryDisplay.addEventListener('click', (event) => {
+            if (!(event.target instanceof Element)) return;
+            const wrapper = event.target.closest('.item-wrapper');
+            if (!(wrapper instanceof HTMLElement)) return;
+            const id = wrapper.dataset.id;
+            if (!id) return;
+
+            const itemToEquip = gameState.inventory.find(i => String(i.id) === id);
+            if (!itemToEquip) return;
+
+            const result = player.equipItem(gameState, itemToEquip);
+            if (result.success) {
+                if (result.isPendingRing) {
+                    pendingRingEquip = result.item;
+                    showRingSelectionModal(pendingRingEquip);
+                } else {
+                    recalculateStats();
+                }
             } else {
-                logMessage(elements.gameLogEl, `You can only select up to ${maxSelections} item(s) to carry over.`, 'rare');
+                logMessage(elements.gameLogEl, result.message, 'rare');
             }
             updateAll();
+            autoSave();
         });
     
         elements.confirmPrestigeButton.addEventListener('click', () => {
-            const itemsToAbsorb = prestigeSlotSelections.map(slotName => gameState.equipment[slotName]).filter(Boolean);
+            const itemsToAbsorb = gameState.unlockedPrestigeSlots
+                .map(slotName => gameState.equipment[slotName])
+                .filter(Boolean); // Filter out empty slots
             
             const newAbsorbedStats = {};
             const newAbsorbedSynergies = [];
@@ -1508,9 +1509,9 @@ document.addEventListener('DOMContentLoaded', () => {
             }
     
             if (itemsToAbsorb.length > 0) {
-                logMessage(elements.gameLogEl, `Absorbed stats from ${itemsToAbsorb.length} selected item(s)!`, 'epic');
+                logMessage(elements.gameLogEl, `Absorbed stats from ${itemsToAbsorb.length} equipped item(s)!`, 'epic');
             } else {
-                logMessage(elements.gameLogEl, `No items were selected to absorb.`, 'uncommon');
+                logMessage(elements.gameLogEl, `No items were equipped in unlocked slots to absorb.`, 'uncommon');
             }
     
             const heroToPrestige = gameState.hero;
@@ -1568,7 +1569,6 @@ document.addEventListener('DOMContentLoaded', () => {
     
             logMessage(elements.gameLogEl, `PRESTIGE! You are reborn with greater power. Your next goal is Level ${gameState.nextPrestigeLevel}.`, 'legendary');
             
-            prestigeSlotSelections = [];
             ui.switchView(elements, 'map-view');
             recalculateStats();
             startNewMonster();
@@ -1586,7 +1586,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const slotName = slotEl.id.replace('unlock-slot-', '');
             if (gameState.unlockedPrestigeSlots.includes(slotName)) {
-                return; // Already unlocked
+                return;
             }
 
             const upgrade = PERMANENT_UPGRADES.LEGACY_KEEPER;
