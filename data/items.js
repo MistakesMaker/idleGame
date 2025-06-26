@@ -337,6 +337,8 @@ const greenMeadowsItems = {
         name: "Seal of the King",
         type: 'ring',
         icon: 'images/icons/seal_of_the_king.png',
+        canHaveSockets: true,
+        maxSockets: 1,
         width: 1, height: 1,
         isUnique: true,
         possibleStats: [
