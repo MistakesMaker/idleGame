@@ -204,7 +204,6 @@ const greenMeadowsItems = {
         type: 'shield',
         icon: 'images/icons/aegis_of_the_guardian.png',
         width: 2, height: 3,
-        isUnique: true,
         canHaveSockets: true,
         maxSockets: 3,
         possibleStats: [
@@ -413,7 +412,6 @@ const orcVolcanoItems = {
         type: 'sword',
         icon: 'images/icons/orcish_cleaver.png',
         width: 2, height: 3,
-        isUnique: true,
         canHaveSockets: true,
         maxSockets: 2,
         possibleStats: [
@@ -490,7 +488,6 @@ const orcVolcanoItems = {
         type: 'belt',
         icon: 'images/icons/sunstone_buckle.png',
         width: 2, height: 1,
-        isUnique: true,
         possibleStats: [
             { key: STATS.DPS.key, min: 3000, max: 9000 },
             { key: STATS.GOLD_GAIN.key, min: 20, max: 60 },
@@ -504,7 +501,6 @@ const orcVolcanoItems = {
         type: 'ring',
         icon: 'images/icons/obsidian_band.png',
         width: 1, height: 1,
-        isUnique: true,
         possibleStats: [
             { key: STATS.CLICK_DAMAGE.key, min: 50, max: 150 },
             { key: STATS.DPS.key, min: 1000, max: 3000 },
@@ -528,7 +524,6 @@ const orcVolcanoItems = {
         type: 'sword',
         icon: 'images/icons/runic_blade.png',
         width: 2, height: 3,
-        isUnique: true,
         canHaveSockets: true,
         maxSockets: 3,
         possibleStats: [
@@ -542,7 +537,6 @@ const orcVolcanoItems = {
         type: 'helmet',
         icon: 'images/icons/helm_of_valor.png',
         width: 2, height: 2,
-        isUnique: true,
         canHaveSockets: true,
         maxSockets: 2,
         possibleStats: [
@@ -581,7 +575,6 @@ const undeadDesertItems = {
         type: 'platelegs',
         icon: 'images/icons/sandstrider_leggings.png',
         width: 2, height: 3,
-        isUnique: true,
         canHaveSockets: true,
         maxSockets: 3,
         possibleStats: [
@@ -595,7 +588,6 @@ const undeadDesertItems = {
         type: 'platebody',
         icon: 'images/icons/carapace_of_the_scarab.png',
         width: 2, height: 3,
-        isUnique: true,
         canHaveSockets: true,
         maxSockets: 3,
         possibleStats: [
@@ -609,7 +601,6 @@ const undeadDesertItems = {
         type: 'necklace',
         icon: 'images/icons/amulet_of_the_viper.png',
         width: 2, height: 2,
-        isUnique: true,
         canHaveSockets: true,
         maxSockets: 3,
         possibleStats: [
@@ -646,7 +637,6 @@ const undeadDesertItems = {
         type: 'shield',
         icon: 'images/icons/bone_shield.png',
         width: 2, height: 3,
-        isUnique: true,
         canHaveSockets: true,
         maxSockets: 2,
         possibleStats: [
@@ -688,7 +678,6 @@ const undeadDesertItems = {
         type: 'shield',
         icon: 'images/icons/spiked_bulwark.png',
         width: 2, height: 3,
-        isUnique: true,
         canHaveSockets: true,
         maxSockets: 3,
         possibleStats: [
@@ -718,7 +707,6 @@ const undeadDesertItems = {
         type: 'platelegs',
         icon: 'images/icons/bone_legplates.png',
         width: 2, height: 3,
-        isUnique: true,
         canHaveSockets: true,
         maxSockets: 3,
         possibleStats: [
@@ -732,7 +720,6 @@ const undeadDesertItems = {
         type: 'helmet',
         icon: 'images/icons/skull_helm.png',
         width: 2, height: 2,
-        isUnique: true,
         canHaveSockets: true,
         maxSockets: 2,
         possibleStats: [
@@ -787,7 +774,6 @@ const finalDungeonItems = {
         type: 'necklace',
         icon: 'images/icons/bloodstone_pendant.png',
         width: 2, height: 2,
-        isUnique: true,
         canHaveSockets: true,
         maxSockets: 3,
         possibleStats: [
@@ -801,7 +787,6 @@ const finalDungeonItems = {
         type: 'platelegs',
         icon: 'images/icons/greaves_of_haste.png',
         width: 2, height: 3,
-        isUnique: true,
         canHaveSockets: true,
         maxSockets: 3,
         possibleStats: [
@@ -815,7 +800,6 @@ const finalDungeonItems = {
         type: 'platebody',
         icon: 'images/icons/ghastly_robes.png',
         width: 2, height: 3,
-        isUnique: true,
         canHaveSockets: true,
         maxSockets: 3,
         possibleStats: [
@@ -829,7 +813,6 @@ const finalDungeonItems = {
         type: 'helmet',
         icon: 'images/icons/shadow_cowl.png',
         width: 2, height: 2,
-        isUnique: true,
         canHaveSockets: true,
         maxSockets: 2,
         possibleStats: [
@@ -851,7 +834,6 @@ const finalDungeonItems = {
         type: 'shield',
         icon: 'images/icons/mirrored_shield.png',
         width: 2, height: 3,
-        isUnique: true,
         canHaveSockets: true,
         maxSockets: 3,
         possibleStats: [
@@ -865,7 +847,6 @@ const finalDungeonItems = {
         type: 'belt',
         icon: 'images/icons/plague_stitched_cinch.png',
         width: 2, height: 1,
-        isUnique: true,
         possibleStats: [
             { key: STATS.DPS.key, min: 1500, max: 4500 },
             { key: STATS.MAGIC_FIND.key, min: 1, max: 3},
@@ -882,7 +863,6 @@ const finalDungeonItems = {
         type: 'platebody',
         icon: 'images/icons/dragonhide_vest.png',
         width: 2, height: 3,
-        isUnique: true,
         canHaveSockets: true,
         maxSockets: 3,
         possibleStats: [
@@ -896,7 +876,6 @@ const finalDungeonItems = {
         type: 'platelegs',
         icon: 'images/icons/dragonbone_greaves.png',
         width: 2, height: 3,
-        isUnique: true,
         canHaveSockets: true,
         maxSockets: 3,
         possibleStats: [
@@ -910,7 +889,6 @@ const finalDungeonItems = {
         type: 'sword',
         icon: 'images/icons/dragonfang.png',
         width: 2, height: 3,
-        isUnique: true,
         canHaveSockets: true,
         maxSockets: 3,
         possibleStats: [
@@ -924,7 +902,6 @@ const finalDungeonItems = {
         type: 'shield',
         icon: 'images/icons/dragonscale_ward.png',
         width: 2, height: 3,
-        isUnique: true,
         canHaveSockets: true,
         maxSockets: 3,
         possibleStats: [
@@ -938,7 +915,6 @@ const finalDungeonItems = {
         type: 'helmet',
         icon: 'images/icons/dragonbone_headdress.png',
         width: 2, height: 2,
-        isUnique: true,
         canHaveSockets: true,
         maxSockets: 2,
         possibleStats: [
@@ -952,7 +928,6 @@ const finalDungeonItems = {
         type: 'necklace',
         icon: 'images/icons/eye_of_the_dragon.png',
         width: 2, height: 2,
-        isUnique: true,
         canHaveSockets: true,
         maxSockets: 1,
         possibleStats: [
@@ -967,7 +942,6 @@ const finalDungeonItems = {
         type: 'ring',
         icon: 'images/icons/dragonfire_loop.png',
         width: 1, height: 1,
-        isUnique: true,
         canHaveSockets: true,
         maxSockets: 1,
         possibleStats: [
@@ -982,7 +956,6 @@ const finalDungeonItems = {
         type: 'belt',
         icon: 'images/icons/dragonscale_belt.png',
         width: 2, height: 1,
-        isUnique: true,
         canHaveSockets: true,
         maxSockets: 1,
         possibleStats: [
@@ -1006,7 +979,6 @@ const underdarkItems = {
         type: 'helmet',
         icon: 'images/icons/crown_of_wisdom.png',
         width: 2, height: 2,
-        isUnique: true,
         canHaveSockets: true,
         maxSockets: 2,
         possibleStats: [
