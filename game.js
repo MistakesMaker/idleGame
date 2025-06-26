@@ -236,7 +236,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const { newMonster, newMonsterState } = logic.generateMonster(gameState.currentFightingLevel, gameState.specialEncounter);
         currentMonster = newMonster;
         gameState.monster = newMonsterState;
-        (/** @type {HTMLImageElement} */ (elements.monsterImageEl)).src = currentMonster.data.image;
+        
+        const monsterImageEl = (/** @type {HTMLImageElement} */ (elements.monsterImageEl));
+        monsterImageEl.src = currentMonster.data.image;
+        monsterImageEl.classList.toggle('boss-image', !!currentMonster.data.isBoss);
+        
         elements.monsterNameEl.textContent = currentMonster.name;
 
         if (currentMonster.data.isSpecial) {
