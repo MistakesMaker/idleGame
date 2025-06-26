@@ -314,9 +314,7 @@ export function updateUI(elements, gameState, playerStats, currentMonster, salva
 
             const isUnlocked = gameState.unlockedPrestigeSlots.includes(slotName);
             slotEl.classList.toggle('prestige-locked', !isUnlocked);
-            if (!isUnlocked) {
-                slotEl.innerHTML += `<i class="fas fa-lock prestige-lock-icon"></i>`;
-            }
+            slotEl.classList.toggle('prestige-unlocked', isUnlocked);
 
             slotEl.classList.remove('selected-for-prestige');
         });

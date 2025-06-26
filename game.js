@@ -1435,11 +1435,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function setupPrestigeListeners() {
         elements.prestigeButton.addEventListener('click', () => {
+            document.querySelector('.actions-panel').classList.add('hidden');
+            document.querySelector('.upgrades-panel').classList.add('hidden');
             ui.switchView(elements, 'prestige-view');
             updateAll();
         });
     
         elements.cancelPrestigeButton.addEventListener('click', () => {
+            document.querySelector('.actions-panel').classList.remove('hidden');
+            document.querySelector('.upgrades-panel').classList.remove('hidden');
             ui.switchView(elements, 'map-view');
             updateAll();
         });
@@ -1570,6 +1574,8 @@ document.addEventListener('DOMContentLoaded', () => {
     
             logMessage(elements.gameLogEl, `PRESTIGE! You are reborn with greater power. Your next goal is Level ${gameState.nextPrestigeLevel}.`, 'legendary');
             
+            document.querySelector('.actions-panel').classList.remove('hidden');
+            document.querySelector('.upgrades-panel').classList.remove('hidden');
             ui.switchView(elements, 'map-view');
             recalculateStats();
             startNewMonster();
@@ -1601,6 +1607,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const closeThisModal = () => {
             elements.modalBackdropEl.classList.add('hidden');
+            elements.modalCloseBtnEl.classList.remove('hidden');
         };
 
         cancelBtn.onclick = closeThisModal;

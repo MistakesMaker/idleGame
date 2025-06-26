@@ -357,12 +357,17 @@ h5 .legendary { color: #f39c12; }
 .item-wrapper.selected-for-forge .item { border: 3px solid #f1c40f !important; }
 
 /* --- PRESTIGE VIEW --- */
-.middle-panel:has(#prestige-view.active) {
+.game-container:has(#prestige-view.active) .middle-panel {
+    flex-grow: 1;
+    flex-shrink: 1;
+    min-width: 1000px;
+}
+.game-container:has(#prestige-view.active) .left-panel {
     flex-grow: 0;
     flex-shrink: 0;
-    flex-basis: auto;
-    width: auto;
 }
+
+
 #prestige-view {
     text-align: center;
 }
@@ -383,14 +388,15 @@ h5 .legendary { color: #f39c12; }
 }
 #prestige-equipment-paperdoll {
     position: relative;
-    flex-grow: 1;
     width: 100%;
-    max-width: 400px;
+    aspect-ratio: 400 / 600;
     margin: 0 auto;
-    background-image: url('images/paperdoll-bg.png');
-    background-size: contain;
+    background-image: url('images/backgrounds/bg_prestige.png');
+    background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
+    border-radius: 8px;
+    border: 2px solid #4a637e;
 }
 #prestige-equipment-side .equipment-slot {
     cursor: pointer;
@@ -405,15 +411,14 @@ h5 .legendary { color: #f39c12; }
 #prestige-equipment-side .equipment-slot.prestige-locked:hover {
     border-color: #4a637e;
 }
-.prestige-lock-icon {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    font-size: 3em;
-    color: rgba(236, 240, 241, 0.5);
-    pointer-events: none;
+#prestige-equipment-side .equipment-slot.prestige-unlocked {
+    animation: prestige-glow 2.5s infinite alternate;
 }
+@keyframes prestige-glow {
+    from { box-shadow: 0 0 8px rgba(241, 196, 15, 0.4); border-color: rgba(241, 196, 15, 0.6); }
+    to { box-shadow: 0 0 20px rgba(241, 196, 15, 0.9); border-color: rgba(241, 196, 15, 1); }
+}
+
 #prestige-inventory-side {
     flex: 0 0 620px;
     display: flex;
@@ -431,10 +436,12 @@ h5 .legendary { color: #f39c12; }
     margin-bottom: 10px;
 }
 #prestige-actions {
-    margin-top: 15px;
+    margin-top: 20px;
     display: flex;
     justify-content: center;
     gap: 20px;
+    width: 100%;
+    flex-shrink: 0; /* Prevent buttons from shrinking */
 }
 #cancel-prestige-btn {
     background: #7f8c8d;
