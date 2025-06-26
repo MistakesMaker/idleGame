@@ -728,6 +728,11 @@ export function showGoldPopup(popupContainerEl, gold) {
 export function showItemDropAnimation(popupContainerEl, item) {
     if (!item || !item.icon) return;
 
+    // Create a wrapper for the path animation
+    const wrapper = document.createElement('div');
+    wrapper.className = 'item-drop-wrapper';
+
+    // Create the image for the spin and sparkle
     const itemImg = document.createElement('img');
     itemImg.src = item.icon;
     itemImg.className = 'item-drop-animation';
@@ -738,8 +743,8 @@ export function showItemDropAnimation(popupContainerEl, item) {
 
     const startX = 40 + Math.random() * 20;
     const startY = 40 + Math.random() * 20;
-    itemImg.style.left = `${startX}%`;
-    itemImg.style.top = `${startY}%`;
+    wrapper.style.left = `${startX}%`;
+    wrapper.style.top = `${startY}%`;
 
     const horizontalDirection = Math.random() < 0.5 ? -1 : 1;
     const peakX = (50 + Math.random() * 50) * horizontalDirection;
@@ -747,15 +752,18 @@ export function showItemDropAnimation(popupContainerEl, item) {
     const endX = (100 + Math.random() * 50) * horizontalDirection;
     const endY = 100;
 
-    itemImg.style.setProperty('--peak-x', `${peakX}px`);
-    itemImg.style.setProperty('--peak-y', `${peakY}px`);
-    itemImg.style.setProperty('--end-x', `${endX}px`);
-    itemImg.style.setProperty('--end-y', `${endY}px`);
+    // Set CSS variables on the wrapper for the path
+    wrapper.style.setProperty('--peak-x', `${peakX}px`);
+    wrapper.style.setProperty('--peak-y', `${peakY}px`);
+    wrapper.style.setProperty('--end-x', `${endX}px`);
+    wrapper.style.setProperty('--end-y', `${endY}px`);
 
-    popupContainerEl.appendChild(itemImg);
+    // Append image to wrapper, and wrapper to container
+    wrapper.appendChild(itemImg);
+    popupContainerEl.appendChild(wrapper);
 
     setTimeout(() => {
-        itemImg.remove();
+        wrapper.remove();
     }, 1500);
 }
 
