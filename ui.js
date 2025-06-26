@@ -99,7 +99,7 @@ export function initDOMElements() {
  * @param {object} options - Configuration options.
  */
 export function renderGrid(containerEl, items, options = {}) {
-    const { calculatePositions = false, type = 'item', selectedItem = null, salvageSelections = [], prestigeSlotSelections = [] } = options;
+    const { calculatePositions = false, type = 'item', selectedItem = null, salvageSelections = [], showLockIcon = true } = options;
     
     containerEl.innerHTML = '';
     const tempPlacement = []; 
@@ -131,7 +131,7 @@ export function renderGrid(containerEl, items, options = {}) {
                 maxRow = currentMaxRow;
             }
 
-            wrapper.innerHTML = type === 'gem' ? createGemHTML(item) : createItemHTML(item);
+            wrapper.innerHTML = type === 'gem' ? createGemHTML(item) : createItemHTML(item, showLockIcon);
             
             if (item.locked) wrapper.classList.add('locked-item');
             if (selectedItem && selectedItem.id === item.id) wrapper.classList.add('selected-for-forge');
@@ -221,7 +221,7 @@ export function updateUI(elements, gameState, playerStats, currentMonster, salva
         const item = gameState.equipment[slotName];
         slotEl.innerHTML = '';
         if (item) {
-            slotEl.innerHTML = createItemHTML(item);
+            slotEl.innerHTML = createItemHTML(item, false); // Don't show lock icon on paperdoll
         } else {
             const placeholder = document.createElement('img');
             placeholder.src = getItemIcon(slotName.replace(/\d/g, ''));
@@ -290,14 +290,13 @@ export function updateUI(elements, gameState, playerStats, currentMonster, salva
 
     // --- New Prestige View UI ---
     if (elements.prestigeView.classList.contains('active')) {
-        // Filter the inventory to show only items that can fit in an unlocked prestige slot
         const unlockedItemTypes = gameState.unlockedPrestigeSlots.map(slot => slot.replace(/\d/g, ''));
         const filteredInventory = gameState.inventory.filter(item => {
             const itemType = item.type.replace(/\d/g, '');
             return unlockedItemTypes.includes(itemType);
         });
 
-        renderGrid(prestigeInventoryDisplay, filteredInventory, { calculatePositions: true });
+        renderGrid(prestigeInventoryDisplay, filteredInventory, { calculatePositions: true, showLockIcon: false });
         
         prestigeEquipmentPaperdoll.querySelectorAll('.equipment-slot').forEach(slotEl => {
             const slotName = slotEl.id.replace('prestige-slot-', '');
@@ -305,7 +304,7 @@ export function updateUI(elements, gameState, playerStats, currentMonster, salva
             slotEl.innerHTML = '';
             
             if (item) {
-                slotEl.innerHTML = createItemHTML(item);
+                slotEl.innerHTML = createItemHTML(item, false);
             } else {
                 const placeholder = document.createElement('img');
                 placeholder.src = getItemIcon(slotName.replace(/\d/g, ''));
@@ -319,9 +318,8 @@ export function updateUI(elements, gameState, playerStats, currentMonster, salva
                 slotEl.innerHTML += `<i class="fas fa-lock prestige-lock-icon"></i>`;
             }
 
-            slotEl.classList.remove('selected-for-prestige'); // Implicit selection now
+            slotEl.classList.remove('selected-for-prestige');
         });
-        const maxSelections = 1 + playerStats.legacyKeeperBonus;
         const currentSelections = gameState.unlockedPrestigeSlots.map(slot => gameState.equipment[slot]).filter(Boolean).length;
         prestigeSelectionCount.textContent = currentSelections;
         prestigeSelectionMax.textContent = gameState.unlockedPrestigeSlots.length;
@@ -619,8 +617,11 @@ export function createLootComparisonTooltipHTML(potentialItem, equippedItem, equ
 
 /**
  * Creates the HTML for an item's icon-centric view in the grid.
+ * @param {object} item - The item to create HTML for.
+ * @param {boolean} [showLock=true] - Whether to render the lock icon.
+ * @returns {string} The generated HTML string.
  */
-export function createItemHTML(item) {
+export function createItemHTML(item, showLock = true) {
     if (!item) return '';
     let socketsHTML = '';
     if (item.sockets) {
@@ -637,7 +638,7 @@ export function createItemHTML(item) {
 
     const iconSrc = item.icon || getItemIcon(item.type);
     
-    const lockHTML = item.locked !== undefined ? `<i class="fas ${item.locked ? 'fa-lock' : 'fa-lock-open'} lock-icon"></i>` : '';
+    const lockHTML = showLock && item.locked !== undefined ? `<i class="fas ${item.locked ? 'fa-lock' : 'fa-lock-open'} lock-icon"></i>` : '';
 
     return `<div class="item ${item.rarity}">
                 <img src="${iconSrc}" class="item-icon" alt="${item.name}">

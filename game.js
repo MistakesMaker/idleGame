@@ -903,7 +903,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         elements.gemCraftingSlotsContainer.addEventListener('click', (e) => {
-            if (!(e.target instanceof Element)) return;
+            if (!(e.target instanceof HTMLElement)) return;
             const slot = e.target.closest('.gem-crafting-slot');
             if (!(slot instanceof HTMLElement)) return;
         
@@ -1484,7 +1484,7 @@ document.addEventListener('DOMContentLoaded', () => {
         elements.confirmPrestigeButton.addEventListener('click', () => {
             const itemsToAbsorb = gameState.unlockedPrestigeSlots
                 .map(slotName => gameState.equipment[slotName])
-                .filter(Boolean); // Filter out empty slots
+                .filter(Boolean);
             
             const newAbsorbedStats = {};
             const newAbsorbedSynergies = [];
@@ -1577,35 +1577,64 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    function showUnlockConfirmationModal(slotName) {
+        elements.modalTitleEl.textContent = 'Confirm Unlock';
+        elements.modalBodyEl.innerHTML = `<p>Are you sure you want to permanently unlock the <b>${slotName.charAt(0).toUpperCase() + slotName.slice(1)}</b> legacy slot?</p>`;
+
+        const confirmBtn = document.createElement('button');
+        confirmBtn.textContent = 'Confirm';
+        confirmBtn.style.background = 'linear-gradient(145deg, #27ae60, #2ecc71)';
+        confirmBtn.style.borderBottomColor = '#229954';
+
+        const cancelBtn = document.createElement('button');
+        cancelBtn.textContent = 'Cancel';
+        cancelBtn.style.background = '#c0392b';
+        cancelBtn.style.borderBottomColor = '#922b21';
+
+        const buttonContainer = document.createElement('div');
+        buttonContainer.style.marginTop = '20px';
+        buttonContainer.appendChild(confirmBtn);
+        buttonContainer.appendChild(cancelBtn);
+        elements.modalBodyEl.appendChild(buttonContainer);
+
+        const closeThisModal = () => {
+            elements.modalBackdropEl.classList.add('hidden');
+        };
+
+        cancelBtn.onclick = closeThisModal;
+
+        confirmBtn.onclick = () => {
+            const upgrade = PERMANENT_UPGRADES.LEGACY_KEEPER;
+            const currentLevel = gameState.permanentUpgrades.LEGACY_KEEPER || 0;
+            const cost = Math.floor(upgrade.baseCost * Math.pow(upgrade.costScalar, currentLevel));
+            
+            gameState.gold -= cost;
+            gameState.permanentUpgrades.LEGACY_KEEPER++;
+            gameState.unlockedPrestigeSlots.push(slotName);
+            
+            logMessage(elements.gameLogEl, `You have unlocked the <b class="epic">${slotName.charAt(0).toUpperCase() + slotName.slice(1)}</b> slot for Prestige!`, 'epic');
+            
+            pendingLegacyKeeperUpgrade = false;
+            closeThisModal();
+            ui.hideUnlockSlotModal(elements);
+            recalculateStats();
+            updateAll();
+            autoSave();
+        };
+
+        elements.modalBackdropEl.classList.remove('hidden');
+    }
+
     function setupLegacyKeeperModalListeners() {
         elements.unlockSlotPaperdoll.addEventListener('click', (e) => {
             if (!pendingLegacyKeeperUpgrade) return;
             if (!(e.target instanceof Element)) return;
             const slotEl = e.target.closest('.equipment-slot');
-            if (!(slotEl instanceof HTMLElement)) return;
-
-            const slotName = slotEl.id.replace('unlock-slot-', '');
-            if (gameState.unlockedPrestigeSlots.includes(slotName)) {
+            if (!(slotEl instanceof HTMLElement) || slotEl.classList.contains('prestige-unlocked')) {
                 return;
             }
-
-            const upgrade = PERMANENT_UPGRADES.LEGACY_KEEPER;
-            const currentLevel = gameState.permanentUpgrades.LEGACY_KEEPER || 0;
-            const cost = Math.floor(upgrade.baseCost * Math.pow(upgrade.costScalar, currentLevel));
-
-            if (gameState.gold >= cost) {
-                gameState.gold -= cost;
-                gameState.permanentUpgrades.LEGACY_KEEPER++;
-                gameState.unlockedPrestigeSlots.push(slotName);
-                
-                logMessage(elements.gameLogEl, `You have unlocked the <b class="epic">${slotName.charAt(0).toUpperCase() + slotName.slice(1)}</b> slot for Prestige!`, 'epic');
-                
-                pendingLegacyKeeperUpgrade = false;
-                ui.hideUnlockSlotModal(elements);
-                recalculateStats();
-                updateAll();
-                autoSave();
-            }
+            const slotName = slotEl.id.replace('unlock-slot-', '');
+            showUnlockConfirmationModal(slotName);
         });
 
         elements.unlockSlotCancelBtn.addEventListener('click', () => {
