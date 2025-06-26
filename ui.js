@@ -77,19 +77,21 @@ export function initDOMElements() {
         ringSelectionCancelBtn: document.getElementById('ring-selection-cancel-btn'),
         permanentUpgradesContainerEl: document.getElementById('permanent-upgrades-container'),
 
-        // Main Paperdoll
+        // Main Equipment View & Paperdoll
         mainEquipmentPaperdoll: document.getElementById('main-equipment-paperdoll'),
+        equipmentView: document.getElementById('equipment-view'), // The main equipment view
+        inventoryView: document.getElementById('inventory-view'), // The main inventory view
+        equipmentControlsWrapper: document.getElementById('equipment-controls-wrapper'),
+        prestigeControls: document.getElementById('prestige-controls'), // div containing prestige buttons
+        legacyKeeperControls: document.getElementById('legacy-keeper-controls'), // div containing LK buttons (in equipment tab for now)
 
-        // Prestige UI
-        prestigeUiPanel: document.getElementById('prestige-ui-panel'),
-        prestigeEquipmentPaperdoll: document.getElementById('prestige-equipment-paperdoll'),
-        prestigeInventorySlotsEl: document.getElementById('prestige-inventory-slots'),
-        prestigeBackButton: document.getElementById('prestige-back-btn'),
+        // Prestige UI (now part of equipment tab)
         confirmPrestigeButton: document.getElementById('confirm-prestige-btn'),
+        prestigeCancelButton: document.getElementById('prestige-cancel-btn'), // New button
 
-        // Legacy Keeper UI
-        legacyKeeperPanel: document.getElementById('legacy-keeper-panel'),
-        legacyKeeperEquipmentPaperdoll: document.getElementById('legacy-keeper-equipment-paperdoll'),
+        // Legacy Keeper Modal
+        legacyKeeperPanel: document.getElementById('legacy-keeper-panel'), // The modal itself
+        legacyKeeperEquipmentPaperdoll: document.getElementById('legacy-keeper-equipment-paperdoll'), // Paperdoll within the modal
         legacyKeeperCancelBtn: document.getElementById('legacy-keeper-cancel-btn'),
         legacyKeeperSaveBtn: document.getElementById('legacy-keeper-save-btn'),
     };
@@ -103,18 +105,18 @@ export function initDOMElements() {
  */
 export function renderGrid(containerEl, items, options = {}) {
     const { calculatePositions = false, type = 'item', selectedItem = null, salvageSelections = [] } = options;
-    
+
     containerEl.innerHTML = '';
-    const tempPlacement = []; 
+    const tempPlacement = [];
     let maxRow = 0;
 
     for (const item of items) {
         const wrapper = document.createElement('div');
         wrapper.className = type === 'gem' ? 'gem-wrapper' : 'item-wrapper';
-        
+
         const id = type === 'gem' ? item.id : item.id;
         wrapper.dataset.id = String(id);
-        
+
         let pos;
         if (calculatePositions) {
             pos = findEmptySpot(item.width, item.height, tempPlacement);
@@ -128,18 +130,18 @@ export function renderGrid(containerEl, items, options = {}) {
         if (pos && pos.x !== -1) {
             wrapper.style.gridColumn = `${pos.x + 1} / span ${item.width}`;
             wrapper.style.gridRow = `${pos.y + 1} / span ${item.height}`;
-            
+
             const currentMaxRow = pos.y + item.height;
             if (currentMaxRow > maxRow) {
                 maxRow = currentMaxRow;
             }
 
             wrapper.innerHTML = type === 'gem' ? createGemHTML(item) : createItemHTML(item);
-            
+
             if (item.locked) wrapper.classList.add('locked-item');
             if (selectedItem && selectedItem.id === item.id) wrapper.classList.add('selected-for-forge');
             if (salvageSelections.some(sel => sel.id === item.id)) wrapper.classList.add('selected-for-salvage');
-            
+
             containerEl.appendChild(wrapper);
         }
     }
@@ -154,54 +156,70 @@ export function renderGrid(containerEl, items, options = {}) {
  * @param {object} options - Configuration options.
  */
 export function renderPaperdoll(containerEl, gameState, options = {}) {
-    const { unlockedSlots = [], selectedLegacySlots = [] } = options;
+    const {
+        mode = 'normal', // 'normal', 'prestigeMode', 'legacyKeeperMode'
+        permanentlyUnlockedSlots = [], // Slots permanently unlocked by Legacy Keeper
+        tempSelectedLegacySlots = [] // Slots temporarily selected in Legacy Keeper UI
+    } = options;
 
     const slotElements = containerEl.querySelectorAll('.equipment-slot');
 
     slotElements.forEach(slotEl => {
-        if (!(slotEl instanceof HTMLElement)) return; // Type guard for TypeScript
+        if (!(slotEl instanceof HTMLElement)) return;
 
         const slotName = slotEl.dataset.slotName;
         if (!slotName) return;
-        
+
         const item = gameState.equipment[slotName];
-
         slotEl.innerHTML = '';
-        slotEl.classList.remove('locked', 'selected-for-legacy', 'permanently-unlocked');
+        slotEl.className = 'equipment-slot'; // Reset classes
+        slotEl.dataset.slotName = slotName; // Ensure data-slot-name is preserved
 
-        const isPermanentlyUnlocked = (unlockedSlots.includes(slotName));
-        const isTemporarilySelected = selectedLegacySlots.includes(slotName);
-        
-        // This logic determines if the slot is clickable or shows a lock.
-        // For the main paperdoll, all slots are "unlocked".
-        // For Prestige/Legacy, only those passed in `unlockedSlots` are active.
-        if (isPermanentlyUnlocked || isTemporarilySelected) {
-             if (item) {
+        let isSlotActive = false; // Determines if the slot is clickable/interactable
+        let isVisuallyLocked = false; // Determines if the big lock icon shows
+
+        if (mode === 'normal') {
+            isSlotActive = true;
+        } else if (mode === 'prestigeMode') {
+            isSlotActive = permanentlyUnlockedSlots.includes(slotName);
+            isVisuallyLocked = !isSlotActive;
+        } else if (mode === 'legacyKeeperMode') {
+            // In Legacy Keeper mode, all slots are "active" for selection, but visually distinct
+            isSlotActive = true; // All slots are clickable to select/deselect
+            if (permanentlyUnlockedSlots.includes(slotName)) {
+                slotEl.classList.add('permanently-unlocked'); // Already saved legacy slot
+            } else if (tempSelectedLegacySlots.includes(slotName)) {
+                slotEl.classList.add('selected-for-legacy'); // Newly selected for this upgrade
+            } else {
+                isVisuallyLocked = true; // Not yet a legacy slot, shows lock
+            }
+        }
+
+        if (isSlotActive) {
+            if (item) {
                 slotEl.innerHTML = createItemHTML(item);
+                 if (mode === 'prestigeMode' && item.locked) { // If item itself is locked, show small lock
+                    slotEl.querySelector('.item')?.classList.add('locked-item');
+                }
             } else {
                 const placeholder = document.createElement('img');
                 placeholder.src = getItemIcon(slotName.replace(/\d/g, ''));
                 placeholder.className = 'placeholder-icon';
                 slotEl.appendChild(placeholder);
             }
-        } else {
+        }
+
+        if (isVisuallyLocked) {
             slotEl.classList.add('locked');
-        }
-        
-        // Add specific classes for visual highlighting
-        if (isPermanentlyUnlocked && !isTemporarilySelected) {
-            slotEl.classList.add('permanently-unlocked');
-        }
-        if(isTemporarilySelected){
-             slotEl.classList.add('selected-for-legacy');
         }
     });
 }
 
+
 /**
  * Updates the entire game UI based on the current state.
  */
-export function updateUI(elements, gameState, playerStats, currentMonster, salvageMode, craftingGems = [], selectedItemForForge = null) {
+export function updateUI(elements, gameState, playerStats, currentMonster, salvageMode, craftingGems = [], selectedItemForForge = null, tempLegacySelections = []) {
     const {
         goldStatEl, scrapStatEl, heroXpTextEl, clickDamageStatEl, dpsStatEl, absorbedStatsListEl,
         monsterHealthTextEl, upgradeClickCostEl, upgradeDpsCostEl, heroLevelEl,
@@ -210,7 +228,10 @@ export function updateUI(elements, gameState, playerStats, currentMonster, salva
         prestigeRequirementTextEl, currentLevelEl, autoProgressCheckboxEl, monsterHealthBarEl,
         upgradeClickLevelEl, upgradeDpsLevelEl, inventorySlotsEl, lootMonsterNameEl,
         lootTableDisplayEl, prestigeButton, gemSlotsEl, gemCraftingSlotsContainer, gemCraftBtn,
-        forgeInventorySlotsEl, forgeSelectedItemEl, forgeRerollBtn
+        forgeInventorySlotsEl, forgeSelectedItemEl, forgeRerollBtn,
+        mainEquipmentPaperdoll, equipmentView, inventoryView,
+        prestigeControls, legacyKeeperControls, confirmPrestigeButton, prestigeCancelButton,
+        mainEquipmentTabBtn
     } = elements;
 
     // --- Stats and Hero Info ---
@@ -253,11 +274,11 @@ export function updateUI(elements, gameState, playerStats, currentMonster, salva
     document.getElementById('upgrade-click-damage').classList.toggle('disabled', gameState.gold < clickCost);
     document.getElementById('upgrade-dps').classList.toggle('disabled', gameState.gold < dpsCost);
     (/** @type {HTMLButtonElement} */ (document.getElementById('buy-loot-crate-btn'))).disabled = gameState.scrap < 50;
-    
+
     // --- Grid Renders ---
     renderGrid(inventorySlotsEl, gameState.inventory, { salvageSelections: salvageMode.selections });
     renderGrid(gemSlotsEl, gameState.gems, { type: 'gem', calculatePositions: true });
-    
+
     const allForgeItems = [...Object.values(gameState.equipment).filter(Boolean), ...gameState.inventory];
     renderGrid(forgeInventorySlotsEl, allForgeItems, { calculatePositions: true, selectedItem: selectedItemForForge });
 
@@ -267,12 +288,24 @@ export function updateUI(elements, gameState, playerStats, currentMonster, salva
         forgeSelectedItemEl.innerHTML = `<p>Select an item to begin.</p>`;
     }
     (/** @type {HTMLButtonElement} */ (forgeRerollBtn)).disabled = !selectedItemForForge || gameState.scrap < 50;
-    
+
     // --- Main Paperdoll Equipment ---
-    renderPaperdoll(elements.mainEquipmentPaperdoll, gameState, { 
-        unlockedSlots: Object.keys(gameState.equipment)
+    // The main paperdoll's rendering depends on the uiMode
+    let paperdollMode = 'normal';
+    let paperdollUnlockedSlots = Object.keys(gameState.equipment); // By default, all slots are "active" in normal mode
+
+    if (gameState.uiMode === 'prestigeMode') {
+        paperdollMode = 'prestigeMode';
+        paperdollUnlockedSlots = gameState.unlockedLegacySlots;
+    }
+    // Legacy Keeper mode uses a separate paperdoll in its modal, handled by renderLegacyKeeperUI
+
+    renderPaperdoll(mainEquipmentPaperdoll, gameState, {
+        mode: paperdollMode,
+        permanentlyUnlockedSlots: gameState.unlockedLegacySlots, // For prestige mode correct visuals
     });
-    
+
+
     // --- Gem Crafting ---
     const craftingSlots = gemCraftingSlotsContainer.querySelectorAll('.gem-crafting-slot');
     craftingSlots.forEach((slot, index) => {
@@ -282,41 +315,33 @@ export function updateUI(elements, gameState, playerStats, currentMonster, salva
         }
     });
     (/** @type {HTMLButtonElement} */ (gemCraftBtn)).disabled = craftingGems.length !== 2 || gameState.scrap < 100;
-    
-    // --- Presets & Prestige ---
+
+    // --- Presets ---
     document.querySelectorAll('.preset-btn').forEach((btn, index) => {
         btn.textContent = gameState.presets[index].name;
         btn.classList.toggle('active', index === gameState.activePresetIndex);
+        (/** @type {HTMLButtonElement} */ (btn)).disabled = (gameState.uiMode === 'prestigeMode' || gameState.uiMode === 'legacyKeeperMode');
     });
-    
+
+    // --- Prestige Area (Actions Panel) ---
     absorbedStatsListEl.innerHTML = '';
     const absorbedStats = gameState.absorbedStats || {};
-
     const prestigeStatsToShow = {
         [STATS.DPS.key]: { icon: 'fa-sword', label: 'DPS' },
         [STATS.CLICK_DAMAGE.key]: { icon: 'fa-hand-rock', label: 'Click Dmg' },
         [STATS.GOLD_GAIN.key]: { icon: 'fa-coins', label: '% Gold Gain' },
         [STATS.MAGIC_FIND.key]: { icon: 'fa-star', label: '% Magic Find' },
     };
-
     for (const [key, config] of Object.entries(prestigeStatsToShow)) {
         if (absorbedStats[key] > 0) {
             const isPercent = STATS[Object.keys(STATS).find(k => STATS[k].key === key)].type === 'percent';
             const value = isPercent ? `${absorbedStats[key].toFixed(2)}%` : formatNumber(absorbedStats[key]);
-            
             const statEl = document.createElement('div');
             statEl.className = 'prestige-stat-entry';
-            statEl.innerHTML = `
-                <i class="fas ${config.icon}"></i>
-                <div class="prestige-stat-text">
-                    <div>${config.label}:</div>
-                    <div>${value}</div>
-                </div>
-            `;
+            statEl.innerHTML = `<i class="fas ${config.icon}"></i><div class="prestige-stat-text"><div>${config.label}:</div><div>${value}</div></div>`;
             absorbedStatsListEl.appendChild(statEl);
         }
     }
-    
     const absorbedUniqueEffects = gameState.absorbedUniqueEffects || {};
     for (const [effectKey, count] of Object.entries(absorbedUniqueEffects)) {
         if (count > 0) {
@@ -325,24 +350,41 @@ export function updateUI(elements, gameState, playerStats, currentMonster, salva
                 const stackText = count > 1 ? ` (x${count})` : '';
                 const effectEl = document.createElement('div');
                 effectEl.className = 'prestige-stat-entry';
-                effectEl.innerHTML = `
-                    <i class="fas fa-magic"></i>
-                    <div class="prestige-stat-text">
-                        <div>Absorbed Unique:</div>
-                        <div>${effectData.name}${stackText}</div>
-                    </div>
-                `;
+                effectEl.innerHTML = `<i class="fas fa-magic"></i><div class="prestige-stat-text"><div>Absorbed Unique:</div><div>${effectData.name}${stackText}</div></div>`;
                 effectEl.title = effectData.description;
                 absorbedStatsListEl.appendChild(effectEl);
             }
         }
     }
-
-
     const nextPrestigeLevel = gameState.nextPrestigeLevel || 100;
     prestigeCountStatEl.textContent = (gameState.prestigeCount || 0).toString();
     prestigeRequirementTextEl.innerHTML = `Defeat the boss at Level <b>${nextPrestigeLevel}</b> to Prestige.`;
-    (/** @type {HTMLButtonElement} */ (prestigeButton)).disabled = !gameState.currentRunCompletedLevels.includes(nextPrestigeLevel);
+    (/** @type {HTMLButtonElement} */ (prestigeButton)).disabled = !gameState.currentRunCompletedLevels.includes(nextPrestigeLevel) || gameState.uiMode !== 'normal';
+
+
+    // --- UI Mode Specific Adjustments ---
+    if (gameState.uiMode === 'prestigeMode') {
+        equipmentView.classList.add('prestige-mode-active');
+        inventoryView.classList.add('active'); // Show inventory alongside equipment
+        inventoryView.classList.remove('hidden');
+        prestigeControls.classList.remove('hidden');
+        legacyKeeperControls.classList.add('hidden'); // Hide LK controls if they were visible
+        mainEquipmentTabBtn.textContent = "Prestige Setup"; // Change tab name
+    } else {
+        equipmentView.classList.remove('prestige-mode-active');
+        // In normal mode, only show inventory if its tab is active
+        if (!document.querySelector('.tab-button[data-view="inventory-view"].active')) {
+            inventoryView.classList.add('hidden');
+            inventoryView.classList.remove('active');
+        }
+        prestigeControls.classList.add('hidden');
+        mainEquipmentTabBtn.textContent = "Equipment"; // Reset tab name
+    }
+    // Ensure legacy keeper controls are hidden if not in LK mode (handled by modal display)
+    if (gameState.uiMode !== 'legacyKeeperMode') {
+        legacyKeeperControls.classList.add('hidden');
+    }
+
 
     // --- Map and Monster Info ---
     (/** @type {HTMLInputElement} */ (autoProgressCheckboxEl)).checked = gameState.isAutoProgressing;
@@ -356,7 +398,7 @@ export function updateUI(elements, gameState, playerStats, currentMonster, salva
                 const itemChance = (entry.weight / totalWeight) * monsterDef.dropChance;
                 const entryDiv = document.createElement('div');
                 entryDiv.className = 'loot-table-entry';
-                entryDiv.dataset.lootIndex = index.toString(); 
+                entryDiv.dataset.lootIndex = index.toString();
                 entryDiv.innerHTML = `<img src="${entry.item.icon}" class="loot-item-icon" alt="${entry.item.name}"><div class="loot-item-details"><div class="item-name">${entry.item.name}</div><div class="drop-chance">${itemChance.toFixed(2)}% chance</div></div>`;
                 lootTableDisplayEl.appendChild(entryDiv);
             });
@@ -366,56 +408,40 @@ export function updateUI(elements, gameState, playerStats, currentMonster, salva
     }
 }
 
-/**
- * Renders the Prestige UI panel.
- * @param {object} elements - The collection of DOM elements.
- * @param {object} gameState - The main game state object.
- */
-export function renderPrestigeUI(elements, gameState) {
-    const unlockedSlots = gameState.unlockedLegacySlots || ['sword'];
-    
-    // Render the paperdoll with currently unlocked legacy slots
-    renderPaperdoll(elements.prestigeEquipmentPaperdoll, gameState, {
-        unlockedSlots: unlockedSlots
-    });
-    
-    // Render the inventory for swapping
-    renderGrid(elements.prestigeInventorySlotsEl, gameState.inventory);
-}
-
 
 /**
- * Renders the Legacy Keeper UI panel.
+ * Renders the Legacy Keeper UI panel (modal).
  * @param {object} elements - The collection of DOM elements.
  * @param {object} gameState - The main game state object.
- * @param {string[]} tempSelections - An array of slot names temporarily selected by the user.
+ * @param {string[]} tempSelections - An array of slot names temporarily selected by the user for this upgrade.
  */
 export function renderLegacyKeeperUI(elements, gameState, tempSelections) {
+    if (!elements.legacyKeeperPanel || !elements.legacyKeeperEquipmentPaperdoll) return;
+
     const permanentlyUnlocked = gameState.unlockedLegacySlots || ['sword'];
-    
-    // Pass both the permanently unlocked slots and the temporary selections to the renderer.
-    // The renderer will handle showing them as "active" slots.
+
     renderPaperdoll(elements.legacyKeeperEquipmentPaperdoll, gameState, {
-        unlockedSlots: [...permanentlyUnlocked, ...tempSelections],
-        selectedLegacySlots: tempSelections // This is used for the special highlighting
+        mode: 'legacyKeeperMode',
+        permanentlyUnlockedSlots: permanentlyUnlocked,
+        tempSelectedLegacySlots: tempSelections
     });
+
+    const currentLkLevel = gameState.permanentUpgrades.LEGACY_KEEPER || 0;
+    const slotsToUnlockThisUpgrade = 1; // Player is always trying to unlock 1 more slot per upgrade level
+    const canSave = tempSelections.filter(s => !permanentlyUnlocked.includes(s)).length === slotsToUnlockThisUpgrade;
+
+    (/** @type {HTMLButtonElement} */ (elements.legacyKeeperSaveBtn)).disabled = !canSave;
 }
 
 
 /**
  * Creates the full HTML block for an item's stats and unique effects.
- * This is a helper function to avoid duplicating code between tooltip functions.
- * @param {object|null} item - The item to create the block for.
- * @returns {string} The generated HTML string.
  */
 function createDetailedItemStatBlockHTML(item) {
     if (!item) {
         return '<ul><li>(Empty Slot)</li></ul>';
     }
-
     const itemBase = ITEMS[item.baseId];
-    
-    // Build the stat list from COMBINED stats (item + gems)
     const combinedStats = getCombinedItemStats(item);
     let statsHTML = '<ul>';
     for (const statKey in combinedStats) {
@@ -425,8 +451,6 @@ function createDetailedItemStatBlockHTML(item) {
         const statValue = statInfo.type === 'percent' ? `${value.toFixed(1)}%` : formatNumber(value);
         statsHTML += `<li>+${statValue} ${statName}</li>`;
     }
-    
-    // Handle synergy from gems, as it's a special stat
     let totalSynergyValue = 0;
     if (item.sockets) {
         for (const gem of item.sockets) {
@@ -440,61 +464,41 @@ function createDetailedItemStatBlockHTML(item) {
         statsHTML += `<li class="stat-special">Special: +${synergyPercentage}% DPS to Click Dmg</li>`;
     }
     statsHTML += '</ul>';
-
-    // Section for unique effect
     let uniqueEffectHTML = '';
     if (itemBase && itemBase.uniqueEffect) {
         const effectData = UNIQUE_EFFECTS[itemBase.uniqueEffect];
         if (effectData) {
-            uniqueEffectHTML = `
-                <div class="tooltip-unique-effect">
-                    <h4>${effectData.name}</h4>
-                    <p>${effectData.description}</p>
-                </div>
-            `;
+            uniqueEffectHTML = `<div class="tooltip-unique-effect"><h4>${effectData.name}</h4><p>${effectData.description}</p></div>`;
         }
     }
-
     return statsHTML + uniqueEffectHTML;
 }
 
-
 /**
- * Creates the full HTML for an item's tooltip, including details, stats, and sockets.
+ * Creates the full HTML for an item's tooltip.
  */
 export function createTooltipHTML(item) {
     if (!item) return '';
     const itemBase = ITEMS[item.baseId];
     const isUnique = itemBase && itemBase.isUnique;
-
     const uniqueClass = isUnique ? 'unique-item-name' : '';
     let headerHTML = `<div class="item-header"><span class="${item.rarity} ${uniqueClass}">${item.name}</span></div>`;
     headerHTML += `<div style="font-size: 0.9em; color: #95a5a6; margin-bottom: 5px;">${item.rarity.charAt(0).toUpperCase() + item.rarity.slice(1)} ${item.type.charAt(0).toUpperCase() + item.type.slice(1)}</div>`;
-
     const detailedBlock = createDetailedItemStatBlockHTML(item);
-
     let socketsHTML = '';
     if (item.sockets) {
         socketsHTML += `<div class="item-sockets" style="margin-top: 10px; padding-left:0; justify-content:center; position: static; transform: none;">`;
         item.sockets.forEach(gem => {
-            if (gem) {
-                socketsHTML += `<div class="socket"><img src="${gem.icon}" alt="${gem.name}"></div>`;
-            } else {
-                socketsHTML += '<div class="socket"></div>';
-            }
+            if (gem) socketsHTML += `<div class="socket"><img src="${gem.icon}" alt="${gem.name}"></div>`;
+            else socketsHTML += '<div class="socket"></div>';
         });
         socketsHTML += '</div>';
     }
-
     return headerHTML + detailedBlock + socketsHTML;
 }
 
 /**
- * Creates the HTML for an item comparison tooltip, now with numerical diffs.
- * @param {object} hoveredItem - The item being hovered over.
- * @param {object|null} equippedItem - The currently equipped item for comparison.
- * @param {object|null} [equippedItem2=null] - The second equipped item (for rings).
- * @returns {string} The generated HTML string.
+ * Creates the HTML for an item comparison tooltip.
  */
 export function createItemComparisonTooltipHTML(hoveredItem, equippedItem, equippedItem2 = null) {
     const hoveredItemBase = ITEMS[hoveredItem.baseId];
@@ -502,24 +506,18 @@ export function createItemComparisonTooltipHTML(hoveredItem, equippedItem, equip
     const uniqueClass = isUnique ? 'unique-item-name' : '';
     let headerHTML = `<div class="item-header"><span class="${hoveredItem.rarity} ${uniqueClass}">${hoveredItem.name}</span></div>`;
     headerHTML += `<div style="font-size: 0.9em; color: #95a5a6; margin-bottom: 5px;">${hoveredItem.rarity.charAt(0).toUpperCase() + hoveredItem.rarity.slice(1)} ${hoveredItem.type.charAt(0).toUpperCase() + hoveredItem.type.slice(1)}</div>`;
-
-    // Helper to generate a stat list with diffs
     const createComparisonList = (itemForDisplay, itemToCompare) => {
         const displayStats = getCombinedItemStats(itemForDisplay);
         const compareStats = itemToCompare ? getCombinedItemStats(itemToCompare) : {};
         const allStatKeys = new Set([...Object.keys(displayStats), ...Object.keys(compareStats)]);
-
         let statsHTML = '<ul>';
         allStatKeys.forEach(statKey => {
             const displayValue = displayStats[statKey] || 0;
             const compareValue = compareStats[statKey] || 0;
             const diff = displayValue - compareValue;
-
             const statInfo = Object.values(STATS).find(s => s.key === statKey) || { name: statKey, type: 'flat' };
             const isPercent = statInfo.type === 'percent';
-            
             const valueStr = isPercent ? `${displayValue.toFixed(1)}%` : formatNumber(displayValue);
-            
             let diffSpan = '';
             if (itemToCompare && Math.abs(diff) > 0.001) {
                 const diffClass = diff > 0 ? 'stat-better' : 'stat-worse';
@@ -532,9 +530,7 @@ export function createItemComparisonTooltipHTML(hoveredItem, equippedItem, equip
         statsHTML += '</ul>';
         return statsHTML;
     };
-
     let comparisonHTML = createComparisonList(hoveredItem, equippedItem);
-    
     let uniqueEffectHTML = '';
     if (hoveredItemBase && hoveredItemBase.uniqueEffect) {
         const effectData = UNIQUE_EFFECTS[hoveredItemBase.uniqueEffect];
@@ -542,36 +538,19 @@ export function createItemComparisonTooltipHTML(hoveredItem, equippedItem, equip
             uniqueEffectHTML = `<div class="tooltip-unique-effect"><h4>${effectData.name}</h4><p>${effectData.description}</p></div>`;
         }
     }
-    
-    // Special handling for rings
     if (hoveredItem.type === 'ring') {
         let ring1Comparison = createComparisonList(hoveredItem, equippedItem);
         let ring2Comparison = createComparisonList(hoveredItem, equippedItem2);
-
-        comparisonHTML = `
-            <div class="tooltip-ring-comparison">
-                <div>
-                    <h5>vs. ${equippedItem ? equippedItem.name : "Ring 1"}</h5>
-                    ${ring1Comparison}
-                </div>
-                <div>
-                    <h5>vs. ${equippedItem2 ? equippedItem2.name : "Ring 2"}</h5>
-                    ${ring2Comparison}
-                </div>
-            </div>`;
+        comparisonHTML = `<div class="tooltip-ring-comparison"><div><h5>vs. ${equippedItem ? equippedItem.name : "Ring 1"}</h5>${ring1Comparison}</div><div><h5>vs. ${equippedItem2 ? equippedItem2.name : "Ring 2"}</h5>${ring2Comparison}</div></div>`;
     }
-
-
     return headerHTML + comparisonHTML + uniqueEffectHTML;
 }
-
 
 export function createGemTooltipHTML(gem) {
     const name = gem.name || `T${gem.tier} Gem`;
     const displayName = gem.tier > 1 ? `T${gem.tier} Fused Gem` : name;
     const headerHTML = `<div class="item-header gem-tooltip"><span>${displayName}</span></div>`;
     let statsHTML = '<ul>';
-
     if (gem.stats) {
         for (const statKey in gem.stats) {
             const statInfo = Object.values(STATS).find(s => s.key === statKey);
@@ -581,24 +560,14 @@ export function createGemTooltipHTML(gem) {
             statsHTML += `<li>+${statValue} ${statName}</li>`;
         }
     }
-
     if (gem.synergy) {
         statsHTML += `<li class="stat-special" style="margin: 5px 0;">Special: +${(gem.synergy.value * 100).toFixed(2)}% of total DPS to Click Dmg</li>`;
     }
-
-    if (statsHTML === '<ul>') {
-        statsHTML += `<li>A mysterious gem...</li>`;
-    }
-
+    if (statsHTML === '<ul>') statsHTML += `<li>A mysterious gem...</li>`;
     statsHTML += '</ul>';
     return headerHTML + statsHTML;
 }
 
-/**
- * Creates the HTML for a tooltip showing a base item's potential.
- * @param {object} itemBase - The base item definition.
- * @returns {string} The generated HTML string.
- */
 export function createLootTableTooltipHTML(itemBase) {
     let statsHTML = '<ul>';
     itemBase.possibleStats.forEach(statInfo => {
@@ -606,89 +575,44 @@ export function createLootTableTooltipHTML(itemBase) {
         statsHTML += `<li>+ ${statInfo.min} - ${statInfo.max} ${statName}</li>`;
     });
     statsHTML += '</ul>';
-
     let socketsHTML = '';
-    if (itemBase.canHaveSockets) {
-        socketsHTML = `<div class="item-sockets-tooltip">Sockets: 0 - ${itemBase.maxSockets}</div>`;
-    }
-    
+    if (itemBase.canHaveSockets) socketsHTML = `<div class="item-sockets-tooltip">Sockets: 0 - ${itemBase.maxSockets}</div>`;
     let uniqueEffectHTML = '';
     if (itemBase && itemBase.uniqueEffect) {
         const effectData = UNIQUE_EFFECTS[itemBase.uniqueEffect];
-        if (effectData) {
-            uniqueEffectHTML = `
-                <div class="tooltip-unique-effect" style="padding-top: 5px; margin-top: 5px; border-top: 1px solid #4a637e;">
-                    <h4>${effectData.name}</h4>
-                    <p>${effectData.description}</p>
-                </div>
-            `;
-        }
+        if (effectData) uniqueEffectHTML = `<div class="tooltip-unique-effect" style="padding-top: 5px; margin-top: 5px; border-top: 1px solid #4a637e;"><h4>${effectData.name}</h4><p>${effectData.description}</p></div>`;
     }
-    
     const isUnique = itemBase && itemBase.isUnique;
     const uniqueClass = isUnique ? 'unique-item-name' : '';
     const headerHTML = `<div class="item-header"><span class="${uniqueClass}">${itemBase.name}</span></div>`;
-
-    return `${headerHTML}
-            <div class="possible-stats-header">
-                Possible Stats:
-                <span class="tooltip-shift-hint">Hold [SHIFT] to compare</span>
-            </div>
-            ${statsHTML}
-            ${socketsHTML}
-            ${uniqueEffectHTML}`;
+    return `${headerHTML}<div class="possible-stats-header">Possible Stats:<span class="tooltip-shift-hint">Hold [SHIFT] to compare</span></div>${statsHTML}${socketsHTML}${uniqueEffectHTML}`;
 }
 
-
-/**
- * Creates the HTML for a tooltip that compares a potential loot drop with an equipped item.
- * @param {object} potentialItem - The item base definition from the loot table.
- * @param {object|null} equippedItem - The currently equipped item instance.
- * @param {object|null} [equippedItem2=null] - The second equipped ring, if applicable.
- * @returns {string} The generated HTML string for the tooltip.
- */
 export function createLootComparisonTooltipHTML(potentialItem, equippedItem, equippedItem2 = null) {
     const potentialIsUnique = potentialItem.isUnique ? 'unique-item-name' : '';
     const headerHTML = `<div class="item-header"><span class="${potentialIsUnique}">${potentialItem.name}</span></div>`;
-
-    // Block for the potential item's stat ranges
     let potentialStatsHTML = '<ul>';
     potentialItem.possibleStats.forEach(statInfo => {
         const statName = Object.values(STATS).find(s => s.key === statInfo.key)?.name || statInfo.key;
         potentialStatsHTML += `<li>+ ${statInfo.min} - ${statInfo.max} ${statName}</li>`;
     });
     potentialStatsHTML += '</ul>';
-    
     let uniqueEffectHTML = '';
     if (potentialItem.uniqueEffect) {
         const effectData = UNIQUE_EFFECTS[potentialItem.uniqueEffect];
-        if (effectData) {
-            uniqueEffectHTML = `
-                <div class="tooltip-unique-effect" style="margin-top: 5px; padding-top: 5px; border-top: 1px solid #f39c12;">
-                    <h4>${effectData.name}</h4>
-                    <p>${effectData.description}</p>
-                </div>
-            `;
-        }
+        if (effectData) uniqueEffectHTML = `<div class="tooltip-unique-effect" style="margin-top: 5px; padding-top: 5px; border-top: 1px solid #f39c12;"><h4>${effectData.name}</h4><p>${effectData.description}</p></div>`;
     }
     const potentialBlock = `<div><h5>Potential Drop</h5>${potentialStatsHTML}${uniqueEffectHTML}</div>`;
-
-
-    // Function to create a block for an equipped item
     const createComparisonBlock = (item, title) => {
-        if (!item) {
-            return `<div><h5>${title}</h5><ul><li>(Empty Slot)</li></ul></div>`;
-        }
+        if (!item) return `<div><h5>${title}</h5><ul><li>(Empty Slot)</li></ul></div>`;
         const itemBase = ITEMS[item.baseId];
         const isUnique = itemBase && itemBase.isUnique;
         const itemNameClass = isUnique ? 'unique-item-name' : '';
         const itemRarityClass = item.rarity || 'common';
-
         const blockTitle = `<h5>${title}: <span class="${itemRarityClass} ${itemNameClass}">${item.name}</span></h5>`;
         const detailedStats = createDetailedItemStatBlockHTML(item);
         return `<div>${blockTitle}${detailedStats}</div>`;
     };
-
     if (potentialItem.type === 'ring') {
         const equippedBlock1 = createComparisonBlock(equippedItem, "Ring 1");
         const equippedBlock2 = createComparisonBlock(equippedItem2, "Ring 2");
@@ -699,29 +623,19 @@ export function createLootComparisonTooltipHTML(potentialItem, equippedItem, equ
     }
 }
 
-
-/**
- * Creates the HTML for an item's icon-centric view in the grid.
- */
 export function createItemHTML(item) {
     if (!item) return '';
     let socketsHTML = '';
     if (item.sockets) {
         socketsHTML += `<div class="item-sockets">`;
         item.sockets.forEach(gem => {
-            if (gem) {
-                socketsHTML += `<div class="socket"><img src="${gem.icon}" alt="${gem.name}"></div>`;
-            } else {
-                socketsHTML += '<div class="socket"></div>';
-            }
+            if (gem) socketsHTML += `<div class="socket"><img src="${gem.icon}" alt="${gem.name}"></div>`;
+            else socketsHTML += '<div class="socket"></div>';
         });
         socketsHTML += '</div>';
     }
-
     const iconSrc = item.icon || getItemIcon(item.type);
-    
     const lockHTML = item.locked !== undefined ? `<i class="fas ${item.locked ? 'fa-lock' : 'fa-lock-open'} lock-icon"></i>` : '';
-
     return `<div class="item ${item.rarity}">
                 <img src="${iconSrc}" class="item-icon" alt="${item.name}">
                 ${socketsHTML}
@@ -753,23 +667,17 @@ export function getItemIcon(type) {
 export function showDamagePopup(popupContainerEl, damage, isCrit = false, isMultiStrike = false) {
     const popup = document.createElement('div');
     let content = `-${formatNumber(damage)}`;
-    if (isMultiStrike) {
-        content += ' (Multi!)';
-    }
+    if (isMultiStrike) content += ' (Multi!)';
     popup.textContent = content;
     popup.className = 'damage-popup';
-    if (isCrit) {
-        popup.classList.add('crit');
-    }
+    if (isCrit) popup.classList.add('crit');
     if (isMultiStrike) {
-        // Use a slightly different starting position for multi-strikes to avoid overlap
         popup.style.left = `${50 + Math.random() * 20}%`;
         popup.style.top = `${20 + Math.random() * 20}%`;
     } else {
         popup.style.left = `${40 + Math.random() * 20}%`;
         popup.style.top = `${40 + Math.random() * 20}%`;
     }
-    
     popupContainerEl.appendChild(popup);
     setTimeout(() => popup.remove(), 1000);
 }
@@ -787,15 +695,10 @@ export function showGoldPopup(popupContainerEl, gold) {
 export function showDpsPopup(popupContainerEl, damage, isCrit = false, isMultiStrike = false) {
     const popup = document.createElement('div');
     let content = `-${formatNumber(damage)}`;
-    if (isMultiStrike) {
-        content += ' (Multi!)';
-    }
+    if (isMultiStrike) content += ' (Multi!)';
     popup.textContent = content;
     popup.className = 'dps-popup';
-    if (isCrit) {
-        popup.classList.add('crit');
-    }
-
+    if (isCrit) popup.classList.add('crit');
     if (isMultiStrike) {
         popup.style.left = `${40 + Math.random() * 40}%`;
         popup.style.top = `${35 + Math.random() * 20}%`;
@@ -803,7 +706,6 @@ export function showDpsPopup(popupContainerEl, damage, isCrit = false, isMultiSt
         popup.style.left = `${30 + Math.random() * 40}%`;
         popup.style.top = `${45 + Math.random() * 20}%`;
     }
-
     popupContainerEl.appendChild(popup);
     setTimeout(() => popup.remove(), 800);
 }
@@ -813,38 +715,20 @@ export function createMapNode(name, iconSrc, coords, isUnlocked, isCompleted, cu
     node.className = 'map-node';
     if (!isUnlocked) node.classList.add('locked');
     if (isBoss) node.classList.add('boss-node');
-
     const currentFightingSubZone = findSubZoneByLevel(currentFightingLevel);
-    if (currentFightingSubZone && currentFightingSubZone.name === name) {
-        node.classList.add('active-zone');
-    }
-
+    if (currentFightingSubZone && currentFightingSubZone.name === name) node.classList.add('active-zone');
     node.style.top = coords.top;
     node.style.left = coords.left;
-
     let levelText = '';
     if (levelRange) {
-        if (levelRange[0] === levelRange[1]) {
-            levelText = `<br>(Lvl ${levelRange[0]})`;
-        } else {
-            levelText = `<br>(Lvls ${levelRange[0]}-${levelRange[1]})`;
-        }
+        if (levelRange[0] === levelRange[1]) levelText = `<br>(Lvl ${levelRange[0]})`;
+        else levelText = `<br>(Lvls ${levelRange[0]}-${levelRange[1]})`;
     }
-    
     const finalIconSrc = isBoss ? 'images/icons/boss.png' : iconSrc;
-
     let iconHtml = `<img src="${finalIconSrc}" class="map-node-icon ${isUnlocked ? '' : 'locked'} ${isCompleted ? 'completed' : ''}">`;
-    if (isCompleted) {
-        iconHtml += `<i class="fas fa-check-circle map-node-completed-icon"></i>`;
-    }
-    if (!isUnlocked) {
-        iconHtml += `<i class="fas fa-lock map-node-lock-icon"></i>`;
-    }
-
-    node.innerHTML = `
-        ${iconHtml}
-        <span class="map-node-label">${name}${levelText}</span>
-    `;
+    if (isCompleted) iconHtml += `<i class="fas fa-check-circle map-node-completed-icon"></i>`;
+    if (!isUnlocked) iconHtml += `<i class="fas fa-lock map-node-lock-icon"></i>`;
+    node.innerHTML = `${iconHtml}<span class="map-node-label">${name}${levelText}</span>`;
     return node;
 }
 
@@ -852,9 +736,7 @@ export function getHighestCompletedLevelInSubZone(completedLevels, subZone) {
     let highest = 0;
     for (const level of completedLevels) {
         if (level >= subZone.levelRange[0] && level <= subZone.levelRange[1]) {
-            if (level > highest) {
-                highest = level;
-            }
+            if (level > highest) highest = level;
         }
     }
     return highest;

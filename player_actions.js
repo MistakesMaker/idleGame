@@ -58,9 +58,15 @@ export function equipItem(gameState, itemToEquip) {
         }
     }
 
+    // In Prestige Mode, only allow equipping into unlocked legacy slots
+    if (gameState.uiMode === 'prestigeMode' && !gameState.unlockedLegacySlots.includes(targetSlot)) {
+        return { isPendingRing: false, item: null, success: false, message: `Slot ${targetSlot} is not unlocked for Prestige.` };
+    }
+
+
     const itemInSlot = gameState.equipment[targetSlot];
     const [equippedItem] = gameState.inventory.splice(inventoryItemIndex, 1);
-    
+
     // Perform the direct swap
     if (itemInSlot) {
         // Place the previously worn item in the exact spot of the newly equipped item
@@ -68,9 +74,9 @@ export function equipItem(gameState, itemToEquip) {
         itemInSlot.y = equippedItem.y;
         gameState.inventory.push(itemInSlot);
     }
-    
+
     gameState.equipment[targetSlot] = equippedItem;
-    
+
     return { isPendingRing: false, item: null, success: true, message: `Equipped ${equippedItem.name}.` };
 }
 
@@ -83,6 +89,13 @@ export function equipItem(gameState, itemToEquip) {
 export function equipRing(gameState, pendingRing, targetSlot) {
     const inventoryItemIndex = gameState.inventory.findIndex(i => i.id === pendingRing.id);
     if (inventoryItemIndex === -1) return;
+
+    // In Prestige Mode, only allow equipping into unlocked legacy slots (though rings are usually always "unlocked" if player has them)
+    if (gameState.uiMode === 'prestigeMode' && !gameState.unlockedLegacySlots.includes(targetSlot)) {
+        // This case might be less common for rings if they are always part of legacy slots by default or if the logic prevents this earlier.
+        // However, adding a check for completeness.
+        return; // Or log an error/message
+    }
 
     const itemInSlot = gameState.equipment[targetSlot];
     const [equippedItem] = gameState.inventory.splice(inventoryItemIndex, 1);
@@ -103,6 +116,13 @@ export function equipRing(gameState, pendingRing, targetSlot) {
 export function unequipItem(gameState, slotName) {
     const item = gameState.equipment[slotName];
     if (!item) return;
+
+    // In Prestige Mode, only allow unequipping from unlocked legacy slots
+    if (gameState.uiMode === 'prestigeMode' && !gameState.unlockedLegacySlots.includes(slotName)) {
+        // This should ideally not be reachable if the UI correctly grays out locked slots,
+        // but it's a good safeguard.
+        return;
+    }
 
     const spot = findEmptySpot(item.width, item.height, gameState.inventory);
     if (spot) {
@@ -163,7 +183,7 @@ export function buyMaxUpgrade(gameState, upgradeType) {
     let gold = gameState.gold;
     let currentLevel = gameState.upgrades[upgradeType];
     let levelsBought = 0;
-    
+
     while (true) {
         const cost = getUpgradeCost(upgradeType, currentLevel);
         if (gold >= cost) {
@@ -171,7 +191,7 @@ export function buyMaxUpgrade(gameState, upgradeType) {
             currentLevel++;
             levelsBought++;
         } else {
-            break; 
+            break;
         }
     }
 
@@ -228,7 +248,7 @@ export function buyLootCrate(gameState, generateItemFn) {
     const rarityRoll = Math.floor(Math.random() * (rarities.length - 1)) + 1;
     const rarity = rarities[rarityRoll];
     const item = generateItemFn(rarity, gameState.maxLevel, itemBase);
-    
+
     const spot = findEmptySpot(item.width, item.height, gameState.inventory);
     if (spot) {
         item.x = spot.x;
@@ -261,13 +281,12 @@ export function salvageSelectedItems(gameState, salvageMode, playerStats) {
         const rarityIndex = rarities.indexOf(item.rarity);
         totalScrapGained += Math.ceil(Math.pow(4, rarityIndex));
     });
-    
+
     totalScrapGained = Math.floor(totalScrapGained * playerStats.scrapBonus);
-    
+
     gameState.inventory = gameState.inventory.filter(item => !idsToSalvage.has(item.id));
     gameState.scrap += totalScrapGained;
 
-    // Compact the inventory after salvaging
     gameState.inventory = compactInventory(gameState.inventory);
 
     return { count: selectedCount, scrapGained: totalScrapGained };
@@ -283,7 +302,7 @@ export function salvageByRarity(gameState, rarityToSalvage, playerStats) {
     let scrapGained = 0;
     let itemsSalvagedCount = 0;
     const itemsToKeep = [];
-    
+
     gameState.inventory.forEach(item => {
         if (item.rarity === rarityToSalvage && !item.locked) {
             const rarityIndex = rarities.indexOf(item.rarity);
@@ -298,10 +317,9 @@ export function salvageByRarity(gameState, rarityToSalvage, playerStats) {
         scrapGained = Math.floor(scrapGained * playerStats.scrapBonus);
         gameState.inventory = itemsToKeep;
         gameState.scrap += scrapGained;
-        // Compact the inventory after salvaging
         gameState.inventory = compactInventory(gameState.inventory);
     }
-    
+
     return { count: itemsSalvagedCount, scrapGained };
 }
 
@@ -336,24 +354,24 @@ export function activatePreset(gameState, presetIndex) {
             gameState.inventory.push(item);
         } else {
             console.error(`No space for ${item.name} when swapping presets!`);
-            gameState.inventory.push(item); 
+            gameState.inventory.push(item);
         }
     }
-    
+
     for (const slot in gameState.equipment) {
         gameState.equipment[slot] = null;
     }
 
     const newPresetEquipment = { ...gameState.presets[presetIndex].equipment };
     const newInventory = [];
-    
+
     gameState.inventory.forEach(invItem => {
         let equipped = false;
         for (const slot in newPresetEquipment) {
             const presetItem = newPresetEquipment[slot];
             if (presetItem && invItem && presetItem.id === invItem.id) {
                 gameState.equipment[slot] = invItem;
-                delete newPresetEquipment[slot]; 
+                delete newPresetEquipment[slot];
                 equipped = true;
                 break;
             }
@@ -363,7 +381,7 @@ export function activatePreset(gameState, presetIndex) {
         }
     });
 
-    gameState.inventory = compactInventory(newInventory); // Compact after preset load
+    gameState.inventory = compactInventory(newInventory);
     gameState.activePresetIndex = presetIndex;
 }
 
@@ -380,15 +398,14 @@ export function combineGems(gameState, craftingGems) {
     }
 
     const [gem1, gem2] = craftingGems;
-    
+
     if (!gem1 || !gem2 || gem1.tier !== gem2.tier) {
         return { success: false, message: "You must combine two gems of the same tier.", newGem: null };
     }
-    
+
     gameState.scrap -= cost;
 
     if (Math.random() < 0.5) {
-        // SUCCESS
         const newTier = gem1.tier + 1;
         const newStats = {};
         let newSynergy = null;
@@ -418,20 +435,17 @@ export function combineGems(gameState, craftingGems) {
             stats: newStats,
             synergy: newSynergy
         };
-        
+
         const id1 = gem1.id;
         const id2 = gem2.id;
         gameState.gems = gameState.gems.filter(g => g.id !== id1 && g.id !== id2);
-
         gameState.gems.push(newGem);
 
         return { success: true, message: `Success! You fused a ${newGem.name}!`, newGem: newGem };
     } else {
-        // FAILURE
         const id1 = gem1.id;
         const id2 = gem2.id;
         gameState.gems = gameState.gems.filter(g => g.id !== id1 && g.id !== id2);
-        
         return { success: true, message: "The gems shattered... you lost everything.", newGem: null };
     }
 }
@@ -447,7 +461,7 @@ export function rerollItemStats(gameState, itemToReroll) {
     if (gameState.scrap < cost) {
         return { success: false, message: "Not enough Scrap to reroll!" };
     }
-    
+
     if (!itemToReroll || !itemToReroll.baseId) {
         return { success: false, message: "Invalid item selected for rerolling." };
     }
@@ -456,31 +470,20 @@ export function rerollItemStats(gameState, itemToReroll) {
     if (!itemBase) {
         return { success: false, message: `Could not find base definition for ${itemToReroll.name}.` };
     }
-    
+
     const rarityIndex = rarities.indexOf(itemToReroll.rarity);
     const tier_max_percent = (rarityIndex + 1) / rarities.length;
     let isMaxed = true;
-    
-    const currentStatKeys = Object.keys(itemToReroll.stats);
 
-    if (currentStatKeys.length === 0) {
-        isMaxed = false;
-    }
+    const currentStatKeys = Object.keys(itemToReroll.stats);
+    if (currentStatKeys.length === 0) isMaxed = false;
 
     for (const statKey of currentStatKeys) {
         const statDefinition = itemBase.possibleStats.find(p => p.key === statKey);
-        if (!statDefinition) {
-            isMaxed = false; 
-            break;
-        }
-
+        if (!statDefinition) { isMaxed = false; break; }
         const statRange = statDefinition.max - statDefinition.min;
         const maxStatForTier = statDefinition.min + (statRange * tier_max_percent);
-
-        if (itemToReroll.stats[statKey] < maxStatForTier - 0.001) {
-            isMaxed = false;
-            break; 
-        }
+        if (itemToReroll.stats[statKey] < maxStatForTier - 0.001) { isMaxed = false; break; }
     }
 
     if (isMaxed) {
@@ -488,41 +491,30 @@ export function rerollItemStats(gameState, itemToReroll) {
     }
 
     gameState.scrap -= cost;
-    
-    if (typeof itemToReroll.rerollAttempts !== 'number') {
-        itemToReroll.rerollAttempts = 0;
-    }
+    if (typeof itemToReroll.rerollAttempts !== 'number') itemToReroll.rerollAttempts = 0;
     itemToReroll.rerollAttempts++;
-    
     const isGuaranteedRoll = itemToReroll.rerollAttempts >= 100;
 
     const newStats = {};
-    const tier_min_percent = rarityIndex / rarities.length;
-    
     for(const statKey of currentStatKeys) {
         const statDefinition = itemBase.possibleStats.find(p => p.key === statKey);
         if (statDefinition) {
             const total_stat_range = statDefinition.max - statDefinition.min;
             const range_per_tier = total_stat_range / rarities.length;
-
             const min_for_tier = statDefinition.min + (range_per_tier * rarityIndex);
             const max_for_tier = statDefinition.min + (range_per_tier * (rarityIndex + 1));
-            
             let final_stat_value;
-
             if (isGuaranteedRoll) {
                 final_stat_value = max_for_tier;
             } else {
                 const tier_specific_range = max_for_tier - min_for_tier;
                 final_stat_value = min_for_tier + (Math.random() * tier_specific_range);
             }
-            
             newStats[statKey] = parseFloat(final_stat_value.toFixed(2));
         }
     }
-    
     itemToReroll.stats = newStats;
-    
+
     if (isGuaranteedRoll) {
         itemToReroll.rerollAttempts = 0;
         return { success: true, message: `FAILSAFE! After 100 attempts, the forge grants a PERFECT reroll on ${itemToReroll.name}!` };
@@ -544,7 +536,9 @@ export function buyPermanentUpgrade(gameState, upgradeId) {
     }
 
     const currentLevel = gameState.permanentUpgrades[upgradeId] || 0;
-    if (currentLevel >= upgrade.maxLevel) {
+
+    // Max level for Legacy Keeper is dynamic and checked in game.js before opening modal
+    if (upgradeId !== 'LEGACY_KEEPER' && currentLevel >= upgrade.maxLevel) {
         return { success: false, message: "This upgrade is already at its max level.", newLevel: null };
     }
 
@@ -553,8 +547,18 @@ export function buyPermanentUpgrade(gameState, upgradeId) {
         return { success: false, message: "Not enough gold!", newLevel: null };
     }
 
+    // For Legacy Keeper, the actual slot unlocking is handled in game.js after UI interaction.
+    // Here, we just increment the level and deduct cost.
+    if (upgradeId === 'LEGACY_KEEPER') {
+        // The logic to actually pick a slot and update gameState.unlockedLegacySlots
+        // will be handled in game.js when the Legacy Keeper modal is saved.
+        // This function is now only responsible for the cost and level increment.
+        // The `tempLegacySelections` in game.js will guide which slot gets added.
+    }
+
+
     gameState.gold -= cost;
     gameState.permanentUpgrades[upgradeId]++;
-    
+
     return { success: true, message: `Purchased ${upgrade.name}!`, newLevel: gameState.permanentUpgrades[upgradeId] };
 }

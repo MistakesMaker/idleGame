@@ -11,7 +11,7 @@ import * as logic from './game_logic.js';
 
 export const rarities = ['common', 'uncommon', 'rare', 'epic', 'legendary'];
 
-/** @typedef {Object<string, HTMLElement|HTMLButtonElement|HTMLInputElement|HTMLImageElement>} DOMElements */
+/** @typedef {Object<string, HTMLElement|HTMLButtonElement|HTMLInputElement|HTMLImageElement|HTMLDivElement>} DOMElements */
 
 document.addEventListener('DOMContentLoaded', () => {
 
@@ -20,7 +20,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentMonster = { name: "Slime", data: MONSTERS.SLIME };
     let playerStats = { baseClickDamage: 1, baseDps: 0, totalClickDamage: 1, totalDps: 0, bonusGold: 0, magicFind: 0 };
     let salvageMode = { active: false, selections: [] };
-    let tempLegacySelections = [];
+    let tempLegacySelections = []; // Used for Legacy Keeper UI
     let saveTimeout;
     let isShiftPressed = false;
     let lastMousePosition = { x: 0, y: 0 };
@@ -28,7 +28,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let selectedGemForSocketing = null;
     let craftingGems = [];
     let selectedItemForForge = null;
-    let isResetting = false; 
+    let isResetting = false;
 
     /** @type {DOMElements} */
     let elements = {};
@@ -40,7 +40,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let raidPanel = null;
     let raidPlayerId = `Player_${Math.random().toString(36).substr(2, 5)}`;
-    
+
     const defaultEquipmentState = { sword: null, shield: null, helmet: null, necklace: null, platebody: null, platelegs: null, ring1: null, ring2: null, belt: null };
 
     function getDefaultGameState() {
@@ -56,7 +56,7 @@ document.addEventListener('DOMContentLoaded', () => {
             inventory: [],
             inventoryGridInitialized: true,
             gems: [],
-            unlockedLegacySlots: ['sword'], // Player starts with the sword slot unlocked
+            unlockedLegacySlots: ['sword'], // Player starts with ONLY the sword slot unlocked
             absorbedStats: {},
             absorbedSynergies: [],
             absorbedUniqueEffects: {},
@@ -80,6 +80,7 @@ document.addEventListener('DOMContentLoaded', () => {
             currentRealmIndex: 0,
             lastSaveTimestamp: null,
             permanentUpgrades: defaultPermUpgrades,
+            uiMode: 'normal', // 'normal', 'prestigeMode', 'legacyKeeperMode'
         };
     }
 
@@ -100,7 +101,7 @@ document.addEventListener('DOMContentLoaded', () => {
             gemFind: (permUpgrades.GEM_FIND || 0) * permUpgradeDefs.GEM_FIND.bonusPerLevel,
             bossDamage: (permUpgrades.BOSS_HUNTER || 0) * permUpgradeDefs.BOSS_HUNTER.bonusPerLevel,
             multiStrike: (permUpgrades.SWIFT_STRIKES || 0) * permUpgradeDefs.SWIFT_STRIKES.bonusPerLevel,
-            legacyKeeper: (permUpgrades.LEGACY_KEEPER || 0) * permUpgradeDefs.LEGACY_KEEPER.bonusPerLevel,
+            legacyKeeperBonus: (permUpgrades.LEGACY_KEEPER || 0) * permUpgradeDefs.LEGACY_KEEPER.bonusPerLevel, // This is the number of *additional* slots
         };
 
         const newCalculatedStats = {
@@ -137,21 +138,21 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
         }
-        
+
         const strengthBonusClickFlat = hero.attributes.strength * 0.5;
         const strengthBonusClickPercent = hero.attributes.strength * 0.2;
-        const agilityBonusDpsFlat = hero.attributes.agility * 1; // --- CHANGE: Agility now adds flat DPS
+        const agilityBonusDpsFlat = hero.attributes.agility * 1;
         const agilityBonusDpsPercent = hero.attributes.agility * 0.3;
 
         let clickDamageSubtotal = newCalculatedStats.baseClickDamage + strengthBonusClickFlat;
         clickDamageSubtotal *= (1 + (strengthBonusClickPercent / 100));
 
-        let dpsSubtotal = newCalculatedStats.baseDps + agilityBonusDpsFlat; // --- CHANGE: Agility flat DPS added here
+        let dpsSubtotal = newCalculatedStats.baseDps + agilityBonusDpsFlat;
         dpsSubtotal *= (1 + (agilityBonusDpsPercent / 100));
 
         const clickUpgradeBonusPercent = gameState.upgrades.clickDamage * 1;
         let finalClickDamage = clickDamageSubtotal * (1 + (clickUpgradeBonusPercent / 100));
-        
+
         const dpsUpgradeBonusPercent = gameState.upgrades.dps * 1;
         let finalDps = dpsSubtotal * (1 + (dpsUpgradeBonusPercent / 100));
 
@@ -159,7 +160,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const finalBonusGold = newCalculatedStats.bonusGold + luckBonusGold;
         const finalMagicFind = newCalculatedStats.magicFind;
 
-        // Apply prestige power bonus
         const prestigeMultiplier = 1 + ((permanentUpgradeBonuses.prestigePower * (gameState.prestigeCount || 0)) / 100);
         finalClickDamage *= prestigeMultiplier;
         finalDps *= prestigeMultiplier;
@@ -188,7 +188,7 @@ document.addEventListener('DOMContentLoaded', () => {
             bossDamageBonus: 1 + (permanentUpgradeBonuses.bossDamage / 100),
             scrapBonus: 1 + (permanentUpgradeBonuses.scrap / 100),
             gemFindChance: permanentUpgradeBonuses.gemFind,
-            legacyKeeperBonus: permanentUpgradeBonuses.legacyKeeper,
+            legacyKeeperSlots: 1 + permanentUpgradeBonuses.legacyKeeperBonus, // Total legacy slots player has
         };
 
         if (socket && socket.connected) {
@@ -217,7 +217,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             startNewMonster();
             updateAll();
-            
+
             elements.inventorySlotsEl.parentElement.scrollTop = scrollPositions.inventory;
             elements.forgeInventorySlotsEl.parentElement.scrollTop = scrollPositions.forge;
             elements.gemSlotsEl.parentElement.scrollTop = scrollPositions.gems;
@@ -235,7 +235,6 @@ document.addEventListener('DOMContentLoaded', () => {
         (/** @type {HTMLImageElement} */ (elements.monsterImageEl)).src = currentMonster.data.image;
         elements.monsterNameEl.textContent = currentMonster.name;
 
-        // Set zone-specific background
         if (currentMonster.data.isSpecial) {
             elements.monsterAreaEl.style.backgroundImage = `url('images/backgrounds/bg_treasure_realm.png')`;
         } else {
@@ -243,7 +242,6 @@ document.addEventListener('DOMContentLoaded', () => {
             if (subZone && subZone.parentZone) {
                 elements.monsterAreaEl.style.backgroundImage = `url('${subZone.parentZone.monsterAreaBg}')`;
             } else {
-                 // Fallback for the very first level or if something goes wrong
                 elements.monsterAreaEl.style.backgroundImage = `url('${REALMS[0].zones.green_meadows.monsterAreaBg}')`;
             }
         }
@@ -256,18 +254,15 @@ document.addEventListener('DOMContentLoaded', () => {
         const level = gameState.currentFightingLevel;
         const isAnyBoss = isBossLevel(level) || isBigBossLevel(level) || isMiniBossLevel(level);
 
-        // Apply boss damage bonus
         if (isAnyBoss) {
             finalDamage *= playerStats.bossDamageBonus;
         }
 
-        // Roll for crit
         const isCrit = Math.random() * 100 < playerStats.critChance;
         if (isCrit) {
             finalDamage *= playerStats.critDamage;
         }
-        
-        // Apply damage
+
         gameState.monster.hp -= finalDamage;
 
         if (isClick) {
@@ -276,9 +271,7 @@ document.addEventListener('DOMContentLoaded', () => {
             ui.showDpsPopup(elements.popupContainerEl, finalDamage, isCrit);
         }
 
-        // Roll for multi-strike
         if (Math.random() * 100 < playerStats.multiStrikeChance) {
-            // Apply a second, identical hit
             gameState.monster.hp -= finalDamage;
              if (isClick) {
                 ui.showDamagePopup(elements.popupContainerEl, finalDamage, isCrit, true);
@@ -320,26 +313,22 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function updateAll() {
-        ui.updateUI(elements, gameState, playerStats, currentMonster, salvageMode, craftingGems, selectedItemForForge);
+        ui.updateUI(elements, gameState, playerStats, currentMonster, salvageMode, craftingGems, selectedItemForForge, tempLegacySelections);
         renderMap();
         renderRealmTabs();
         renderPermanentUpgrades();
 
-        // Specific UI updates for modals/panels if they are open
-        if (!elements.prestigeUiPanel.classList.contains('hidden')) {
-            ui.renderPrestigeUI(elements, gameState);
-        }
-        if (!elements.legacyKeeperPanel.classList.contains('hidden')) {
+        if (gameState.uiMode === 'legacyKeeperMode' && !elements.legacyKeeperPanel.classList.contains('hidden')) {
             ui.renderLegacyKeeperUI(elements, gameState, tempLegacySelections);
         }
-        
+
         if (selectedGemForSocketing) {
             document.querySelectorAll('.selected-gem').forEach(el => el.classList.remove('selected-gem'));
             const gemEl = document.querySelector(`.gem-wrapper[data-id="${selectedGemForSocketing.id}"]`);
             if (gemEl) gemEl.classList.add('selected-gem');
-            
+
             document.querySelectorAll('.socket-target').forEach(el => el.classList.remove('socket-target'));
-            
+
             gameState.inventory.forEach((item) => {
                 if (item.sockets && item.sockets.includes(null)) {
                     const itemEl = document.querySelector(`.item-wrapper[data-id="${item.id}"] .item`);
@@ -363,7 +352,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function autoSave() {
         elements.saveIndicatorEl.classList.add('visible');
         if (saveTimeout) clearTimeout(saveTimeout);
-        
+
         gameState.lastSaveTimestamp = Date.now();
         localStorage.setItem('idleRPGSaveData', JSON.stringify(gameState));
 
@@ -412,9 +401,8 @@ document.addEventListener('DOMContentLoaded', () => {
             elements.mapTitleEl.textContent = zone.name;
             elements.backToWorldMapBtnEl.classList.remove('hidden');
             elements.mapContainerEl.style.backgroundImage = `url('${zone.mapImage}')`;
-            
+
             const subZonesArray = Object.values(zone.subZones).sort((a, b) => a.levelRange[0] - b.levelRange[0]);
-            
             const unlockedNodes = subZonesArray.filter(sz => gameState.maxLevel >= sz.levelRange[0]);
 
             if (unlockedNodes.length > 1) {
@@ -426,7 +414,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     x: parseFloat(sz.coords.left) / 100 * mapWidth,
                     y: parseFloat(sz.coords.top) / 100 * mapHeight,
                 }));
-                
+
                 const svgNS = "http://www.w3.org/2000/svg";
                 const svgEl = document.createElementNS(svgNS, 'svg');
                 svgEl.setAttribute('class', 'map-path-svg');
@@ -435,42 +423,31 @@ document.addEventListener('DOMContentLoaded', () => {
                 for (let i = 0; i < points.length - 1; i++) {
                     const p1 = points[i];
                     const p2 = points[i+1];
-
                     const dx = p2.x - p1.x;
                     const dy = p2.y - p1.y;
                     const mag = Math.sqrt(dx * dx + dy * dy);
                     if (mag < NODE_RADIUS * 2) continue;
-
                     const unitX = dx / mag;
                     const unitY = dy / mag;
-
                     const startX = p1.x + unitX * NODE_RADIUS;
                     const startY = p1.y + unitY * NODE_RADIUS;
-
                     const endX = p2.x - unitX * NODE_RADIUS;
                     const endY = p2.y - unitY * NODE_RADIUS;
-                    
                     const segDx = endX - startX;
                     const segDy = endY - startY;
                     const segDist = Math.sqrt(segDx * segDx + segDy * segDy);
                     if (segDist < 1) continue;
-
                     const midX = (startX + endX) / 2;
                     const midY = (startY + endY) / 2;
-
                     const waviness = ((i + 1) % 2 === 1) ? 1 : -1;
                     const offsetMagnitude = Math.min(segDist / 8, 15) * waviness;
-
                     const controlX = midX - segDy * (offsetMagnitude / segDist);
                     const controlY = midY + segDx * (offsetMagnitude / segDist);
-                    
                     const pathEl = document.createElementNS(svgNS, 'path');
                     pathEl.setAttribute('d', `M ${startX} ${startY} Q ${controlX} ${controlY} ${endX} ${endY}`);
                     pathEl.setAttribute('class', 'map-path-line');
-                    
                     svgEl.appendChild(pathEl);
                 }
-
                 elements.mapContainerEl.appendChild(svgEl);
             }
 
@@ -499,7 +476,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 currentMap = 'world';
                 renderMap();
                 renderRealmTabs();
-                startNewMonster(); // Update background when changing realms
+                startNewMonster();
                 autoSave();
             };
             elements.realmTabsContainerEl.appendChild(tab);
@@ -509,32 +486,32 @@ document.addEventListener('DOMContentLoaded', () => {
     function renderPermanentUpgrades() {
         const container = elements.permanentUpgradesContainerEl;
         container.innerHTML = '';
-    
+
         for (const key in PERMANENT_UPGRADES) {
             const upgrade = PERMANENT_UPGRADES[key];
             const currentLevel = gameState.permanentUpgrades[key] || 0;
             const cost = Math.floor(upgrade.baseCost * Math.pow(upgrade.costScalar, currentLevel));
-            
+
             let bonus = upgrade.bonusPerLevel * currentLevel;
             if (upgrade.id === 'PRESTIGE_POWER') {
                 bonus *= (gameState.prestigeCount || 0);
             }
             if (upgrade.id === 'LEGACY_KEEPER') {
-                bonus = 1 + currentLevel; // 1 base slot + bonus levels
+                bonus = 1 + currentLevel; // 1 base slot (Sword) + bonus levels
             }
-    
-            const maxLevel = upgrade.id === 'LEGACY_KEEPER' 
-                ? Object.keys(defaultEquipmentState).length - 1 
+
+            const maxLevel = upgrade.id === 'LEGACY_KEEPER'
+                ? Object.keys(defaultEquipmentState).length - 1 // -1 because Sword is base, rest are upgradable
                 : upgrade.maxLevel;
-    
+
             const isMaxed = currentLevel >= maxLevel;
-            const description = upgrade.description.replace('{value}', bonus.toFixed(0)); // Use toFixed(0) for whole numbers
-    
+            const description = upgrade.description.replace('{value}', bonus.toFixed(upgrade.bonusType === 'PERCENT' ? 1 : 0));
+
             const card = document.createElement('div');
             card.className = 'permanent-upgrade-card';
             if (gameState.gold < cost && !isMaxed) card.classList.add('disabled');
             if (isMaxed) card.classList.add('maxed');
-    
+
             card.innerHTML = `
                 <div class="upgrade-icon"><i class="${upgrade.icon}"></i></div>
                 <div class="upgrade-details">
@@ -544,7 +521,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
                 <div class="upgrade-buy-section">
                     ${isMaxed ? 'MAXED' : `<div class="upgrade-cost">${formatNumber(cost)} Gold</div>`}
-                    <button class="buy-permanent-upgrade-btn" data-upgrade-id="${upgrade.id}" ${gameState.gold < cost || isMaxed ? 'disabled' : ''}>${upgrade.id === 'LEGACY_KEEPER' ? 'Upgrade' : 'Buy'}</button>
+                    <button class="buy-permanent-upgrade-btn" data-upgrade-id="${upgrade.id}" ${gameState.gold < cost || isMaxed ? 'disabled' : ''}>Upgrade</button>
                 </div>
             `;
             container.appendChild(card);
@@ -579,7 +556,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
         } else {
             const highestCompleted = ui.getHighestCompletedLevelInSubZone(gameState.completedLevels, subZone);
-            
             const nextLevelToTry = Math.min(highestCompleted + 1, finalLevel);
             const isNewZone = highestCompleted < startLevel;
             const levelToStart = isNewZone ? startLevel : nextLevelToTry;
@@ -596,13 +572,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 elements.modalBodyEl.appendChild(restartButton);
             }
         }
-
         elements.modalBackdropEl.classList.remove('hidden');
     }
 
     function showRingSelectionModal(pendingRing) {
         const { ringSelectionModalBackdrop, ringSelectionSlot1, ringSelectionSlot2 } = elements;
-        
         const createRingHTML = (ring) => {
             if (!ring) return '';
             const wrapper = document.createElement('div');
@@ -611,10 +585,8 @@ document.addEventListener('DOMContentLoaded', () => {
             wrapper.innerHTML = ui.createItemHTML(ring);
             return wrapper.outerHTML;
         }
-
         ringSelectionSlot1.innerHTML = createRingHTML(gameState.equipment.ring1);
         ringSelectionSlot2.innerHTML = createRingHTML(gameState.equipment.ring2);
-
         ringSelectionModalBackdrop.classList.remove('hidden');
     }
 
@@ -625,23 +597,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function calculateOfflineProgress() {
         if (!gameState.lastSaveTimestamp) return;
-
         const offlineDurationSeconds = (Date.now() - gameState.lastSaveTimestamp) / 1000;
         if (offlineDurationSeconds < 10) return;
-
         recalculateStats();
-
         if (playerStats.totalDps <= 0) return;
-
         const level = gameState.currentFightingLevel;
-        
         const { newMonster, newMonsterState } = logic.generateMonster(level);
         const monsterHp = newMonsterState.maxHp;
         const monsterDropChance = newMonster.data.dropChance;
-        
         const timeToKill = monsterHp / playerStats.totalDps;
         const killsPerSecond = 1 / timeToKill;
-
         const tier = Math.floor((level - 1) / 10);
         const difficultyResetFactor = 4;
         const effectiveLevel = level - (tier * difficultyResetFactor);
@@ -649,62 +614,47 @@ document.addEventListener('DOMContentLoaded', () => {
         const baseGold = 15;
         let goldPerKill = Math.ceil(baseGold * Math.pow(goldExponent, effectiveLevel) * (1 + (playerStats.bonusGold / 100)));
         let xpPerKill = level * 5;
-
         if (isBigBossLevel(level)) {
-            xpPerKill *= 5;
-            goldPerKill *= 5;
+            xpPerKill *= 5; goldPerKill *= 5;
         } else if (isBossLevel(level)) {
-            xpPerKill *= 3;
-            goldPerKill *= 3;
+            xpPerKill *= 3; goldPerKill *= 3;
         } else if(isMiniBossLevel(level)) {
-            xpPerKill *= 2;
-            goldPerKill *= 2;
+            xpPerKill *= 2; goldPerKill *= 2;
         }
-
         const goldPerSecond = goldPerKill * killsPerSecond;
         const xpPerSecond = xpPerKill * killsPerSecond;
-
         const AVERAGE_SCRAP_VALUE = 2 * playerStats.scrapBonus;
         const dropsPerSecond = (monsterDropChance / 100) * killsPerSecond;
         const scrapPerSecond = dropsPerSecond * AVERAGE_SCRAP_VALUE;
-
         const totalGoldGained = Math.floor(goldPerSecond * offlineDurationSeconds);
         const totalXPGained = Math.floor(xpPerSecond * offlineDurationSeconds);
         const totalScrapGained = Math.floor(scrapPerSecond * offlineDurationSeconds);
-
         if (totalGoldGained === 0 && totalXPGained === 0 && totalScrapGained === 0) return;
-
         const startingLevel = gameState.hero.level;
         gameState.gold += totalGoldGained;
         gameState.scrap += totalScrapGained;
         player.gainXP(gameState, totalXPGained);
         const finalLevel = gameState.hero.level;
-
         recalculateStats();
-
         const hours = Math.floor(offlineDurationSeconds / 3600);
         const minutes = Math.floor((offlineDurationSeconds % 3600) / 60);
         elements.offlineTime.textContent = `${hours} hours and ${minutes} minutes`;
         elements.offlineGold.textContent = formatNumber(totalGoldGained);
         elements.offlineXp.textContent = formatNumber(totalXPGained);
         elements.offlineScrap.textContent = formatNumber(totalScrapGained);
-        
         const existingLevelUps = elements.offlineRewards.querySelectorAll('.level-up-summary');
         existingLevelUps.forEach(el => el.remove());
-
         if (finalLevel > startingLevel) {
             const p = document.createElement('p');
             p.innerHTML = `Leveled Up! (Level ${startingLevel} → Level ${finalLevel})`;
             p.className = 'legendary level-up-summary';
             elements.offlineRewards.appendChild(p);
         }
-
         elements.offlineProgressModalBackdrop.classList.remove('hidden');
     }
 
     function setupEventListeners() {
         window.addEventListener('beforeunload', saveOnExit);
-
         window.addEventListener('keydown', (e) => {
             if (e.key === 'Shift' && !isShiftPressed) {
                 isShiftPressed = true;
@@ -728,7 +678,7 @@ document.addEventListener('DOMContentLoaded', () => {
             lastMousePosition.x = e.clientX;
             lastMousePosition.y = e.clientY;
         });
-        
+
         elements.monsterImageEl.addEventListener('click', clickMonster);
         document.getElementById('buy-loot-crate-btn').addEventListener('click', () => {
             const result = player.buyLootCrate(gameState, logic.generateItem);
@@ -808,7 +758,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 logMessage(elements.gameLogEl, `No unlocked ${rarity} items to salvage.`);
             }
         });
-        
+
         const gridClickHandler = (event) => {
             if (!(event.target instanceof Element)) return;
             const wrapper = event.target.closest('.item-wrapper, .gem-wrapper');
@@ -816,7 +766,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const id = wrapper.dataset.id;
             if (!id) return;
-            
+
             const isGem = wrapper.classList.contains('gem-wrapper');
             const item = isGem ? gameState.gems.find(i => String(i.id) === id) : gameState.inventory.find(i => String(i.id) === id);
 
@@ -843,11 +793,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
                 updateAll();
 
-            } else {
+            } else { // It's an item
                 if (selectedGemForSocketing && item.sockets && item.sockets.includes(null)) {
                     const gemToSocket = selectedGemForSocketing;
                     const firstEmptySocketIndex = item.sockets.indexOf(null);
-                    
+
                     if (firstEmptySocketIndex > -1) {
                         item.sockets[firstEmptySocketIndex] = gemToSocket;
                         gameState.gems = gameState.gems.filter(g => g.id !== gemToSocket.id);
@@ -859,7 +809,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         return;
                     }
                 }
-    
+
                 if (event.target.closest('.lock-icon')) {
                     const message = player.toggleItemLock(gameState, item);
                     if (message) logMessage(elements.gameLogEl, message);
@@ -871,8 +821,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     } else {
                         salvageMode.selections.push(item);
                     }
-                    document.getElementById('salvage-count').textContent = salvageMode.selections.length.toString();
-                } else {
+                    const salvageCountEl = document.getElementById('salvage-count');
+                    if(salvageCountEl) salvageCountEl.textContent = salvageMode.selections.length.toString();
+                } else { // Default action: equip
                     const result = player.equipItem(gameState, item);
                     if (result.success) {
                         if (result.isPendingRing) {
@@ -893,18 +844,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
         elements.inventorySlotsEl.addEventListener('click', gridClickHandler);
         elements.gemSlotsEl.addEventListener('click', gridClickHandler);
-        elements.prestigeInventorySlotsEl.addEventListener('click', gridClickHandler);
-        
+
         const equipmentClickHandler = (event) => {
             if (!(event.target instanceof Element)) return;
             const slotElement = event.target.closest('.equipment-slot');
-            if (!(slotElement instanceof HTMLElement) || slotElement.classList.contains('locked')) return;
+            if (!(slotElement instanceof HTMLElement)) return;
 
             const slotName = slotElement.dataset.slotName;
             if (!slotName) return;
 
             // Handle gem socketing
-            if (selectedGemForSocketing) {
+            if (selectedGemForSocketing && gameState.uiMode !== 'legacyKeeperMode') { // Don't allow socketing in LK mode
                 const item = gameState.equipment[slotName];
                 if (item && item.sockets && item.sockets.includes(null)) {
                     const gemToSocket = selectedGemForSocketing;
@@ -923,39 +873,77 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
 
-            // Default behavior: unequip
-            player.unequipItem(gameState, slotName);
-            recalculateStats();
+            if (gameState.uiMode === 'normal' || gameState.uiMode === 'prestigeMode') {
+                if(slotElement.classList.contains('locked') && gameState.uiMode === 'prestigeMode') {
+                    logMessage(elements.gameLogEl, "This slot is not unlocked for Prestige.");
+                    return;
+                }
+                // Default behavior: unequip
+                player.unequipItem(gameState, slotName);
+                recalculateStats();
+            } else if (gameState.uiMode === 'legacyKeeperMode') {
+                // Legacy Keeper Slot Selection Logic
+                if (slotName === 'sword') {
+                    logMessage(elements.gameLogEl, "The Sword slot is always preserved and cannot be changed.");
+                    return;
+                }
+                if (gameState.unlockedLegacySlots.includes(slotName)) {
+                    logMessage(elements.gameLogEl, "This slot is already permanently unlocked.");
+                    return;
+                }
+
+                const currentLegacyKeeperLevel = gameState.permanentUpgrades.LEGACY_KEEPER || 0;
+                const totalAllowedLegacySlots = 1 + currentLegacyKeeperLevel + 1; // Base + current level + the one they are buying
+                const maxNewSelections = 1; // Player is buying one level of the upgrade
+
+                const selectionIndex = tempLegacySelections.indexOf(slotName);
+
+                if (selectionIndex > -1) { // Deselect
+                    tempLegacySelections.splice(selectionIndex, 1);
+                } else { // Select
+                    // Count how many *new* slots are already in tempLegacySelections
+                    const newSlotsCurrentlySelected = tempLegacySelections.filter(s => !gameState.unlockedLegacySlots.includes(s)).length;
+
+                    if (newSlotsCurrentlySelected < maxNewSelections) {
+                        tempLegacySelections.push(slotName);
+                    } else {
+                        logMessage(elements.gameLogEl, `You can only select ${maxNewSelections} new slot(s) for this upgrade. Deselect another slot first.`, 'rare');
+                    }
+                }
+            }
             updateAll();
             autoSave();
         };
 
         elements.mainEquipmentPaperdoll.addEventListener('click', equipmentClickHandler);
-        elements.prestigeEquipmentPaperdoll.addEventListener('click', equipmentClickHandler);
+        if(elements.legacyKeeperEquipmentPaperdoll) { // Check if it exists
+            elements.legacyKeeperEquipmentPaperdoll.addEventListener('click', equipmentClickHandler);
+        }
+
 
         elements.gemCraftingSlotsContainer.addEventListener('click', (e) => {
             if (!(e.target instanceof HTMLElement)) return;
             const slot = e.target.closest('.gem-crafting-slot');
             if (!(slot instanceof HTMLElement)) return;
-        
+
             const slotIndexStr = slot.dataset.slot;
             if (slotIndexStr === null || slotIndexStr === undefined) return;
             const slotIndex = parseInt(slotIndexStr, 10);
 
             const gemInSlot = craftingGems[slotIndex];
-        
+
             if (gemInSlot) {
                 gameState.gems.push(gemInSlot);
-                craftingGems[slotIndex] = undefined; 
+                craftingGems[slotIndex] = undefined;
                 craftingGems = craftingGems.filter(Boolean);
-            } 
+            }
             else if (selectedGemForSocketing) {
                 if (craftingGems.length < 2) {
                     if (craftingGems.length > 0 && craftingGems[0].tier !== selectedGemForSocketing.tier) {
                         logMessage(elements.gameLogEl, "You can only combine gems of the same tier.", "rare");
                         return;
                     }
-        
+
                     craftingGems.push(selectedGemForSocketing);
                     gameState.gems = gameState.gems.filter(g => g.id !== selectedGemForSocketing.id);
                     selectedGemForSocketing = null;
@@ -966,12 +954,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
         elements.gemCraftBtn.addEventListener('click', () => {
             if (craftingGems.length !== 2) return;
-            
             const result = player.combineGems(gameState, craftingGems);
             logMessage(elements.gameLogEl, result.message, result.success && result.newGem ? 'legendary' : 'rare');
-
             craftingGems = [];
-            
             recalculateStats();
             updateAll();
             autoSave();
@@ -1026,9 +1011,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const result = player.buyMaxUpgrade(gameState, 'clickDamage');
                 if (result.levelsBought > 0) {
                     logMessage(elements.gameLogEl, `Bought ${result.levelsBought} Click Damage levels!`);
-                    recalculateStats();
-                    updateAll();
-                    autoSave();
+                    recalculateStats(); updateAll(); autoSave();
                 } else {
                     logMessage(elements.gameLogEl, "Not enough gold for even one level!");
                 }
@@ -1045,9 +1028,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const result = player.buyMaxUpgrade(gameState, 'dps');
                 if (result.levelsBought > 0) {
                     logMessage(elements.gameLogEl, `Bought ${result.levelsBought} DPS levels!`);
-                    recalculateStats();
-                    updateAll();
-                    autoSave();
+                    recalculateStats(); updateAll(); autoSave();
                 } else {
                     logMessage(elements.gameLogEl, "Not enough gold for even one level!");
                 }
@@ -1060,11 +1041,13 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         document.querySelectorAll('.preset-btn').forEach((btn, index) => {
             btn.addEventListener('click', () => {
+                if (gameState.uiMode === 'prestigeMode' || gameState.uiMode === 'legacyKeeperMode') {
+                    logMessage(elements.gameLogEl, "Cannot change presets in Prestige or Legacy Keeper mode.", "rare");
+                    return;
+                }
                 player.activatePreset(gameState, index);
                 logMessage(elements.gameLogEl, `Activated preset: <b>${gameState.presets[index].name}</b>`);
-                recalculateStats();
-                updateAll();
-                autoSave();
+                recalculateStats(); updateAll(); autoSave();
             });
             btn.addEventListener('dblclick', () => {
                  const currentName = gameState.presets[index].name;
@@ -1072,12 +1055,11 @@ document.addEventListener('DOMContentLoaded', () => {
                  if (newName && newName.trim() !== "") {
                      gameState.presets[index].name = newName.trim();
                      logMessage(elements.gameLogEl, `Renamed preset to: <b>${newName.trim()}</b>`);
-                     updateAll();
-                     autoSave();
+                     updateAll(); autoSave();
                  }
             });
         });
-        
+
         document.querySelectorAll('.tabs').forEach(tabContainer => {
             const tabs = tabContainer.querySelectorAll('.tab-button');
             const parentPanel = tabContainer.parentElement;
@@ -1087,6 +1069,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (!viewId) return;
 
                 tab.addEventListener('click', () => {
+                    if (gameState.uiMode === 'prestigeMode' && (viewId !== 'equipment-view' && viewId !== 'inventory-view')) {
+                         logMessage(elements.gameLogEl, "Cannot switch tabs while in Prestige Mode. Cancel or Confirm Prestige first.", "rare");
+                         return;
+                    }
+                    if (gameState.uiMode === 'legacyKeeperMode') {
+                        logMessage(elements.gameLogEl, "Cannot switch tabs while in Legacy Keeper Mode. Save or Cancel first.", "rare");
+                        return;
+                    }
+
                     tabs.forEach(t => t.classList.remove('active'));
                     tab.classList.add('active');
                     if (parentPanel) {
@@ -1102,36 +1093,27 @@ document.addEventListener('DOMContentLoaded', () => {
 
         document.getElementById('toggle-loot-log-btn').addEventListener('click', (e) => {
             if (!(e.currentTarget instanceof HTMLButtonElement)) return;
-
             const btn = e.currentTarget;
             const logView = document.getElementById('game-log-container');
             const lootView = document.getElementById('loot-view');
-
             if (btn.classList.contains('active')) {
-                btn.classList.remove('active');
-                btn.textContent = 'View Loot';
-                logView.classList.remove('hidden');
-                lootView.classList.add('hidden');
+                btn.classList.remove('active'); btn.textContent = 'View Loot';
+                logView.classList.remove('hidden'); lootView.classList.add('hidden');
             } else {
-                btn.classList.add('active');
-                btn.textContent = 'View Log';
-                logView.classList.add('hidden');
-                lootView.classList.remove('hidden');
+                btn.classList.add('active'); btn.textContent = 'View Log';
+                logView.classList.add('hidden'); lootView.classList.remove('hidden');
             }
         });
-        
+
         elements.forgeInventorySlotsEl.addEventListener('click', (e) => {
             if (!(e.target instanceof Element)) return;
             const wrapper = e.target.closest('.item-wrapper');
             if (!(wrapper instanceof HTMLElement)) return;
-            
             const id = wrapper.dataset.id;
             if (!id) return;
-            
             const item = [...Object.values(gameState.equipment), ...gameState.inventory].find(i => i && String(i.id) === id);
-            
             if (item && item.stats) {
-                selectedItemForForge = item; 
+                selectedItemForForge = item;
                 logMessage(elements.gameLogEl, `Selected <span class="${item.rarity}">${item.name}</span> for rerolling.`, 'uncommon');
                 updateAll();
             }
@@ -1139,17 +1121,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
         elements.forgeRerollBtn.addEventListener('click', () => {
             if (!selectedItemForForge) {
-                logMessage(elements.gameLogEl, "No item selected to reroll.", 'rare');
-                return;
+                logMessage(elements.gameLogEl, "No item selected to reroll.", 'rare'); return;
             }
-
             const result = player.rerollItemStats(gameState, selectedItemForForge);
             logMessage(elements.gameLogEl, result.message, result.success ? 'epic' : 'rare');
-            
             if (result.success) {
-                recalculateStats();
-                updateAll();
-                autoSave();
+                recalculateStats(); updateAll(); autoSave();
             }
         });
 
@@ -1157,19 +1134,24 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!(e.target instanceof Element)) return;
             const buyButton = (e.target).closest('.buy-permanent-upgrade-btn');
             if (!buyButton || !(buyButton instanceof HTMLButtonElement) || buyButton.disabled) return;
-
             const upgradeId = buyButton.dataset.upgradeId;
             if (!upgradeId) return;
 
-            // Special handling for legacy keeper
             if (upgradeId === 'LEGACY_KEEPER') {
                 const upgrade = PERMANENT_UPGRADES[upgradeId];
                 const currentLevel = gameState.permanentUpgrades[upgradeId] || 0;
                 const cost = Math.floor(upgrade.baseCost * Math.pow(upgrade.costScalar, currentLevel));
-                
+                const maxLegacyLevel = Object.keys(defaultEquipmentState).length - 1;
+
+                if (currentLevel >= maxLegacyLevel) {
+                    logMessage(elements.gameLogEl, "Legacy Keeper is already maxed out!", 'rare');
+                    return;
+                }
                 if (gameState.gold >= cost) {
-                    tempLegacySelections = [...(gameState.unlockedLegacySlots || ['sword'])];
+                    gameState.uiMode = 'legacyKeeperMode';
+                    tempLegacySelections = []; // Reset temp selections for the new upgrade instance
                     elements.legacyKeeperPanel.classList.remove('hidden');
+                    logMessage(elements.gameLogEl, "Select one new equipment slot to unlock for future prestiges.", "uncommon");
                     updateAll();
                 } else {
                     logMessage(elements.gameLogEl, "Not enough gold!", 'rare');
@@ -1178,12 +1160,9 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             const result = player.buyPermanentUpgrade(gameState, upgradeId);
-
             if (result.success) {
                 logMessage(elements.gameLogEl, `Purchased Level ${result.newLevel} of ${PERMANENT_UPGRADES[upgradeId].name}!`, 'epic');
-                recalculateStats();
-                updateAll();
-                autoSave();
+                recalculateStats(); updateAll(); autoSave();
             } else {
                 logMessage(elements.gameLogEl, result.message, 'rare');
             }
@@ -1196,24 +1175,21 @@ document.addEventListener('DOMContentLoaded', () => {
         setupRaidListeners();
         setupPrestigeListeners();
     }
-    
+
     function setupItemTooltipListeners() {
         const showTooltip = (item, element) => {
             if (!item) return;
+            elements.tooltipEl.className = 'hidden'; // Clear all previous classes first
+            elements.tooltipEl.classList.add(item.rarity); // Add rarity class
 
-            elements.tooltipEl.className = 'hidden';
-            elements.tooltipEl.classList.add(item.rarity);
-
-            // Invert the logic: Shift shows potential stats, default shows comparison.
             if (isShiftPressed) {
                 const itemBase = ITEMS[item.baseId];
                 if(itemBase) {
                      elements.tooltipEl.innerHTML = ui.createLootTableTooltipHTML(itemBase);
-                } else {
+                } else { // Should not happen if item has baseId
                      elements.tooltipEl.innerHTML = ui.createTooltipHTML(item);
                 }
             } else {
-                // Default behavior: show comparison tooltip for the actual item instance.
                 if (item.type === 'ring') {
                     elements.tooltipEl.innerHTML = ui.createItemComparisonTooltipHTML(item, gameState.equipment.ring1, gameState.equipment.ring2);
                 } else {
@@ -1221,32 +1197,24 @@ document.addEventListener('DOMContentLoaded', () => {
                     elements.tooltipEl.innerHTML = ui.createItemComparisonTooltipHTML(item, equippedItem);
                 }
             }
-
             const rect = element.getBoundingClientRect();
             elements.tooltipEl.style.left = `${rect.right + 10}px`;
             elements.tooltipEl.style.top = `${rect.top}px`;
             elements.tooltipEl.classList.remove('hidden');
         };
-
         const onMouseOver = (event) => {
             if (!(event.target instanceof Element)) return;
             const wrapper = event.target.closest('.item-wrapper');
             if (!(wrapper instanceof HTMLElement)) return;
             const id = wrapper.dataset.id;
             if (!id) return;
-
             const item = [...gameState.inventory, ...Object.values(gameState.equipment)].find(i => i && String(i.id) === id);
-            if(item) {
-                showTooltip(item, wrapper);
-            }
+            if(item) showTooltip(item, wrapper);
         };
-
         const onMouseOut = () => elements.tooltipEl.classList.add('hidden');
-
         elements.inventorySlotsEl.addEventListener('mouseover', onMouseOver);
         elements.inventorySlotsEl.addEventListener('mouseout', onMouseOut);
-    
-        const equipmentPaperdolls = document.querySelectorAll('.equipment-paperdoll-container');
+        const equipmentPaperdolls = document.querySelectorAll('.equipment-paperdoll-container'); // Select all for flexibility
         equipmentPaperdolls.forEach(doll => {
             doll.addEventListener('mouseover', (event) => {
                 if (!(event.target instanceof Element)) return;
@@ -1259,51 +1227,39 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             doll.addEventListener('mouseout', onMouseOut);
         });
-        
         elements.forgeInventorySlotsEl.addEventListener('mouseover', onMouseOver);
         elements.forgeInventorySlotsEl.addEventListener('mouseout', onMouseOut);
-        
-        elements.prestigeInventorySlotsEl.addEventListener('mouseover', onMouseOver);
-        elements.prestigeInventorySlotsEl.addEventListener('mouseout', onMouseOut);
     }
-    
+
     function setupGemTooltipListeners(){
         const showGemTooltip = (e) => {
              if (!(e.target instanceof Element)) return;
             const gemWrapper = e.target.closest('div.gem-wrapper');
             if (!(gemWrapper instanceof HTMLElement)) return;
-
             const gemId = gemWrapper.dataset.id;
             if (!gemId) return;
-
             const gem = gameState.gems.find(g => String(g.id) === gemId) || craftingGems.find(g => String(g.id) === gemId);
             if (!gem) return;
-            
             elements.tooltipEl.className = 'hidden';
             elements.tooltipEl.classList.add('gem-quality');
             elements.tooltipEl.innerHTML = ui.createGemTooltipHTML(gem);
-
             const rect = gemWrapper.getBoundingClientRect();
             elements.tooltipEl.style.left = `${rect.right + 5}px`;
             elements.tooltipEl.style.top = `${rect.top}px`;
             elements.tooltipEl.classList.remove('hidden');
         };
-
         elements.gemSlotsEl.addEventListener('mouseover', showGemTooltip);
         elements.gemSlotsEl.addEventListener('mouseout', () => elements.tooltipEl.classList.add('hidden'));
-        
         elements.gemCraftingSlotsContainer.addEventListener('mouseover', (e) => {
             if (!(e.target instanceof Element)) return;
             const gemWrapper = e.target.closest('.gem');
-            if (!(gemWrapper instanceof HTMLElement)) return; 
+            if (!(gemWrapper instanceof HTMLElement)) return;
             const id = gemWrapper.dataset.gemId;
             const gem = craftingGems.find(g => String(g.id) === id);
             if (!gem) return;
-
             elements.tooltipEl.className = 'hidden';
             elements.tooltipEl.classList.add('gem-quality');
             elements.tooltipEl.innerHTML = ui.createGemTooltipHTML(gem);
-
             const rect = gemWrapper.getBoundingClientRect();
             elements.tooltipEl.style.left = `${rect.right + 5}px`;
             elements.tooltipEl.style.top = `${rect.top}px`;
@@ -1311,7 +1267,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         elements.gemCraftingSlotsContainer.addEventListener('mouseout', () => elements.tooltipEl.classList.add('hidden'));
     }
-    
+
     function setupStatTooltipListeners() {
         const statTooltipContent = {
             strength: { title: 'Strength', description: 'Increases your raw power. Each point provides:', effects: ['<b>+0.5</b> Flat Click Damage', '<b>+0.2%</b> Total Click Damage'] },
@@ -1325,7 +1281,6 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!(row instanceof HTMLElement)) return;
             const attributeKey = row.dataset.attribute;
             if (!attributeKey) return;
-
             const content = statTooltipContent[attributeKey];
             if (!content) return;
             let html = `<h4>${content.title}</h4><p>${content.description}</p><ul>`;
@@ -1348,21 +1303,17 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!(event.target instanceof Element)) return;
             const entryEl = event.target.closest('.loot-table-entry');
             if (!(entryEl instanceof HTMLElement)) return;
-            
             const lootIndexStr = entryEl.dataset.lootIndex;
             if (!lootIndexStr) return;
             const lootIndex = parseInt(lootIndexStr, 10);
-
             const itemBase = currentMonster.data.lootTable[lootIndex]?.item;
             if (!itemBase) return;
             elements.tooltipEl.className = 'hidden';
-            
-            if (itemBase.tier >= 1) { // It's a gem
+            if (itemBase.tier >= 1) {
                 elements.tooltipEl.innerHTML = ui.createGemTooltipHTML(itemBase);
                 elements.tooltipEl.classList.add('gem-quality');
             }
             else if (isShiftPressed) {
-                // Show comparison when shift is held
                 if (itemBase.type === 'ring') {
                     elements.tooltipEl.innerHTML = ui.createLootComparisonTooltipHTML(itemBase, gameState.equipment.ring1, gameState.equipment.ring2);
                 } else {
@@ -1370,7 +1321,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     elements.tooltipEl.innerHTML = ui.createLootComparisonTooltipHTML(itemBase, equippedItem);
                 }
             } else {
-                // Default to showing potential ranges
                 elements.tooltipEl.innerHTML = ui.createLootTableTooltipHTML(itemBase);
             }
             const rect = entryEl.getBoundingClientRect();
@@ -1428,14 +1378,13 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
     }
-    
+
     function setupRaidListeners() {
         const raidBtn = document.getElementById('raid-btn');
         if (!socket || !raidBtn) {
             if(raidBtn) raidBtn.style.display = 'none';
             return;
         };
-
         raidBtn.addEventListener('click', () => {
             if (raidPanel) {
                 destroyRaidPanel();
@@ -1460,90 +1409,29 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function setupPrestigeListeners() {
         elements.prestigeButton.addEventListener('click', () => {
-            elements.prestigeUiPanel.classList.remove('hidden');
+            gameState.uiMode = 'prestigeMode';
+            logMessage(elements.gameLogEl, "Entered Prestige Mode. Equip items into unlocked legacy slots to preserve them.", "uncommon");
             updateAll();
         });
 
-        elements.prestigeBackButton.addEventListener('click', () => {
-            elements.prestigeUiPanel.classList.add('hidden');
-        });
-
-        elements.legacyKeeperPanel.addEventListener('click', (e) => {
-             if (!(e.target instanceof Element)) return;
-            const slotElement = e.target.closest('.equipment-slot');
-            if (!(slotElement instanceof HTMLElement) || slotElement.classList.contains('permanently-unlocked')) return;
-
-            const slotName = slotElement.dataset.slotName;
-            if (!slotName || slotName === 'sword') return; // Sword slot is always unlocked and cannot be changed
-
-            const maxSelections = 1 + (gameState.permanentUpgrades.LEGACY_KEEPER || 0);
-            const selectionIndex = tempLegacySelections.indexOf(slotName);
-
-            if (selectionIndex > -1) {
-                // Deselect
-                tempLegacySelections.splice(selectionIndex, 1);
-            } else {
-                // Select, but respect the max limit
-                if (tempLegacySelections.length < maxSelections) {
-                    tempLegacySelections.push(slotName);
-                } else {
-                    logMessage(elements.gameLogEl, `You can only unlock ${maxSelections} slot(s) at your current Legacy Keeper level.`, 'rare');
-                }
-            }
+        elements.prestigeCancelButton.addEventListener('click', () => {
+            gameState.uiMode = 'normal';
+            logMessage(elements.gameLogEl, "Exited Prestige Mode.");
             updateAll();
-        });
-
-        elements.legacyKeeperCancelBtn.addEventListener('click', () => {
-            tempLegacySelections = [];
-            elements.legacyKeeperPanel.classList.add('hidden');
-        });
-
-        elements.legacyKeeperSaveBtn.addEventListener('click', () => {
-            const upgrade = PERMANENT_UPGRADES.LEGACY_KEEPER;
-            const currentLevel = gameState.permanentUpgrades.LEGACY_KEEPER || 0;
-            const cost = Math.floor(upgrade.baseCost * Math.pow(upgrade.costScalar, currentLevel));
-
-            // Double-check cost and that the number of selections matches the new level
-            const slotsToUnlock = tempLegacySelections.filter(s => !(gameState.unlockedLegacySlots || []).includes(s)).length;
-            
-            if (gameState.gold < cost) {
-                 logMessage(elements.gameLogEl, "Not enough gold!", 'rare');
-                 return;
-            }
-            if (tempLegacySelections.length !== (gameState.unlockedLegacySlots || ['sword']).length + 1) {
-                 logMessage(elements.gameLogEl, `You must select exactly one new slot to unlock.`, 'rare');
-                 return;
-            }
-
-            gameState.gold -= cost;
-            gameState.permanentUpgrades.LEGACY_KEEPER++;
-            gameState.unlockedLegacySlots = [...tempLegacySelections];
-            
-            logMessage(elements.gameLogEl, `Legacy Keeper upgraded! You can now preserve items in ${gameState.unlockedLegacySlots.length} slots.`, 'legendary');
-            
-            elements.legacyKeeperPanel.classList.add('hidden');
-            tempLegacySelections = [];
-            recalculateStats();
-            updateAll();
-            autoSave();
         });
 
         elements.confirmPrestigeButton.addEventListener('click', () => {
-            // New prestige logic based on slots
-            const unlockedSlots = gameState.unlockedLegacySlots || ['sword'];
-            
             const itemsToAbsorb = [];
             const preservedEquipment = { ...defaultEquipmentState };
 
-            for (const slotName of unlockedSlots) {
+            for (const slotName of gameState.unlockedLegacySlots) {
                 const item = gameState.equipment[slotName];
                 if (item) {
                     itemsToAbsorb.push(item);
-                    preservedEquipment[slotName] = item; // This item survives the reset
+                    preservedEquipment[slotName] = item;
                 }
             }
-            
-            // --- Stat Absorption Logic (same as before) ---
+
             const newAbsorbedStats = {};
             const newAbsorbedSynergies = [];
             const newAbsorbedUniqueEffects = {};
@@ -1555,9 +1443,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
                 if (item.sockets) {
                     for (const gem of item.sockets) {
-                        if (gem && gem.synergy) {
-                            newAbsorbedSynergies.push(gem.synergy);
-                        }
+                        if (gem && gem.synergy) newAbsorbedSynergies.push(gem.synergy);
                     }
                 }
                 const itemBase = ITEMS[item.baseId];
@@ -1572,14 +1458,13 @@ document.addEventListener('DOMContentLoaded', () => {
                  logMessage(elements.gameLogEl, `No items in legacy slots to absorb.`, 'uncommon');
             }
 
-            // --- Combine with old absorbed stats ---
             const heroToPrestige = gameState.hero;
             const oldAbsorbedStats = gameState.absorbedStats || {};
             const finalAbsorbedStats = { ...oldAbsorbedStats };
             for(const statKey in newAbsorbedStats) {
                 finalAbsorbedStats[statKey] = (finalAbsorbedStats[statKey] || 0) + newAbsorbedStats[statKey];
             }
-            
+
             const oldAbsorbedSynergies = gameState.absorbedSynergies || [];
             const finalAbsorbedSynergies = [...oldAbsorbedSynergies];
             for (const newSynergy of newAbsorbedSynergies) {
@@ -1596,60 +1481,92 @@ document.addEventListener('DOMContentLoaded', () => {
              for (const [effectKey, count] of Object.entries(newAbsorbedUniqueEffects)) {
                 finalAbsorbedUniqueEffects[effectKey] = (finalAbsorbedUniqueEffects[effectKey] || 0) + count;
             }
-            
+
             const spentPoints = heroToPrestige.attributes.strength + heroToPrestige.attributes.agility + heroToPrestige.attributes.luck;
             const newTotalAttributePoints = heroToPrestige.attributePoints + spentPoints;
 
             const prestgedHeroState = {
-                ...heroToPrestige, // Keep level and XP
-                attributePoints: newTotalAttributePoints, // Refund all points
-                attributes: { strength: 0, agility: 0, luck: 0 } // Reset attributes
+                ...heroToPrestige,
+                attributePoints: newTotalAttributePoints,
+                attributes: { strength: 0, agility: 0, luck: 0 }
             };
 
-            // --- Reset Game State ---
             const oldPrestigeCount = gameState.prestigeCount || 0;
             const currentPrestigeLevel = gameState.nextPrestigeLevel || 100;
-            const baseState = getDefaultGameState();
+            const baseState = getDefaultGameState(); // This already sets unlockedLegacySlots to ['sword']
 
             gameState = {
                 ...baseState,
-                // --- Keep these ---
-                permanentUpgrades: gameState.permanentUpgrades,
-                unlockedLegacySlots: gameState.unlockedLegacySlots,
+                permanentUpgrades: gameState.permanentUpgrades, // Keep permanent upgrades
+                unlockedLegacySlots: gameState.unlockedLegacySlots, // Keep the list of *which* slots are unlocked
                 absorbedStats: finalAbsorbedStats,
                 absorbedSynergies: finalAbsorbedSynergies,
                 absorbedUniqueEffects: finalAbsorbedUniqueEffects,
                 prestigeCount: oldPrestigeCount + 1,
-                completedLevels: gameState.completedLevels, // Keep completed levels for map unlocks
-                // --- Reset these, but with new values ---
-                equipment: preservedEquipment, // This is the key change!
-                maxLevel: 1, 
+                completedLevels: gameState.completedLevels,
+                equipment: preservedEquipment, // Items in unlocked slots are preserved
+                maxLevel: 1,
                 nextPrestigeLevel: currentPrestigeLevel + 100,
                 hero: prestgedHeroState,
                 currentFightingLevel: 1,
                 currentRunCompletedLevels: [],
-                // Other things are reset by `baseState`
+                uiMode: 'normal', // Reset UI mode
             };
 
             logMessage(elements.gameLogEl, `PRESTIGE! You are reborn with greater power. Your next goal is Level ${gameState.nextPrestigeLevel}.`, 'legendary');
-            elements.prestigeUiPanel.classList.add('hidden');
             recalculateStats();
             startNewMonster();
             updateAll();
             autoSave();
         });
+
+        // Legacy Keeper Modal Listeners
+        elements.legacyKeeperCancelBtn.addEventListener('click', () => {
+            gameState.uiMode = 'normal';
+            tempLegacySelections = [];
+            elements.legacyKeeperPanel.classList.add('hidden');
+            updateAll();
+        });
+
+        elements.legacyKeeperSaveBtn.addEventListener('click', () => {
+            const upgrade = PERMANENT_UPGRADES.LEGACY_KEEPER;
+            const currentLkLevel = gameState.permanentUpgrades.LEGACY_KEEPER || 0;
+            const cost = Math.floor(upgrade.baseCost * Math.pow(upgrade.costScalar, currentLkLevel));
+
+            const newSlotsSelected = tempLegacySelections.filter(s => !gameState.unlockedLegacySlots.includes(s));
+
+            if (newSlotsSelected.length !== 1) {
+                 logMessage(elements.gameLogEl, `You must select exactly one new slot to unlock.`, 'rare');
+                 return;
+            }
+            if (gameState.gold < cost) {
+                 logMessage(elements.gameLogEl, "Not enough gold!", 'rare');
+                 return;
+            }
+
+            gameState.gold -= cost;
+            gameState.permanentUpgrades.LEGACY_KEEPER++;
+            gameState.unlockedLegacySlots.push(newSlotsSelected[0]); // Add the newly selected slot
+
+            logMessage(elements.gameLogEl, `Legacy Keeper upgraded! You can now preserve items in ${gameState.unlockedLegacySlots.length} slot(s). Newly unlocked: ${newSlotsSelected[0]}`, 'legendary');
+
+            gameState.uiMode = 'normal';
+            tempLegacySelections = [];
+            elements.legacyKeeperPanel.classList.add('hidden');
+            recalculateStats();
+            updateAll();
+            autoSave();
+        });
     }
-    
+
     function migrateInventoryToGrid(oldInventory) {
         console.log("Old save detected. Migrating inventory to grid format...");
         const newGridInventory = [];
-        
         for (const item of oldInventory) {
             if (typeof item.x === 'number' && item.x >= 0) {
                 newGridInventory.push(item);
                 continue;
             }
-
             let baseItem = ITEMS[item.baseId];
             if (!baseItem) {
                  const baseName = item.name.split(' ').slice(1).join(' ');
@@ -1659,38 +1576,32 @@ document.addEventListener('DOMContentLoaded', () => {
                     item.baseId = foundKey;
                  }
             }
-
             if(baseItem) {
                 item.width = baseItem.width;
                 item.height = baseItem.height;
             } else {
                 console.warn("Could not find base item for", item, "during migration. Defaulting to 1x1.");
-                item.width = 1;
-                item.height = 1;
+                item.width = 1; item.height = 1;
             }
-
             const spot = findEmptySpot(item.width, item.height, newGridInventory);
             if (spot) {
-                item.x = spot.x;
-                item.y = spot.y;
+                item.x = spot.x; item.y = spot.y;
                 newGridInventory.push(item);
             } else {
                 console.error("Could not find a spot for item during migration:", item);
             }
         }
-        
         return newGridInventory;
     }
 
     function main() {
         elements = ui.initDOMElements();
-        
+
         const savedData = localStorage.getItem('idleRPGSaveData');
         if (savedData) {
             const loadedState = JSON.parse(savedData);
             const baseState = getDefaultGameState();
-            
-            // Convert old array-based unique effects to new object-based one for old saves
+
             let uniqueEffects = loadedState.absorbedUniqueEffects || {};
             if (Array.isArray(uniqueEffects)) {
                 const newEffectsObject = {};
@@ -1699,41 +1610,39 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
                 uniqueEffects = newEffectsObject;
             }
-            
-            gameState = { 
-                ...baseState, 
+
+            gameState = {
+                ...baseState,
                 ...loadedState,
                 gems: loadedState.gems || [],
-                hero: { ...baseState.hero, ...(loadedState.hero || {}), attributes: { ...baseState.hero.attributes, ...(loadedState.hero?.attributes || {}) } }, 
-                upgrades: { ...baseState.upgrades, ...(loadedState.upgrades || {}) }, 
-                equipment: { ...baseState.equipment, ...(loadedState.equipment || {}) }, 
-                absorbedStats: { ...(loadedState.absorbedStats || {}) }, 
+                hero: { ...baseState.hero, ...(loadedState.hero || {}), attributes: { ...baseState.hero.attributes, ...(loadedState.hero?.attributes || {}) } },
+                upgrades: { ...baseState.upgrades, ...(loadedState.upgrades || {}) },
+                equipment: { ...baseState.equipment, ...(loadedState.equipment || {}) },
+                absorbedStats: { ...(loadedState.absorbedStats || {}) },
                 absorbedSynergies: loadedState.absorbedSynergies || [],
                 absorbedUniqueEffects: uniqueEffects,
-                monster: { ...baseState.monster, ...(loadedState.monster || {}) }, 
-                presets: loadedState.presets || baseState.presets, 
-                isAutoProgressing: loadedState.isAutoProgressing !== undefined ? loadedState.isAutoProgressing : true, 
+                monster: { ...baseState.monster, ...(loadedState.monster || {}) },
+                presets: loadedState.presets || baseState.presets,
+                isAutoProgressing: loadedState.isAutoProgressing !== undefined ? loadedState.isAutoProgressing : true,
                 currentRealmIndex: loadedState.currentRealmIndex || 0,
-                currentRunCompletedLevels: loadedState.currentRunCompletedLevels || [], 
+                currentRunCompletedLevels: loadedState.currentRunCompletedLevels || [],
                 inventoryGridInitialized: loadedState.inventoryGridInitialized || false,
                 permanentUpgrades: { ...baseState.permanentUpgrades, ...(loadedState.permanentUpgrades || {}) },
                 specialEncounter: loadedState.specialEncounter || null,
-                unlockedLegacySlots: loadedState.unlockedLegacySlots || ['sword'], // Load legacy slots
+                unlockedLegacySlots: loadedState.unlockedLegacySlots && loadedState.unlockedLegacySlots.length > 0 ? loadedState.unlockedLegacySlots : ['sword'], // Ensure at least sword
+                uiMode: 'normal', // Always start in normal mode on load
             };
-            
+
             if (!gameState.inventoryGridInitialized) {
                 gameState.inventory = migrateInventoryToGrid(gameState.inventory);
                 gameState.inventoryGridInitialized = true;
                 logMessage(elements.gameLogEl, "Your inventory has been updated to the new grid system!", "uncommon");
                 autoSave();
             }
-
-            if (gameState.nextPrestigeLevel === undefined) {
-                gameState.nextPrestigeLevel = 100;
-            }
-            
-            if (loadedState.legacyItems) {
-                 delete loadedState.legacyItems;
+            if (gameState.nextPrestigeLevel === undefined) gameState.nextPrestigeLevel = 100;
+            if (loadedState.legacyItems) delete loadedState.legacyItems; // Old field, remove
+            if (!Array.isArray(gameState.unlockedLegacySlots) || gameState.unlockedLegacySlots.length === 0) { // Safety for old saves
+                gameState.unlockedLegacySlots = ['sword'];
             }
 
 
@@ -1741,14 +1650,14 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
             gameState = getDefaultGameState();
         }
-        
+
         setupEventListeners();
         recalculateStats();
         startNewMonster();
         logMessage(elements.gameLogEl, savedData ? "Saved game loaded!" : "Welcome! Your progress will be saved automatically.");
         updateAll();
-        
-        autoSave(); 
+
+        autoSave();
         setInterval(autoSave, 30000);
         setInterval(gameLoop, 1000);
     }

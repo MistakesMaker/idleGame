@@ -35,7 +35,7 @@
                 <h4>Game Log</h4>
                 <div id="game-log"><p>Welcome! Your progress will be saved automatically.</p></div>
             </div>
-            
+
             <div id="loot-view" class="hidden">
                 <h3 id="loot-monster-name">Monster Loot</h3>
                 <h4>Possible Drops:</h4>
@@ -51,7 +51,7 @@
                 <button class="tab-button active" data-view="map-view">Map</button>
                 <button class="tab-button" data-view="hero-view">Hero</button>
                 <button id="main-equipment-tab-btn" class="tab-button" data-view="equipment-view">Equipment</button>
-                <button class="tab-button" data-view="inventory-view">Inventory</button>
+                <button id="inventory-tab-btn" class="tab-button" data-view="inventory-view">Inventory</button>
                 <button class="tab-button" data-view="gems-view">Gems</button>
                 <button class="tab-button" data-view="forge-view">Forge</button>
             </div>
@@ -98,7 +98,7 @@
                         <button class="attribute-btn" id="add-luck-btn" disabled>+</button>
                     </div>
                 </div>
-                
+
                 <h4>Derived Stats</h4>
                 <div id="derived-stats-area">
                     <p><i class="fas fa-hand-rock"></i> Click Damage: <span id="click-damage-stat">1</span></p>
@@ -117,18 +117,13 @@
                             <button id="preset-btn-1" class="preset-btn">Preset 2</button>
                             <button id="preset-btn-2" class="preset-btn">Preset 3</button>
                         </div>
-                        <div id="prestige-controls" class="hidden">
+                        <div id="prestige-controls" class="hidden"> <!-- Initially hidden -->
                             <h4>Prestige Mode</h4>
                             <p>Equip items into your unlocked slots to preserve them.</p>
                             <button id="confirm-prestige-btn">Confirm Prestige</button>
                             <button id="prestige-cancel-btn">Cancel</button>
                         </div>
-                        <div id="legacy-keeper-controls" class="hidden">
-                             <h4>Legacy Keeper</h4>
-                             <p>Select a new slot to permanently unlock.</p>
-                             <button id="legacy-keeper-save-btn">Save</button>
-                             <button id="legacy-keeper-cancel-btn">Cancel</button>
-                        </div>
+                         <!-- Legacy Keeper Controls are now part of a modal, not here -->
                     </div>
                     <div class="equipment-paperdoll-wrapper">
                         <div id="main-equipment-paperdoll" class="equipment-paperdoll-container">
@@ -142,7 +137,7 @@
                 </div>
             </div>
 
-            <div id="inventory-view" class="view">
+            <div id="inventory-view" class="view"> <!-- This is the main inventory view -->
                 <h3>Inventory</h3>
                 <div class="inventory-actions">
                     <button id="buy-loot-crate-btn">Buy Crate (Cost: 50 Scrap)</button>
@@ -181,7 +176,7 @@
                     <button id="gem-craft-btn" disabled>Combine (Cost: 100 Scrap)</button>
                 </div>
             </div>
-            
+
              <div id="forge-view" class="view">
                 <h3>The Forge</h3>
                 <p>Select an item below to reroll its stats for 50 Scrap.</p>
@@ -202,7 +197,7 @@
         <!-- Actions Panel (Formerly Right Panel) -->
         <div class="panel actions-panel">
             <h2>Actions</h2>
-            
+
             <div id="currency-display">
                 <p><i class="fas fa-coins"></i> <span id="gold-stat">0</span></p>
                 <p><i class="fas fa-cogs"></i> <span id="scrap-stat">0</span></p>
@@ -228,8 +223,8 @@
             <div id="prestige-area">
                 <h3>Prestige</h3>
                 <p id="prestige-requirement-text">Reach Max Level 100 to unlock Prestige.</p>
-                <p>Items in unlocked slots will be preserved.</p>
-                
+                <p>Items in unlocked legacy slots will be preserved.</p>
+
                 <div id="prestige-stats-area">
                     <h4>Prestige Bonuses</h4>
                      <p><i class="fas fa-award"></i> Prestige Count: <span id="prestige-count-stat">0</span></p>
@@ -252,12 +247,13 @@
              </div>
         </div>
     </div>
-    
+
     <div id="raid-container"></div>
     <div id="save-indicator" class="hidden">Game Saved!</div>
     <div id="item-tooltip" class="hidden"></div>
     <div id="stat-tooltip" class="hidden"></div>
 
+    <!-- Generic Modal for Sub-Zones -->
     <div id="modal-backdrop" class="hidden">
         <div id="modal-content">
             <h3 id="modal-title">Sub-Zone</h3>
@@ -268,21 +264,19 @@
         </div>
     </div>
 
+    <!-- Ring Selection Modal -->
     <div id="ring-selection-modal-backdrop" class="hidden">
         <div id="ring-selection-modal">
             <h3 id="ring-selection-title">Replace Which Ring?</h3>
             <div id="ring-selection-options">
-                <div id="ring-selection-slot1" class="ring-selection-option" data-slot="ring1">
-                    <!-- Content for ring 1 will be inserted here by JS -->
-                </div>
-                <div id="ring-selection-slot2" class="ring-selection-option" data-slot="ring2">
-                    <!-- Content for ring 2 will be inserted here by JS -->
-                </div>
+                <div id="ring-selection-slot1" class="ring-selection-option" data-slot="ring1"></div>
+                <div id="ring-selection-slot2" class="ring-selection-option" data-slot="ring2"></div>
             </div>
             <button id="ring-selection-cancel-btn">Cancel</button>
         </div>
     </div>
 
+    <!-- Offline Progress Modal -->
     <div id="offline-progress-modal-backdrop" class="hidden">
         <div id="offline-progress-modal">
             <h3>Welcome Back!</h3>
@@ -295,6 +289,28 @@
             <button id="offline-progress-close-btn">Continue</button>
         </div>
     </div>
+
+    <!-- Legacy Keeper Modal -->
+    <div id="legacy-keeper-panel" class="hidden modal-backdrop-style"> <!-- Use a generic modal style -->
+        <div class="modal-content-style"> <!-- Generic modal content style -->
+            <h3>Legacy Keeper</h3>
+            <p>Select one new slot to permanently unlock for Prestige.</p>
+            <div class="equipment-paperdoll-wrapper" style="margin: 20px auto; max-width: 300px;"> <!-- Centered and slightly smaller paperdoll -->
+                 <div id="legacy-keeper-equipment-paperdoll" class="equipment-paperdoll-container">
+                    <div class="equipment-slot" data-slot-name="helmet"></div><div class="equipment-slot" data-slot-name="necklace"></div>
+                    <div class="equipment-slot" data-slot-name="platebody"></div><div class="equipment-slot" data-slot-name="platelegs"></div>
+                    <div class="equipment-slot" data-slot-name="belt"></div><div class="equipment-slot" data-slot-name="sword"></div>
+                    <div class="equipment-slot" data-slot-name="shield"></div><div class="equipment-slot" data-slot-name="ring1"></div>
+                    <div class="equipment-slot" data-slot-name="ring2"></div>
+                </div>
+            </div>
+            <div class="modal-button-group">
+                <button id="legacy-keeper-save-btn">Save & Upgrade</button>
+                <button id="legacy-keeper-cancel-btn">Cancel</button>
+            </div>
+        </div>
+    </div>
+
 
     <!-- Scripts -->
     <script type="module" src="game.js"></script>
