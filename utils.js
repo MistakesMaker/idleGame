@@ -154,10 +154,10 @@ export function getXpForNextLevel(level) {
  */
 export function getUpgradeCost(upgradeType, level) {
     if (upgradeType === 'clickDamage') {
-        return Math.floor(10 * Math.pow(1.15, level));
+        return Math.floor(10 * Math.pow(1.19, level));
     }
     if (upgradeType === 'dps') {
-        return Math.floor(25 * Math.pow(1.18, level));
+        return Math.floor(25 * Math.pow(1.19, level));
     }
     return Infinity;
 }
