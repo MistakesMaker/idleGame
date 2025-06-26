@@ -7,22 +7,28 @@ import { MONSTERS } from './data/monsters.js';
 import { UNIQUE_EFFECTS } from './data/unique_effects.js';
 
 /**
- * Checks if an item is a "boss unique" by seeing if it only drops from one monster in the entire game.
+ * Checks if an item is a "boss unique" by seeing if it only drops from one boss monster in the entire game.
  * @param {string} itemId The base ID of the item to check.
- * @returns {boolean} True if the item is a unique drop, false otherwise.
+ * @returns {boolean} True if the item is a unique boss drop, false otherwise.
  */
 function isBossUnique(itemId) {
     let dropCount = 0;
+    let fromBoss = false;
+
     for (const monsterKey in MONSTERS) {
         const monster = MONSTERS[monsterKey];
         if (monster.lootTable && monster.lootTable.some(loot => loot.item.id === itemId)) {
             dropCount++;
+            if (monster.isBoss) {
+                fromBoss = true;
+            }
         }
         if (dropCount > 1) {
-            return false; // Optimization: if we find it twice, we can stop early.
+            return false; // Optimization: if we find it twice, it can't be unique.
         }
     }
-    return dropCount === 1;
+
+    return dropCount === 1 && fromBoss;
 }
 
 
@@ -728,16 +734,15 @@ export function showGoldPopup(popupContainerEl, gold) {
 export function showItemDropAnimation(popupContainerEl, item) {
     if (!item || !item.icon) return;
 
-    // Create a wrapper for the path animation
     const wrapper = document.createElement('div');
     wrapper.className = 'item-drop-wrapper';
 
-    // Create the image for the spin and sparkle
     const itemImg = document.createElement('img');
     itemImg.src = item.icon;
     itemImg.className = 'item-drop-animation';
 
     if (isBossUnique(item.baseId)) {
+        wrapper.classList.add('boss-unique-drop');
         itemImg.classList.add('sparkle-animation');
     }
 
@@ -752,13 +757,11 @@ export function showItemDropAnimation(popupContainerEl, item) {
     const endX = (100 + Math.random() * 50) * horizontalDirection;
     const endY = 100;
 
-    // Set CSS variables on the wrapper for the path
     wrapper.style.setProperty('--peak-x', `${peakX}px`);
     wrapper.style.setProperty('--peak-y', `${peakY}px`);
     wrapper.style.setProperty('--end-x', `${endX}px`);
     wrapper.style.setProperty('--end-y', `${endY}px`);
 
-    // Append image to wrapper, and wrapper to container
     wrapper.appendChild(itemImg);
     popupContainerEl.appendChild(wrapper);
 
