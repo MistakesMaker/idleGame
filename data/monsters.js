@@ -59,6 +59,7 @@ const greenMeadowsMonsters = {
     SLIME_GENERAL: {
         name: 'Slime General',
         image: 'images/monsters/slime_general.png',
+        isBoss: true,
         dropChance: 100,
         lootTable: [
             { item: ITEMS.GLADIATORS_LONGSWORD, weight: 10 },
@@ -130,8 +131,8 @@ const greenMeadowsMonsters = {
     ROYAL_GRIFFIN: {
         name: 'Royal Griffin',
         image: 'images/monsters/griffin_chick.png', // Using chick image for now
-        dropChance: 100,
         isBoss: true,
+        dropChance: 100,
         lootTable: [
             { item: ITEMS.AMULET_OF_POWER, weight: 10 },
             { item: ITEMS.RING_OF_WEALTH, weight: 10 },
@@ -155,6 +156,7 @@ const greenMeadowsMonsters = {
     KING_OF_SLIMES: {
         name: 'King of Slimes',
         image: 'images/monsters/king_of_slimes.png',
+        isBoss: true,
         dropChance: 100,
         lootTable: [
             { item: ITEMS.ROYAL_CIRCLET, weight: 20 },
@@ -195,6 +197,7 @@ const orcVolcanoMonsters = {
     GIANT_ORC: {
         name: 'Giant Orc',
         image: 'images/monsters/giant_orc.png',
+        isBoss: true,
         dropChance: 100,
         lootTable: [
             { item: ITEMS.BELT_OF_THE_GIANT, weight: 2 },
@@ -249,6 +252,7 @@ const orcVolcanoMonsters = {
     // --- Sub-Zone: Chieftain's Camp (Boss Lvl 175) ---
     OBSIDIAN_GOLEM: {
         name: 'Obsidian Golem',
+        isBoss: true,
         image: 'images/monsters/obsidian_golem.png',
         dropChance: 33, // Note: This is a boss subzone but monster dropchance is not 100
         lootTable: [
@@ -272,6 +276,7 @@ const orcVolcanoMonsters = {
     RULER_OF_ORCS: {
         name: 'Ruler of Orcs',
         image: 'images/monsters/ruler_of_orcs.png',
+        isBoss: true,
         dropChance: 100,
         lootTable: [
             { item: ITEMS.RUNIC_BLADE, weight: 10 },
@@ -312,6 +317,7 @@ const undeadDesertMonsters = {
     CURSED_MUMMY: {
         name: 'Cursed Mummy',
         image: 'images/monsters/cursed_mummy.png',
+        isBoss: true,
         dropChance: 100,
         lootTable: [
             { item: ITEMS.SANDSTRIDER_LEGGINGS, weight: 10 },
@@ -345,6 +351,7 @@ const undeadDesertMonsters = {
     TOMB_ROBBER: {
         name: 'Tomb Robber',
         image: 'images/monsters/tomb_robber.png',
+        isBoss: true,
         dropChance: 35, // Note: Boss subzone, but not 100% drop chance
         lootTable: [
             { item: ITEMS.RING_OF_WEALTH, weight: 8 },
@@ -378,6 +385,7 @@ const undeadDesertMonsters = {
     SAND_WRAITH: {
         name: 'Sand Wraith',
         image: 'images/monsters/sand_wraith.png',
+        isBoss: true,
         dropChance: 32, // Note: Boss subzone, but not 100% drop chance
         lootTable: [
             { item: ITEMS.SANDSTRIDER_LEGGINGS, weight: 1 },
@@ -389,6 +397,7 @@ const undeadDesertMonsters = {
     GATEKEEPER_OF_THE_SANDS: {
         name: 'Gatekeeper of the Sands',
         image: 'images/monsters/gatekeeper_of_the_sands.png',
+        isBoss: true,
         dropChance: 100,
         lootTable: [
             { item: ITEMS.AEGIS_OF_THE_GUARDIAN, weight: 10 },
@@ -469,6 +478,7 @@ const finalDungeonMonsters = {
     PIT_FIEND: {
         name: 'Pit Fiend',
         image: 'images/monsters/pit_fiend.png',
+        isBoss: true,
         dropChance: 38, // Note: Boss subzone, but not 100% drop chance
         lootTable: [
             { item: ITEMS.DRAGONHIDE_VEST, weight: 1 },
@@ -489,6 +499,7 @@ const finalDungeonMonsters = {
     ARCHDEMON_OVERLORD: {
         name: 'Archdemon Overlord',
         image: 'images/monsters/bigboss.png',
+        isBoss: true,
         dropChance: 100,
         lootTable: [
             { item: ITEMS.DRAGONFANG, weight: 10 },
@@ -559,6 +570,7 @@ const underdarkMonsters = {
     CRYSTAL_GOLEM: {
         name: 'Crystal Golem',
         image: 'images/monsters/crystal_golem.png',
+        isBoss: true,
         dropChance: 100,
         lootTable: [
             { item: ITEMS.CROWN_OF_WISDOM, weight: 10 },
@@ -569,6 +581,7 @@ const underdarkMonsters = {
     CRYSTAL_KING: {
         name: 'The Crystal King',
         image: 'images/monsters/crystal_king.png',
+        isBoss: true,
         dropChance: 100,
         lootTable: [
             { item: ITEMS.DRAGONBONE_HEADDRESS, weight: 10 },
@@ -627,6 +640,7 @@ const underdarkMonsters = {
     FUNGAL_BEHEMOTH: {
         name: 'Fungal Behemoth',
         image: 'images/monsters/fungal_behemoth.png',
+        isBoss: true,
         dropChance: 100,
         lootTable: [
             { item: ITEMS.BELT_OF_THE_GIANT, weight: 10 },
@@ -637,6 +651,7 @@ const underdarkMonsters = {
     THE_GREAT_MYCELIUM: {
         name: 'The Great Mycelium',
         image: 'images/monsters/the_great_mycelium.png',
+        isBoss: true,
         dropChance: 100,
         lootTable: [
             { item: ITEMS.DRAGONHIDE_VEST, weight: 10 },
@@ -697,6 +712,7 @@ const underdarkMonsters = {
     DROW_PRIESTESS: {
         name: 'Drow Priestess',
         image: 'images/monsters/drow_priestess.png',
+        isBoss: true,
         dropChance: 100,
         lootTable: [
             { item: ITEMS.RUNIC_BLADE, weight: 10 },
@@ -707,6 +723,7 @@ const underdarkMonsters = {
     SPIDER_QUEEN_MATRON: {
         name: 'Spider Queen Matron',
         image: 'images/monsters/spider_queen_matron.png',
+        isBoss: true,
         dropChance: 100,
         lootTable: [
             { item: ITEMS.DRAGONFIRE_LOOP, weight: 10 },
@@ -728,10 +745,12 @@ const otherMonsters = {
         dropChance: 0, // No item drops
         lootTable: [],
         isSpecial: true,
+        background: 'images/backgrounds/bg_golden_slime.png'
     },
     DUNGEON_GUARDIAN: {
         name: 'Dungeon Guardian',
         image: 'images/boss.png',
+        isBoss: true,
         dropChance: 100,
         lootTable: [
             { item: ITEMS.RUNIC_BLADE, weight: 10 },
