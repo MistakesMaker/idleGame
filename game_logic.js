@@ -59,18 +59,37 @@ export function generateItem(rarity, itemLevel, itemBase) {
     });
 
     if (itemBase.canHaveSockets && itemBase.maxSockets > 0) {
-        item.sockets = [];
-        
-        if (Math.random() < 0.10) {
-            item.sockets.push(null);
-            
-            if (item.sockets.length < itemBase.maxSockets && Math.random() < 0.05) {
-                item.sockets.push(null);
+        // Rarity defines the "potential" cap for sockets as a percentage of the item's max.
+        const rarityPotential = {
+            common: 0.34,
+            uncommon: 0.50,
+            rare: 0.75,
+            epic: 0.90,
+            legendary: 1.00
+        };
 
-                if (item.sockets.length < itemBase.maxSockets && Math.random() < 0.01) {
-                    item.sockets.push(null);
+        const potentialMultiplier = rarityPotential[item.rarity] || 0.34; // Default to common
+        const dynamicCap = Math.floor(itemBase.maxSockets * potentialMultiplier);
+        
+        const createdSockets = [];
+        if (dynamicCap > 0) {
+            const SOCKET_CHANCE = 0.10; // 10% chance for each potential socket
+
+            // Perform cascading rolls up to the dynamic cap
+            for (let i = 0; i < dynamicCap; i++) {
+                if (Math.random() < SOCKET_CHANCE) {
+                    // Success! Add a socket.
+                    createdSockets.push(null);
+                } else {
+                    // Failure. Stop trying to add more sockets.
+                    break;
                 }
             }
+        }
+        
+        // Only add the sockets property if at least one was successfully created.
+        if (createdSockets.length > 0) {
+            item.sockets = createdSockets;
         }
     }
 
