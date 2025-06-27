@@ -56,7 +56,7 @@ document.addEventListener('DOMContentLoaded', () => {
             inventory: [],
             inventoryGridInitialized: true,
             gems: [],
-            monsterKillCounts: {}, // <-- NEW: Initialize kill counts
+            monsterKillCounts: {},
             unlockedPrestigeSlots: ['sword'], 
             absorbedStats: {},
             absorbedSynergies: [],
@@ -1581,7 +1581,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 absorbedUniqueEffects: finalAbsorbedUniqueEffects,
                 prestigeCount: oldPrestigeCount + 1,
                 completedLevels: gameState.completedLevels,
-                monsterKillCounts: gameState.monsterKillCounts, // <-- Keep kill counts on prestige
                 maxLevel: 1,
                 nextPrestigeLevel: currentPrestigeLevel + 100,
                 hero: prestgedHeroState,
@@ -1738,7 +1737,7 @@ document.addEventListener('DOMContentLoaded', () => {
             gameState = { 
                 ...baseState, 
                 ...loadedState,
-                monsterKillCounts: loadedState.monsterKillCounts || {}, // <-- Load kill counts
+                monsterKillCounts: loadedState.monsterKillCounts || {},
                 unlockedPrestigeSlots: loadedState.unlockedPrestigeSlots || ['sword'],
                 gems: loadedState.gems || [],
                 hero: { ...baseState.hero, ...(loadedState.hero || {}), attributes: { ...baseState.hero.attributes, ...(loadedState.hero?.attributes || {}) } }, 
