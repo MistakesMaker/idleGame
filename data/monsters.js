@@ -369,7 +369,6 @@ const undeadDesertMonsters = {
         isBoss: true,
         dropChance: 35, // Note: Boss subzone, but not 100% drop chance
         lootTable: [
-            { item: ITEMS.RING_OF_WEALTH, weight: 8 },
             { item: ITEMS.GOLD_RING, weight: 6 },
             { item: ITEMS.EMERALD_CHARM, weight: 4 },
         ]

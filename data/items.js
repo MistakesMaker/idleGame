@@ -670,7 +670,7 @@ const undeadDesertItems = {
         type: 'ring',
         icon: 'images/icons/gold_ring.png',
         width: 1, height: 1,
-        possibleStats: [ { key: STATS.GOLD_GAIN.key, min: 10, max: 30 } ]
+        possibleStats: [ { key: STATS.GOLD_GAIN.key, min: 80, max: 100 } ]
     },
     EMERALD_CHARM: {
         id: 'EMERALD_CHARM',
@@ -678,7 +678,7 @@ const undeadDesertItems = {
         type: 'necklace',
         icon: 'images/icons/emerald_charm.png',
         width: 2, height: 2,
-        possibleStats: [ { key: STATS.GOLD_GAIN.key, min: 15, max: 45 } ]
+        possibleStats: [ { key: STATS.MAGIC_FIND.key, min: 5, max: 10 } ]
     },
 
     // --- Sub-Zone: Scorpion Nest (Levels 251-274) ---
