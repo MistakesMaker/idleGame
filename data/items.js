@@ -709,7 +709,7 @@ const undeadDesertItems = {
         type: 'necklace',
         icon: 'images/icons/topaz_talisman.png',
         width: 2, height: 2,
-        possibleStats: [ { key: STATS.MAGIC_FIND.key, min: 10, max: 15 } ]
+        possibleStats: [ { key: STATS.MAGIC_FIND.key, min: 7, max: 10 } ]
     },
     BONE_LEGPLATES: {
         id: 'BONE_LEGPLATES',
