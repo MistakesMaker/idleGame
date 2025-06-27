@@ -535,6 +535,8 @@ const orcVolcanoItems = {
         type: 'sword',
         icon: 'images/icons/mithril_scimitar.png',
         width: 2, height: 3,
+        canHaveSockets: true,
+        maxSockets: 3,
         possibleStats: [ { key: STATS.CLICK_DAMAGE.key, min: 1250, max: 2100 } ]
     },
 
@@ -573,7 +575,7 @@ const undeadDesertItems = {
         type: 'ring',
         icon: 'images/icons/band_of_might.png',
         width: 1, height: 1,
-        possibleStats: [ { key: STATS.CLICK_DAMAGE.key, min: 15, max: 45 } ]
+        possibleStats: [ { key: STATS.CLICK_DAMAGE.key, min: 100, max: 250 } ]
     },
 
     // --- Sub-Zone: Mummy's Crypt (Boss Lvl 225) ---
