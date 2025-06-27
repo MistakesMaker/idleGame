@@ -234,7 +234,7 @@ const orcVolcanoMonsters = {
     // --- Sub-Zone: Molten Heart (Boss Lvl 150) ---
     MOLTEN_GUARDIAN: {
         name: 'Molten Guardian',
-        image: 'images/monsters/obsidian_guardian.png', 
+        image: 'images/monsters/obsidian_golem.png', // Re-using image
         isBoss: true,
         dropChance: 100,
         lootTable: [
@@ -451,7 +451,7 @@ const finalDungeonMonsters = {
     // --- Sub-Zone: Demon Sentry (Boss Lvl 325) ---
     DEMON_SENTRY_BOSS: {
         name: 'Demon Sentry',
-        image: 'images/monsters/demon_sentry.png', 
+        image: 'images/monsters/gargoyle.png', // Re-using image
         isBoss: true,
         dropChance: 100,
         lootTable: [
@@ -484,14 +484,14 @@ const finalDungeonMonsters = {
     // --- Sub-Zone: The Hellforge (Boss Lvl 350) ---
     HELLFORGE_GUARDIAN: {
         name: 'Hellforge Guardian',
-        image: 'images/monsters/hellforge_demon.png',
+        image: 'images/monsters/chaos_demon.png', // Re-using image
         isBoss: true,
         dropChance: 100,
         lootTable: [
             { item: ITEMS.MIRRORED_SHIELD, weight: 10 },
             { item: ITEMS.PLAGUE_STITCHED_CINCH, weight: 10 },
             { item: ITEMS.BLOODSTONE_PENDANT, weight: 15 },
-            { item: GEMS.BASE_DIAMOND, weight: 5 }, // Assuming a future gem
+            { item: GEMS.BASE_AMETHYST, weight: 5 }, // FIXED: Was BASE_DIAMOND
         ]
     },
     // --- Sub-Zone: Brimstone Corridors (Levels 351-374) ---
@@ -539,7 +539,7 @@ const finalDungeonMonsters = {
     // --- Sub-Zone: Archdemon's Lair (Boss Lvl 400) ---
     ARCHDEMON_OVERLORD: {
         name: 'Archdemon Overlord',
-        image: 'images/boss.png', // Was bigboss.png, using a consistent one
+        image: 'images/monsters/bigboss.png',
         isBoss: true,
         dropChance: 100,
         lootTable: [
@@ -657,7 +657,6 @@ const underdarkMonsters = {
         dropChance: 28,
         lootTable: [
             { item: ITEMS.SANDSTRIDER_LEGGINGS, weight: 2 },
-            // Studded leather belt was here, now moved to a lower level monster
         ]
     },
     GAS_SPORE: {
