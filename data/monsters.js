@@ -252,7 +252,7 @@ const orcVolcanoMonsters = {
         dropChance: 30,
         lootTable: [
             { item: ITEMS.SUNSTONE_BUCKLE, weight: 1 },
-            { item: GEMS.BASE_RUBY, weight: 1.5 },
+            { item: GEMS.BASE_RUBY, weight: 9 },
         ]
     },
     SALAMANDER: {
