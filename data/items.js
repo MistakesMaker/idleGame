@@ -535,7 +535,7 @@ const orcVolcanoItems = {
         type: 'sword',
         icon: 'images/icons/mithril_scimitar.png',
         width: 2, height: 3,
-        possibleStats: [ { key: STATS.CLICK_DAMAGE.key, min: 100, max: 1000 } ]
+        possibleStats: [ { key: STATS.CLICK_DAMAGE.key, min: 1250, max: 2100 } ]
     },
 
     // --- Sub-Zone: Volcano Peak (Boss Lvl 200) ---
