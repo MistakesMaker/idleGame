@@ -488,7 +488,7 @@ const orcVolcanoItems = {
         type: 'shield',
         icon: 'images/icons/steel_heater.png',
         width: 2, height: 3,
-        possibleStats: [ { key: STATS.DPS.key, min: 1200, max: 1600 } ]
+        possibleStats: [ { key: STATS.DPS.key, min: 2200, max: 5000 } ]
     },
     STEEL_FULL_HELM: {
         id: 'STEEL_FULL_HELM',
