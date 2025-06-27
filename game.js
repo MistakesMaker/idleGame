@@ -93,7 +93,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Calculate bonuses from permanent upgrades first
         const permanentUpgradeBonuses = {
             gold: (permUpgrades.GOLD_MASTERY || 0) * permUpgradeDefs.GOLD_MASTERY.bonusPerLevel,
-            magicFind: (permUpgrades.LOOT_HOARDER || 0) * permUpgradeDefs.LOOT_HOARDER.bonusPerLevel,
+            magicFind: (permUpgrades.LOOT_HOARDER || 0) * (permUpgradeDefs.LOOT_HOARDER?.bonusPerLevel || 0),
             critChance: (permUpgrades.CRITICAL_POWER || 0) * permUpgradeDefs.CRITICAL_POWER.bonusPerLevel,
             critDamage: (permUpgrades.CRITICAL_DAMAGE || 0) * permUpgradeDefs.CRITICAL_DAMAGE.bonusPerLevel,
             prestigePower: (permUpgrades.PRESTIGE_POWER || 0) * permUpgradeDefs.PRESTIGE_POWER.bonusPerLevel,
@@ -183,7 +183,7 @@ document.addEventListener('DOMContentLoaded', () => {
             bonusGold: finalBonusGold,
             magicFind: finalMagicFind,
             critChance: permanentUpgradeBonuses.critChance,
-            critDamage: 1 + (permanentUpgradeBonuses.critDamage / 100),
+            critDamage: 1.5 + (permanentUpgradeBonuses.critDamage / 100),
             multiStrikeChance: permanentUpgradeBonuses.multiStrike,
             bossDamageBonus: 1 + (permanentUpgradeBonuses.bossDamage / 100),
             scrapBonus: 1 + (permanentUpgradeBonuses.scrap / 100),
@@ -533,7 +533,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div class="upgrade-details">
                     <h4>${upgrade.name}</h4>
                     <p>${description}</p>
-                    <div class="upgrade-level">Level: ${currentLevel} / ${upgrade.maxLevel}</div>
+                    <div class="upgrade-level">Level: ${currentLevel} / ${upgrade.maxLevel === Infinity ? '∞' : upgrade.maxLevel}</div>
                 </div>
                 <div class="upgrade-buy-section">
                     ${isMaxed ? 'MAXED' : `<div class="upgrade-cost">${formatNumber(cost)} Gold</div>`}

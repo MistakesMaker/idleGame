@@ -101,8 +101,9 @@ export function generateItem(rarity, itemLevel, itemBase) {
  */
 export function dropLoot(currentMonster, gameState, playerStats) {
     const monsterDef = currentMonster.data;
-    if (!monsterDef || !monsterDef.lootTable || monsterDef.lootTable.length === 0) return null;
+    if (!monsterDef || !monsterDef.lootTable || monsterDef.lootTable.length === 0) return { droppedItem: null, logMessages: [] };
 
+    const logMessages = [];
     const totalWeight = monsterDef.lootTable.reduce((sum, entry) => sum + entry.weight, 0);
     let roll = Math.random() * totalWeight;
 
@@ -115,17 +116,26 @@ export function dropLoot(currentMonster, gameState, playerStats) {
         roll -= entry.weight;
     }
 
-    if (!itemBaseToDrop) return null;
+    if (!itemBaseToDrop) return { droppedItem: null, logMessages: [] };
 
     // Check if the drop is a gem by looking for a 'tier' property
     const isGem = itemBaseToDrop.tier >= 1;
 
     if (isGem) {
-        // It's a gem, add it to the gems inventory
-        const newGem = { ...itemBaseToDrop, id: Date.now() + Math.random() };
         if (!gameState.gems) gameState.gems = []; // Safety check for old saves
+        
+        // Add the primary gem
+        const newGem = { ...itemBaseToDrop, id: Date.now() + Math.random() };
         gameState.gems.push(newGem);
-        return newGem;
+        
+        // Check for the new Gem Find (duplication) bonus
+        if (playerStats.gemFindChance > 0 && Math.random() * 100 < playerStats.gemFindChance) {
+            const duplicateGem = { ...itemBaseToDrop, id: Date.now() + Math.random() + 1 };
+            gameState.gems.push(duplicateGem);
+            logMessages.push(`Gem Find! You found a duplicate <span class="epic" style="font-weight:bold;">${duplicateGem.name}</span>!`);
+        }
+        
+        return { droppedItem: newGem, logMessages };
     }
     
     // It's a regular item, proceed with rarity roll etc.
@@ -151,10 +161,10 @@ export function dropLoot(currentMonster, gameState, playerStats) {
         item.x = spot.x;
         item.y = spot.y;
         gameState.inventory.push(item);
-        return item;
+        return { droppedItem: item, logMessages };
     } else {
         // Inventory is full, can't add the item.
-        return null;
+        return { droppedItem: null, logMessages: [`The ${currentMonster.name} dropped an item, but your inventory is full!`] };
     }
 }
 
@@ -228,25 +238,18 @@ export function monsterDefeated(gameState, playerStats, currentMonster) {
 
         const dropRoll = Math.random() * 100;
         if (dropRoll < currentMonster.data.dropChance) {
-            droppedItem = dropLoot(currentMonster, gameState, playerStats);
+            const lootResult = dropLoot(currentMonster, gameState, playerStats);
+            droppedItem = lootResult.droppedItem;
+            
+            lootResult.logMessages.forEach(msg => logMessages.push(msg));
+
             if (droppedItem) {
                 const isGem = droppedItem.tier >= 1;
                 const rarityClass = isGem ? 'epic' : droppedItem.rarity;
                 logMessages.push(`The ${currentMonster.name} dropped something! <span class="${rarityClass}" style="font-weight:bold;">${droppedItem.name}</span>`);
-                
-                // Gem Find roll
-                if (playerStats.gemFindChance > 0 && Math.random() * 100 < playerStats.gemFindChance) {
-                    const gemKeys = Object.keys(GEMS);
-                    const randomGemKey = gemKeys[Math.floor(Math.random() * gemKeys.length)];
-                    const gemBase = GEMS[randomGemKey];
-                    const newGem = { ...gemBase, id: Date.now() + Math.random() };
-                    gameState.gems.push(newGem);
-                    logMessages.push(`Bonus Drop! You found a <span class="epic" style="font-weight:bold;">${newGem.name}</span>!`);
-                }
-
-            } else {
-                // A drop was rolled, but dropLoot returned null. This means the inventory is full.
-                logMessages.push(`The ${currentMonster.name} dropped an item, but your inventory is full!`, 'rare');
+            } else if (lootResult.logMessages.length > 0) {
+                // This handles the "inventory full" message from dropLoot
+                logMessages.push(lootResult.logMessages[0], 'rare');
             }
         }
     }

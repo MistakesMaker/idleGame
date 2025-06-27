@@ -28,18 +28,7 @@ export const PERMANENT_UPGRADES = {
         costScalar: 1.25,
         bonusType: 'PERCENT',
         bonusPerLevel: 1, // +1% per level
-        maxLevel: 100,
-    },
-    LOOT_HOARDER: {
-        id: 'LOOT_HOARDER',
-        name: "Loot Hoarder",
-        description: "Permanently increase Magic Find by <span>{value}%</span>, improving item rarity.",
-        icon: 'fas fa-gem',
-        baseCost: 2500,
-        costScalar: 1.35,
-        bonusType: 'PERCENT',
-        bonusPerLevel: 0.5, // +0.5% per level
-        maxLevel: 50,
+        maxLevel: Infinity,
     },
     CRITICAL_POWER: {
         id: 'CRITICAL_POWER',
@@ -50,18 +39,18 @@ export const PERMANENT_UPGRADES = {
         costScalar: 2.2,
         bonusType: 'PERCENT',
         bonusPerLevel: 0.2, // +0.2% per level
-        maxLevel: 25, // Capped at 5%
+        maxLevel: 500, // Capped at 100%
     },
     CRITICAL_DAMAGE: {
         id: 'CRITICAL_DAMAGE',
         name: "Critical Damage",
-        description: "Critical hits deal an additional <span>{value}%</span> damage.",
+        description: "Critical hits deal an additional <span>{value}%</span> damage. Base crit damage is 1.5x.",
         icon: 'fas fa-crosshairs',
         baseCost: 4000,
         costScalar: 1.4,
         bonusType: 'PERCENT',
         bonusPerLevel: 5, // +5% per level
-        maxLevel: 100,
+        maxLevel: Infinity,
     },
     PRESTIGE_POWER: {
         id: 'PRESTIGE_POWER',
@@ -72,7 +61,7 @@ export const PERMANENT_UPGRADES = {
         costScalar: 3,
         bonusType: 'PERCENT',
         bonusPerLevel: 0.5, // +0.5% per prestige count, per level
-        maxLevel: 20,
+        maxLevel: Infinity,
     },
     SCRAP_SCAVENGER: {
         id: 'SCRAP_SCAVENGER',
@@ -83,18 +72,18 @@ export const PERMANENT_UPGRADES = {
         costScalar: 1.5,
         bonusType: 'PERCENT',
         bonusPerLevel: 2, // +2% per level
-        maxLevel: 50,
+        maxLevel: Infinity,
     },
     GEM_FIND: {
         id: 'GEM_FIND',
         name: "Gem Find",
-        description: "Gain a <span>{value}%</span> chance for a random T1 Gem to drop alongside item drops.",
+        description: "Gain a <span>{value}%</span> chance to double any gem drop you receive.",
         icon: 'fas fa-search-plus',
         baseCost: 50000,
-        costScalar: 2.5,
+        costScalar: 2.0,
         bonusType: 'PERCENT',
-        bonusPerLevel: 0.1, // +0.1% per level
-        maxLevel: 20, // Capped at 2%
+        bonusPerLevel: 0.5, // +0.5% per level
+        maxLevel: 200, // Capped at 100%
     },
     BOSS_HUNTER: {
         id: 'BOSS_HUNTER',
@@ -105,7 +94,7 @@ export const PERMANENT_UPGRADES = {
         costScalar: 1.6,
         bonusType: 'PERCENT',
         bonusPerLevel: 2, // +2% per level
-        maxLevel: 50,
+        maxLevel: Infinity,
     },
     SWIFT_STRIKES: {
         id: 'SWIFT_STRIKES',
@@ -116,7 +105,7 @@ export const PERMANENT_UPGRADES = {
         costScalar: 2.8,
         bonusType: 'PERCENT',
         bonusPerLevel: 0.1, // +0.1% per level
-        maxLevel: 25, // Capped at 2.5%
+        maxLevel: Infinity,
     },
     LEGACY_KEEPER: {
         id: 'LEGACY_KEEPER',
@@ -124,7 +113,7 @@ export const PERMANENT_UPGRADES = {
         description: "Carry over <span>{value}</span> additional item(s) through Prestige.",
         icon: 'fas fa-archive',
         baseCost: 1000000, // Starts very expensive
-        costScalar: 10,  // Cost scales extremely fast
+        costScalar: 100,  // Cost scales extremely fast
         bonusType: 'FLAT',
         bonusPerLevel: 1, // +1 item slot per level
         maxLevel: 8, 
