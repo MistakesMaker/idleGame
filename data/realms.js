@@ -47,7 +47,7 @@ export const REALMS = [
                     // --- Sub-Zone: Scorched Path (Levels 126-149) ---
                     "scorched_path": { name: "Scorched Path", levelRange: [126, 149], monsterPool: [MONSTERS.ORC_SHAMAN, MONSTERS.LAVA_TURTLE], coords: {top: '80%', left: '80%'} },
                     // --- Sub-Zone: Molten Heart (Boss Lvl 150) ---
-                    "molten_heart": { name: "Molten Heart", levelRange: [150, 150], monsterPool: [MONSTERS.DUNGEON_GUARDIAN], coords: {top: '50%', left: '75%'}, isBoss: true },
+                    "molten_heart": { name: "Molten Heart", levelRange: [150, 150], monsterPool: [MONSTERS.MOLTEN_GUARDIAN], coords: {top: '50%', left: '75%'}, isBoss: true },
                     // --- Sub-Zone: Charred Forest (Levels 151-174) ---
                     "charred_forest": { name: "Charred Forest", levelRange: [151, 174], monsterPool: [MONSTERS.FIRE_ELEMENTAL, MONSTERS.SALAMANDER], coords: {top: '50%', left: '45%'} },
                     // --- Sub-Zone: Chieftain's Camp (Boss Lvl 175) ---
@@ -93,11 +93,11 @@ export const REALMS = [
                     // --- Sub-Zone: The Gatehouse (Levels 301-324) ---
                     "gatehouse": { name: "The Gatehouse", levelRange: [301, 324], monsterPool: [MONSTERS.GARGOYLE, MONSTERS.IMP], coords: {top: '80%', left: '20%'} },
                     // --- Sub-Zone: Demon Sentry (Boss Lvl 325) ---
-                    "demon_sentry": { name: "Demon Sentry", levelRange: [325, 325], monsterPool: [MONSTERS.DUNGEON_GUARDIAN], coords: {top: '80%', left: '50%'}, isBoss: true },
+                    "demon_sentry": { name: "Demon Sentry", levelRange: [325, 325], monsterPool: [MONSTERS.DEMON_SENTRY_BOSS], coords: {top: '80%', left: '50%'}, isBoss: true },
                     // --- Sub-Zone: Halls of Damnation (Levels 326-349) ---
                     "halls_of_damnation": { name: "Halls of Damnation", levelRange: [326, 349], monsterPool: [MONSTERS.HELLHOUND, MONSTERS.CULTIST], coords: {top: '80%', left: '80%'} },
                     // --- Sub-Zone: The Hellforge (Boss Lvl 350) ---
-                    "the_hellforge": { name: "The Hellforge", levelRange: [350, 350], monsterPool: [MONSTERS.DUNGEON_GUARDIAN], coords: {top: '50%', left: '75%'}, isBoss: true },
+                    "the_hellforge": { name: "The Hellforge", levelRange: [350, 350], monsterPool: [MONSTERS.HELLFORGE_GUARDIAN], coords: {top: '50%', left: '75%'}, isBoss: true },
                     // --- Sub-Zone: Brimstone Corridors (Levels 351-374) ---
                     "brimstone_corridors": { name: "Brimstone Corridors", levelRange: [351, 374], monsterPool: [MONSTERS.TOXIC_SULPHUR_GAS, MONSTERS.SUCCUBUS], coords: {top: '50%', left: '45%'} },
                     // --- Sub-Zone: Pit Lord's Arena (Boss Lvl 375) ---

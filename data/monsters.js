@@ -76,6 +76,7 @@ const greenMeadowsMonsters = {
         dropChance: 20,
         lootTable: [
             { item: ITEMS.LEATHER_TUNIC, weight: 10 },
+            { item: ITEMS.STUDDED_LEATHER_BELT, weight: 1 },
         ]
     },
     BAT: {
@@ -94,6 +95,7 @@ const greenMeadowsMonsters = {
         lootTable: [
             { item: ITEMS.CHAINMAIL_HAUBERK, weight: 1 },
             { item: ITEMS.CHAINMAIL_LEGGINGS, weight: 1 },
+            { item: ITEMS.BRONZE_BUCKLER, weight: 1 },
         ]
     },
 
@@ -229,6 +231,20 @@ const orcVolcanoMonsters = {
         ]
     },
 
+    // --- Sub-Zone: Molten Heart (Boss Lvl 150) ---
+    MOLTEN_GUARDIAN: {
+        name: 'Molten Guardian',
+        image: 'images/monsters/obsidian_guardian.png', 
+        isBoss: true,
+        dropChance: 100,
+        lootTable: [
+            { item: ITEMS.SUNSTONE_BUCKLE, weight: 15 },
+            { item: ITEMS.STEEL_FULL_HELM, weight: 15 },
+            { item: ITEMS.ORCISH_CLEAVER, weight: 10 },
+            { item: GEMS.BASE_RUBY, weight: 10 },
+        ]
+    },
+
     // --- Sub-Zone: Charred Forest (Levels 151-174) ---
     FIRE_ELEMENTAL: {
         name: 'Fire Elemental',
@@ -279,7 +295,6 @@ const orcVolcanoMonsters = {
         isBoss: true,
         dropChance: 100,
         lootTable: [
-            { item: ITEMS.RUNIC_BLADE, weight: 10 },
             { item: ITEMS.HELM_OF_VALOR, weight: 10 },
             { item: ITEMS.OBSIDIAN_BAND, weight: 15 },
             { item: ITEMS.MITHRIL_SCIMITAR, weight: 20 },
@@ -412,7 +427,7 @@ const undeadDesertMonsters = {
 // --- Final Dungeon Zone Monsters (Levels 301-400) ---
 // ====================================================================================
 const finalDungeonMonsters = {
-    // --- Sub-Zone: Gatehouse (Levels 301-324) ---
+    // --- Sub-Zone: The Gatehouse (Levels 301-324) ---
     GARGOYLE: {
         name: 'Gargoyle',
         image: 'images/monsters/gargoyle.png',
@@ -433,6 +448,19 @@ const finalDungeonMonsters = {
             { item: GEMS.BASE_RUBY, weight: 0.6 },
         ]
     },
+    // --- Sub-Zone: Demon Sentry (Boss Lvl 325) ---
+    DEMON_SENTRY_BOSS: {
+        name: 'Demon Sentry',
+        image: 'images/monsters/demon_sentry.png', 
+        isBoss: true,
+        dropChance: 100,
+        lootTable: [
+            { item: ITEMS.GREAVES_OF_HASTE, weight: 10 },
+            { item: ITEMS.GHASTLY_ROBES, weight: 10 },
+            { item: ITEMS.SHADOW_COWL, weight: 15 },
+            { item: GEMS.BASE_AMETHYST, weight: 5 },
+        ]
+    },
     // --- Sub-Zone: Halls of Damnation (Levels 326-349) ---
     HELLHOUND: {
         name: 'Hellhound',
@@ -451,6 +479,19 @@ const finalDungeonMonsters = {
             { item: ITEMS.GHASTLY_ROBES, weight: 1 },
             { item: ITEMS.SHADOW_COWL, weight: 1 },
             { item: GEMS.BASE_AMETHYST, weight: 0.2 },
+        ]
+    },
+    // --- Sub-Zone: The Hellforge (Boss Lvl 350) ---
+    HELLFORGE_GUARDIAN: {
+        name: 'Hellforge Guardian',
+        image: 'images/monsters/hellforge_demon.png',
+        isBoss: true,
+        dropChance: 100,
+        lootTable: [
+            { item: ITEMS.MIRRORED_SHIELD, weight: 10 },
+            { item: ITEMS.PLAGUE_STITCHED_CINCH, weight: 10 },
+            { item: ITEMS.BLOODSTONE_PENDANT, weight: 15 },
+            { item: GEMS.BASE_DIAMOND, weight: 5 }, // Assuming a future gem
         ]
     },
     // --- Sub-Zone: Brimstone Corridors (Levels 351-374) ---
@@ -498,7 +539,7 @@ const finalDungeonMonsters = {
     // --- Sub-Zone: Archdemon's Lair (Boss Lvl 400) ---
     ARCHDEMON_OVERLORD: {
         name: 'Archdemon Overlord',
-        image: 'images/monsters/bigboss.png',
+        image: 'images/boss.png', // Was bigboss.png, using a consistent one
         isBoss: true,
         dropChance: 100,
         lootTable: [
@@ -616,7 +657,7 @@ const underdarkMonsters = {
         dropChance: 28,
         lootTable: [
             { item: ITEMS.SANDSTRIDER_LEGGINGS, weight: 2 },
-            { item: ITEMS.STUDDED_LEATHER_BELT, weight: 8 },
+            // Studded leather belt was here, now moved to a lower level monster
         ]
     },
     GAS_SPORE: {
@@ -715,7 +756,6 @@ const underdarkMonsters = {
         isBoss: true,
         dropChance: 100,
         lootTable: [
-            { item: ITEMS.RUNIC_BLADE, weight: 10 },
             { item: ITEMS.GHASTLY_ROBES, weight: 10 },
             { item: GEMS.BASE_AMETHYST, weight: 15 },
         ]

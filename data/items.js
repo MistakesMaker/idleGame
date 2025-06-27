@@ -69,7 +69,7 @@ const greenMeadowsItems = {
         type: 'belt',
         icon: 'images/icons/leather_belt.png',
         width: 2, height: 1,
-        possibleStats: [ { key: STATS.DPS.key, min: 50, max: 150 } ]
+        possibleStats: [ { key: STATS.DPS.key, min: 30, max: 90 } ]
     },
     LEATHER_TROUSERS: {
         id: 'LEATHER_TROUSERS',
@@ -86,14 +86,6 @@ const greenMeadowsItems = {
         icon: 'images/icons/simple_sash.png',
         width: 2, height: 1,
         possibleStats: [ { key: STATS.DPS.key, min: 20, max: 60 } ]
-    },
-    BRONZE_BUCKLER: {
-        id: 'BRONZE_BUCKLER',
-        name: "Bronze Buckler",
-        type: 'shield',
-        icon: 'images/icons/bronze_buckler.png',
-        width: 2, height: 3,
-        possibleStats: [ { key: STATS.DPS.key, min: 200, max: 600 } ]
     },
 
     // --- Sub-Zone: General's Outpost (Boss Lvl 25) ---
@@ -186,6 +178,22 @@ const greenMeadowsItems = {
         width: 2, height: 3,
         possibleStats: [ { key: STATS.DPS.key, min: 100, max: 300 } ]
     },
+    BRONZE_BUCKLER: {
+        id: 'BRONZE_BUCKLER',
+        name: "Bronze Buckler",
+        type: 'shield',
+        icon: 'images/icons/bronze_buckler.png',
+        width: 2, height: 3,
+        possibleStats: [ { key: STATS.DPS.key, min: 200, max: 500 } ]
+    },
+    STUDDED_LEATHER_BELT: {
+        id: 'STUDDED_LEATHER_BELT',
+        name: "Studded Leather Belt",
+        type: 'belt',
+        icon: 'images/icons/studded_leather_belt.png',
+        width: 2, height: 1,
+        possibleStats: [ { key: STATS.DPS.key, min: 120, max: 300 } ]
+    },
 
     // --- Sub-Zone: Guardian's Knoll (Boss Lvl 50) ---
     TOWER_SHIELD: {
@@ -221,8 +229,21 @@ const greenMeadowsItems = {
         canHaveSockets: true,
         maxSockets: 2,
         possibleStats: [
-            { key: STATS.CLICK_DAMAGE.key, min: 50, max: 300 },
-            { key: STATS.DPS.key, min: 1500, max: 4000 },
+            { key: STATS.CLICK_DAMAGE.key, min: 50, max: 250 },
+            { key: STATS.DPS.key, min: 1500, max: 3500 },
+        ]
+    },
+    RUNIC_BLADE: {
+        id: 'RUNIC_BLADE',
+        name: "Runic Blade",
+        type: 'sword',
+        icon: 'images/icons/runic_blade.png',
+        width: 2, height: 3,
+        canHaveSockets: true,
+        maxSockets: 3,
+        possibleStats: [
+            { key: STATS.CLICK_DAMAGE.key, min: 80, max: 150 },
+            { key: STATS.DPS.key, min: 1500, max: 4000 }
         ]
     },
 
@@ -285,6 +306,7 @@ const greenMeadowsItems = {
         type: 'necklace',
         icon: 'images/icons/amulet_of_power.png',
         width: 2, height: 2,
+        isUnique: true,
         possibleStats: [
             { key: STATS.CLICK_DAMAGE.key, min: 200, max: 250 },
             { key: STATS.DPS.key, min: 400, max: 750 }
@@ -355,8 +377,8 @@ const greenMeadowsItems = {
         canHaveSockets: true,
         maxSockets: 3,
         possibleStats: [
-            { key: STATS.CLICK_DAMAGE.key, min: 500, max: 1000 },
-            { key: STATS.DPS.key, min: 2500, max: 8000 },
+            { key: STATS.CLICK_DAMAGE.key, min: 400, max: 900 },
+            { key: STATS.DPS.key, min: 2000, max: 6500 },
             { key: STATS.GOLD_GAIN.key, min: 20, max: 20 },
         ]
     },
@@ -517,19 +539,6 @@ const orcVolcanoItems = {
     },
 
     // --- Sub-Zone: Volcano Peak (Boss Lvl 200) ---
-    RUNIC_BLADE: {
-        id: 'RUNIC_BLADE',
-        name: "Runic Blade",
-        type: 'sword',
-        icon: 'images/icons/runic_blade.png',
-        width: 2, height: 3,
-        canHaveSockets: true,
-        maxSockets: 3,
-        possibleStats: [
-            { key: STATS.CLICK_DAMAGE.key, min: 150, max: 450 },
-            { key: STATS.DPS.key, min: 2500, max: 7000 }
-        ]
-    },
     HELM_OF_VALOR: {
         id: 'HELM_OF_VALOR',
         name: "Helm of Valor",
@@ -744,7 +753,7 @@ const undeadDesertItems = {
         canHaveSockets: true,
         maxSockets: 3,
         possibleStats: [
-            { key: STATS.CLICK_DAMAGE.key, min: 200, max: 600 },
+            { key: STATS.CLICK_DAMAGE.key, min: 200, max: 500 },
             { key: STATS.MAGIC_FIND.key, min: 1, max: 3 }
         ]
     },
@@ -1017,14 +1026,7 @@ const underdarkItems = {
     // (Currently no new items are introduced here)
 
     // --- Sub-Zone: Mycelial Network (Levels 526-549) ---
-    STUDDED_LEATHER_BELT: {
-        id: 'STUDDED_LEATHER_BELT',
-        name: "Studded Leather Belt",
-        type: 'belt',
-        icon: 'images/icons/studded_leather_belt.png',
-        width: 2, height: 1,
-        possibleStats: [ { key: STATS.DPS.key, min: 120, max: 360 } ]
-    },
+    // (This item was moved to Green Meadows)
 
     // --- Sub-Zone: Fungal Behemoth's Cave (Boss Lvl 550) ---
     // (Currently no new items are introduced here)
