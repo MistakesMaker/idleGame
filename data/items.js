@@ -403,7 +403,7 @@ const orcVolcanoItems = {
         type: 'necklace',
         icon: 'images/icons/ruby_amulet.png',
         width: 2, height: 2,
-        possibleStats: [ { key: STATS.CLICK_DAMAGE.key, min: 10, max: 30 } ]
+        possibleStats: [ { key: STATS.CLICK_DAMAGE.key, min: 300, max: 600 } ]
     },
     IRON_GIRDLE: {
         id: 'IRON_GIRDLE',
