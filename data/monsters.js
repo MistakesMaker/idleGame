@@ -391,7 +391,6 @@ const undeadDesertMonsters = {
         dropChance: 28,
         lootTable: [
             { item: ITEMS.BONE_LEGPLATES, weight: 1 },
-            { item: GEMS.BASE_AMETHYST, weight: 0.2 },
         ]
     },
 
@@ -417,7 +416,6 @@ const undeadDesertMonsters = {
             { item: ITEMS.AEGIS_OF_THE_GUARDIAN, weight: 10 },
             { item: ITEMS.BLADE_OF_THE_SPECTRE, weight: 10 },
             { item: ITEMS.SIGNET_OF_THE_LEECH, weight: 15 },
-            { item: GEMS.BASE_AMETHYST, weight: 5 },
         ]
     },
 };
@@ -457,7 +455,6 @@ const finalDungeonMonsters = {
             { item: ITEMS.GREAVES_OF_HASTE, weight: 10 },
             { item: ITEMS.GHASTLY_ROBES, weight: 10 },
             { item: ITEMS.SHADOW_COWL, weight: 15 },
-            { item: GEMS.BASE_AMETHYST, weight: 5 },
         ]
     },
     // --- Sub-Zone: Halls of Damnation (Levels 326-349) ---
@@ -477,7 +474,6 @@ const finalDungeonMonsters = {
         lootTable: [
             { item: ITEMS.GHASTLY_ROBES, weight: 1 },
             { item: ITEMS.SHADOW_COWL, weight: 1 },
-            { item: GEMS.BASE_AMETHYST, weight: 0.2 },
         ]
     },
     // --- Sub-Zone: The Hellforge (Boss Lvl 350) ---
@@ -490,7 +486,6 @@ const finalDungeonMonsters = {
             { item: ITEMS.MIRRORED_SHIELD, weight: 10 },
             { item: ITEMS.PLAGUE_STITCHED_CINCH, weight: 10 },
             { item: ITEMS.BLOODSTONE_PENDANT, weight: 15 },
-            { item: GEMS.BASE_AMETHYST, weight: 5 }, // FIXED: Was BASE_DIAMOND
         ]
     },
     // --- Sub-Zone: Brimstone Corridors (Levels 351-374) ---
@@ -540,6 +535,7 @@ const finalDungeonMonsters = {
         name: 'Archdemon Overlord',
         image: 'images/monsters/bigboss.png',
         isBoss: true,
+        isUnique: true,
         dropChance: 100,
         lootTable: [
             { item: ITEMS.DRAGONFANG, weight: 10 },
