@@ -234,7 +234,7 @@ const orcVolcanoMonsters = {
     // --- Sub-Zone: Molten Heart (Boss Lvl 150) ---
     MOLTEN_GUARDIAN: {
         name: 'Molten Guardian',
-        image: 'images/monsters/obsidian_golem.png', // Re-using image
+        image: 'images/monsters/molten_guardian.png', // Re-using image
         isBoss: true,
         dropChance: 100,
         lootTable: [

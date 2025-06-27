@@ -858,7 +858,7 @@ const finalDungeonItems = {
         icon: 'images/icons/plague_stitched_cinch.png',
         width: 2, height: 1,
         possibleStats: [
-            { key: STATS.DPS.key, min: 1500, max: 4500 },
+            { key: STATS.DPS.key, min: 10000, max: 13000 },
             { key: STATS.MAGIC_FIND.key, min: 1, max: 3},
         ]
     },
