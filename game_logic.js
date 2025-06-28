@@ -170,7 +170,7 @@ export function dropLoot(currentMonster, gameState, playerStats) {
         if (playerStats.gemFindChance > 0 && Math.random() * 100 < playerStats.gemFindChance) {
             const duplicateGem = { ...itemBaseToDrop, id: Date.now() + Math.random() + 1 };
             gameState.gems.push(duplicateGem);
-            logMessages.push({ message: `Gem Find! You found a duplicate <span class="epic">${duplicateGem.name}</span>!`, class: 'epic' });
+            logMessages.push({ message: `Gem Find! You found a duplicate <span class="epic">${duplicateGem.name}</span>!`, class: '' });
         }
         
         return { droppedItem: newGem, logMessages };
@@ -196,7 +196,7 @@ export function dropLoot(currentMonster, gameState, playerStats) {
         const rarityIndex = rarities.indexOf(item.rarity);
         const scrapGained = Math.ceil(Math.pow(4, rarityIndex) * playerStats.scrapBonus);
         gameState.scrap += scrapGained;
-        logMessages.push({ message: `Auto-salvaged <span class="${item.rarity}">${item.name}</span> for ${scrapGained} scrap.`, class: 'uncommon' });
+        logMessages.push({ message: `Auto-salvaged <span class="${item.rarity}">${item.name}</span> for ${scrapGained} scrap.`, class: '' });
         return { droppedItem: null, logMessages };
     }
 
@@ -265,7 +265,6 @@ export function monsterDefeated(gameState, playerStats, currentMonster) {
         logMessages.push({ message: `You defeated the Golden Slime! (Streak: ${gameState.goldenSlimeStreak}) You gained a massive bonus of ${formatNumber(goldGained)} gold!`, class: '' });
         gameState.specialEncounter = null; // Clear the special encounter
     } else {
-        gameState.goldenSlimeStreak = 0; // Reset streak if it wasn't a golden slime
         // Apply regular boss multipliers to rewards
         if (isBigBossLevel(level)) {
             xpGained *= 3;
@@ -315,7 +314,7 @@ export function monsterDefeated(gameState, playerStats, currentMonster) {
     }
 
     if (slimeSplitChance > 0 && Math.random() * 100 < slimeSplitChance) {
-        logMessages.push({ message: 'The defeated monster splits into a <span class="legendary">Golden Slime!</span>', class: 'legendary' });
+        logMessages.push({ message: 'The defeated monster splits into a <span class="legendary">Golden Slime!</span>', class: '' });
         gameState.specialEncounter = {
             type: 'GOLDEN_SLIME',
             hp: previousMonsterMaxHp / 2,
