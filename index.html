@@ -129,7 +129,7 @@
             <div id="inventory-view" class="view">
                 <h3>Inventory</h3>
                 <div class="inventory-actions">
-                    <button id="buy-loot-crate-btn">Buy Crate (Cost: 50 Scrap)</button>
+                    <button id="auto-salvage-filter-btn">Auto-Salvage Filter</button>
                     <button id="salvage-mode-btn">Select to Salvage</button>
                     <button id="select-all-salvage-btn" class="hidden">Select All</button>
                     <button id="confirm-salvage-btn" class="hidden">Salvage Selected (<span id="salvage-count">0</span>)</button>
@@ -139,41 +139,6 @@
                     <button class="salvage-rarity-btn" data-rarity="uncommon">Salvage Uncommon</button>
                     <button class="salvage-rarity-btn" data-rarity="rare">Salvage Rare</button>
                 </div>
-                <!-- SALVAGE FILTER SECTION -->
-                <div id="salvage-filter-section">
-                    <h4>Auto-Salvage Filter</h4>
-                    <p class="small-text-hint">Items will be auto-salvaged if they do NOT meet ANY of the criteria below.</p>
-                    <div class="filter-master-control">
-                        <input type="checkbox" id="enable-salvage-filter">
-                        <label for="enable-salvage-filter">Enable Auto-Salvage</label>
-                    </div>
-                    <div id="salvage-filter-controls" class="hidden">
-                        <div class="filter-group">
-                            <label for="filter-keep-rarity">Keep Rarity:</label>
-                            <select id="filter-keep-rarity">
-                                <option value="common">Common & Up</option>
-                                <option value="uncommon">Uncommon & Up</option>
-                                <option value="rare">Rare & Up</option>
-                                <option value="epic">Epic & Up</option>
-                                <option value="legendary">Legendary Only</option>
-                                <option value="none">None (Use other filters)</option>
-                            </select>
-                        </div>
-                        <div class="filter-group">
-                            <label for="filter-keep-sockets">Keep Sockets:</label>
-                            <input type="number" id="filter-keep-sockets" min="0" max="3" value="0">
-                            <span>or more</span>
-                        </div>
-                        <div class="filter-group stats-filter-group">
-                            <label>Keep Stats:</label>
-                            <div id="filter-keep-stats-container">
-                                <!-- Stat checkboxes will be injected by JS -->
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <!-- END SALVAGE FILTER SECTION -->
-
                 <div class="grid-scroll-container">
                     <div id="inventory-slots" class="item-grid">
                         <!-- Items will be positioned here by JS -->
@@ -266,6 +231,7 @@
 
             <button id="raid-btn">Raid</button>
             <button id="reset-game-btn">Hard Reset</button>
+            <button id="buy-loot-crate-btn">Buy Crate (Cost: 50 Scrap)</button>
 
             <div id="upgrades-area">
                 <h3>Gold Upgrades</h3>
@@ -365,6 +331,43 @@
                 </div>
             </div>
             <button id="unlock-slot-cancel-btn">Cancel</button>
+        </div>
+    </div>
+
+    <!-- NEW SALVAGE FILTER MODAL -->
+    <div id="salvage-filter-modal-backdrop" class="hidden">
+        <div id="salvage-filter-modal">
+            <h3 id="salvage-filter-title">Auto-Salvage Filter</h3>
+            <p class="small-text-hint">Items will be auto-salvaged if they do NOT meet ALL of the enabled criteria.</p>
+            <div id="salvage-filter-modal-body">
+                <div class="filter-master-control">
+                    <input type="checkbox" id="enable-salvage-filter">
+                    <label for="enable-salvage-filter">Enable Auto-Salvage</label>
+                </div>
+                <div id="salvage-filter-controls">
+                    <div class="filter-group">
+                        <label for="filter-keep-rarity">Minimum Rarity to Keep:</label>
+                        <select id="filter-keep-rarity">
+                            <option value="common">Common</option>
+                            <option value="uncommon">Uncommon</option>
+                            <option value="rare">Rare</option>
+                            <option value="epic">Epic</option>
+                            <option value="legendary">Legendary</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="filter-keep-sockets">Minimum Sockets to Keep:</label>
+                        <input type="number" id="filter-keep-sockets" min="0" max="3" value="0">
+                    </div>
+                    <div class="filter-group stats-filter-group">
+                        <label>Required Stats to Keep:</label>
+                        <div id="filter-keep-stats-container">
+                            <!-- Stat checkboxes will be injected by JS -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <button id="salvage-filter-close-btn">Close</button>
         </div>
     </div>
 

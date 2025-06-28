@@ -153,23 +153,31 @@ export function populateSalvageFilter(elements, gameState) {
     const { filterKeepStatsContainer } = initSalvageFilterDOMElements();
     filterKeepStatsContainer.innerHTML = '';
     
-    for (const key in STATS) {
-        const stat = STATS[key];
-        const wrapper = document.createElement('div');
-        const checkbox = document.createElement('input');
-        checkbox.type = 'checkbox';
-        checkbox.id = `filter-stat-${stat.key}`;
-        checkbox.dataset.statKey = stat.key;
-        checkbox.checked = gameState.salvageFilter.keepStats[stat.key] || false;
-        
-        const label = document.createElement('label');
-        label.htmlFor = checkbox.id;
-        label.textContent = stat.name;
-        
-        wrapper.appendChild(checkbox);
-        wrapper.appendChild(label);
-        filterKeepStatsContainer.appendChild(wrapper);
+    const allPossibleStats = new Set();
+    for(const key in ITEMS) {
+        const itemBase = ITEMS[key];
+        itemBase.possibleStats.forEach(stat => allPossibleStats.add(stat.key));
     }
+    
+    Array.from(allPossibleStats).sort().forEach(statKey => {
+        const stat = Object.values(STATS).find(s => s.key === statKey);
+        if (stat) {
+            const wrapper = document.createElement('div');
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.id = `filter-stat-${stat.key}`;
+            checkbox.dataset.statKey = stat.key;
+            checkbox.checked = gameState.salvageFilter.keepStats[stat.key] || false;
+            
+            const label = document.createElement('label');
+            label.htmlFor = checkbox.id;
+            label.textContent = stat.name;
+            
+            wrapper.appendChild(checkbox);
+            wrapper.appendChild(label);
+            filterKeepStatsContainer.appendChild(wrapper);
+        }
+    });
 }
 
 

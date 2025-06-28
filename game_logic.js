@@ -7,7 +7,7 @@ import { rarities } from './game.js';
 import { isBossLevel, isBigBossLevel, isMiniBossLevel, findSubZoneByLevel, formatNumber, findEmptySpot } from './utils.js';
 
 /**
- * Checks if a dropped item should be kept based on the player's salvage filter settings.
+ * Checks if a dropped item should be kept based on the player's salvage filter settings (strict AND logic).
  * @param {object} item - The item that was just dropped.
  * @param {object} filter - The player's salvage filter settings from gameState.
  * @returns {boolean} True if the item should be kept, false if it should be salvaged.
@@ -17,28 +17,30 @@ function shouldKeepItem(item, filter) {
         return true; // If the filter is off, keep everything.
     }
 
-    // 1. Rarity Check
+    // Rarity Check
     const itemRarityIndex = rarities.indexOf(item.rarity);
     const keepRarityIndex = rarities.indexOf(filter.keepRarity);
-    if (filter.keepRarity !== 'none' && itemRarityIndex >= keepRarityIndex) {
-        return true; // Keep because its rarity is high enough.
+    if (itemRarityIndex < keepRarityIndex) {
+        return false; // Salvage because its rarity is too low.
     }
 
-    // 2. Sockets Check
+    // Sockets Check
     const itemSocketCount = item.sockets ? item.sockets.length : 0;
-    if (filter.keepSockets > 0 && itemSocketCount >= filter.keepSockets) {
-        return true; // Keep because it has enough sockets.
+    if (itemSocketCount < filter.keepSockets) {
+        return false; // Salvage because it doesn't have enough sockets.
     }
 
-    // 3. Stats Check
-    for (const statKey in item.stats) {
-        if (filter.keepStats[statKey]) {
-            return true; // Keep because it has a desired stat.
+    // Stats Check (must have ALL checked stats)
+    for (const statKey in filter.keepStats) {
+        if (filter.keepStats[statKey]) { // If this stat is required by the filter...
+            if (!item.stats || !item.stats[statKey]) {
+                return false; // ... and the item doesn't have it, salvage.
+            }
         }
     }
 
-    // If none of the "keep" conditions were met, salvage it.
-    return false;
+    // If the item has passed all the above checks, it's a keeper.
+    return true;
 }
 
 
@@ -289,9 +291,8 @@ export function monsterDefeated(gameState, playerStats, currentMonster) {
             if (droppedItem) {
                 const isGem = droppedItem.tier >= 1;
                 const rarityClass = isGem ? 'epic' : droppedItem.rarity;
-                logMessages.push({ message: `The ${currentMonster.name} dropped something! <span class="${rarityClass}" style="font-weight:bold;">${droppedItem.name}</span>`, class: rarityClass });
-            } else if (lootResult.logMessages.some(msg => msg.message.includes("inventory is full"))) {
-                // Do nothing special, the "inventory full" message is already in the log.
+                logMessages.push({ message: `The ${currentMonster.name} dropped something!`, class: '' });
+                logMessages.push({ message: `<span class="${rarityClass}" style="font-weight:bold;">${droppedItem.name}</span>`, class: rarityClass });
             }
         }
     }

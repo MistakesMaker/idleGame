@@ -51,10 +51,16 @@ document.addEventListener('DOMContentLoaded', () => {
             defaultPermUpgrades[key] = 0;
         }
 
-        const defaultKeepStats = {};
-        for (const key in STATS) {
-            defaultKeepStats[STATS[key].key] = false;
+        const allPossibleStats = new Set();
+        for(const key in ITEMS) {
+            const itemBase = ITEMS[key];
+            itemBase.possibleStats.forEach(stat => allPossibleStats.add(stat.key));
         }
+        const defaultKeepStats = {};
+        allPossibleStats.forEach(key => {
+            defaultKeepStats[key] = false;
+        });
+
 
         return {
             gold: 0, scrap: 0, upgrades: { clickDamage: 0, dps: 0 }, maxLevel: 1, currentFightingLevel: 1,
@@ -567,8 +573,8 @@ document.addEventListener('DOMContentLoaded', () => {
         gameState.gems.forEach(gem => {
             if (gem.tier) {
                 availableTiers.add(gem.tier);
-                if (gem.stats) { // <-- FIX: Check if stats exist
-                    for (const statKey in gem.stats) { // <-- FIX: Iterate over all stats
+                if (gem.stats) {
+                    for (const statKey in gem.stats) {
                         if (!availableStats.has(gem.tier)) {
                             availableStats.set(gem.tier, new Set());
                         }
@@ -807,19 +813,23 @@ document.addEventListener('DOMContentLoaded', () => {
             const confirmBtn = document.getElementById('confirm-salvage-btn');
             const selectAllBtn = document.getElementById('select-all-salvage-btn');
             const raritySalvageContainer = document.getElementById('salvage-by-rarity-controls');
-            if (salvageBtn && confirmBtn && selectAllBtn && raritySalvageContainer) {
+            const autoSalvageBtn = document.getElementById('auto-salvage-filter-btn');
+
+            if (salvageBtn && confirmBtn && selectAllBtn && raritySalvageContainer && autoSalvageBtn) {
                 if (salvageMode.active) {
                     salvageBtn.textContent = 'Cancel Salvage';
                     salvageBtn.classList.add('active');
                     confirmBtn.classList.remove('hidden');
                     selectAllBtn.classList.remove('hidden');
                     raritySalvageContainer.classList.remove('hidden');
+                    autoSalvageBtn.classList.add('hidden');
                 } else {
                     salvageBtn.textContent = 'Select to Salvage';
                     salvageBtn.classList.remove('active');
                     confirmBtn.classList.add('hidden');
                     selectAllBtn.classList.add('hidden');
                     raritySalvageContainer.classList.add('hidden');
+                    autoSalvageBtn.classList.remove('hidden');
                     salvageMode.selections = [];
                 }
             }
@@ -846,6 +856,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const confirmBtn = document.getElementById('confirm-salvage-btn');
             const selectAllBtn = document.getElementById('select-all-salvage-btn');
             const raritySalvageContainer = document.getElementById('salvage-by-rarity-controls');
+            const autoSalvageBtn = document.getElementById('auto-salvage-filter-btn');
+
             if (salvageBtn) {
                 salvageBtn.textContent = 'Select to Salvage';
                 salvageBtn.classList.remove('active');
@@ -853,6 +865,8 @@ document.addEventListener('DOMContentLoaded', () => {
             if (confirmBtn) confirmBtn.classList.add('hidden');
             if (selectAllBtn) selectAllBtn.classList.add('hidden');
             if(raritySalvageContainer) raritySalvageContainer.classList.add('hidden');
+            if(autoSalvageBtn) autoSalvageBtn.classList.remove('hidden');
+            
             document.body.classList.remove('salvage-mode-active');
             salvageMode.selections = [];
             updateAll();
@@ -1044,10 +1058,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
         elements.bulkCombineTierSelect.addEventListener('change', () => {
             const selectedTier = parseInt((/** @type {HTMLSelectElement} */ (elements.bulkCombineTierSelect)).value, 10);
+            const previousStatKey = bulkCombineSelection.statKey;
             bulkCombineSelection.tier = selectedTier || null;
-            bulkCombineSelection.statKey = null; // Reset stat when tier changes
-            bulkCombineDeselectedIds.clear(); // Clear deselections
-            populateBulkCombineControls(); // Repopulate stat dropdown
+            bulkCombineSelection.statKey = previousStatKey;
+            bulkCombineDeselectedIds.clear();
+            populateBulkCombineControls(); 
             updateAll();
         });
 
@@ -1331,6 +1346,29 @@ document.addEventListener('DOMContentLoaded', () => {
         filterKeepRarity.addEventListener('change', updateFilter);
         filterKeepSockets.addEventListener('change', updateFilter);
         filterKeepStatsContainer.addEventListener('change', updateFilter);
+
+        // Listeners to open and close the modal itself
+        const salvageFilterBtn = document.getElementById('auto-salvage-filter-btn');
+        const modalBackdrop = document.getElementById('salvage-filter-modal-backdrop');
+        const closeBtn = document.getElementById('salvage-filter-close-btn');
+
+        if (salvageFilterBtn && modalBackdrop) {
+            salvageFilterBtn.addEventListener('click', () => {
+                modalBackdrop.classList.remove('hidden');
+            });
+        }
+        if (closeBtn && modalBackdrop) {
+            closeBtn.addEventListener('click', () => {
+                modalBackdrop.classList.add('hidden');
+            });
+        }
+        if (modalBackdrop) {
+            modalBackdrop.addEventListener('click', (e) => {
+                if (e.target === modalBackdrop) {
+                    modalBackdrop.classList.add('hidden');
+                }
+            });
+        }
     }
     
     function setupItemTooltipListeners() {
@@ -1722,13 +1760,17 @@ document.addEventListener('DOMContentLoaded', () => {
     
             gameState = {
                 ...baseState,
+                // Persist these through prestige
                 permanentUpgrades: gameState.permanentUpgrades,
+                salvageFilter: gameState.salvageFilter, 
+                // Merge old and new absorbed stats
                 unlockedPrestigeSlots: gameState.unlockedPrestigeSlots,
                 absorbedStats: finalAbsorbedStats,
                 absorbedSynergies: finalAbsorbedSynergies,
                 absorbedUniqueEffects: finalAbsorbedUniqueEffects,
                 prestigeCount: oldPrestigeCount + 1,
-                completedLevels: gameState.completedLevels,
+                completedLevels: gameState.completedLevels, // Keep completed level history
+                // Reset run-specific data
                 maxLevel: 1,
                 nextPrestigeLevel: currentPrestigeLevel + 100,
                 hero: prestgedHeroState,
@@ -1884,6 +1926,10 @@ document.addEventListener('DOMContentLoaded', () => {
             gameState = { 
                 ...baseState, 
                 ...loadedState,
+                permanentUpgrades: { // Ensure permanent upgrades from default are present
+                    ...baseState.permanentUpgrades,
+                    ...(loadedState.permanentUpgrades || {})
+                },
                 salvageFilter: {
                     ...baseState.salvageFilter,
                     ...(loadedState.salvageFilter || {}),
