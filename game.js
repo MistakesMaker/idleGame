@@ -51,6 +51,11 @@ document.addEventListener('DOMContentLoaded', () => {
             defaultPermUpgrades[key] = 0;
         }
 
+        const defaultKeepStats = {};
+        for (const key in STATS) {
+            defaultKeepStats[STATS[key].key] = false;
+        }
+
         return {
             gold: 0, scrap: 0, upgrades: { clickDamage: 0, dps: 0 }, maxLevel: 1, currentFightingLevel: 1,
             monster: { hp: 10, maxHp: 10 },
@@ -83,6 +88,12 @@ document.addEventListener('DOMContentLoaded', () => {
             lastSaveTimestamp: null,
             permanentUpgrades: defaultPermUpgrades,
             presetSystemMigrated: true, // New saves will have the correct structure
+            salvageFilter: {
+                enabled: false,
+                keepRarity: 'uncommon',
+                keepSockets: 0,
+                keepStats: defaultKeepStats
+            }
         };
     }
 
@@ -200,7 +211,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function handleMonsterDefeated() {
         const result = logic.monsterDefeated(gameState, playerStats, currentMonster);
-        result.logMessages.forEach(msg => logMessage(elements.gameLogEl, msg));
+        result.logMessages.forEach(msg => logMessage(elements.gameLogEl, msg.message, msg.class));
         ui.showGoldPopup(elements.popupContainerEl, result.goldGained);
         
         if (result.droppedItem) {
@@ -1180,6 +1191,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (viewId === 'gems-view') {
                         populateBulkCombineControls();
                     }
+                    if (viewId === 'inventory-view') {
+                        ui.populateSalvageFilter(elements, gameState);
+                    }
                     tabs.forEach(t => t.classList.remove('active'));
                     tab.classList.add('active');
                     if (parentPanel) {
@@ -1285,6 +1299,38 @@ document.addEventListener('DOMContentLoaded', () => {
         setupRaidListeners();
         setupPrestigeListeners();
         setupLegacyKeeperModalListeners();
+        setupSalvageFilterListeners();
+    }
+
+    function setupSalvageFilterListeners() {
+        const {
+            enableSalvageFilter,
+            filterKeepRarity,
+            filterKeepSockets,
+            filterKeepStatsContainer,
+            salvageFilterControls
+        } = ui.initSalvageFilterDOMElements();
+    
+        const updateFilter = () => {
+            gameState.salvageFilter.enabled = (/** @type {HTMLInputElement} */ (enableSalvageFilter)).checked;
+            gameState.salvageFilter.keepRarity = (/** @type {HTMLSelectElement} */ (filterKeepRarity)).value;
+            gameState.salvageFilter.keepSockets = parseInt((/** @type {HTMLInputElement} */ (filterKeepSockets)).value, 10) || 0;
+            
+            const statCheckboxes = filterKeepStatsContainer.querySelectorAll('input[type="checkbox"]');
+            statCheckboxes.forEach(checkbox => {
+                if (checkbox instanceof HTMLInputElement && checkbox.dataset.statKey) {
+                    gameState.salvageFilter.keepStats[checkbox.dataset.statKey] = checkbox.checked;
+                }
+            });
+    
+            salvageFilterControls.classList.toggle('hidden', !(/** @type {HTMLInputElement} */ (enableSalvageFilter)).checked);
+            autoSave();
+        };
+    
+        enableSalvageFilter.addEventListener('change', updateFilter);
+        filterKeepRarity.addEventListener('change', updateFilter);
+        filterKeepSockets.addEventListener('change', updateFilter);
+        filterKeepStatsContainer.addEventListener('change', updateFilter);
     }
     
     function setupItemTooltipListeners() {
@@ -1826,16 +1872,30 @@ document.addEventListener('DOMContentLoaded', () => {
         
         const savedData = localStorage.getItem('idleRPGSaveData');
         if (savedData) {
-            const loadedState = JSON.parse(savedData);
+            let loadedState = JSON.parse(savedData);
             
+            // First, migrate the preset system if necessary
             if (!loadedState.presetSystemMigrated) {
-                 gameState = migrateToPresetInventories(loadedState);
-            } else {
-                const baseState = getDefaultGameState();
-                gameState = { ...baseState, ...loadedState };
-                // Ensure equipment is a reference to the active preset's equipment
-                gameState.equipment = gameState.presets[gameState.activePresetIndex].equipment;
+                 loadedState = migrateToPresetInventories(loadedState);
             }
+
+            // Then, merge with the default state to ensure new properties like salvageFilter exist
+            const baseState = getDefaultGameState();
+            gameState = { 
+                ...baseState, 
+                ...loadedState,
+                salvageFilter: {
+                    ...baseState.salvageFilter,
+                    ...(loadedState.salvageFilter || {}),
+                    keepStats: {
+                        ...baseState.salvageFilter.keepStats,
+                        ...((loadedState.salvageFilter || {}).keepStats || {})
+                    }
+                }
+            };
+            
+            // Ensure equipment is a reference to the active preset's equipment
+            gameState.equipment = gameState.presets[gameState.activePresetIndex].equipment;
             
             calculateOfflineProgress();
         } else {

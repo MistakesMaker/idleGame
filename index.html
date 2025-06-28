@@ -139,6 +139,41 @@
                     <button class="salvage-rarity-btn" data-rarity="uncommon">Salvage Uncommon</button>
                     <button class="salvage-rarity-btn" data-rarity="rare">Salvage Rare</button>
                 </div>
+                <!-- SALVAGE FILTER SECTION -->
+                <div id="salvage-filter-section">
+                    <h4>Auto-Salvage Filter</h4>
+                    <p class="small-text-hint">Items will be auto-salvaged if they do NOT meet ANY of the criteria below.</p>
+                    <div class="filter-master-control">
+                        <input type="checkbox" id="enable-salvage-filter">
+                        <label for="enable-salvage-filter">Enable Auto-Salvage</label>
+                    </div>
+                    <div id="salvage-filter-controls" class="hidden">
+                        <div class="filter-group">
+                            <label for="filter-keep-rarity">Keep Rarity:</label>
+                            <select id="filter-keep-rarity">
+                                <option value="common">Common & Up</option>
+                                <option value="uncommon">Uncommon & Up</option>
+                                <option value="rare">Rare & Up</option>
+                                <option value="epic">Epic & Up</option>
+                                <option value="legendary">Legendary Only</option>
+                                <option value="none">None (Use other filters)</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label for="filter-keep-sockets">Keep Sockets:</label>
+                            <input type="number" id="filter-keep-sockets" min="0" max="3" value="0">
+                            <span>or more</span>
+                        </div>
+                        <div class="filter-group stats-filter-group">
+                            <label>Keep Stats:</label>
+                            <div id="filter-keep-stats-container">
+                                <!-- Stat checkboxes will be injected by JS -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- END SALVAGE FILTER SECTION -->
+
                 <div class="grid-scroll-container">
                     <div id="inventory-slots" class="item-grid">
                         <!-- Items will be positioned here by JS -->

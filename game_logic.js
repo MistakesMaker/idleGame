@@ -7,6 +7,42 @@ import { rarities } from './game.js';
 import { isBossLevel, isBigBossLevel, isMiniBossLevel, findSubZoneByLevel, formatNumber, findEmptySpot } from './utils.js';
 
 /**
+ * Checks if a dropped item should be kept based on the player's salvage filter settings.
+ * @param {object} item - The item that was just dropped.
+ * @param {object} filter - The player's salvage filter settings from gameState.
+ * @returns {boolean} True if the item should be kept, false if it should be salvaged.
+ */
+function shouldKeepItem(item, filter) {
+    if (!filter.enabled) {
+        return true; // If the filter is off, keep everything.
+    }
+
+    // 1. Rarity Check
+    const itemRarityIndex = rarities.indexOf(item.rarity);
+    const keepRarityIndex = rarities.indexOf(filter.keepRarity);
+    if (filter.keepRarity !== 'none' && itemRarityIndex >= keepRarityIndex) {
+        return true; // Keep because its rarity is high enough.
+    }
+
+    // 2. Sockets Check
+    const itemSocketCount = item.sockets ? item.sockets.length : 0;
+    if (filter.keepSockets > 0 && itemSocketCount >= filter.keepSockets) {
+        return true; // Keep because it has enough sockets.
+    }
+
+    // 3. Stats Check
+    for (const statKey in item.stats) {
+        if (filter.keepStats[statKey]) {
+            return true; // Keep because it has a desired stat.
+        }
+    }
+
+    // If none of the "keep" conditions were met, salvage it.
+    return false;
+}
+
+
+/**
  * Generates a new item based on rarity, level, and a base item definition.
  * @param {string} rarity - The rarity of the item.
  * @param {number} itemLevel - The level of the item (influences stats).
@@ -132,7 +168,7 @@ export function dropLoot(currentMonster, gameState, playerStats) {
         if (playerStats.gemFindChance > 0 && Math.random() * 100 < playerStats.gemFindChance) {
             const duplicateGem = { ...itemBaseToDrop, id: Date.now() + Math.random() + 1 };
             gameState.gems.push(duplicateGem);
-            logMessages.push(`Gem Find! You found a duplicate <span class="epic" style="font-weight:bold;">${duplicateGem.name}</span>!`);
+            logMessages.push({ message: `Gem Find! You found a duplicate <span class="epic" style="font-weight:bold;">${duplicateGem.name}</span>!`, class: 'epic' });
         }
         
         return { droppedItem: newGem, logMessages };
@@ -153,8 +189,15 @@ export function dropLoot(currentMonster, gameState, playerStats) {
     else rarity = 'common';
 
     const item = generateItem(rarity, gameState.currentFightingLevel, itemBaseToDrop);
-    
-    // Find a spot in the grid for the new item
+
+    if (!shouldKeepItem(item, gameState.salvageFilter)) {
+        const rarityIndex = rarities.indexOf(item.rarity);
+        const scrapGained = Math.ceil(Math.pow(4, rarityIndex) * playerStats.scrapBonus);
+        gameState.scrap += scrapGained;
+        logMessages.push({ message: `Auto-salvaged <span class="${item.rarity}">${item.name}</span> for ${scrapGained} scrap.`, class: 'uncommon' });
+        return { droppedItem: null, logMessages };
+    }
+
     const spot = findEmptySpot(item.width, item.height, gameState.inventory);
     
     if (spot) {
@@ -164,7 +207,7 @@ export function dropLoot(currentMonster, gameState, playerStats) {
         return { droppedItem: item, logMessages };
     } else {
         // Inventory is full, can't add the item.
-        return { droppedItem: null, logMessages: [`The ${currentMonster.name} dropped an item, but your inventory is full!`] };
+        return { droppedItem: null, logMessages: [{ message: `The ${currentMonster.name} dropped an item, but your inventory is full!`, class: 'rare' }] };
     }
 }
 
@@ -216,7 +259,7 @@ export function monsterDefeated(gameState, playerStats, currentMonster) {
     if (currentMonster.data.isSpecial && currentMonster.data.id === 'GOLDEN_SLIME') {
         goldGained = gameState.specialEncounter.goldReward || 0;
         xpGained = 0; // No XP from Golden Slime
-        logMessages.push(`You defeated the Golden Slime and gained a massive bonus of ${formatNumber(goldGained)} gold!`);
+        logMessages.push({ message: `You defeated the Golden Slime and gained a massive bonus of ${formatNumber(goldGained)} gold!`, class: '' });
         gameState.specialEncounter = null; // Clear the special encounter
     } else {
         // Apply regular boss multipliers to rewards
@@ -234,7 +277,7 @@ export function monsterDefeated(gameState, playerStats, currentMonster) {
         xpGained = Math.ceil(xpGained);
         goldGained = Math.ceil(goldGained);
 
-        logMessages.push(`You defeated the ${currentMonster.name} and gained ${formatNumber(goldGained)} gold and ${formatNumber(xpGained)} XP.`);
+        logMessages.push({ message: `You defeated the ${currentMonster.name} and gained ${formatNumber(goldGained)} gold and ${formatNumber(xpGained)} XP.`, class: '' });
 
         const dropRoll = Math.random() * 100;
         if (dropRoll < currentMonster.data.dropChance) {
@@ -246,10 +289,9 @@ export function monsterDefeated(gameState, playerStats, currentMonster) {
             if (droppedItem) {
                 const isGem = droppedItem.tier >= 1;
                 const rarityClass = isGem ? 'epic' : droppedItem.rarity;
-                logMessages.push(`The ${currentMonster.name} dropped something! <span class="${rarityClass}" style="font-weight:bold;">${droppedItem.name}</span>`);
-            } else if (lootResult.logMessages.length > 0) {
-                // This handles the "inventory full" message from dropLoot
-                logMessages.push(lootResult.logMessages[0], 'rare');
+                logMessages.push({ message: `The ${currentMonster.name} dropped something! <span class="${rarityClass}" style="font-weight:bold;">${droppedItem.name}</span>`, class: rarityClass });
+            } else if (lootResult.logMessages.some(msg => msg.message.includes("inventory is full"))) {
+                // Do nothing special, the "inventory full" message is already in the log.
             }
         }
     }
@@ -270,7 +312,7 @@ export function monsterDefeated(gameState, playerStats, currentMonster) {
     }
 
     if (slimeSplitChance > 0 && Math.random() * 100 < slimeSplitChance) {
-        logMessages.push('The defeated monster splits into a <span class="legendary">Golden Slime!</span>', 'legendary');
+        logMessages.push({ message: 'The defeated monster splits into a <span class="legendary">Golden Slime!</span>', class: 'legendary' });
         gameState.specialEncounter = {
             type: 'GOLDEN_SLIME',
             hp: previousMonsterMaxHp / 2,

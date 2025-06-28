@@ -131,6 +131,47 @@ export function initDOMElements() {
     };
 }
 
+/**
+ * Gathers DOM elements specific to the Salvage Filter.
+ */
+export function initSalvageFilterDOMElements() {
+    return {
+        enableSalvageFilter: document.getElementById('enable-salvage-filter'),
+        salvageFilterControls: document.getElementById('salvage-filter-controls'),
+        filterKeepRarity: document.getElementById('filter-keep-rarity'),
+        filterKeepSockets: document.getElementById('filter-keep-sockets'),
+        filterKeepStatsContainer: document.getElementById('filter-keep-stats-container')
+    };
+}
+
+/**
+ * Populates the salvage filter controls with the correct options and sets their initial values.
+ * @param {object} elements - The main DOM elements object.
+ * @param {object} gameState - The current game state.
+ */
+export function populateSalvageFilter(elements, gameState) {
+    const { filterKeepStatsContainer } = initSalvageFilterDOMElements();
+    filterKeepStatsContainer.innerHTML = '';
+    
+    for (const key in STATS) {
+        const stat = STATS[key];
+        const wrapper = document.createElement('div');
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.id = `filter-stat-${stat.key}`;
+        checkbox.dataset.statKey = stat.key;
+        checkbox.checked = gameState.salvageFilter.keepStats[stat.key] || false;
+        
+        const label = document.createElement('label');
+        label.htmlFor = checkbox.id;
+        label.textContent = stat.name;
+        
+        wrapper.appendChild(checkbox);
+        wrapper.appendChild(label);
+        filterKeepStatsContainer.appendChild(wrapper);
+    }
+}
+
 
 /**
  * Renders a list of items or gems into a grid container.
@@ -396,6 +437,19 @@ export function updateUI(elements, gameState, playerStats, currentMonster, salva
             lootTableDisplayEl.innerHTML = '<p>This monster has no special drops.</p>';
         }
     }
+
+    // --- Salvage Filter ---
+    const filterElements = initSalvageFilterDOMElements();
+    const filter = gameState.salvageFilter;
+    (/** @type {HTMLInputElement} */ (filterElements.enableSalvageFilter)).checked = filter.enabled;
+    filterElements.salvageFilterControls.classList.toggle('hidden', !filter.enabled);
+    (/** @type {HTMLSelectElement} */ (filterElements.filterKeepRarity)).value = filter.keepRarity;
+    (/** @type {HTMLInputElement} */ (filterElements.filterKeepSockets)).value = String(filter.keepSockets);
+    filterElements.filterKeepStatsContainer.querySelectorAll('input').forEach(input => {
+        if (input instanceof HTMLInputElement) {
+            input.checked = filter.keepStats[input.dataset.statKey] || false;
+        }
+    });
 }
 
 /**
