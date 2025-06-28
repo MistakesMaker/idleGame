@@ -421,15 +421,15 @@ export function updateUI(elements, gameState, playerStats, currentMonster, salva
         }
     }
 
-    // --- NEW: Display Absorbed Amethyst Synergy ---
-    const absorbedSynergies = gameState.absorbedSynergies || [];
-    const amethystSynergy = absorbedSynergies.find(syn => syn.source === 'dps' && syn.target === 'clickDamage');
-    if (amethystSynergy && amethystSynergy.value > 0) {
+    // --- CORRECTED: Display Absorbed Amethyst Synergy ---
+    const absorbedSynergies = gameState.absorbedSynergies || {};
+    const amethystSynergyValue = absorbedSynergies['dps_to_clickDamage'] || 0;
+    if (amethystSynergyValue > 0) {
         const synergyEl = document.createElement('div');
         synergyEl.className = 'prestige-stat-entry';
-        const synergyValue = (amethystSynergy.value * 100).toFixed(1);
-        synergyEl.innerHTML = `<i class="fas fa-magic"></i><div class="prestige-stat-text"><div>Absorbed Synergy:</div><div>+${synergyValue}% DPS to Click</div></div>`;
-        synergyEl.title = `Converts ${synergyValue}% of your total DPS into Click Damage.`;
+        const synergyValueText = (amethystSynergyValue * 100).toFixed(1);
+        synergyEl.innerHTML = `<i class="fas fa-magic"></i><div class="prestige-stat-text"><div>Absorbed Synergy:</div><div>+${synergyValueText}% DPS to Click</div></div>`;
+        synergyEl.title = `Converts ${synergyValueText}% of your total DPS into Click Damage.`;
         absorbedStatsListEl.appendChild(synergyEl);
     }
     // --- END: Display Absorbed Amethyst Synergy ---
@@ -629,24 +629,27 @@ export function createItemComparisonTooltipHTML(hoveredItem, equippedItem, equip
 
     // --- Stats & Comparison ---
     const hoveredStats = getCombinedItemStats(hoveredItem);
-    const equippedStats = equippedItem ? getCombinedItemStats(equippedItem) : {};
     
     // For rings, we compare against the better of the two equipped rings
-    let comparisonTargetStats = equippedStats;
+    let comparisonTargetStats = equippedItem ? getCombinedItemStats(equippedItem) : {};
     if (hoveredItem.type === 'ring') {
+        const equippedStats1 = equippedItem ? getCombinedItemStats(equippedItem) : {};
         const equippedStats2 = equippedItem2 ? getCombinedItemStats(equippedItem2) : {};
-        // Simple comparison: sum of stats. A more complex heuristic could be used.
-        const sum1 = Object.values(equippedStats).reduce((s, a) => s + a, 0);
+        const sum1 = Object.values(equippedStats1).reduce((s, a) => s + a, 0);
         const sum2 = Object.values(equippedStats2).reduce((s, a) => s + a, 0);
-        comparisonTargetStats = sum1 > sum2 ? equippedStats : equippedStats2;
+        comparisonTargetStats = sum1 > sum2 ? equippedStats1 : equippedStats2;
     }
-
+    
     const allStatKeys = new Set([...Object.keys(hoveredStats), ...Object.keys(comparisonTargetStats)]);
     
-    html += '<ul>';
+    let statsHTML = '<ul>';
     allStatKeys.forEach(statKey => {
         const hoveredValue = hoveredStats[statKey] || 0;
         const equippedValue = comparisonTargetStats[statKey] || 0;
+
+        // Don't show a line for a stat that only exists on the equipped item but not the hovered one
+        if (hoveredValue === 0 && equippedValue !== 0) return;
+
         const diff = hoveredValue - equippedValue;
 
         const statInfo = Object.values(STATS).find(s => s.key === statKey) || { name: statKey, type: 'flat' };
@@ -662,12 +665,15 @@ export function createItemComparisonTooltipHTML(hoveredItem, equippedItem, equip
             diffSpan = ` <span class="${diffClass}">(${sign}${diffStr})</span>`;
         }
 
-        html += `<li>+${valueStr} ${statInfo.name}${diffSpan}</li>`;
+        statsHTML += `<li>+${valueStr} ${statInfo.name}${diffSpan}</li>`;
     });
-    html += '</ul>';
+    statsHTML += '</ul>';
+    html += statsHTML;
+
 
     // --- Gem & Unique Blueprints (for hovered item only) ---
-    html += createDetailedItemStatBlockHTML(hoveredItem).replace(/<ul>.*?<\/ul>/, ''); // Remove the stat list we already rendered
+    // We call the detailed block function but remove the stat list it generates, as we've already created our own with comparisons.
+    html += createDetailedItemStatBlockHTML(hoveredItem).replace(/<ul>.*?<\/ul>/, ''); 
 
     // --- Sockets Visual ---
     if (hoveredItem.sockets) {
@@ -680,6 +686,7 @@ export function createItemComparisonTooltipHTML(hoveredItem, equippedItem, equip
 
     return html;
 }
+
 
 export function createGemTooltipHTML(gem) {
     const name = gem.name || `T${gem.tier} Gem`;

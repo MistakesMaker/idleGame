@@ -72,7 +72,7 @@ document.addEventListener('DOMContentLoaded', () => {
             monsterKillCounts: {},
             unlockedPrestigeSlots: ['sword'], 
             absorbedStats: {},
-            absorbedSynergies: [],
+            absorbedSynergies: {}, // CORRECTED: Changed from array to object
             absorbedUniqueEffects: {},
             prestigeCount: 0,
             nextPrestigeLevel: 100,
@@ -139,7 +139,8 @@ document.addEventListener('DOMContentLoaded', () => {
             if (STATS.MAGIC_FIND.key === statKey) newCalculatedStats.magicFind += absorbed[statKey];
         }
 
-        const equippedSynergyGems = [];
+        let totalSynergyValue = 0; // CORRECTED: Initialize here
+
         const allItems = Object.values(gameState.equipment);
 
         for (const item of allItems) {
@@ -152,9 +153,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (STATS.GOLD_GAIN.key === statKey) newCalculatedStats.bonusGold += value;
                     if (STATS.MAGIC_FIND.key === statKey) newCalculatedStats.magicFind += value;
                 }
+                
+                // CORRECTED: Calculate synergy from currently equipped gems
                 if (item.sockets) {
                     for (const gem of item.sockets) {
-                        if (gem && gem.synergy) equippedSynergyGems.push(gem.synergy);
+                        if (gem && gem.synergy && gem.synergy.source === 'dps' && gem.synergy.target === 'clickDamage') {
+                            totalSynergyValue += gem.synergy.value;
+                        }
                     }
                 }
             }
@@ -185,13 +190,10 @@ document.addEventListener('DOMContentLoaded', () => {
         finalClickDamage *= prestigeMultiplier;
         finalDps *= prestigeMultiplier;
 
-        let totalSynergyValue = 0;
-        const allSynergies = [...equippedSynergyGems, ...(gameState.absorbedSynergies || [])];
-        for (const synergy of allSynergies) {
-             if (synergy && synergy.source === 'dps' && synergy.target === 'clickDamage') {
-                totalSynergyValue += synergy.value;
-            }
-        }
+        // CORRECTED: Add absorbed synergy value to the total from equipped gems
+        const dpsToClickSynergyValue = (gameState.absorbedSynergies && gameState.absorbedSynergies['dps_to_clickDamage']) || 0;
+        totalSynergyValue += dpsToClickSynergyValue;
+        
         if (totalSynergyValue > 0) {
             finalClickDamage += finalDps * totalSynergyValue;
         }
@@ -1745,7 +1747,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 .filter(Boolean);
             
             const newAbsorbedStats = {};
-            const newAbsorbedSynergies = [];
+            const newAbsorbedSynergies = {}; // CORRECTED: Now an object
             const newAbsorbedUniqueEffects = {};
     
             for (const item of itemsToAbsorb) {
@@ -1756,7 +1758,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (item.sockets) {
                     for (const gem of item.sockets) {
                         if (gem && gem.synergy) {
-                            newAbsorbedSynergies.push(gem.synergy);
+                            // CORRECTED: Aggregate synergy values into an object
+                            const key = `${gem.synergy.source}_to_${gem.synergy.target}`;
+                            newAbsorbedSynergies[key] = (newAbsorbedSynergies[key] || 0) + gem.synergy.value;
                         }
                     }
                 }
@@ -1778,16 +1782,12 @@ document.addEventListener('DOMContentLoaded', () => {
             for (const statKey in newAbsorbedStats) {
                 finalAbsorbedStats[statKey] = (finalAbsorbedStats[statKey] || 0) + newAbsorbedStats[statKey];
             }
-    
-            const oldAbsorbedSynergies = gameState.absorbedSynergies || [];
-            const finalAbsorbedSynergies = [...oldAbsorbedSynergies];
-            for (const newSynergy of newAbsorbedSynergies) {
-                const existingSynergy = finalAbsorbedSynergies.find(s => s.source === newSynergy.source && s.target === newSynergy.target);
-                if (existingSynergy) {
-                    existingSynergy.value += newSynergy.value;
-                } else {
-                    finalAbsorbedSynergies.push({ ...newSynergy });
-                }
+
+            // CORRECTED: This now correctly merges the new synergy values with the old ones.
+            const oldAbsorbedSynergies = gameState.absorbedSynergies || {};
+            const finalAbsorbedSynergies = { ...oldAbsorbedSynergies };
+            for (const key in newAbsorbedSynergies) {
+                finalAbsorbedSynergies[key] = (finalAbsorbedSynergies[key] || 0) + newAbsorbedSynergies[key];
             }
     
             const oldAbsorbedUniqueEffects = gameState.absorbedUniqueEffects || {};
@@ -1998,6 +1998,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     ...baseState.permanentUpgrades,
                     ...(loadedState.permanentUpgrades || {})
                 },
+                // Ensure synergies is an object, not an array from old saves
+                absorbedSynergies: (typeof loadedState.absorbedSynergies === 'object' && !Array.isArray(loadedState.absorbedSynergies)) ? loadedState.absorbedSynergies : {},
                 salvageFilter: {
                     ...baseState.salvageFilter,
                     ...(loadedState.salvageFilter || {}),
