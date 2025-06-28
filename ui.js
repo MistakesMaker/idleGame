@@ -630,7 +630,8 @@ export function createItemComparisonTooltipHTML(hoveredItem, equippedItem, equip
     // --- Stats & Comparison ---
     const hoveredStats = getCombinedItemStats(hoveredItem);
     
-    // For rings, we compare against the better of the two equipped rings
+    // For rings, we compare against the better of the two equipped rings for simplicity.
+    // A more advanced comparison might show diffs for both.
     let comparisonTargetStats = equippedItem ? getCombinedItemStats(equippedItem) : {};
     if (hoveredItem.type === 'ring') {
         const equippedStats1 = equippedItem ? getCombinedItemStats(equippedItem) : {};
@@ -640,16 +641,13 @@ export function createItemComparisonTooltipHTML(hoveredItem, equippedItem, equip
         comparisonTargetStats = sum1 > sum2 ? equippedStats1 : equippedStats2;
     }
     
+    // CORRECTED: Combine keys from both items to ensure all stats are compared.
     const allStatKeys = new Set([...Object.keys(hoveredStats), ...Object.keys(comparisonTargetStats)]);
     
     let statsHTML = '<ul>';
     allStatKeys.forEach(statKey => {
         const hoveredValue = hoveredStats[statKey] || 0;
         const equippedValue = comparisonTargetStats[statKey] || 0;
-
-        // Don't show a line for a stat that only exists on the equipped item but not the hovered one
-        if (hoveredValue === 0 && equippedValue !== 0) return;
-
         const diff = hoveredValue - equippedValue;
 
         const statInfo = Object.values(STATS).find(s => s.key === statKey) || { name: statKey, type: 'flat' };
@@ -658,6 +656,7 @@ export function createItemComparisonTooltipHTML(hoveredItem, equippedItem, equip
         const valueStr = isPercent ? `${hoveredValue.toFixed(1)}%` : formatNumber(hoveredValue);
         
         let diffSpan = '';
+        // Only show diff if there's an item to compare against.
         if (equippedItem && Math.abs(diff) > 0.001) {
             const diffClass = diff > 0 ? 'stat-better' : 'stat-worse';
             const sign = diff > 0 ? '+' : '';
