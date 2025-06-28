@@ -54,9 +54,8 @@ document.addEventListener('DOMContentLoaded', () => {
         return {
             gold: 0, scrap: 0, upgrades: { clickDamage: 0, dps: 0 }, maxLevel: 1, currentFightingLevel: 1,
             monster: { hp: 10, maxHp: 10 },
-            equipment: { ...defaultEquipmentState },
-            inventory: [],
-            inventoryGridInitialized: true,
+            equipment: { ...defaultEquipmentState }, // This will be a REFERENCE to the active preset's equipment
+            inventory: [], // This is now for "loose" items only
             gems: [],
             monsterKillCounts: {},
             unlockedPrestigeSlots: ['sword'], 
@@ -83,6 +82,7 @@ document.addEventListener('DOMContentLoaded', () => {
             currentRealmIndex: 0,
             lastSaveTimestamp: null,
             permanentUpgrades: defaultPermUpgrades,
+            presetSystemMigrated: true, // New saves will have the correct structure
         };
     }
 
@@ -818,7 +818,7 @@ document.addEventListener('DOMContentLoaded', () => {
             updateAll();
         });
         document.getElementById('select-all-salvage-btn').addEventListener('click', () => {
-             salvageMode.selections = gameState.inventory.filter(item => !item.locked);
+             salvageMode.selections = player.getAllItems(gameState).filter(item => !item.locked);
              const salvageCountEl = document.getElementById('salvage-count');
              if (salvageCountEl) salvageCountEl.textContent = salvageMode.selections.length.toString();
              updateAll();
@@ -869,7 +869,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!id) return;
             
             const isGem = wrapper.classList.contains('gem-wrapper');
-            const item = isGem ? gameState.gems.find(i => String(i.id) === id) : gameState.inventory.find(i => String(i.id) === id);
+            const item = isGem ? gameState.gems.find(i => String(i.id) === id) : player.findItemFromAllSources(gameState, id);
 
             if (!item) return;
 
@@ -1221,7 +1221,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const id = wrapper.dataset.id;
             if (!id) return;
             
-            const item = [...Object.values(gameState.equipment), ...gameState.inventory].find(i => i && String(i.id) === id);
+            const item = player.findItemFromAllSources(gameState, id);
             
             if (item && item.stats) {
                 selectedItemForForge = item; 
@@ -1323,7 +1323,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const id = wrapper.dataset.id;
             if (!id) return;
 
-            const item = [...gameState.inventory, ...Object.values(gameState.equipment)].find(i => i && String(i.id) === id);
+            const item = player.findItemFromAllSources(gameState, id);
             if(item) {
                 showTooltip(item, wrapper);
             }
@@ -1586,7 +1586,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const id = wrapper.dataset.id;
             if (!id) return;
 
-            const itemToEquip = gameState.inventory.find(i => String(i.id) === id);
+            const itemToEquip = player.findItemFromAllSources(gameState, id);
             if (!itemToEquip) return;
 
             const result = player.equipItem(gameState, itemToEquip);
@@ -1689,6 +1689,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 currentFightingLevel: 1,
                 currentRunCompletedLevels: [],
             };
+            gameState.equipment = gameState.presets[gameState.activePresetIndex].equipment;
+
     
             logMessage(elements.gameLogEl, `PRESTIGE! You are reborn with greater power. Your next goal is Level ${gameState.nextPrestigeLevel}.`, 'legendary');
             
@@ -1777,46 +1779,46 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
     
-    function migrateInventoryToGrid(oldInventory) {
-        console.log("Old save detected. Migrating inventory to grid format...");
-        const newGridInventory = [];
-        
-        for (const item of oldInventory) {
-            if (typeof item.x === 'number' && item.x >= 0) {
-                newGridInventory.push(item);
-                continue;
-            }
+    function migrateToPresetInventories(loadedState) {
+        console.log("Old preset system detected. Migrating to new independent preset inventories...");
+        const migratedState = getDefaultGameState();
 
-            let baseItem = ITEMS[item.baseId];
-            if (!baseItem) {
-                 const baseName = item.name.split(' ').slice(1).join(' ');
-                 const foundKey = Object.keys(ITEMS).find(key => ITEMS[key].name === baseName);
-                 if (foundKey) {
-                    baseItem = ITEMS[foundKey];
-                    item.baseId = foundKey;
-                 }
+        // Copy over all simple, top-level data
+        Object.keys(migratedState).forEach(key => {
+            if (typeof loadedState[key] !== 'undefined' && !['presets', 'equipment', 'inventory'].includes(key)) {
+                migratedState[key] = loadedState[key];
             }
+        });
 
-            if(baseItem) {
-                item.width = baseItem.width;
-                item.height = baseItem.height;
-            } else {
-                console.warn("Could not find base item for", item, "during migration. Defaulting to 1x1.");
-                item.width = 1;
-                item.height = 1;
-            }
+        // The player's currently worn gear goes into the first preset's equipment
+        migratedState.presets[0].equipment = { ...loadedState.equipment };
 
-            const spot = findEmptySpot(item.width, item.height, newGridInventory);
-            if (spot) {
-                item.x = spot.x;
-                item.y = spot.y;
-                newGridInventory.push(item);
-            } else {
-                console.error("Could not find a spot for item during migration:", item);
+        // All items that were in the global inventory or stored in other old presets become "loose" items
+        const looseItems = [...(loadedState.inventory || [])];
+        if (loadedState.presets && loadedState.presets.length > 1) {
+            for (let i = 1; i < loadedState.presets.length; i++) {
+                const oldPreset = loadedState.presets[i];
+                if (oldPreset && oldPreset.equipment) {
+                    Object.values(oldPreset.equipment).forEach(item => {
+                        if (item) looseItems.push(item);
+                    });
+                }
             }
         }
+        migratedState.inventory = looseItems;
         
-        return newGridInventory;
+        // Set the active preset index and the active equipment reference correctly
+        migratedState.activePresetIndex = loadedState.activePresetIndex || 0;
+        if(migratedState.activePresetIndex >= migratedState.presets.length) {
+            migratedState.activePresetIndex = 0;
+        }
+        migratedState.equipment = migratedState.presets[migratedState.activePresetIndex].equipment;
+        
+        migratedState.presetSystemMigrated = true;
+        
+        logMessage(elements.gameLogEl, "Your equipment presets have been updated to a new system! You may need to re-organize your gear.", "uncommon");
+
+        return migratedState;
     }
 
     function main() {
@@ -1825,53 +1827,21 @@ document.addEventListener('DOMContentLoaded', () => {
         const savedData = localStorage.getItem('idleRPGSaveData');
         if (savedData) {
             const loadedState = JSON.parse(savedData);
-            const baseState = getDefaultGameState();
             
-            let uniqueEffects = loadedState.absorbedUniqueEffects || {};
-            if (Array.isArray(uniqueEffects)) {
-                const newEffectsObject = {};
-                for (const effectKey of uniqueEffects) {
-                    newEffectsObject[effectKey] = (newEffectsObject[effectKey] || 0) + 1;
-                }
-                uniqueEffects = newEffectsObject;
+            if (!loadedState.presetSystemMigrated) {
+                 gameState = migrateToPresetInventories(loadedState);
+            } else {
+                const baseState = getDefaultGameState();
+                gameState = { ...baseState, ...loadedState };
+                // Ensure equipment is a reference to the active preset's equipment
+                gameState.equipment = gameState.presets[gameState.activePresetIndex].equipment;
             }
             
-            gameState = { 
-                ...baseState, 
-                ...loadedState,
-                monsterKillCounts: loadedState.monsterKillCounts || {},
-                unlockedPrestigeSlots: loadedState.unlockedPrestigeSlots || ['sword'],
-                gems: loadedState.gems || [],
-                hero: { ...baseState.hero, ...(loadedState.hero || {}), attributes: { ...baseState.hero.attributes, ...(loadedState.hero?.attributes || {}) } }, 
-                upgrades: { ...baseState.upgrades, ...(loadedState.upgrades || {}) }, 
-                equipment: { ...baseState.equipment, ...(loadedState.equipment || {}) }, 
-                absorbedStats: { ...(loadedState.absorbedStats || {}) }, 
-                absorbedSynergies: loadedState.absorbedSynergies || [],
-                absorbedUniqueEffects: uniqueEffects,
-                monster: { ...baseState.monster, ...(loadedState.monster || {}) }, 
-                presets: loadedState.presets || baseState.presets, 
-                isAutoProgressing: loadedState.isAutoProgressing !== undefined ? loadedState.isAutoProgressing : true, 
-                currentRealmIndex: loadedState.currentRealmIndex || 0,
-                currentRunCompletedLevels: loadedState.currentRunCompletedLevels || [], 
-                inventoryGridInitialized: loadedState.inventoryGridInitialized || false,
-                permanentUpgrades: { ...baseState.permanentUpgrades, ...(loadedState.permanentUpgrades || {}) },
-                specialEncounter: loadedState.specialEncounter || null,
-            };
-            
-            if (!gameState.inventoryGridInitialized) {
-                gameState.inventory = migrateInventoryToGrid(gameState.inventory);
-                gameState.inventoryGridInitialized = true;
-                logMessage(elements.gameLogEl, "Your inventory has been updated to the new grid system!", "uncommon");
-                autoSave();
-            }
-
-            if (gameState.nextPrestigeLevel === undefined) {
-                gameState.nextPrestigeLevel = 100;
-            }
-
             calculateOfflineProgress();
         } else {
             gameState = getDefaultGameState();
+            // On a new game, also set the equipment reference correctly
+            gameState.equipment = gameState.presets[gameState.activePresetIndex].equipment;
         }
         
         setupEventListeners();

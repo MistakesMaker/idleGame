@@ -8,6 +8,52 @@ import { ITEMS } from './data/items.js';
 import { PERMANENT_UPGRADES } from './data/upgrades.js';
 
 /**
+ * Finds an item by its ID from all possible sources (main inventory and all preset inventories).
+ * @param {object} gameState - The main game state object.
+ * @param {string} itemId - The ID of the item to find.
+ * @returns {object|null} The found item object, or null.
+ */
+export function findItemFromAllSources(gameState, itemId) {
+    // Check loose inventory first
+    let item = gameState.inventory.find(i => String(i.id) === itemId);
+    if (item) return item;
+
+    // Check all presets
+    for (const preset of gameState.presets) {
+        // Check equipped items in the preset
+        for (const slot in preset.equipment) {
+            const equippedItem = preset.equipment[slot];
+            if (equippedItem && String(equippedItem.id) === itemId) {
+                return equippedItem;
+            }
+        }
+    }
+    return null;
+}
+
+/**
+ * Gets a flat array of all items the player owns, regardless of location.
+ * @param {object} gameState - The main game state object.
+ * @returns {Array<object>} An array of all item objects.
+ */
+export function getAllItems(gameState) {
+    const allItems = [...gameState.inventory];
+    const itemIds = new Set(allItems.map(i => i.id));
+
+    for (const preset of gameState.presets) {
+        for (const slot in preset.equipment) {
+            const item = preset.equipment[slot];
+            if (item && !itemIds.has(item.id)) {
+                allItems.push(item);
+                itemIds.add(item.id);
+            }
+        }
+    }
+    return allItems;
+}
+
+
+/**
  * Re-packs the inventory to remove any gaps.
  * @param {Array<object>} inventory - The current inventory array.
  * @returns {Array<object>} The compacted inventory array.
@@ -36,7 +82,7 @@ export function compactInventory(inventory) {
 }
 
 /**
- * Equips an item from the inventory.
+ * Equips an item from the loose inventory.
  * @param {object} gameState - The main game state object.
  * @param {object} itemToEquip - The item object from the inventory to equip.
  * @returns {{isPendingRing: boolean, item: object|null, success: boolean, message: string}}
@@ -44,38 +90,48 @@ export function compactInventory(inventory) {
 export function equipItem(gameState, itemToEquip) {
     if (!itemToEquip) return { isPendingRing: false, item: null, success: false, message: "Invalid item." };
 
+    // Find the item in the loose inventory.
     const inventoryItemIndex = gameState.inventory.findIndex(i => i.id === itemToEquip.id);
     if (inventoryItemIndex === -1) {
-        return { isPendingRing: false, item: null, success: false, message: "Item not found in inventory." };
+        return { isPendingRing: false, item: null, success: false, message: "Item not found in loose inventory. It might be part of another preset." };
     }
 
     let targetSlot = itemToEquip.type;
+    const activePreset = gameState.presets[gameState.activePresetIndex];
+
     if (itemToEquip.type === 'ring') {
-        if (!gameState.equipment.ring1) targetSlot = 'ring1';
-        else if (!gameState.equipment.ring2) targetSlot = 'ring2';
+        if (!activePreset.equipment.ring1) targetSlot = 'ring1';
+        else if (!activePreset.equipment.ring2) targetSlot = 'ring2';
         else {
             return { isPendingRing: true, item: itemToEquip, success: true, message: "Select a ring to replace." };
         }
     }
 
-    const itemInSlot = gameState.equipment[targetSlot];
+    const itemInSlot = activePreset.equipment[targetSlot];
     const [equippedItem] = gameState.inventory.splice(inventoryItemIndex, 1);
     
-    // Perform the direct swap
+    // Place the previously worn item back into the loose inventory
     if (itemInSlot) {
-        // Place the previously worn item in the exact spot of the newly equipped item
-        itemInSlot.x = equippedItem.x;
-        itemInSlot.y = equippedItem.y;
-        gameState.inventory.push(itemInSlot);
+        const spot = findEmptySpot(itemInSlot.width, itemInSlot.height, gameState.inventory);
+        if (spot) {
+            itemInSlot.x = spot.x;
+            itemInSlot.y = spot.y;
+            gameState.inventory.push(itemInSlot);
+        } else {
+            // Failsafe: push it anyway if no grid spot is found, though this shouldn't happen with a large grid.
+            gameState.inventory.push(itemInSlot);
+            console.error("No space in loose inventory for unequipped item!");
+        }
     }
     
-    gameState.equipment[targetSlot] = equippedItem;
+    activePreset.equipment[targetSlot] = equippedItem;
+    gameState.inventory = compactInventory(gameState.inventory);
     
     return { isPendingRing: false, item: null, success: true, message: `Equipped ${equippedItem.name}.` };
 }
 
 /**
- * Equips a pending ring to a specific slot.
+ * Equips a pending ring to a specific slot for the active preset.
  * @param {object} gameState - The main game state object.
  * @param {object} pendingRing - The ring item waiting to be equipped.
  * @param {string} targetSlot - The specific ring slot ('ring1' or 'ring2').
@@ -83,25 +139,33 @@ export function equipItem(gameState, itemToEquip) {
 export function equipRing(gameState, pendingRing, targetSlot) {
     const inventoryItemIndex = gameState.inventory.findIndex(i => i.id === pendingRing.id);
     if (inventoryItemIndex === -1) return;
-
-    const itemInSlot = gameState.equipment[targetSlot];
+    
+    const activePreset = gameState.presets[gameState.activePresetIndex];
+    const itemInSlot = activePreset.equipment[targetSlot];
     const [equippedItem] = gameState.inventory.splice(inventoryItemIndex, 1);
 
     if (itemInSlot) {
-        // Direct swap logic for rings as well
-        itemInSlot.x = equippedItem.x;
-        itemInSlot.y = equippedItem.y;
-        gameState.inventory.push(itemInSlot);
+        const spot = findEmptySpot(itemInSlot.width, itemInSlot.height, gameState.inventory);
+        if (spot) {
+            itemInSlot.x = spot.x;
+            itemInSlot.y = spot.y;
+            gameState.inventory.push(itemInSlot);
+        } else {
+            gameState.inventory.push(itemInSlot);
+            console.error("No space in loose inventory for unequipped ring!");
+        }
     }
-    gameState.equipment[targetSlot] = equippedItem;
+    activePreset.equipment[targetSlot] = equippedItem;
+    gameState.inventory = compactInventory(gameState.inventory);
 }
 
 
 /**
- * Unequips an item from an equipment slot back to the inventory.
+ * Unequips an item from an equipment slot back to the loose inventory.
  */
 export function unequipItem(gameState, slotName) {
-    const item = gameState.equipment[slotName];
+    const activePreset = gameState.presets[gameState.activePresetIndex];
+    const item = activePreset.equipment[slotName];
     if (!item) return;
 
     const spot = findEmptySpot(item.width, item.height, gameState.inventory);
@@ -109,7 +173,7 @@ export function unequipItem(gameState, slotName) {
         item.x = spot.x;
         item.y = spot.y;
         gameState.inventory.push(item);
-        gameState.equipment[slotName] = null;
+        activePreset.equipment[slotName] = null;
     } else {
         alert("Cannot unequip item, inventory is full!");
     }
@@ -264,10 +328,21 @@ export function salvageSelectedItems(gameState, salvageMode, playerStats) {
     
     totalScrapGained = Math.floor(totalScrapGained * playerStats.scrapBonus);
     
+    // Remove from loose inventory
     gameState.inventory = gameState.inventory.filter(item => !idsToSalvage.has(item.id));
+    
+    // Remove from all preset equipment slots
+    for (const preset of gameState.presets) {
+        for (const slot in preset.equipment) {
+            if (preset.equipment[slot] && idsToSalvage.has(preset.equipment[slot].id)) {
+                preset.equipment[slot] = null;
+            }
+        }
+    }
+
     gameState.scrap += totalScrapGained;
 
-    // Compact the inventory after salvaging
+    // Compact the loose inventory after salvaging
     gameState.inventory = compactInventory(gameState.inventory);
 
     return { count: selectedCount, scrapGained: totalScrapGained };
@@ -282,23 +357,37 @@ export function salvageSelectedItems(gameState, salvageMode, playerStats) {
 export function salvageByRarity(gameState, rarityToSalvage, playerStats) {
     let scrapGained = 0;
     let itemsSalvagedCount = 0;
-    const itemsToKeep = [];
     
+    // Filter loose inventory
+    const itemsToKeepInInventory = [];
     gameState.inventory.forEach(item => {
         if (item.rarity === rarityToSalvage && !item.locked) {
             const rarityIndex = rarities.indexOf(item.rarity);
             scrapGained += Math.ceil(Math.pow(4, rarityIndex));
             itemsSalvagedCount++;
         } else {
-            itemsToKeep.push(item);
+            itemsToKeepInInventory.push(item);
         }
     });
+    gameState.inventory = itemsToKeepInInventory;
+
+    // Filter preset equipment
+    for (const preset of gameState.presets) {
+        for (const slot in preset.equipment) {
+            const item = preset.equipment[slot];
+            if (item && item.rarity === rarityToSalvage && !item.locked) {
+                const rarityIndex = rarities.indexOf(item.rarity);
+                scrapGained += Math.ceil(Math.pow(4, rarityIndex));
+                itemsSalvagedCount++;
+                preset.equipment[slot] = null;
+            }
+        }
+    }
 
     if (itemsSalvagedCount > 0) {
         scrapGained = Math.floor(scrapGained * playerStats.scrapBonus);
-        gameState.inventory = itemsToKeep;
         gameState.scrap += scrapGained;
-        // Compact the inventory after salvaging
+        // Compact the loose inventory after salvaging
         gameState.inventory = compactInventory(gameState.inventory);
     }
     
@@ -313,58 +402,28 @@ export function salvageByRarity(gameState, rarityToSalvage, playerStats) {
  * @returns {string} A message describing the action.
  */
 export function toggleItemLock(gameState, itemToToggle) {
-    const item = gameState.inventory.find(i => i.id === itemToToggle.id);
-    if (item) {
-        item.locked = !item.locked;
-        return `Item ${item.name} ${item.locked ? 'locked' : 'unlocked'}.`;
+    if (itemToToggle) {
+        itemToToggle.locked = !itemToToggle.locked;
+        return `Item ${itemToToggle.name} ${itemToToggle.locked ? 'locked' : 'unlocked'}.`;
     }
-    return "";
+    return "Could not find item to toggle lock.";
 }
 
 /**
- * Activates a given equipment preset.
+ * Activates a given equipment preset, swapping all gear.
  */
 export function activatePreset(gameState, presetIndex) {
-    gameState.presets[gameState.activePresetIndex].equipment = { ...gameState.equipment };
+    if (presetIndex === gameState.activePresetIndex) return;
 
-    const itemsToUnequip = Object.values(gameState.equipment).filter(Boolean);
-    for (const item of itemsToUnequip) {
-        const spot = findEmptySpot(item.width, item.height, gameState.inventory);
-        if (spot) {
-            item.x = spot.x;
-            item.y = spot.y;
-            gameState.inventory.push(item);
-        } else {
-            console.error(`No space for ${item.name} when swapping presets!`);
-            gameState.inventory.push(item); 
-        }
-    }
-    
-    for (const slot in gameState.equipment) {
-        gameState.equipment[slot] = null;
-    }
+    // The currently active preset (which is also gameState.equipment) is now the "old" one.
+    const oldPreset = gameState.presets[gameState.activePresetIndex];
+    const newPreset = gameState.presets[presetIndex];
 
-    const newPresetEquipment = { ...gameState.presets[presetIndex].equipment };
-    const newInventory = [];
-    
-    gameState.inventory.forEach(invItem => {
-        let equipped = false;
-        for (const slot in newPresetEquipment) {
-            const presetItem = newPresetEquipment[slot];
-            if (presetItem && invItem && presetItem.id === invItem.id) {
-                gameState.equipment[slot] = invItem;
-                delete newPresetEquipment[slot]; 
-                equipped = true;
-                break;
-            }
-        }
-        if (!equipped) {
-            newInventory.push(invItem);
-        }
-    });
+    // No changes needed to the "old" preset's inventory, its gear is already stored correctly.
 
-    gameState.inventory = compactInventory(newInventory); // Compact after preset load
+    // Set the new active preset and update the master equipment reference
     gameState.activePresetIndex = presetIndex;
+    gameState.equipment = newPreset.equipment;
 }
 
 /**
