@@ -111,6 +111,11 @@ export function initDOMElements() {
         ringSelectionCancelBtn: document.getElementById('ring-selection-cancel-btn'),
         permanentUpgradesContainerEl: document.getElementById('permanent-upgrades-container'),
 
+        // Bulk Gem Combine
+        bulkCombineTierSelect: document.getElementById('bulk-combine-tier-select'),
+        bulkCombineStatSelect: document.getElementById('bulk-combine-stat-select'),
+        bulkCombineBtn: document.getElementById('bulk-combine-btn'),
+
         // New Prestige and Unlock Slot elements
         prestigeView: document.getElementById('prestige-view'),
         prestigeEquipmentPaperdoll: document.getElementById('prestige-equipment-paperdoll'),
@@ -133,7 +138,7 @@ export function initDOMElements() {
  * @param {object} options - Configuration options.
  */
 export function renderGrid(containerEl, items, options = {}) {
-    const { calculatePositions = false, type = 'item', selectedItem = null, salvageSelections = [], showLockIcon = true } = options;
+    const { calculatePositions = false, type = 'item', selectedItem = null, salvageSelections = [], showLockIcon = true, bulkCombineSelection = {}, bulkCombineDeselectedIds = new Set() } = options;
     
     containerEl.innerHTML = '';
     const tempPlacement = []; 
@@ -170,6 +175,12 @@ export function renderGrid(containerEl, items, options = {}) {
             if (item.locked) wrapper.classList.add('locked-item');
             if (selectedItem && selectedItem.id === item.id) wrapper.classList.add('selected-for-forge');
             if (salvageSelections.some(sel => sel.id === item.id)) wrapper.classList.add('selected-for-salvage');
+
+            if (type === 'gem' && bulkCombineSelection && bulkCombineSelection.tier && bulkCombineSelection.statKey) {
+                if (item.tier === bulkCombineSelection.tier && item.stats && item.stats[bulkCombineSelection.statKey] && !bulkCombineDeselectedIds.has(item.id)) {
+                    wrapper.classList.add('selected-for-bulk-combine');
+                }
+            }
             
             containerEl.appendChild(wrapper);
         }
@@ -180,7 +191,7 @@ export function renderGrid(containerEl, items, options = {}) {
 /**
  * Updates the entire game UI based on the current state.
  */
-export function updateUI(elements, gameState, playerStats, currentMonster, salvageMode, craftingGems = [], selectedItemForForge = null, prestigeSlotSelections = []) {
+export function updateUI(elements, gameState, playerStats, currentMonster, salvageMode, craftingGems = [], selectedItemForForge = null, bulkCombineSelection = {}, bulkCombineDeselectedIds = new Set()) {
     const {
         goldStatEl, scrapStatEl, heroXpTextEl, clickDamageStatEl, dpsStatEl, absorbedStatsListEl,
         monsterHealthTextEl, upgradeClickCostEl, upgradeDpsCostEl, heroLevelEl,
@@ -236,7 +247,7 @@ export function updateUI(elements, gameState, playerStats, currentMonster, salva
     
     // --- Grid Renders ---
     renderGrid(inventorySlotsEl, gameState.inventory, { salvageSelections: salvageMode.selections });
-    renderGrid(gemSlotsEl, gameState.gems, { type: 'gem', calculatePositions: true });
+    renderGrid(gemSlotsEl, gameState.gems, { type: 'gem', calculatePositions: true, bulkCombineSelection, bulkCombineDeselectedIds });
     
     const allForgeItems = [...Object.values(gameState.equipment).filter(Boolean), ...gameState.inventory];
     renderGrid(forgeInventorySlotsEl, allForgeItems, { calculatePositions: true, selectedItem: selectedItemForForge });

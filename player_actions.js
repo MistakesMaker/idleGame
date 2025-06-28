@@ -437,6 +437,90 @@ export function combineGems(gameState, craftingGems) {
 }
 
 /**
+ * Automatically combines all matching gems of a given tier and stat.
+ * @param {object} gameState - The main game state object.
+ * @param {number} tier - The tier of gems to combine.
+ * @param {string} statKey - The stat key of gems to combine.
+ * @param {Set<any>} excludedIds - A set of gem IDs to exclude from this operation.
+ * @returns {{success: boolean, message: string, successes: number, failures: number, cost: number}}
+ */
+export function bulkCombineGems(gameState, tier, statKey, excludedIds) {
+    const costPerCombine = 100;
+    
+    const matchingGems = gameState.gems.filter(gem => 
+        gem.tier === tier && 
+        gem.stats && 
+        gem.stats[statKey] &&
+        !excludedIds.has(gem.id) // Exclude manually deselected gems
+    );
+
+    if (matchingGems.length < 2) {
+        return { success: false, message: "Not enough matching gems to combine.", successes: 0, failures: 0, cost: 0 };
+    }
+
+    let successes = 0;
+    let failures = 0;
+    let totalCost = 0;
+    const gemsToCombine = [...matchingGems];
+    const newGems = [];
+    const usedGemIds = new Set();
+
+    while (gemsToCombine.length >= 2) {
+        if (gameState.scrap < costPerCombine) {
+            break; // Stop if we can't afford the next one
+        }
+
+        const gem1 = gemsToCombine.shift();
+        const gem2 = gemsToCombine.shift();
+        
+        gameState.scrap -= costPerCombine;
+        totalCost += costPerCombine;
+        usedGemIds.add(gem1.id);
+        usedGemIds.add(gem2.id);
+
+        if (Math.random() < 0.5) { // Success
+            successes++;
+            const newTier = gem1.tier + 1;
+            const newStats = {};
+            let newSynergy = null;
+
+            [gem1, gem2].forEach(parentGem => {
+                if (parentGem.stats) {
+                    for (const key in parentGem.stats) {
+                        newStats[key] = (newStats[key] || 0) + parentGem.stats[key];
+                    }
+                }
+                if (parentGem.synergy) {
+                    if (!newSynergy) newSynergy = { ...parentGem.synergy };
+                    else newSynergy.value += parentGem.synergy.value;
+                }
+            });
+
+            newGems.push({
+                id: Date.now() + Math.random() + successes,
+                baseId: `FUSED_T${newTier}`,
+                name: `T${newTier} Fused Gem`,
+                tier: newTier,
+                icon: `images/gems/fused_t${newTier}.png`,
+                width: 1, height: 1,
+                stats: newStats,
+                synergy: newSynergy
+            });
+        } else { // Failure
+            failures++;
+        }
+    }
+
+    // Update the main gem list
+    gameState.gems = gameState.gems.filter(g => !usedGemIds.has(g.id));
+    gameState.gems.push(...newGems);
+
+    const message = `Bulk combine finished. Successes: ${successes}, Failures: ${failures}. Total cost: ${totalCost} Scrap.`;
+    return { success: true, message, successes, failures, cost: totalCost };
+}
+
+
+/**
  * Rerolls the stat values of a given item from either inventory or equipment.
  * @param {object} gameState The main game state object.
  * @param {object} itemToReroll The item object to be rerolled.

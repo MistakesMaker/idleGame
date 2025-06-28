@@ -11,7 +11,7 @@ import * as logic from './game_logic.js';
 
 export const rarities = ['common', 'uncommon', 'rare', 'epic', 'legendary'];
 
-/** @typedef {Object<string, HTMLElement|HTMLButtonElement|HTMLInputElement|HTMLImageElement>} DOMElements */
+/** @typedef {Object<string, HTMLElement|HTMLButtonElement|HTMLInputElement|HTMLImageElement|HTMLSelectElement>} DOMElements */
 
 document.addEventListener('DOMContentLoaded', () => {
 
@@ -29,6 +29,8 @@ document.addEventListener('DOMContentLoaded', () => {
     let selectedItemForForge = null;
     let isResetting = false; 
     let pendingLegacyKeeperUpgrade = false; 
+    let bulkCombineSelection = { tier: null, statKey: null };
+    let bulkCombineDeselectedIds = new Set();
 
     /** @type {DOMElements} */
     let elements = {};
@@ -328,7 +330,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function updateAll() {
-        ui.updateUI(elements, gameState, playerStats, currentMonster, salvageMode, craftingGems, selectedItemForForge, []);
+        ui.updateUI(elements, gameState, playerStats, currentMonster, salvageMode, craftingGems, selectedItemForForge, bulkCombineSelection, bulkCombineDeselectedIds);
         renderMap();
         renderRealmTabs();
         renderPermanentUpgrades();
@@ -542,6 +544,61 @@ document.addEventListener('DOMContentLoaded', () => {
             `;
             container.appendChild(card);
         }
+    }
+
+    function populateBulkCombineControls() {
+        const bulkCombineTierSelect = /** @type {HTMLSelectElement} */ (elements.bulkCombineTierSelect);
+        const bulkCombineStatSelect = /** @type {HTMLSelectElement} */ (elements.bulkCombineStatSelect);
+        
+        const availableTiers = new Set();
+        const availableStats = new Map();
+
+        gameState.gems.forEach(gem => {
+            if (gem.tier) {
+                availableTiers.add(gem.tier);
+                if (gem.stats) { // <-- FIX: Check if stats exist
+                    for (const statKey in gem.stats) { // <-- FIX: Iterate over all stats
+                        if (!availableStats.has(gem.tier)) {
+                            availableStats.set(gem.tier, new Set());
+                        }
+                        availableStats.get(gem.tier).add(statKey);
+                    }
+                }
+            }
+        });
+
+        const currentTier = bulkCombineSelection.tier;
+        const currentStat = bulkCombineSelection.statKey;
+
+        // Populate Tier Select
+        bulkCombineTierSelect.innerHTML = '<option value="">Select Tier</option>';
+        Array.from(availableTiers).sort((a,b) => a-b).forEach(tier => {
+            const option = document.createElement('option');
+            option.value = String(tier);
+            option.textContent = `Tier ${tier}`;
+            if (tier === currentTier) option.selected = true;
+            bulkCombineTierSelect.appendChild(option);
+        });
+        
+        // Populate Stat Select based on Tier
+        const populateStats = (tier) => {
+            bulkCombineStatSelect.innerHTML = '<option value="">Select Stat</option>';
+            bulkCombineStatSelect.disabled = true;
+            if (tier && availableStats.has(tier)) {
+                bulkCombineStatSelect.disabled = false;
+                availableStats.get(tier).forEach(statKey => {
+                    const statInfo = Object.values(STATS).find(s => s.key === statKey);
+                    if (statInfo) {
+                        const option = document.createElement('option');
+                        option.value = statKey;
+                        option.textContent = statInfo.name;
+                        if (statKey === currentStat) option.selected = true;
+                        bulkCombineStatSelect.appendChild(option);
+                    }
+                });
+            }
+        };
+        populateStats(currentTier);
     }
 
     function showSubZoneModal(subZone) {
@@ -817,6 +874,17 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!item) return;
 
             if (isGem) {
+                const isBulkSelected = bulkCombineSelection.tier && bulkCombineSelection.statKey && item.tier === bulkCombineSelection.tier && item.stats?.[bulkCombineSelection.statKey];
+                if (isBulkSelected) {
+                    if (bulkCombineDeselectedIds.has(item.id)) {
+                        bulkCombineDeselectedIds.delete(item.id);
+                    } else {
+                        bulkCombineDeselectedIds.add(item.id);
+                    }
+                    updateAll();
+                    return;
+                }
+
                 if (isShiftPressed) {
                     if (craftingGems.length < 2) {
                          if (craftingGems.length > 0 && craftingGems[0].tier !== item.tier) {
@@ -963,6 +1031,38 @@ document.addEventListener('DOMContentLoaded', () => {
             autoSave();
         });
 
+        elements.bulkCombineTierSelect.addEventListener('change', () => {
+            const selectedTier = parseInt((/** @type {HTMLSelectElement} */ (elements.bulkCombineTierSelect)).value, 10);
+            bulkCombineSelection.tier = selectedTier || null;
+            bulkCombineSelection.statKey = null; // Reset stat when tier changes
+            bulkCombineDeselectedIds.clear(); // Clear deselections
+            populateBulkCombineControls(); // Repopulate stat dropdown
+            updateAll();
+        });
+
+        elements.bulkCombineStatSelect.addEventListener('change', () => {
+            bulkCombineSelection.statKey = (/** @type {HTMLSelectElement} */ (elements.bulkCombineStatSelect)).value || null;
+            bulkCombineDeselectedIds.clear(); // Clear deselections
+            updateAll();
+        });
+
+        elements.bulkCombineBtn.addEventListener('click', () => {
+            if (!bulkCombineSelection.tier || !bulkCombineSelection.statKey) {
+                logMessage(elements.gameLogEl, "Please select a tier and a stat to bulk combine.", "rare");
+                return;
+            }
+            const result = player.bulkCombineGems(gameState, bulkCombineSelection.tier, bulkCombineSelection.statKey, bulkCombineDeselectedIds);
+            logMessage(elements.gameLogEl, result.message, result.success ? 'uncommon' : 'rare');
+            
+            bulkCombineDeselectedIds.clear();
+            if (result.success) {
+                recalculateStats();
+                populateBulkCombineControls(); // Repopulate selectors
+                updateAll();
+                autoSave();
+            }
+        });
+
         elements.ringSelectionSlot1.addEventListener('click', () => {
             if (pendingRingEquip) {
                 player.equipRing(gameState, pendingRingEquip, 'ring1');
@@ -1077,7 +1177,9 @@ document.addEventListener('DOMContentLoaded', () => {
                         logMessage(elements.gameLogEl, "You must confirm or cancel prestige first.", "rare");
                         return;
                     }
-
+                    if (viewId === 'gems-view') {
+                        populateBulkCombineControls();
+                    }
                     tabs.forEach(t => t.classList.remove('active'));
                     tab.classList.add('active');
                     if (parentPanel) {

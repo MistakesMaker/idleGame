@@ -815,6 +815,7 @@ const finalDungeonItems = {
         possibleStats: [
             { key: STATS.DPS.key, min: 2500, max: 7500 },
             { key: STATS.MAGIC_FIND.key, min: 1.5, max: 4 },
+            { key: STATS.GOLD_GAIN.key, min: 10, max: 80},
         ]
     },
     SHADOW_COWL: {
@@ -824,9 +825,9 @@ const finalDungeonItems = {
         icon: 'images/icons/shadow_cowl.png',
         width: 2, height: 2,
         canHaveSockets: true,
-        maxSockets: 2,
+        maxSockets: 3,
         possibleStats: [
-            { key: STATS.DPS.key, min: 2500, max: 7500 },
+            { key: STATS.DPS.key, min: 2500, max: 40000 },
             { key: STATS.MAGIC_FIND.key, min: 1.5, max: 3 },
         ]
     },

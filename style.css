@@ -42,13 +42,18 @@ h2, h3, h4 { font-family: 'Cinzel', serif; color: #f1c40f; text-shadow: 1px 1px 
 .upgrades-panel { flex: 1.75; min-width: 300px; }
 
 
-button {
+button, select {
     font-family: 'Cinzel', serif; background: linear-gradient(145deg, #3498db, #2980b9); color: white; border: none; padding: 10px 15px; border-radius: 5px;
     cursor: pointer; font-size: 16px; transition: all 0.2s ease; box-shadow: 0 2px 4px rgba(0,0,0,0.3); border-bottom: 2px solid #20638f; margin: 5px;
 }
-button:hover { background: linear-gradient(145deg, #4aa9e8, #3a90c9); transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.3); }
+button:hover, select:hover { background: linear-gradient(145deg, #4aa9e8, #3a90c9); transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.3); }
 button:active { transform: translateY(1px); box-shadow: 0 1px 2px rgba(0,0,0,0.3); }
-button:disabled { background: #7f8c8d; cursor: not-allowed; border-bottom: 2px solid #6c7a7b; transform: none; box-shadow: none; }
+button:disabled, select:disabled { background: #7f8c8d; cursor: not-allowed; border-bottom: 2px solid #6c7a7b; transform: none; box-shadow: none; }
+
+select option {
+    background-color: #2c3e50;
+    color: white;
+}
 
 .control-group { display: flex; align-items: center; gap: 8px; margin: 0 10px; }
 
@@ -401,6 +406,17 @@ h5 .legendary { color: #f39c12; }
 .gem-crafting-slot:hover { border-color: #f1c40f; background-color: rgba(241, 196, 15, 0.1); }
 .gem-crafting-slot .gem { pointer-events: none; }
 #gem-craft-btn { background: linear-gradient(145deg, #e67e22, #f39c12); border-bottom-color: #d35400; }
+.gem-wrapper.selected-for-bulk-combine .gem {
+    border-color: #3498db;
+    box-shadow: 0 0 15px #3498db;
+    animation: pulse-blue 1.5s infinite;
+}
+
+@keyframes pulse-blue {
+    0% { box-shadow: 0 0 5px rgba(52, 152, 219, 0.6); }
+    50% { box-shadow: 0 0 15px rgba(52, 152, 219, 1); }
+    100% { box-shadow: 0 0 5px rgba(52, 152, 219, 0.6); }
+}
 
 #forge-main-area { display: flex; flex-direction: column; align-items: center; gap: 15px; margin-bottom: 15px; }
 #forge-selected-item { width: 150px; height: 150px; }
