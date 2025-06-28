@@ -128,6 +128,7 @@ export function initDOMElements() {
         unlockSlotModalBackdrop: document.getElementById('unlock-slot-modal-backdrop'),
         unlockSlotPaperdoll: document.getElementById('unlock-slot-paperdoll'),
         unlockSlotCancelBtn: document.getElementById('unlock-slot-cancel-btn'),
+        goldenSlimeStreakEl: document.getElementById('golden-slime-streak'),
     };
 }
 
@@ -251,7 +252,8 @@ export function updateUI(elements, gameState, playerStats, currentMonster, salva
         upgradeClickLevelEl, upgradeDpsLevelEl, inventorySlotsEl, lootMonsterNameEl,
         lootTableDisplayEl, prestigeButton, gemSlotsEl, gemCraftingSlotsContainer, gemCraftBtn,
         forgeInventorySlotsEl, forgeSelectedItemEl, forgeRerollBtn,
-        prestigeEquipmentPaperdoll, prestigeInventoryDisplay, prestigeSelectionCount, prestigeSelectionMax
+        prestigeEquipmentPaperdoll, prestigeInventoryDisplay, prestigeSelectionCount, prestigeSelectionMax,
+        goldenSlimeStreakEl
     } = elements;
 
     // --- Stats and Hero Info ---
@@ -283,6 +285,23 @@ export function updateUI(elements, gameState, playerStats, currentMonster, salva
     if (healthPercent < 30) monsterHealthBarEl.style.background = 'linear-gradient(to right, #e74c3c, #c0392b)';
     else if (healthPercent < 60) monsterHealthBarEl.style.background = 'linear-gradient(to right, #f39c12, #e67e22)';
     else monsterHealthBarEl.style.background = 'linear-gradient(to right, #2ecc71, #27ae60)';
+
+    // Golden Slime Streak UI
+    if (gameState.goldenSlimeStreak > 1 && currentMonster.data.id === 'GOLDEN_SLIME') {
+        goldenSlimeStreakEl.classList.remove('hidden', 'streak-fade-out');
+        const span = goldenSlimeStreakEl.querySelector('span');
+        if(span) span.textContent = gameState.goldenSlimeStreak.toString();
+    } else {
+         if (!goldenSlimeStreakEl.classList.contains('hidden') && !goldenSlimeStreakEl.classList.contains('streak-fade-out')) {
+            // This condition is met when the streak has just been broken.
+            goldenSlimeStreakEl.classList.add('streak-fade-out');
+            setTimeout(() => {
+                goldenSlimeStreakEl.classList.add('hidden');
+                goldenSlimeStreakEl.classList.remove('streak-fade-out');
+            }, 2000);
+        }
+    }
+
 
     // --- Upgrades ---
     const clickCost = getUpgradeCost('clickDamage', gameState.upgrades.clickDamage);
@@ -519,7 +538,7 @@ export function createTooltipHTML(item) {
     const isUnique = itemBase && itemBase.isUnique;
 
     const uniqueClass = isUnique ? 'unique-item-name' : '';
-    let headerHTML = `<div class="item-header"><span class="${item.rarity} ${uniqueClass}">${item.name}</span></div>`;
+    let headerHTML = `<div class="item-header"><span class="${item.rarity}">${item.name}</span></div>`;
     headerHTML += `<div style="font-size: 0.9em; color: #95a5a6; margin-bottom: 5px;">${item.rarity.charAt(0).toUpperCase() + item.rarity.slice(1)} ${item.type.charAt(0).toUpperCase() + item.type.slice(1)}</div>`;
 
     const detailedBlock = createDetailedItemStatBlockHTML(item);
@@ -547,7 +566,7 @@ export function createItemComparisonTooltipHTML(hoveredItem, equippedItem, equip
     const hoveredItemBase = ITEMS[hoveredItem.baseId];
     const isUnique = hoveredItemBase?.isUnique;
     const uniqueClass = isUnique ? 'unique-item-name' : '';
-    let headerHTML = `<div class="item-header"><span class="${hoveredItem.rarity} ${uniqueClass}">${hoveredItem.name}</span></div>`;
+    let headerHTML = `<div class="item-header"><span class="${hoveredItem.rarity}">${hoveredItem.name}</span></div>`;
     headerHTML += `<div style="font-size: 0.9em; color: #95a5a6; margin-bottom: 5px;">${hoveredItem.rarity.charAt(0).toUpperCase() + hoveredItem.rarity.slice(1)} ${hoveredItem.type.charAt(0).toUpperCase() + hoveredItem.type.slice(1)}</div>`;
 
     const createComparisonList = (itemForDisplay, itemToCompare) => {

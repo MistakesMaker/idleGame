@@ -76,6 +76,7 @@ document.addEventListener('DOMContentLoaded', () => {
             prestigeCount: 0,
             nextPrestigeLevel: 100,
             specialEncounter: null,
+            goldenSlimeStreak: 0,
             hero: {
                 level: 1, xp: 0, attributePoints: 0,
                 attributes: { strength: 0, agility: 0, luck: 0 }
@@ -278,6 +279,17 @@ document.addEventListener('DOMContentLoaded', () => {
             } else {
                 elements.monsterAreaEl.style.backgroundImage = `url('${REALMS[0].zones.green_meadows.monsterAreaBg}')`;
             }
+        }
+        
+        // Handle Golden Slime Streak logic
+        if (currentMonster.data.id !== 'GOLDEN_SLIME' && gameState.goldenSlimeStreak > 0) {
+            const streakEl = elements.goldenSlimeStreakEl;
+            streakEl.classList.add('streak-fade-out');
+            setTimeout(() => {
+                streakEl.classList.remove('streak-fade-out');
+                streakEl.classList.add('hidden');
+            }, 2000);
+            gameState.goldenSlimeStreak = 0;
         }
     }
 
@@ -802,7 +814,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const result = player.buyLootCrate(gameState, logic.generateItem);
             logMessage(elements.gameLogEl, result.message);
             if(result.success && result.item) {
-                 logMessage(elements.gameLogEl, `The crate contained: <span class="${result.item.rarity}" style="font-weight:bold;">${result.item.name}</span>`);
+                 logMessage(elements.gameLogEl, `The crate contained: <span class="${result.item.rarity}">${result.item.name}</span>`);
             }
             updateAll();
             autoSave();

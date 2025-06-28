@@ -170,7 +170,7 @@ export function dropLoot(currentMonster, gameState, playerStats) {
         if (playerStats.gemFindChance > 0 && Math.random() * 100 < playerStats.gemFindChance) {
             const duplicateGem = { ...itemBaseToDrop, id: Date.now() + Math.random() + 1 };
             gameState.gems.push(duplicateGem);
-            logMessages.push({ message: `Gem Find! You found a duplicate <span class="epic" style="font-weight:bold;">${duplicateGem.name}</span>!`, class: 'epic' });
+            logMessages.push({ message: `Gem Find! You found a duplicate <span class="epic">${duplicateGem.name}</span>!`, class: 'epic' });
         }
         
         return { droppedItem: newGem, logMessages };
@@ -259,11 +259,13 @@ export function monsterDefeated(gameState, playerStats, currentMonster) {
 
     // Handle special monster rewards (Golden Slime)
     if (currentMonster.data.isSpecial && currentMonster.data.id === 'GOLDEN_SLIME') {
-        goldGained = gameState.specialEncounter.goldReward || 0;
+        gameState.goldenSlimeStreak = (gameState.goldenSlimeStreak || 0) + 1;
+        goldGained = gameState.specialEncounter.goldReward * gameState.goldenSlimeStreak;
         xpGained = 0; // No XP from Golden Slime
-        logMessages.push({ message: `You defeated the Golden Slime and gained a massive bonus of ${formatNumber(goldGained)} gold!`, class: '' });
+        logMessages.push({ message: `You defeated the Golden Slime! (Streak: ${gameState.goldenSlimeStreak}) You gained a massive bonus of ${formatNumber(goldGained)} gold!`, class: '' });
         gameState.specialEncounter = null; // Clear the special encounter
     } else {
+        gameState.goldenSlimeStreak = 0; // Reset streak if it wasn't a golden slime
         // Apply regular boss multipliers to rewards
         if (isBigBossLevel(level)) {
             xpGained *= 3;
@@ -292,7 +294,7 @@ export function monsterDefeated(gameState, playerStats, currentMonster) {
                 const isGem = droppedItem.tier >= 1;
                 const rarityClass = isGem ? 'epic' : droppedItem.rarity;
                 logMessages.push({ message: `The ${currentMonster.name} dropped something!`, class: '' });
-                logMessages.push({ message: `<span class="${rarityClass}" style="font-weight:bold;">${droppedItem.name}</span>`, class: rarityClass });
+                logMessages.push({ message: `<span class="${rarityClass}">${droppedItem.name}</span>`, class: '' });
             }
         }
     }
