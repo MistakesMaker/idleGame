@@ -863,7 +863,9 @@ document.addEventListener('DOMContentLoaded', () => {
             updateAll();
         });
         document.getElementById('select-all-salvage-btn').addEventListener('click', () => {
-             salvageMode.selections = player.getAllItems(gameState).filter(item => !item.locked);
+             // CORRECTED: Exclude all equipped items from "Select All"
+             const equippedIds = player.getAllEquippedItemIds(gameState);
+             salvageMode.selections = player.getAllItems(gameState).filter(item => !item.locked && !equippedIds.has(item.id));
              const salvageCountEl = document.getElementById('salvage-count');
              if (salvageCountEl) salvageCountEl.textContent = salvageMode.selections.length.toString();
              updateAll();
@@ -977,16 +979,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (message) logMessage(elements.gameLogEl, message, '', isAutoScrollingLog);
                 } else if (salvageMode.active) {
                     // NEW: Check if item is equipped in any preset before salvaging
-                    let isEquipped = false;
-                    for (const preset of gameState.presets) {
-                        for (const slot in preset.equipment) {
-                            if (preset.equipment[slot] && preset.equipment[slot].id === item.id) {
-                                isEquipped = true;
-                                break;
-                            }
-                        }
-                        if (isEquipped) break;
-                    }
+                    const isEquipped = player.getAllEquippedItemIds(gameState).has(item.id);
 
                     if (isEquipped) {
                         logMessage(elements.gameLogEl, "Cannot salvage an item that is equipped in any preset.", 'rare', isAutoScrollingLog);

@@ -52,6 +52,24 @@ export function getAllItems(gameState) {
     return allItems;
 }
 
+/**
+ * Gets a Set of all item IDs that are equipped in any preset.
+ * @param {object} gameState - The main game state object.
+ * @returns {Set<any>} A Set containing the IDs of all equipped items.
+ */
+export function getAllEquippedItemIds(gameState) {
+    const equippedIds = new Set();
+    for (const preset of gameState.presets) {
+        for (const slot in preset.equipment) {
+            const item = preset.equipment[slot];
+            if (item) {
+                equippedIds.add(item.id);
+            }
+        }
+    }
+    return equippedIds;
+}
+
 
 /**
  * Re-packs the inventory to remove any gaps.
@@ -358,10 +376,13 @@ export function salvageByRarity(gameState, rarityToSalvage, playerStats) {
     let scrapGained = 0;
     let itemsSalvagedCount = 0;
     
+    // CORRECTED: Get all equipped item IDs first to prevent them from being salvaged.
+    const equippedIds = getAllEquippedItemIds(gameState);
+    
     // Filter loose inventory
     const itemsToKeepInInventory = [];
     gameState.inventory.forEach(item => {
-        if (item.rarity === rarityToSalvage && !item.locked) {
+        if (item.rarity === rarityToSalvage && !item.locked && !equippedIds.has(item.id)) {
             const rarityIndex = rarities.indexOf(item.rarity);
             scrapGained += Math.ceil(Math.pow(4, rarityIndex));
             itemsSalvagedCount++;
@@ -370,20 +391,7 @@ export function salvageByRarity(gameState, rarityToSalvage, playerStats) {
         }
     });
     gameState.inventory = itemsToKeepInInventory;
-
-    // Filter preset equipment
-    for (const preset of gameState.presets) {
-        for (const slot in preset.equipment) {
-            const item = preset.equipment[slot];
-            if (item && item.rarity === rarityToSalvage && !item.locked) {
-                const rarityIndex = rarities.indexOf(item.rarity);
-                scrapGained += Math.ceil(Math.pow(4, rarityIndex));
-                itemsSalvagedCount++;
-                preset.equipment[slot] = null;
-            }
-        }
-    }
-
+    
     if (itemsSalvagedCount > 0) {
         scrapGained = Math.floor(scrapGained * playerStats.scrapBonus);
         gameState.scrap += scrapGained;
