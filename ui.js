@@ -616,49 +616,70 @@ export function createTooltipHTML(item) {
 }
 
 /**
- * Creates the HTML for an item comparison tooltip.
- * This has been refactored to use the detailed blueprint for both items.
+ * Creates the HTML for an item comparison tooltip, now with embedded differences.
  */
 export function createItemComparisonTooltipHTML(hoveredItem, equippedItem, equippedItem2 = null) {
-    // Helper function to create a full blueprint block for an item.
-    const createBlueprintBlock = (item, title) => {
-        if (!item) {
-            return `<div><h5>${title}</h5><ul><li>(Empty Slot)</li></ul></div>`;
-        }
-        const itemBase = ITEMS[item.baseId];
-        const isUnique = itemBase && itemBase.isUnique;
-        const itemNameClass = isUnique ? 'unique-item-name' : '';
-        const itemRarityClass = item.rarity || 'common';
+    if (!hoveredItem) return '';
+    const itemBase = ITEMS[hoveredItem.baseId];
 
-        const blockTitle = `<h5>${title}: <span class="${itemRarityClass} ${itemNameClass}">${item.name}</span></h5>`;
-        const detailedStats = createDetailedItemStatBlockHTML(item);
-        
-        let socketsHTML = '';
-        if (item.sockets) {
-            socketsHTML += `<div class="item-sockets" style="margin-top: 10px; padding-left:0; justify-content:center; position: static; transform: none;">`;
-            item.sockets.forEach(gem => {
-                socketsHTML += `<div class="socket">${gem ? `<img src="${gem.icon}" alt="${gem.name}">` : ''}</div>`;
-            });
-            socketsHTML += '</div>';
-        }
-        
-        return `<div>${blockTitle}${detailedStats}${socketsHTML}</div>`;
-    };
+    // --- Header ---
+    const uniqueClass = itemBase?.isUnique ? 'unique-item-name' : '';
+    let html = `<div class="item-header"><span class="${hoveredItem.rarity}">${hoveredItem.name}</span></div>`;
+    html += `<div style="font-size: 0.9em; color: #95a5a6; margin-bottom: 5px;">${hoveredItem.rarity.charAt(0).toUpperCase() + hoveredItem.rarity.slice(1)} ${hoveredItem.type.charAt(0).toUpperCase() + hoveredItem.type.slice(1)}</div>`;
 
-    let hoveredBlock = createBlueprintBlock(hoveredItem, "Hovered");
-    let equippedBlock = '';
-
+    // --- Stats & Comparison ---
+    const hoveredStats = getCombinedItemStats(hoveredItem);
+    const equippedStats = equippedItem ? getCombinedItemStats(equippedItem) : {};
+    
+    // For rings, we compare against the better of the two equipped rings
+    let comparisonTargetStats = equippedStats;
     if (hoveredItem.type === 'ring') {
-        let equippedBlock1 = createBlueprintBlock(equippedItem, "Ring 1");
-        let equippedBlock2 = createBlueprintBlock(equippedItem2, "Ring 2");
-        equippedBlock = `<div class="tooltip-ring-comparison">${equippedBlock1}${equippedBlock2}</div>`;
-    } else {
-        equippedBlock = createBlueprintBlock(equippedItem, "Equipped");
+        const equippedStats2 = equippedItem2 ? getCombinedItemStats(equippedItem2) : {};
+        // Simple comparison: sum of stats. A more complex heuristic could be used.
+        const sum1 = Object.values(equippedStats).reduce((s, a) => s + a, 0);
+        const sum2 = Object.values(equippedStats2).reduce((s, a) => s + a, 0);
+        comparisonTargetStats = sum1 > sum2 ? equippedStats : equippedStats2;
     }
 
-    return `<div class="tooltip-comparison-container">${hoveredBlock}${equippedBlock}</div>`;
-}
+    const allStatKeys = new Set([...Object.keys(hoveredStats), ...Object.keys(comparisonTargetStats)]);
+    
+    html += '<ul>';
+    allStatKeys.forEach(statKey => {
+        const hoveredValue = hoveredStats[statKey] || 0;
+        const equippedValue = comparisonTargetStats[statKey] || 0;
+        const diff = hoveredValue - equippedValue;
 
+        const statInfo = Object.values(STATS).find(s => s.key === statKey) || { name: statKey, type: 'flat' };
+        const isPercent = statInfo.type === 'percent';
+        
+        const valueStr = isPercent ? `${hoveredValue.toFixed(1)}%` : formatNumber(hoveredValue);
+        
+        let diffSpan = '';
+        if (equippedItem && Math.abs(diff) > 0.001) {
+            const diffClass = diff > 0 ? 'stat-better' : 'stat-worse';
+            const sign = diff > 0 ? '+' : '';
+            const diffStr = isPercent ? `${diff.toFixed(1)}%` : formatNumber(diff);
+            diffSpan = ` <span class="${diffClass}">(${sign}${diffStr})</span>`;
+        }
+
+        html += `<li>+${valueStr} ${statInfo.name}${diffSpan}</li>`;
+    });
+    html += '</ul>';
+
+    // --- Gem & Unique Blueprints (for hovered item only) ---
+    html += createDetailedItemStatBlockHTML(hoveredItem).replace(/<ul>.*?<\/ul>/, ''); // Remove the stat list we already rendered
+
+    // --- Sockets Visual ---
+    if (hoveredItem.sockets) {
+        html += `<div class="item-sockets" style="margin-top: 10px; padding-left:0; justify-content:center; position: static; transform: none;">`;
+        hoveredItem.sockets.forEach(gem => {
+            html += `<div class="socket">${gem ? `<img src="${gem.icon}" alt="${gem.name}">` : ''}</div>`;
+        });
+        html += '</div>';
+    }
+
+    return html;
+}
 
 export function createGemTooltipHTML(gem) {
     const name = gem.name || `T${gem.tier} Gem`;
