@@ -373,20 +373,23 @@ document.addEventListener('DOMContentLoaded', () => {
         renderRealmTabs();
         renderPermanentUpgrades();
         
+        // --- NEW: Gem Selection Highlight Logic ---
+        document.querySelectorAll('.gem-wrapper.selected-gem').forEach(el => el.classList.remove('selected-gem'));
+        document.querySelectorAll('.socket-target').forEach(el => el.classList.remove('socket-target'));
+
         if (selectedGemForSocketing) {
-            document.querySelectorAll('.selected-gem').forEach(el => el.classList.remove('selected-gem'));
             const gemEl = document.querySelector(`.gem-wrapper[data-id="${selectedGemForSocketing.id}"]`);
             if (gemEl) gemEl.classList.add('selected-gem');
             
-            document.querySelectorAll('.socket-target').forEach(el => el.classList.remove('socket-target'));
-            
+            // Highlight potential socket targets in inventory
             gameState.inventory.forEach((item) => {
                 if (item.sockets && item.sockets.includes(null)) {
-                    const itemEl = document.querySelector(`.item-wrapper[data-id="${item.id}"] .item`);
+                    const itemEl = document.querySelector(`#inventory-slots .item-wrapper[data-id="${item.id}"]`);
                     if (itemEl) itemEl.classList.add('socket-target');
                 }
             });
 
+            // Highlight potential socket targets on paperdoll
             for (const slotName in gameState.equipment) {
                 const item = gameState.equipment[slotName];
                 if (item && item.sockets && item.sockets.includes(null)) {
@@ -394,10 +397,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (slotEl) slotEl.classList.add('socket-target');
                 }
             }
-        } else {
-            document.querySelectorAll('.selected-gem').forEach(el => el.classList.remove('selected-gem'));
-            document.querySelectorAll('.socket-target').forEach(el => el.classList.remove('socket-target'));
         }
+        // --- END: Gem Selection Highlight Logic ---
     }
 
     function autoSave() {
@@ -1337,6 +1338,7 @@ document.addEventListener('DOMContentLoaded', () => {
         setupPrestigeListeners();
         setupLegacyKeeperModalListeners();
         setupSalvageFilterListeners();
+        setupViewSlotsListeners();
     }
     
     function setupLogScrollListeners() {
@@ -1912,6 +1914,23 @@ document.addEventListener('DOMContentLoaded', () => {
             if (e.target === elements.unlockSlotModalBackdrop) {
                 pendingLegacyKeeperUpgrade = false;
                 ui.hideUnlockSlotModal(elements);
+            }
+        });
+    }
+
+    function setupViewSlotsListeners() {
+        const { viewPrestigeSlotsBtn, viewSlotsModalBackdrop, viewSlotsCloseBtn } = elements;
+
+        viewPrestigeSlotsBtn.addEventListener('click', () => {
+            ui.showViewSlotsModal(elements, gameState.unlockedPrestigeSlots);
+        });
+
+        const close = () => viewSlotsModalBackdrop.classList.add('hidden');
+
+        viewSlotsCloseBtn.addEventListener('click', close);
+        viewSlotsModalBackdrop.addEventListener('click', (e) => {
+            if (e.target === viewSlotsModalBackdrop) {
+                close();
             }
         });
     }

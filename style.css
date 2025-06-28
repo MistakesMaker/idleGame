@@ -190,6 +190,15 @@ select option {
 #currency-display { display: flex; justify-content: space-around; background-color: rgba(0,0,0,0.3); padding: 10px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #4a637e; }
 #currency-display p { margin: 0; font-size: 1.2em; font-family: 'Cinzel', serif; }
 #currency-display i { margin-right: 8px; color: #f1c40f; }
+/* Currency Milestone Colors */
+.currency-tier-0 { color: #ecf0f1; text-shadow: none; }
+.currency-tier-1 { color: #2ecc71; text-shadow: 0 0 5px #27ae60; } /* K */
+.currency-tier-2 { color: #3498db; text-shadow: 0 0 6px #2980b9; } /* M */
+.currency-tier-3 { color: #9b59b6; text-shadow: 0 0 7px #8e44ad; } /* B */
+.currency-tier-4 { color: #f1c40f; text-shadow: 0 0 8px #f39c12; } /* T */
+.currency-tier-5 { color: #e74c3c; text-shadow: 0 0 9px #c0392b; } /* Qa */
+.currency-tier-6 { color: #1abc9c; text-shadow: 0 0 10px #16a085; } /* Qi */
+
 
 #bottom-view-controls { text-align: center; margin-top: 15px; margin-bottom: 15px; flex-shrink: 0; }
 #toggle-loot-log-btn { width: 50%; margin: 0; background: #34495e; }
@@ -273,15 +282,15 @@ select option {
 .equipment-slot:hover { background-color: rgba(0, 0, 0, 0.3); border-color: #f1c40f; }
 
 /* --- Proportional Equipment Slot Sizes --- */
-#slot-helmet, #prestige-slot-helmet, #unlock-slot-helmet { width: 24%; height: 16%; top: 7%; left: 50%; transform: translateX(-50%); }
-#slot-necklace, #prestige-slot-necklace, #unlock-slot-necklace { width: 24%; height: 16%; top: 7%; right: 13%; }
-#slot-platebody, #prestige-slot-platebody, #unlock-slot-platebody { width: 24%; height: 24%; top: 24%; left: 50%; transform: translateX(-50%); }
-#slot-sword, #prestige-slot-sword, #unlock-slot-sword { width: 24%; height: 24%; top: 24%; left: 13%; }
-#slot-shield, #prestige-slot-shield, #unlock-slot-shield { width: 24%; height: 24%; top: 24%; right: 13%; }
-#slot-platelegs, #prestige-slot-platelegs, #unlock-slot-platelegs { width: 24%; height: 24%; top: 58%; left: 50%; transform: translateX(-50%); }
-#slot-belt, #prestige-slot-belt, #unlock-slot-belt { width: 24%; height: 8%; top: 49%; left: 50%; transform: translateX(-50%); }
-#slot-ring1, #prestige-slot-ring1, #unlock-slot-ring1 { width: 12%; height: 8%; top: 49%; left: 25%; }
-#slot-ring2, #prestige-slot-ring2, #unlock-slot-ring2 { width: 12%; height: 8%; top: 49%; right: 25%; }
+#slot-helmet, #prestige-slot-helmet, #unlock-slot-helmet, #view-slot-helmet { width: 24%; height: 16%; top: 7%; left: 50%; transform: translateX(-50%); }
+#slot-necklace, #prestige-slot-necklace, #unlock-slot-necklace, #view-slot-necklace { width: 24%; height: 16%; top: 7%; right: 13%; }
+#slot-platebody, #prestige-slot-platebody, #unlock-slot-platebody, #view-slot-platebody { width: 24%; height: 24%; top: 24%; left: 50%; transform: translateX(-50%); }
+#slot-sword, #prestige-slot-sword, #unlock-slot-sword, #view-slot-sword { width: 24%; height: 24%; top: 24%; left: 13%; }
+#slot-shield, #prestige-slot-shield, #unlock-slot-shield, #view-slot-shield { width: 24%; height: 24%; top: 24%; right: 13%; }
+#slot-platelegs, #prestige-slot-platelegs, #unlock-slot-platelegs, #view-slot-platelegs { width: 24%; height: 24%; top: 58%; left: 50%; transform: translateX(-50%); }
+#slot-belt, #prestige-slot-belt, #unlock-slot-belt, #view-slot-belt { width: 24%; height: 8%; top: 49%; left: 50%; transform: translateX(-50%); }
+#slot-ring1, #prestige-slot-ring1, #unlock-slot-ring1, #view-slot-ring1 { width: 12%; height: 8%; top: 49%; left: 25%; }
+#slot-ring2, #prestige-slot-ring2, #unlock-slot-ring2, #view-slot-ring2 { width: 12%; height: 8%; top: 49%; right: 25%; }
 
 
 .equipment-slot .item-icon { width: 90%; height: 90%; object-fit: contain; -webkit-user-drag: none; cursor: pointer; opacity: 1; }
@@ -313,6 +322,8 @@ select option {
 .equipment-slot.selected-for-prestige { border: 2px solid #f1c40f; box-shadow: 0 0 15px #f1c40f !important; }
 .hidden { display: none !important; }
 #prestige-button:not(:disabled) { animation: pulse 2s infinite; background: linear-gradient(145deg, #f1c40f, #e67e22); border-bottom: 2px solid #d35400; }
+#view-prestige-slots-btn { background: #7f8c8d; border-bottom-color: #6c7a7b; }
+
 @keyframes pulse { 0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(241, 196, 15, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(241, 196, 15, 0); } 100% { box-shadow: 0 0 0 0 rgba(241, 196, 15, 0); } }
 
 #upgrades-area { margin-top: 20px; padding-top: 15px; border-top: 1px solid #4a637e; }
@@ -378,6 +389,39 @@ body.salvage-mode-active .item-grid .item-wrapper:not(.locked-item) { animation:
     border-top: 1px solid #4a637e;
 }
 
+/* CORRECTED: Styles for Gem Stat breakdown in tooltip */
+.tooltip-gem-stats {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid #4a637e; /* Visually separates it */
+}
+.tooltip-gem-stats-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.9em;
+    color: #bdc3c7;
+    margin-bottom: 5px;
+}
+.tooltip-gem-stats-header img {
+    width: 20px;
+    height: 20px;
+}
+.tooltip-gem-stats ul {
+    list-style: none;
+    padding-left: 28px;
+    margin: 0 0 5px 0;
+    font-size: 0.85em;
+}
+.tooltip-gem-stats li {
+    color: #3498db; /* Gem stats are colored blue */
+}
+.tooltip-gem-stats li.stat-special {
+    color: #9b59b6; /* Synergy stats are colored purple */
+    font-style: italic;
+}
+
+
 h5 { margin: 0 0 5px 0; font-size: 0.9em; color: #95a5a6; }
 h5 > span { font-weight: bold; }
 h5 .common { color: #bdc3c7; }
@@ -438,10 +482,21 @@ h5 .legendary { color: #f39c12; }
 .gem-wrapper:hover .gem { transform: scale(1.1); box-shadow: 0 0 8px #f1c40f; }
 
 .gem { width: 100%; height: 100%; cursor: pointer; transition: transform 0.2s ease, box-shadow 0.2s ease; border-radius: 8px; background-color: rgba(0,0,0,0.4); border: 2px solid #d41b07; padding: 5px; display: flex; justify-content: center; align-items: center; }
-.gem.selected-gem { box-shadow: 0 0 15px #f1c40f; border-color: #f1c40f; transform: scale(1.1); }
 .gem img { width: 100%; height: 100%; object-fit: contain; -webkit-user-drag: none; }
+
+.gem-wrapper.selected-gem .gem {
+    box-shadow: 0 0 15px #f1c40f;
+    border-color: #f1c40f;
+    animation: pulse 1.5s infinite;
+}
 .item-grid .item-wrapper.socket-target .item,
-#equipment-paperdoll .equipment-slot.socket-target { animation: pulse-green 1.5s infinite; }
+#equipment-paperdoll .equipment-slot.socket-target { 
+    animation: pulse-green 1.5s infinite; 
+}
+.equipment-slot.socket-target {
+    border: 2px solid #2ecc71;
+}
+
 #gem-crafter { border-top: 2px solid #4a637e; padding-top: 15px; }
 #gem-crafting-slots { display: flex; justify-content: center; gap: 15px; margin: 15px 0; }
 .gem-crafting-slot { width: 70px; height: 70px; border: 2px dashed #4a637e; border-radius: 10px; display: flex; justify-content: center; align-items: center; background-color: rgba(0,0,0,0.2); cursor: pointer; }
@@ -891,4 +946,67 @@ h5 .legendary { color: #f39c12; }
 
 #scroll-to-bottom-btn:hover i {
     transform: scale(1.2);
+}
+
+/* --- VIEW SLOTS MODAL --- */
+#view-slots-modal-backdrop {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+    background-color: rgba(0,0,0,0.8); 
+    z-index: 10003; 
+    display: flex; justify-content: center; align-items: center;
+}
+#view-slots-modal {
+    background-color: #2c3e50; 
+    padding: 25px; 
+    border-radius: 12px; 
+    border: 2px solid #bdc3c7;
+    box-shadow: 0 0 20px rgba(189, 195, 199, 0.3); 
+    width: 90%; max-width: 500px;
+    text-align: center;
+}
+#view-slots-modal h3 {
+    margin-top: 0;
+    color: #ecf0f1;
+}
+#view-slots-paperdoll-container {
+    width: 100%;
+    max-width: 400px;
+    margin: 20px auto;
+}
+#view-slots-paperdoll {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 400 / 600;
+    background-image: url('images/paperdoll-bg.png');
+    background-size: contain;
+    background-position: center;
+    background-repeat: no-repeat;
+}
+#view-slots-paperdoll .equipment-slot {
+    position: absolute;
+    transition: all 0.2s ease;
+}
+#view-slots-paperdoll .equipment-slot.view-unlocked {
+    border-color: #f1c40f;
+}
+#view-slots-paperdoll .equipment-slot.view-locked {
+    filter: grayscale(1) brightness(0.6);
+    position: relative; /* Needed for pseudo-element positioning */
+}
+#view-slots-paperdoll .equipment-slot.view-locked::after {
+    content: '\f023'; /* fa-lock */
+    font-family: "Font Awesome 5 Free";
+    font-weight: 900;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 2.5em;
+    color: rgba(236, 240, 241, 0.5);
+    text-shadow: 1px 1px 3px rgba(0,0,0,0.7);
+    pointer-events: none;
+}
+#view-slots-close-btn {
+    margin-top: 15px;
+    background: #7f8c8d; border-bottom-color: #6c7a7b;
 }

@@ -227,8 +227,8 @@
             <h2>Actions</h2>
             
             <div id="currency-display">
-                <p><i class="fas fa-coins"></i> <span id="gold-stat">0</span></p>
-                <p><i class="fas fa-cogs"></i> <span id="scrap-stat">0</span></p>
+                <p><i class="fas fa-coins"></i> <span id="gold-stat" class="currency-tier-0">0</span></p>
+                <p><i class="fas fa-cogs"></i> <span id="scrap-stat" class="currency-tier-0">0</span></p>
             </div>
 
             <button id="raid-btn">Raid</button>
@@ -261,6 +261,7 @@
                      </div>
                 </div>
                 <button id="prestige-button" disabled>Prestige Now</button>
+                <button id="view-prestige-slots-btn">View Prestige Slots</button>
             </div>
         </div>
 
@@ -370,6 +371,28 @@
                 </div>
             </div>
             <button id="salvage-filter-close-btn">Close</button>
+        </div>
+    </div>
+
+    <!-- UPDATED VIEW PRESTIGE SLOTS MODAL -->
+    <div id="view-slots-modal-backdrop" class="hidden">
+        <div id="view-slots-modal">
+            <h3>Unlocked Prestige Slots</h3>
+            <p class="small-text-hint">These slots will be preserved when you prestige.</p>
+            <div id="view-slots-paperdoll-container">
+                <div id="view-slots-paperdoll">
+                    <div id="view-slot-helmet" class="equipment-slot"></div>
+                    <div id="view-slot-necklace" class="equipment-slot"></div>
+                    <div id="view-slot-platebody" class="equipment-slot"></div>
+                    <div id="view-slot-platelegs" class="equipment-slot"></div>
+                    <div id="view-slot-belt" class="equipment-slot"></div>
+                    <div id="view-slot-sword" class="equipment-slot"></div>
+                    <div id="view-slot-shield" class="equipment-slot"></div>
+                    <div id="view-slot-ring1" class="equipment-slot"></div>
+                    <div id="view-slot-ring2" class="equipment-slot"></div>
+                </div>
+            </div>
+            <button id="view-slots-close-btn">Close</button>
         </div>
     </div>
 

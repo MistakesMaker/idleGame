@@ -130,6 +130,12 @@ export function initDOMElements() {
         unlockSlotPaperdoll: document.getElementById('unlock-slot-paperdoll'),
         unlockSlotCancelBtn: document.getElementById('unlock-slot-cancel-btn'),
         goldenSlimeStreakEl: document.getElementById('golden-slime-streak'),
+
+        // View Prestige Slots Modal
+        viewPrestigeSlotsBtn: document.getElementById('view-prestige-slots-btn'),
+        viewSlotsModalBackdrop: document.getElementById('view-slots-modal-backdrop'),
+        viewSlotsPaperdoll: document.getElementById('view-slots-paperdoll'),
+        viewSlotsCloseBtn: document.getElementById('view-slots-close-btn'),
     };
 }
 
@@ -259,8 +265,25 @@ export function updateUI(elements, gameState, playerStats, currentMonster, salva
 
     // --- Stats and Hero Info ---
     const xpToNextLevel = getXpForNextLevel(gameState.hero.level);
+
+    // --- Currency Formatting & Coloring ---
+    const currencyMilestones = [1e18, 1e15, 1e12, 1e9, 1e6, 1e3]; // From highest to lowest
+    const getCurrencyTier = (amount) => {
+        for (let i = 0; i < currencyMilestones.length; i++) {
+            if (amount >= currencyMilestones[i]) {
+                return currencyMilestones.length - i;
+            }
+        }
+        return 0;
+    };
+    const goldTier = getCurrencyTier(gameState.gold);
+    const scrapTier = getCurrencyTier(gameState.scrap);
+    goldStatEl.className = `currency-tier-${goldTier}`;
+    scrapStatEl.className = `currency-tier-${scrapTier}`;
     goldStatEl.textContent = formatNumber(gameState.gold);
     scrapStatEl.textContent = formatNumber(gameState.scrap);
+    // --- End Currency Formatting ---
+
     heroXpTextEl.textContent = `${formatNumber(gameState.hero.xp)} / ${formatNumber(xpToNextLevel)}`;
     clickDamageStatEl.textContent = formatNumber(playerStats.totalClickDamage);
     dpsStatEl.textContent = formatNumber(playerStats.totalDps);
@@ -489,30 +512,49 @@ function createDetailedItemStatBlockHTML(item) {
     }
 
     const itemBase = ITEMS[item.baseId];
-    const combinedStats = getCombinedItemStats(item);
-    let statsHTML = '<ul>';
-    for (const statKey in combinedStats) {
-        const statInfo = Object.values(STATS).find(s => s.key === statKey) || { name: statKey, type: 'flat' };
-        const statName = statInfo.name;
-        const value = combinedStats[statKey];
-        const statValue = statInfo.type === 'percent' ? `${value.toFixed(1)}%` : formatNumber(value);
-        statsHTML += `<li>+${statValue} ${statName}</li>`;
-    }
     
-    let totalSynergyValue = 0;
-    if (item.sockets) {
-        for (const gem of item.sockets) {
-            if (gem && gem.synergy && gem.synergy.source === 'dps' && gem.synergy.target === 'clickDamage') {
-                totalSynergyValue += gem.synergy.value;
-            }
+    // Base item stats
+    let statsHTML = '<ul>';
+    if (item.stats) {
+        for (const statKey in item.stats) {
+            const statInfo = Object.values(STATS).find(s => s.key === statKey) || { name: statKey, type: 'flat' };
+            const statName = statInfo.name;
+            const value = item.stats[statKey];
+            const statValue = statInfo.type === 'percent' ? `${value.toFixed(1)}%` : formatNumber(value);
+            statsHTML += `<li>+${statValue} ${statName}</li>`;
         }
-    }
-    if (totalSynergyValue > 0) {
-        const synergyPercentage = (totalSynergyValue * 100).toFixed(1);
-        statsHTML += `<li class="stat-special">Special: +${synergyPercentage}% DPS to Click Dmg</li>`;
     }
     statsHTML += '</ul>';
 
+    // Gem stats blueprint
+    let gemsHTML = '';
+    if (item.sockets && item.sockets.some(g => g !== null)) {
+        gemsHTML += '<div class="tooltip-gem-stats">';
+        item.sockets.forEach(gem => {
+            if (gem) {
+                const gemName = gem.name || `T${gem.tier} Gem`;
+                gemsHTML += `<div class="tooltip-gem-stats-header"><img src="${gem.icon}" alt="${gemName}">${gemName}</div>`;
+                gemsHTML += '<ul>';
+                if (gem.stats) {
+                    for (const statKey in gem.stats) {
+                         const statInfo = Object.values(STATS).find(s => s.key === statKey) || { name: statKey, type: 'flat' };
+                         const statName = statInfo.name;
+                         const value = gem.stats[statKey];
+                         const statValue = statInfo.type === 'percent' ? `${value.toFixed(1)}%` : formatNumber(value);
+                         gemsHTML += `<li>+${statValue} ${statName}</li>`;
+                    }
+                }
+                if (gem.synergy) {
+                    const synergyPercentage = (gem.synergy.value * 100).toFixed(1);
+                    gemsHTML += `<li class="stat-special">+${synergyPercentage}% DPS to Click Dmg</li>`;
+                }
+                gemsHTML += '</ul>';
+            }
+        });
+        gemsHTML += '</div>';
+    }
+
+    // Unique effect
     let uniqueEffectHTML = '';
     if (itemBase && itemBase.uniqueEffect) {
         const effectData = UNIQUE_EFFECTS[itemBase.uniqueEffect];
@@ -526,7 +568,7 @@ function createDetailedItemStatBlockHTML(item) {
         }
     }
 
-    return statsHTML + uniqueEffectHTML;
+    return statsHTML + gemsHTML + uniqueEffectHTML;
 }
 
 
@@ -561,73 +603,49 @@ export function createTooltipHTML(item) {
 }
 
 /**
- * Creates the HTML for an item comparison tooltip, now with numerical diffs.
+ * Creates the HTML for an item comparison tooltip.
+ * This has been refactored to use the detailed blueprint for both items.
  */
 export function createItemComparisonTooltipHTML(hoveredItem, equippedItem, equippedItem2 = null) {
-    const hoveredItemBase = ITEMS[hoveredItem.baseId];
-    const isUnique = hoveredItemBase?.isUnique;
-    const uniqueClass = isUnique ? 'unique-item-name' : '';
-    let headerHTML = `<div class="item-header"><span class="${hoveredItem.rarity}">${hoveredItem.name}</span></div>`;
-    headerHTML += `<div style="font-size: 0.9em; color: #95a5a6; margin-bottom: 5px;">${hoveredItem.rarity.charAt(0).toUpperCase() + hoveredItem.rarity.slice(1)} ${hoveredItem.type.charAt(0).toUpperCase() + hoveredItem.type.slice(1)}</div>`;
+    // Helper function to create a full blueprint block for an item.
+    const createBlueprintBlock = (item, title) => {
+        if (!item) {
+            return `<div><h5>${title}</h5><ul><li>(Empty Slot)</li></ul></div>`;
+        }
+        const itemBase = ITEMS[item.baseId];
+        const isUnique = itemBase && itemBase.isUnique;
+        const itemNameClass = isUnique ? 'unique-item-name' : '';
+        const itemRarityClass = item.rarity || 'common';
 
-    const createComparisonList = (itemForDisplay, itemToCompare) => {
-        const displayStats = getCombinedItemStats(itemForDisplay);
-        const compareStats = itemToCompare ? getCombinedItemStats(itemToCompare) : {};
-        const allStatKeys = new Set([...Object.keys(displayStats), ...Object.keys(compareStats)]);
-
-        let statsHTML = '<ul>';
-        allStatKeys.forEach(statKey => {
-            const displayValue = displayStats[statKey] || 0;
-            const compareValue = compareStats[statKey] || 0;
-            const diff = displayValue - compareValue;
-
-            const statInfo = Object.values(STATS).find(s => s.key === statKey) || { name: statKey, type: 'flat' };
-            const isPercent = statInfo.type === 'percent';
-            
-            const valueStr = isPercent ? `${displayValue.toFixed(1)}%` : formatNumber(displayValue);
-            
-            let diffSpan = '';
-            if (itemToCompare && Math.abs(diff) > 0.001) {
-                const diffClass = diff > 0 ? 'stat-better' : 'stat-worse';
-                const sign = diff > 0 ? '+' : '';
-                const diffStr = isPercent ? `${diff.toFixed(1)}%` : formatNumber(diff);
-                diffSpan = ` <span class="${diffClass}">(${sign}${diffStr})</span>`;
-            }
-            statsHTML += `<li>${statInfo.name}: ${valueStr}${diffSpan}</li>`;
-        });
-        statsHTML += '</ul>';
-        return statsHTML;
+        const blockTitle = `<h5>${title}: <span class="${itemRarityClass} ${itemNameClass}">${item.name}</span></h5>`;
+        const detailedStats = createDetailedItemStatBlockHTML(item);
+        
+        let socketsHTML = '';
+        if (item.sockets) {
+            socketsHTML += `<div class="item-sockets" style="margin-top: 10px; padding-left:0; justify-content:center; position: static; transform: none;">`;
+            item.sockets.forEach(gem => {
+                socketsHTML += `<div class="socket">${gem ? `<img src="${gem.icon}" alt="${gem.name}">` : ''}</div>`;
+            });
+            socketsHTML += '</div>';
+        }
+        
+        return `<div>${blockTitle}${detailedStats}${socketsHTML}</div>`;
     };
 
-    let comparisonHTML = createComparisonList(hoveredItem, equippedItem);
-    
-    let uniqueEffectHTML = '';
-    if (hoveredItemBase && hoveredItemBase.uniqueEffect) {
-        const effectData = UNIQUE_EFFECTS[hoveredItemBase.uniqueEffect];
-        if (effectData) {
-            uniqueEffectHTML = `<div class="tooltip-unique-effect"><h4>${effectData.name}</h4><p>${effectData.description}</p></div>`;
-        }
-    }
-    
+    let hoveredBlock = createBlueprintBlock(hoveredItem, "Hovered");
+    let equippedBlock = '';
+
     if (hoveredItem.type === 'ring') {
-        let ring1Comparison = createComparisonList(hoveredItem, equippedItem);
-        let ring2Comparison = createComparisonList(hoveredItem, equippedItem2);
-
-        comparisonHTML = `
-            <div class="tooltip-ring-comparison">
-                <div>
-                    <h5>vs. ${equippedItem ? equippedItem.name : "Ring 1"}</h5>
-                    ${ring1Comparison}
-                </div>
-                <div>
-                    <h5>vs. ${equippedItem2 ? equippedItem2.name : "Ring 2"}</h5>
-                    ${ring2Comparison}
-                </div>
-            </div>`;
+        let equippedBlock1 = createBlueprintBlock(equippedItem, "Ring 1");
+        let equippedBlock2 = createBlueprintBlock(equippedItem2, "Ring 2");
+        equippedBlock = `<div class="tooltip-ring-comparison">${equippedBlock1}${equippedBlock2}</div>`;
+    } else {
+        equippedBlock = createBlueprintBlock(equippedItem, "Equipped");
     }
 
-    return headerHTML + comparisonHTML + uniqueEffectHTML;
+    return `<div class="tooltip-comparison-container">${hoveredBlock}${equippedBlock}</div>`;
 }
+
 
 export function createGemTooltipHTML(gem) {
     const name = gem.name || `T${gem.tier} Gem`;
@@ -978,6 +996,28 @@ export function showUnlockSlotModal(elements, unlockedSlots) {
 export function hideUnlockSlotModal(elements) {
     elements.unlockSlotModalBackdrop.classList.add('hidden');
 }
+
+/**
+ * Shows the modal for viewing unlocked prestige slots using a paperdoll.
+ * @param {object} elements - The DOMElements object.
+ * @param {string[]} unlockedSlots - Array of currently unlocked slot names.
+ */
+export function showViewSlotsModal(elements, unlockedSlots) {
+    const { viewSlotsPaperdoll, viewSlotsModalBackdrop } = elements;
+
+    viewSlotsPaperdoll.querySelectorAll('.equipment-slot').forEach(slotEl => {
+        const slotName = slotEl.id.replace('view-slot-', '');
+        const isUnlocked = unlockedSlots.includes(slotName);
+        
+        slotEl.classList.toggle('view-unlocked', isUnlocked);
+        slotEl.classList.toggle('view-locked', !isUnlocked);
+
+        slotEl.innerHTML = `<img src="${getItemIcon(slotName.replace(/\d/g, ''))}" class="placeholder-icon">`;
+    });
+
+    viewSlotsModalBackdrop.classList.remove('hidden');
+}
+
 
 /**
  * Switches the active view in the middle panel.
