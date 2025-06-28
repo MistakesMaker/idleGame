@@ -1,5 +1,4 @@
 // --- START OF FILE items.js ---
-
 import { STATS } from './stat_pools.js';
 
 /*
@@ -227,7 +226,7 @@ const greenMeadowsItems = {
         width: 2, height: 1,
         isUnique: true,
         canHaveSockets: true,
-        maxSockets: 2,
+        maxSockets: 3,
         possibleStats: [
             { key: STATS.CLICK_DAMAGE.key, min: 50, max: 250 },
             { key: STATS.DPS.key, min: 1500, max: 3500 },
