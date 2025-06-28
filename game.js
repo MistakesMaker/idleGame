@@ -31,6 +31,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let pendingLegacyKeeperUpgrade = false; 
     let bulkCombineSelection = { tier: null, statKey: null };
     let bulkCombineDeselectedIds = new Set();
+    let isAutoScrollingLog = true;
 
     /** @type {DOMElements} */
     let elements = {};
@@ -218,7 +219,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function handleMonsterDefeated() {
         const result = logic.monsterDefeated(gameState, playerStats, currentMonster);
-        result.logMessages.forEach(msg => logMessage(elements.gameLogEl, msg.message, msg.class));
+        
+        result.logMessages.forEach(msg => {
+            logMessage(elements.gameLogEl, msg.message, msg.class, isAutoScrollingLog);
+        });
+
         ui.showGoldPopup(elements.popupContainerEl, result.goldGained);
         
         if (result.droppedItem) {
@@ -226,10 +231,13 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         const levelUpLogs = player.gainXP(gameState, result.xpGained);
-        levelUpLogs.forEach(msg => logMessage(elements.gameLogEl, msg, 'legendary'));
+        levelUpLogs.forEach(msg => {
+            logMessage(elements.gameLogEl, msg, 'legendary', isAutoScrollingLog);
+        });
+
         const nextRealmIndex = gameState.currentRealmIndex + 1;
         if (REALMS[nextRealmIndex] && gameState.maxLevel >= REALMS[nextRealmIndex].requiredLevel && !gameState.completedLevels.includes(REALMS[nextRealmIndex].requiredLevel - 1)) {
-            logMessage(elements.gameLogEl, `A new realm has been unlocked: <b>${REALMS[nextRealmIndex].name}</b>!`, 'legendary');
+            logMessage(elements.gameLogEl, `A new realm has been unlocked: <b>${REALMS[nextRealmIndex].name}</b>!`, 'legendary', isAutoScrollingLog);
         }
         autoSave();
         setTimeout(() => {
@@ -237,7 +245,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 inventory: elements.inventorySlotsEl.parentElement.scrollTop,
                 forge: elements.forgeInventorySlotsEl.parentElement.scrollTop,
                 gems: elements.gemSlotsEl.parentElement.scrollTop,
-                rightPanel: document.querySelector('.right-panel')?.scrollTop || 0
+                actionsPanel: document.querySelector('.actions-panel')?.scrollTop || 0
             };
 
             startNewMonster();
@@ -246,10 +254,11 @@ document.addEventListener('DOMContentLoaded', () => {
             elements.inventorySlotsEl.parentElement.scrollTop = scrollPositions.inventory;
             elements.forgeInventorySlotsEl.parentElement.scrollTop = scrollPositions.forge;
             elements.gemSlotsEl.parentElement.scrollTop = scrollPositions.gems;
-            const rightPanel = document.querySelector('.right-panel');
-            if (rightPanel) {
-                rightPanel.scrollTop = scrollPositions.rightPanel;
+            const actionsPanel = document.querySelector('.actions-panel');
+            if (actionsPanel) {
+                actionsPanel.scrollTop = scrollPositions.actionsPanel;
             }
+
         }, 300);
     }
 
@@ -643,7 +652,7 @@ document.addEventListener('DOMContentLoaded', () => {
             gameState.currentFightingLevel = level;
             gameState.isFarming = isFarming;
             gameState.isAutoProgressing = isFarming ? (/** @type {HTMLInputElement} */ (elements.autoProgressCheckboxEl)).checked : false;
-            logMessage(elements.gameLogEl, `Traveling to level ${level}.`);
+            logMessage(elements.gameLogEl, `Traveling to level ${level}.`, '', isAutoScrollingLog);
             elements.modalBackdropEl.classList.add('hidden');
             startNewMonster();
             updateAll();
@@ -812,9 +821,9 @@ document.addEventListener('DOMContentLoaded', () => {
         elements.monsterImageEl.addEventListener('click', clickMonster);
         document.getElementById('buy-loot-crate-btn').addEventListener('click', () => {
             const result = player.buyLootCrate(gameState, logic.generateItem);
-            logMessage(elements.gameLogEl, result.message);
+            logMessage(elements.gameLogEl, result.message, '', isAutoScrollingLog);
             if(result.success && result.item) {
-                 logMessage(elements.gameLogEl, `The crate contained: <span class="${result.item.rarity}">${result.item.name}</span>`);
+                 logMessage(elements.gameLogEl, `The crate contained: <span class="${result.item.rarity}">${result.item.name}</span>`, '', isAutoScrollingLog);
             }
             updateAll();
             autoSave();
@@ -859,10 +868,11 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('confirm-salvage-btn').addEventListener('click', () => {
             const result = player.salvageSelectedItems(gameState, salvageMode, playerStats);
             if (result.count > 0) {
-                 logMessage(elements.gameLogEl, `Salvaged ${result.count} items for a total of ${formatNumber(result.scrapGained)} Scrap.`, 'uncommon');
+                 logMessage(elements.gameLogEl, `Salvaged ${result.count} items for a total of ${formatNumber(result.scrapGained)} Scrap.`, 'uncommon', isAutoScrollingLog);
             } else {
-                 logMessage(elements.gameLogEl, "No items selected for salvage.");
+                 logMessage(elements.gameLogEl, "No items selected for salvage.", '', isAutoScrollingLog);
             }
+
             salvageMode.active = false;
             const salvageBtn = document.getElementById('salvage-mode-btn');
             const confirmBtn = document.getElementById('confirm-salvage-btn');
@@ -889,11 +899,11 @@ document.addEventListener('DOMContentLoaded', () => {
             const rarity = e.target.dataset.rarity;
             const result = player.salvageByRarity(gameState, rarity, playerStats);
             if (result.count > 0) {
-                logMessage(elements.gameLogEl, `Salvaged ${result.count} ${rarity} items for ${formatNumber(result.scrapGained)} Scrap.`, 'uncommon');
+                logMessage(elements.gameLogEl, `Salvaged ${result.count} ${rarity} items for ${formatNumber(result.scrapGained)} Scrap.`, 'uncommon', isAutoScrollingLog);
                 updateAll();
                 autoSave();
             } else {
-                logMessage(elements.gameLogEl, `No unlocked ${rarity} items to salvage.`);
+                logMessage(elements.gameLogEl, `No unlocked ${rarity} items to salvage.`, '', isAutoScrollingLog);
             }
         });
         
@@ -925,7 +935,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (isShiftPressed) {
                     if (craftingGems.length < 2) {
                          if (craftingGems.length > 0 && craftingGems[0].tier !== item.tier) {
-                            logMessage(elements.gameLogEl, "You can only combine gems of the same tier.", "rare");
+                            logMessage(elements.gameLogEl, "You can only combine gems of the same tier.", "rare", isAutoScrollingLog);
                             return;
                         }
                         craftingGems.push(item);
@@ -934,10 +944,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 } else {
                     if (selectedGemForSocketing && selectedGemForSocketing.id === item.id) {
                         selectedGemForSocketing = null;
-                        logMessage(elements.gameLogEl, "Deselected gem.");
+                        logMessage(elements.gameLogEl, "Deselected gem.", '', isAutoScrollingLog);
                     } else {
                         selectedGemForSocketing = item;
-                        logMessage(elements.gameLogEl, `Selected ${item.name}. Click an item with an empty socket to place it.`, 'uncommon');
+                        logMessage(elements.gameLogEl, `Selected ${item.name}. Click an item with an empty socket to place it.`, 'uncommon', isAutoScrollingLog);
                     }
                 }
                 updateAll();
@@ -950,7 +960,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (firstEmptySocketIndex > -1) {
                         item.sockets[firstEmptySocketIndex] = gemToSocket;
                         gameState.gems = gameState.gems.filter(g => g.id !== gemToSocket.id);
-                        logMessage(elements.gameLogEl, `Socketed ${gemToSocket.name} into ${item.name}.`, 'epic');
+                        logMessage(elements.gameLogEl, `Socketed ${gemToSocket.name} into ${item.name}.`, 'epic', isAutoScrollingLog);
                         selectedGemForSocketing = null;
                         recalculateStats();
                         updateAll();
@@ -961,9 +971,9 @@ document.addEventListener('DOMContentLoaded', () => {
     
                 if (event.target.closest('.lock-icon')) {
                     const message = player.toggleItemLock(gameState, item);
-                    if (message) logMessage(elements.gameLogEl, message);
+                    if (message) logMessage(elements.gameLogEl, message, '', isAutoScrollingLog);
                 } else if (salvageMode.active) {
-                    if (item.locked) { logMessage(elements.gameLogEl, "This item is locked and cannot be salvaged.", 'rare'); return; }
+                    if (item.locked) { logMessage(elements.gameLogEl, "This item is locked and cannot be salvaged.", 'rare', isAutoScrollingLog); return; }
                     const selectionIndex = salvageMode.selections.findIndex(sel => sel.id === item.id);
                     if (selectionIndex > -1) {
                         salvageMode.selections.splice(selectionIndex, 1);
@@ -978,11 +988,11 @@ document.addEventListener('DOMContentLoaded', () => {
                             pendingRingEquip = result.item;
                             showRingSelectionModal(pendingRingEquip);
                         } else {
-                            logMessage(elements.gameLogEl, result.message);
+                            logMessage(elements.gameLogEl, result.message, '', isAutoScrollingLog);
                             recalculateStats();
                         }
                     } else {
-                        logMessage(elements.gameLogEl, result.message, 'rare');
+                        logMessage(elements.gameLogEl, result.message, 'rare', isAutoScrollingLog);
                     }
                 }
                 updateAll();
@@ -1008,7 +1018,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (firstEmptySocketIndex > -1) {
                         item.sockets[firstEmptySocketIndex] = gemToSocket;
                         gameState.gems = gameState.gems.filter(g => g.id !== gemToSocket.id);
-                        logMessage(elements.gameLogEl, `Socketed ${gemToSocket.name} into ${item.name}.`, 'epic');
+                        logMessage(elements.gameLogEl, `Socketed ${gemToSocket.name} into ${item.name}.`, 'epic', isAutoScrollingLog);
                         selectedGemForSocketing = null;
                         recalculateStats();
                         updateAll();
@@ -1043,7 +1053,7 @@ document.addEventListener('DOMContentLoaded', () => {
             else if (selectedGemForSocketing) {
                 if (craftingGems.length < 2) {
                     if (craftingGems.length > 0 && craftingGems[0].tier !== selectedGemForSocketing.tier) {
-                        logMessage(elements.gameLogEl, "You can only combine gems of the same tier.", "rare");
+                        logMessage(elements.gameLogEl, "You can only combine gems of the same tier.", "rare", isAutoScrollingLog);
                         return;
                     }
         
@@ -1059,8 +1069,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (craftingGems.length !== 2) return;
             
             const result = player.combineGems(gameState, craftingGems);
-            logMessage(elements.gameLogEl, result.message, result.success && result.newGem ? 'legendary' : 'rare');
-
+            logMessage(elements.gameLogEl, result.message, result.success && result.newGem ? 'legendary' : 'rare', isAutoScrollingLog);
             craftingGems = [];
             
             recalculateStats();
@@ -1086,11 +1095,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
         elements.bulkCombineBtn.addEventListener('click', () => {
             if (!bulkCombineSelection.tier || !bulkCombineSelection.statKey) {
-                logMessage(elements.gameLogEl, "Please select a tier and a stat to bulk combine.", "rare");
+                logMessage(elements.gameLogEl, "Please select a tier and a stat to bulk combine.", "rare", isAutoScrollingLog);
                 return;
             }
             const result = player.bulkCombineGems(gameState, bulkCombineSelection.tier, bulkCombineSelection.statKey, bulkCombineDeselectedIds);
-            logMessage(elements.gameLogEl, result.message, result.success ? 'uncommon' : 'rare');
+            logMessage(elements.gameLogEl, result.message, result.success ? 'uncommon' : 'rare', isAutoScrollingLog);
             
             bulkCombineDeselectedIds.clear();
             if (result.success) {
@@ -1138,7 +1147,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         elements.autoProgressCheckboxEl.addEventListener('change', () => {
             gameState.isAutoProgressing = (/** @type {HTMLInputElement} */ (elements.autoProgressCheckboxEl)).checked;
-            logMessage(elements.gameLogEl, `Auto-progress ${gameState.isAutoProgressing ? 'enabled' : 'disabled'}.`);
+            logMessage(elements.gameLogEl, `Auto-progress ${gameState.isAutoProgressing ? 'enabled' : 'disabled'}.`, '', isAutoScrollingLog);
             autoSave();
         });
         elements.addStrengthBtn.addEventListener('click', () => { player.spendAttributePoint(gameState, 'strength'); recalculateStats(); updateAll(); autoSave(); });
@@ -1149,17 +1158,17 @@ document.addEventListener('DOMContentLoaded', () => {
             if (e.target.classList.contains('buy-max-btn')) {
                 const result = player.buyMaxUpgrade(gameState, 'clickDamage');
                 if (result.levelsBought > 0) {
-                    logMessage(elements.gameLogEl, `Bought ${result.levelsBought} Click Damage levels!`);
+                    logMessage(elements.gameLogEl, `Bought ${result.levelsBought} Click Damage levels!`, '', isAutoScrollingLog);
                     recalculateStats();
                     updateAll();
                     autoSave();
                 } else {
-                    logMessage(elements.gameLogEl, "Not enough gold for even one level!");
+                    logMessage(elements.gameLogEl, "Not enough gold for even one level!", '', isAutoScrollingLog);
                 }
             } else {
                 const cost = getUpgradeCost('clickDamage', gameState.upgrades.clickDamage);
                 const result = player.buyUpgrade(gameState, 'clickDamage', cost);
-                logMessage(elements.gameLogEl, result.message);
+                logMessage(elements.gameLogEl, result.message, '', isAutoScrollingLog);
                 if (result.success) { recalculateStats(); updateAll(); autoSave(); }
             }
         });
@@ -1168,24 +1177,24 @@ document.addEventListener('DOMContentLoaded', () => {
             if (e.target.classList.contains('buy-max-btn')) {
                 const result = player.buyMaxUpgrade(gameState, 'dps');
                 if (result.levelsBought > 0) {
-                    logMessage(elements.gameLogEl, `Bought ${result.levelsBought} DPS levels!`);
+                    logMessage(elements.gameLogEl, `Bought ${result.levelsBought} DPS levels!`, '', isAutoScrollingLog);
                     recalculateStats();
                     updateAll();
                     autoSave();
                 } else {
-                    logMessage(elements.gameLogEl, "Not enough gold for even one level!");
+                    logMessage(elements.gameLogEl, "Not enough gold for even one level!", '', isAutoScrollingLog);
                 }
             } else {
                 const cost = getUpgradeCost('dps', gameState.upgrades.dps);
                 const result = player.buyUpgrade(gameState, 'dps', cost);
-                logMessage(elements.gameLogEl, result.message);
+                logMessage(elements.gameLogEl, result.message, '', isAutoScrollingLog);
                 if (result.success) { recalculateStats(); updateAll(); autoSave(); }
             }
         });
         document.querySelectorAll('.preset-btn').forEach((btn, index) => {
             btn.addEventListener('click', () => {
                 player.activatePreset(gameState, index);
-                logMessage(elements.gameLogEl, `Activated preset: <b>${gameState.presets[index].name}</b>`);
+                logMessage(elements.gameLogEl, `Activated preset: <b>${gameState.presets[index].name}</b>`, '', isAutoScrollingLog);
                 recalculateStats();
                 updateAll();
                 autoSave();
@@ -1195,7 +1204,7 @@ document.addEventListener('DOMContentLoaded', () => {
                  const newName = prompt("Enter a new name for the preset:", currentName);
                  if (newName && newName.trim() !== "") {
                      gameState.presets[index].name = newName.trim();
-                     logMessage(elements.gameLogEl, `Renamed preset to: <b>${newName.trim()}</b>`);
+                     logMessage(elements.gameLogEl, `Renamed preset to: <b>${newName.trim()}</b>`, '', isAutoScrollingLog);
                      updateAll();
                      autoSave();
                  }
@@ -1212,7 +1221,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 tab.addEventListener('click', () => {
                     if (elements.prestigeView.classList.contains('active')) {
-                        logMessage(elements.gameLogEl, "You must confirm or cancel prestige first.", "rare");
+                        logMessage(elements.gameLogEl, "You must confirm or cancel prestige first.", "rare", isAutoScrollingLog);
                         return;
                     }
                     if (viewId === 'gems-view') {
@@ -1266,19 +1275,19 @@ document.addEventListener('DOMContentLoaded', () => {
             
             if (item && item.stats) {
                 selectedItemForForge = item; 
-                logMessage(elements.gameLogEl, `Selected <span class="${item.rarity}">${item.name}</span> for rerolling.`, 'uncommon');
+                logMessage(elements.gameLogEl, `Selected <span class="${item.rarity}">${item.name}</span> for rerolling.`, 'uncommon', isAutoScrollingLog);
                 updateAll();
             }
         });
 
         elements.forgeRerollBtn.addEventListener('click', () => {
             if (!selectedItemForForge) {
-                logMessage(elements.gameLogEl, "No item selected to reroll.", 'rare');
+                logMessage(elements.gameLogEl, "No item selected to reroll.", 'rare', isAutoScrollingLog);
                 return;
             }
 
             const result = player.rerollItemStats(gameState, selectedItemForForge);
-            logMessage(elements.gameLogEl, result.message, result.success ? 'epic' : 'rare');
+            logMessage(elements.gameLogEl, result.message, result.success ? 'epic' : 'rare', isAutoScrollingLog);
             
             if (result.success) {
                 recalculateStats();
@@ -1303,22 +1312,23 @@ document.addEventListener('DOMContentLoaded', () => {
                     pendingLegacyKeeperUpgrade = true;
                     ui.showUnlockSlotModal(elements, gameState.unlockedPrestigeSlots);
                 } else {
-                    logMessage(elements.gameLogEl, "Not enough gold!", 'rare');
+                    logMessage(elements.gameLogEl, "Not enough gold!", 'rare', isAutoScrollingLog);
                 }
                 return;
             }
 
             const result = player.buyPermanentUpgrade(gameState, upgradeId);
             if (result.success) {
-                logMessage(elements.gameLogEl, `Purchased Level ${result.newLevel} of ${PERMANENT_UPGRADES[upgradeId].name}!`, 'epic');
+                logMessage(elements.gameLogEl, `Purchased Level ${result.newLevel} of ${PERMANENT_UPGRADES[upgradeId].name}!`, 'epic', isAutoScrollingLog);
                 recalculateStats();
                 updateAll();
                 autoSave();
             } else {
-                logMessage(elements.gameLogEl, result.message, 'rare');
+                logMessage(elements.gameLogEl, result.message, 'rare', isAutoScrollingLog);
             }
         });
-
+        
+        setupLogScrollListeners();
         setupItemTooltipListeners();
         setupGemTooltipListeners();
         setupStatTooltipListeners();
@@ -1327,6 +1337,33 @@ document.addEventListener('DOMContentLoaded', () => {
         setupPrestigeListeners();
         setupLegacyKeeperModalListeners();
         setupSalvageFilterListeners();
+    }
+    
+    function setupLogScrollListeners() {
+        const logEl = elements.gameLogEl;
+        const scrollBtn = elements.scrollToBottomBtn;
+    
+        const userScrolled = () => {
+            if (isAutoScrollingLog) {
+                isAutoScrollingLog = false;
+                scrollBtn.classList.remove('hidden');
+            }
+        };
+
+        logEl.addEventListener('wheel', userScrolled);
+        logEl.addEventListener('touchmove', userScrolled);
+        logEl.addEventListener('mousedown', (e) => {
+            // Check if the mousedown is on the scrollbar itself
+            if (e instanceof MouseEvent && e.offsetX > logEl.clientWidth) {
+                userScrolled();
+            }
+        });
+    
+        scrollBtn.addEventListener('click', () => {
+            isAutoScrollingLog = true;
+            logEl.scrollTop = 0;
+            scrollBtn.classList.add('hidden');
+        });
     }
 
     function setupSalvageFilterListeners() {
@@ -1634,14 +1671,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 createRaidPanel();
             }
         });
-        socket.on('connect', () => { logMessage(elements.gameLogEl, 'Connected to Raid Server!', 'uncommon'); });
-        socket.on('disconnect', () => { logMessage(elements.gameLogEl, 'Disconnected from Raid Server.', 'rare'); destroyRaidPanel(); });
+        socket.on('connect', () => { logMessage(elements.gameLogEl, 'Connected to Raid Server!', 'uncommon', isAutoScrollingLog); });
+        socket.on('disconnect', () => { logMessage(elements.gameLogEl, 'Disconnected from Raid Server.', 'rare', isAutoScrollingLog); destroyRaidPanel(); });
         socket.on('raidUpdate', (raidState) => { updateRaidUI(raidState); });
         socket.on('raidOver', (data) => {
-            logMessage(elements.gameLogEl, `RAID OVER: ${data.message}`, 'legendary');
+            logMessage(elements.gameLogEl, `RAID OVER: ${data.message}`, 'legendary', isAutoScrollingLog);
             const scrapReward = 500;
             gameState.scrap += scrapReward;
-            logMessage(elements.gameLogEl, `You received ${formatNumber(scrapReward)} Scrap for participating!`, 'epic');
+            logMessage(elements.gameLogEl, `You received ${formatNumber(scrapReward)} Scrap for participating!`, 'epic', isAutoScrollingLog);
             updateAll();
             destroyRaidPanel();
         });
@@ -1694,7 +1731,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     recalculateStats();
                 }
             } else {
-                logMessage(elements.gameLogEl, result.message, 'rare');
+                logMessage(elements.gameLogEl, result.message, 'rare', isAutoScrollingLog);
             }
             updateAll();
             autoSave();
@@ -1728,9 +1765,9 @@ document.addEventListener('DOMContentLoaded', () => {
             }
     
             if (itemsToAbsorb.length > 0) {
-                logMessage(elements.gameLogEl, `Absorbed stats from ${itemsToAbsorb.length} equipped item(s)!`, 'epic');
+                logMessage(elements.gameLogEl, `Absorbed stats from ${itemsToAbsorb.length} equipped item(s)!`, 'epic', isAutoScrollingLog);
             } else {
-                logMessage(elements.gameLogEl, `No items were equipped in unlocked slots to absorb.`, 'uncommon');
+                logMessage(elements.gameLogEl, `No items were equipped in unlocked slots to absorb.`, 'uncommon', isAutoScrollingLog);
             }
     
             const heroToPrestige = gameState.hero;
@@ -1792,7 +1829,7 @@ document.addEventListener('DOMContentLoaded', () => {
             gameState.equipment = gameState.presets[gameState.activePresetIndex].equipment;
 
     
-            logMessage(elements.gameLogEl, `PRESTIGE! You are reborn with greater power. Your next goal is Level ${gameState.nextPrestigeLevel}.`, 'legendary');
+            logMessage(elements.gameLogEl, `PRESTIGE! You are reborn with greater power. Your next goal is Level ${gameState.nextPrestigeLevel}.`, 'legendary', isAutoScrollingLog);
             
             document.querySelector('.actions-panel').classList.remove('hidden');
             document.querySelector('.upgrades-panel').classList.remove('hidden');
@@ -1841,7 +1878,7 @@ document.addEventListener('DOMContentLoaded', () => {
             gameState.permanentUpgrades.LEGACY_KEEPER++;
             gameState.unlockedPrestigeSlots.push(slotName);
             
-            logMessage(elements.gameLogEl, `You have unlocked the <b class="epic">${slotName.charAt(0).toUpperCase() + slotName.slice(1)}</b> slot for Prestige!`, 'epic');
+            logMessage(elements.gameLogEl, `You have unlocked the <b class="epic">${slotName.charAt(0).toUpperCase() + slotName.slice(1)}</b> slot for Prestige!`, 'epic', isAutoScrollingLog);
             
             pendingLegacyKeeperUpgrade = false;
             closeThisModal();
@@ -1916,7 +1953,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         migratedState.presetSystemMigrated = true;
         
-        logMessage(elements.gameLogEl, "Your equipment presets have been updated to a new system! You may need to re-organize your gear.", "uncommon");
+        logMessage(elements.gameLogEl, "Your equipment presets have been updated to a new system! You may need to re-organize your gear.", "uncommon", isAutoScrollingLog);
 
         return migratedState;
     }
@@ -1965,7 +2002,7 @@ document.addEventListener('DOMContentLoaded', () => {
         setupEventListeners();
         recalculateStats();
         startNewMonster();
-        logMessage(elements.gameLogEl, savedData ? "Saved game loaded!" : "Welcome! Your progress will be saved automatically.");
+        logMessage(elements.gameLogEl, savedData ? "Saved game loaded!" : "Welcome! Your progress will be saved automatically.", '', isAutoScrollingLog);
         updateAll();
         
         autoSave(); 

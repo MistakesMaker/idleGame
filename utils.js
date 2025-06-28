@@ -60,30 +60,26 @@ export function findEmptySpot(itemWidth, itemHeight, inventory) {
 
 
 /**
- * Prepends a message to the game log element and auto-scrolls if appropriate.
+ * Appends a message to the game log element.
  * @param {HTMLElement} gameLogEl - The game log container element.
  * @param {string} message - The HTML string message to log.
  * @param {string} [className=''] - An optional CSS class for the message paragraph.
+ * @param {boolean} [shouldAutoScroll=true] - Whether to scroll the log to the bottom.
  */
-export function logMessage(gameLogEl, message, className = '') {
-    // Due to flex-direction: column-reverse, the "bottom" is when scrollTop is 0.
-    // We use a small threshold (< 5) instead of a strict === 0 check to account
-    // for any minor scrolling or browser rendering quirks.
-    const isScrolledToBottom = gameLogEl.scrollTop < 5;
-
+export function logMessage(gameLogEl, message, className = '', shouldAutoScroll = true) {
     const p = document.createElement('p');
     p.innerHTML = message;
     if (className) p.classList.add(className);
-    gameLogEl.prepend(p);
+    
+    gameLogEl.appendChild(p);
 
-    // If the user was already at the bottom, keep them there.
-    if (isScrolledToBottom) {
-        gameLogEl.scrollTop = 0;
+    if (shouldAutoScroll) {
+        gameLogEl.scrollTop = gameLogEl.scrollHeight;
     }
 
     // Keep the log to a fixed length by removing the oldest message if the limit is exceeded.
-    if (gameLogEl.children.length > 50) { // Increased history from 30 to 50
-        gameLogEl.removeChild(gameLogEl.lastChild);
+    if (gameLogEl.children.length > 200) {
+        gameLogEl.removeChild(gameLogEl.firstChild);
     }
 }
 

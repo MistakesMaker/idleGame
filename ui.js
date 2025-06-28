@@ -59,6 +59,7 @@ export function initDOMElements() {
         monsterAreaEl: document.getElementById('monster-area'),
         inventorySlotsEl: document.getElementById('inventory-slots'),
         gameLogEl: document.getElementById('game-log'),
+        scrollToBottomBtn: document.getElementById('scroll-to-bottom-btn'),
         prestigeButton: document.getElementById('prestige-button'),
         monsterImageEl: document.getElementById('monster-image'),
         popupContainerEl: document.getElementById('popup-container'),

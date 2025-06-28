@@ -194,8 +194,17 @@ select option {
 #bottom-view-controls { text-align: center; margin-top: 15px; margin-bottom: 15px; flex-shrink: 0; }
 #toggle-loot-log-btn { width: 50%; margin: 0; background: #34495e; }
 #toggle-loot-log-btn.active { background: linear-gradient(145deg, #4a637e, #34495e); color: #f1c40f; }
+
 #game-log-container, #loot-view { flex-grow: 1; display: flex; flex-direction: column; min-height: 0; }
-#game-log { flex-grow: 1; overflow-y: auto; background-color: rgba(0,0,0,0.2); padding: 10px; border-radius: 8px; border: 1px solid #4a637e; display: flex; flex-direction: column-reverse; }
+#game-log-container { position: relative; } /* Needed for absolute positioning of the scroll button */
+#game-log { 
+    flex-grow: 1; 
+    overflow-y: auto; 
+    background-color: rgba(0,0,0,0.2); 
+    padding: 10px; 
+    border-radius: 8px; 
+    border: 1px solid #4a637e; 
+}
 
 #game-log p span.uncommon {
     color: inherit;
@@ -339,7 +348,7 @@ body.salvage-mode-active .item-grid .item-wrapper:not(.locked-item) { animation:
 #item-tooltip .item-header .uncommon { color: #2ecc71; border: none; box-shadow: none; text-shadow: none; }
 #item-tooltip .item-header .rare { color: #3498db; border: none; box-shadow: none; text-shadow: none; }
 #item-tooltip .item-header .epic { color: #9b59b6; border: none; box-shadow: none; text-shadow: none; }
-#item-tooltip .item-header .legendary { color: #f39c12; border: none; box-shadow: none; text-shadow: none; animation: none; }
+#item-tooltip .item-header .legendary { color: #f1c40f; border: none; box-shadow: none; text-shadow: none; animation: none; }
 #item-tooltip .item-header.gem-tooltip { color: #e74c3c; border: none; box-shadow: none; text-shadow: 0 0 5px #c0392b; }
 #item-tooltip .stat-better { color: #2ecc71; font-weight: bold; }
 #item-tooltip .stat-worse { color: #e74c3c; font-weight: bold; }
@@ -364,7 +373,7 @@ h5 .common { color: #bdc3c7; }
 h5 .uncommon { color: #2ecc71; }
 h5 .rare { color: #3498db; }
 h5 .epic { color: #9b59b6; }
-h5 .legendary { color: #f39c12; }
+h5 .legendary { color: #f1c40f; }
 
 .unique-item-name { color: #f39c12 !important; text-shadow: 0 0 5px #f39c12; }
 
@@ -842,4 +851,33 @@ h5 .legendary { color: #f39c12; }
 @keyframes streak-fade-out {
     from { opacity: 1; transform: scale(1); }
     to   { opacity: 0; transform: scale(2); }
+}
+
+/* --- SCROLL TO BOTTOM BUTTON --- */
+#scroll-to-bottom-btn {
+    position: absolute;
+    bottom: 10px;
+    right: 15px;
+    z-index: 10;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    margin: 0;
+    font-size: 1.2em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(44, 62, 80, 0.8);
+    border: 1px solid #7f8c8d;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+    animation: pulse-blue 2s infinite;
+}
+
+#scroll-to-bottom-btn i {
+    transition: transform 0.2s ease-in-out;
+}
+
+#scroll-to-bottom-btn:hover i {
+    transform: scale(1.2);
 }
