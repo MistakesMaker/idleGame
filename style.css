@@ -768,6 +768,10 @@ h5 .legendary { color: #f39c12; }
     align-items: flex-start;
     gap: 5px;
 }
+.stats-filter-group > label {
+    flex-basis: auto;
+    margin-bottom: 0;
+}
 #filter-keep-stats-container {
     display: grid;
     width: 100%;
