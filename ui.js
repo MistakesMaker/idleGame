@@ -421,6 +421,19 @@ export function updateUI(elements, gameState, playerStats, currentMonster, salva
         }
     }
 
+    // --- NEW: Display Absorbed Amethyst Synergy ---
+    const absorbedSynergies = gameState.absorbedSynergies || [];
+    const amethystSynergy = absorbedSynergies.find(syn => syn.source === 'dps' && syn.target === 'clickDamage');
+    if (amethystSynergy && amethystSynergy.value > 0) {
+        const synergyEl = document.createElement('div');
+        synergyEl.className = 'prestige-stat-entry';
+        const synergyValue = (amethystSynergy.value * 100).toFixed(1);
+        synergyEl.innerHTML = `<i class="fas fa-magic"></i><div class="prestige-stat-text"><div>Absorbed Synergy:</div><div>+${synergyValue}% DPS to Click</div></div>`;
+        synergyEl.title = `Converts ${synergyValue}% of your total DPS into Click Damage.`;
+        absorbedStatsListEl.appendChild(synergyEl);
+    }
+    // --- END: Display Absorbed Amethyst Synergy ---
+
     const nextPrestigeLevel = gameState.nextPrestigeLevel || 100;
     prestigeCountStatEl.textContent = (gameState.prestigeCount || 0).toString();
     prestigeRequirementTextEl.innerHTML = `Defeat the boss at Level <b>${nextPrestigeLevel}</b> to Prestige.`;
