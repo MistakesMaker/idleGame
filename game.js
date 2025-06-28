@@ -98,6 +98,7 @@ document.addEventListener('DOMContentLoaded', () => {
             presetSystemMigrated: true, // New saves will have the correct structure
             salvageFilter: {
                 enabled: false,
+                autoSalvageGems: false, // NEW
                 keepRarity: 'uncommon',
                 keepSockets: 0,
                 keepStats: defaultKeepStats
@@ -1390,9 +1391,13 @@ document.addEventListener('DOMContentLoaded', () => {
             filterKeepStatsContainer,
             salvageFilterControls
         } = ui.initSalvageFilterDOMElements();
+
+        // NEW: Get the gem salvage checkbox
+        const enableGemSalvage = document.getElementById('enable-gem-salvage');
     
         const updateFilter = () => {
             gameState.salvageFilter.enabled = (/** @type {HTMLInputElement} */ (enableSalvageFilter)).checked;
+            gameState.salvageFilter.autoSalvageGems = (/** @type {HTMLInputElement} */ (enableGemSalvage)).checked; // NEW
             gameState.salvageFilter.keepRarity = (/** @type {HTMLSelectElement} */ (filterKeepRarity)).value;
             gameState.salvageFilter.keepSockets = parseInt((/** @type {HTMLInputElement} */ (filterKeepSockets)).value, 10) || 0;
             
@@ -1408,6 +1413,7 @@ document.addEventListener('DOMContentLoaded', () => {
         };
     
         enableSalvageFilter.addEventListener('change', updateFilter);
+        enableGemSalvage.addEventListener('change', updateFilter); // NEW
         filterKeepRarity.addEventListener('change', updateFilter);
         filterKeepSockets.addEventListener('change', updateFilter);
         filterKeepStatsContainer.addEventListener('change', updateFilter);

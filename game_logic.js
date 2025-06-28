@@ -160,11 +160,20 @@ export function dropLoot(currentMonster, gameState, playerStats) {
     const isGem = itemBaseToDrop.tier >= 1;
 
     if (isGem) {
+        const gem = { ...itemBaseToDrop, id: Date.now() + Math.random() };
+
+        // NEW: Check for auto-salvage gems setting
+        if (gameState.salvageFilter.autoSalvageGems) {
+            const scrapGained = 100;
+            gameState.scrap += scrapGained;
+            logMessages.push({ message: `Auto-salvaged <span class="epic">${gem.name}</span> for ${scrapGained} scrap.`, class: '' });
+            return { droppedItem: null, logMessages }; // Return early, no gem is added
+        }
+
         if (!gameState.gems) gameState.gems = []; // Safety check for old saves
         
         // Add the primary gem
-        const newGem = { ...itemBaseToDrop, id: Date.now() + Math.random() };
-        gameState.gems.push(newGem);
+        gameState.gems.push(gem);
         
         // Check for the new Gem Find (duplication) bonus
         if (playerStats.gemFindChance > 0 && Math.random() * 100 < playerStats.gemFindChance) {
@@ -173,7 +182,7 @@ export function dropLoot(currentMonster, gameState, playerStats) {
             logMessages.push({ message: `Gem Find! You found a duplicate <span class="epic">${duplicateGem.name}</span>!`, class: '' });
         }
         
-        return { droppedItem: newGem, logMessages };
+        return { droppedItem: gem, logMessages };
     }
     
     // It's a regular item, proceed with rarity roll etc.

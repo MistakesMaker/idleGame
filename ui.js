@@ -145,6 +145,7 @@ export function initDOMElements() {
 export function initSalvageFilterDOMElements() {
     return {
         enableSalvageFilter: document.getElementById('enable-salvage-filter'),
+        enableGemSalvage: document.getElementById('enable-gem-salvage'), // NEW
         salvageFilterControls: document.getElementById('salvage-filter-controls'),
         filterKeepRarity: document.getElementById('filter-keep-rarity'),
         filterKeepSockets: document.getElementById('filter-keep-sockets'),
@@ -159,6 +160,8 @@ export function initSalvageFilterDOMElements() {
  */
 export function populateSalvageFilter(elements, gameState) {
     const { filterKeepStatsContainer } = initSalvageFilterDOMElements();
+    if (!filterKeepStatsContainer) return; // Add a guard clause
+    
     filterKeepStatsContainer.innerHTML = '';
     
     const allPossibleStats = new Set();
@@ -506,6 +509,7 @@ export function updateUI(elements, gameState, playerStats, currentMonster, salva
     const filterElements = initSalvageFilterDOMElements();
     const filter = gameState.salvageFilter;
     (/** @type {HTMLInputElement} */ (filterElements.enableSalvageFilter)).checked = filter.enabled;
+    (/** @type {HTMLInputElement} */ (filterElements.enableGemSalvage)).checked = filter.autoSalvageGems; // NEW
     filterElements.salvageFilterControls.classList.toggle('hidden', !filter.enabled);
     (/** @type {HTMLSelectElement} */ (filterElements.filterKeepRarity)).value = filter.keepRarity;
     (/** @type {HTMLInputElement} */ (filterElements.filterKeepSockets)).value = String(filter.keepSockets);
