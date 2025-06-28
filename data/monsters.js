@@ -622,7 +622,6 @@ const underdarkMonsters = {
         lootTable: [
             { item: ITEMS.DRAGONBONE_HEADDRESS, weight: 10 },
             { item: ITEMS.MIRRORED_SHIELD, weight: 10 },
-            { item: GEMS.BASE_AMETHYST, weight: 5 },
             { item: GEMS.BASE_TOPAZ, weight: 15 },
         ]
     },
@@ -691,7 +690,6 @@ const underdarkMonsters = {
         lootTable: [
             { item: ITEMS.DRAGONHIDE_VEST, weight: 10 },
             { item: ITEMS.PLAGUE_STITCHED_CINCH, weight: 10 },
-            { item: GEMS.BASE_AMETHYST, weight: 6 },
             { item: GEMS.BASE_EMERALD, weight: 15 },
         ]
     },
@@ -713,7 +711,6 @@ const underdarkMonsters = {
         lootTable: [
             { item: ITEMS.SHADOW_COWL, weight: 2 },
             { item: ITEMS.SASH_OF_THE_SORCERER, weight: 5 },
-            { item: GEMS.BASE_AMETHYST, weight: 0.8 },
         ]
     },
     GIANT_CAVE_SPIDER: {
@@ -741,7 +738,6 @@ const underdarkMonsters = {
         lootTable: [
             { item: ITEMS.SIGNET_OF_THE_LEECH, weight: 1 },
             { item: ITEMS.BAND_OF_MIGHT, weight: 5 },
-            { item: GEMS.BASE_AMETHYST, weight: 1 },
         ]
     },
     DROW_PRIESTESS: {
@@ -751,7 +747,6 @@ const underdarkMonsters = {
         dropChance: 100,
         lootTable: [
             { item: ITEMS.GHASTLY_ROBES, weight: 10 },
-            { item: GEMS.BASE_AMETHYST, weight: 15 },
         ]
     },
     SPIDER_QUEEN_MATRON: {
@@ -763,7 +758,6 @@ const underdarkMonsters = {
             { item: ITEMS.DRAGONFIRE_LOOP, weight: 10 },
             { item: ITEMS.EYE_OF_THE_DRAGON, weight: 10 },
             { item: ITEMS.BLADE_OF_THE_SPECTRE, weight: 15 },
-            { item: GEMS.BASE_AMETHYST, weight: 20 },
         ]
     },
 };
