@@ -976,7 +976,26 @@ document.addEventListener('DOMContentLoaded', () => {
                     const message = player.toggleItemLock(gameState, item);
                     if (message) logMessage(elements.gameLogEl, message, '', isAutoScrollingLog);
                 } else if (salvageMode.active) {
-                    if (item.locked) { logMessage(elements.gameLogEl, "This item is locked and cannot be salvaged.", 'rare', isAutoScrollingLog); return; }
+                    // NEW: Check if item is equipped in any preset before salvaging
+                    let isEquipped = false;
+                    for (const preset of gameState.presets) {
+                        for (const slot in preset.equipment) {
+                            if (preset.equipment[slot] && preset.equipment[slot].id === item.id) {
+                                isEquipped = true;
+                                break;
+                            }
+                        }
+                        if (isEquipped) break;
+                    }
+
+                    if (isEquipped) {
+                        logMessage(elements.gameLogEl, "Cannot salvage an item that is equipped in any preset.", 'rare', isAutoScrollingLog);
+                        return;
+                    }
+                    if (item.locked) { 
+                        logMessage(elements.gameLogEl, "This item is locked and cannot be salvaged.", 'rare', isAutoScrollingLog); 
+                        return; 
+                    }
                     const selectionIndex = salvageMode.selections.findIndex(sel => sel.id === item.id);
                     if (selectionIndex > -1) {
                         salvageMode.selections.splice(selectionIndex, 1);
