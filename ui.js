@@ -246,9 +246,24 @@ export function updateUI(elements, gameState, playerStats, currentMonster, salva
     (/** @type {HTMLButtonElement} */ (document.getElementById('buy-loot-crate-btn'))).disabled = gameState.scrap < 50;
     
     // --- Grid Renders ---
-    renderGrid(inventorySlotsEl, gameState.inventory, { salvageSelections: salvageMode.selections });
+    // Get all item IDs that are part of any preset
+    const presetItemIds = new Set();
+    if (gameState.presets) {
+        for (const preset of gameState.presets) {
+            for (const slot in preset.equipment) {
+                if (preset.equipment[slot]) {
+                    presetItemIds.add(preset.equipment[slot].id);
+                }
+            }
+        }
+    }
+    // Filter the main inventory display to hide preset items
+    const mainInventoryDisplayItems = gameState.inventory.filter(item => !presetItemIds.has(item.id));
+    renderGrid(inventorySlotsEl, mainInventoryDisplayItems, { salvageSelections: salvageMode.selections });
+
     renderGrid(gemSlotsEl, gameState.gems, { type: 'gem', calculatePositions: true, bulkCombineSelection, bulkCombineDeselectedIds });
     
+    // Forge and Prestige views should show ALL items, so we use the full inventory list.
     const allForgeItems = [...Object.values(gameState.equipment).filter(Boolean), ...gameState.inventory];
     renderGrid(forgeInventorySlotsEl, allForgeItems, { calculatePositions: true, selectedItem: selectedItemForForge });
 
@@ -336,6 +351,7 @@ export function updateUI(elements, gameState, playerStats, currentMonster, salva
     // --- New Prestige View UI ---
     if (elements.prestigeView.classList.contains('active')) {
         const unlockedItemTypes = gameState.unlockedPrestigeSlots.map(slot => slot.replace(/\d/g, ''));
+        // The prestige inventory should show ALL items that can fit, regardless of presets.
         const filteredInventory = gameState.inventory.filter(item => {
             const itemType = item.type.replace(/\d/g, '');
             return unlockedItemTypes.includes(itemType);
