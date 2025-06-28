@@ -58,6 +58,54 @@ export function findEmptySpot(itemWidth, itemHeight, inventory) {
     return null; // No spot found in the entire grid
 }
 
+/**
+ * Parses a message string containing HTML tags and splits it into text and highlighted segments.
+ * This prevents highlighted words from being broken across lines.
+ * @param {string} message - The message string, which may contain <span> tags.
+ * @returns {DocumentFragment} A document fragment containing the parsed elements.
+ */
+function parseMessage(message) {
+    const fragment = document.createDocumentFragment();
+    // Regex to split the string by HTML tags, keeping the tags in the result.
+    const parts = message.split(/(<[^>]+>)/);
+    
+    let isInsideTag = false;
+    let currentSpan = null;
+
+    for (const part of parts) {
+        if (!part) continue;
+
+        if (part.startsWith('<')) {
+            if (part.startsWith('</')) { // It's a closing tag
+                if (currentSpan) {
+                    fragment.appendChild(currentSpan);
+                    currentSpan = null;
+                }
+                isInsideTag = false;
+            } else { // It's an opening tag
+                isInsideTag = true;
+                currentSpan = document.createElement('span');
+                // Extract class from tag, e.g., <span class="epic"> -> "epic"
+                const classMatch = part.match(/class="([^"]+)"/);
+                if (classMatch) {
+                    currentSpan.className = 'highlight ' + classMatch[1];
+                }
+            }
+        } else if (isInsideTag && currentSpan) {
+            currentSpan.textContent = part;
+        } else {
+            // It's plain text, split by space to wrap words individually
+            const words = part.split(' ');
+            words.forEach((word, index) => {
+                if (word) {
+                    const textNode = document.createTextNode(word + (index === words.length - 1 ? '' : ' '));
+                    fragment.appendChild(textNode);
+                }
+            });
+        }
+    }
+    return fragment;
+}
 
 /**
  * Appends a message to the game log element.
@@ -68,8 +116,12 @@ export function findEmptySpot(itemWidth, itemHeight, inventory) {
  */
 export function logMessage(gameLogEl, message, className = '', shouldAutoScroll = true) {
     const p = document.createElement('p');
-    p.innerHTML = message;
-    if (className) p.classList.add(className);
+    p.className = 'log-entry'; // Use the new class for flexbox wrapping
+    if(className) p.classList.add(className);
+    
+    // Use the parser to build the content safely
+    const content = parseMessage(message);
+    p.appendChild(content);
     
     gameLogEl.appendChild(p);
 
@@ -82,6 +134,7 @@ export function logMessage(gameLogEl, message, className = '', shouldAutoScroll 
         gameLogEl.removeChild(gameLogEl.firstChild);
     }
 }
+
 
 const numberAbbreviations = ['K', 'M', 'B', 'T', 'Qa', 'Qi', 'Sx', 'Sp', 'Oc', 'No', 'Dc'];
 

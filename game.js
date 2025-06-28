@@ -1343,25 +1343,25 @@ document.addEventListener('DOMContentLoaded', () => {
         const logEl = elements.gameLogEl;
         const scrollBtn = elements.scrollToBottomBtn;
     
-        const userScrolled = () => {
+        const userInteracted = () => {
             if (isAutoScrollingLog) {
                 isAutoScrollingLog = false;
                 scrollBtn.classList.remove('hidden');
             }
         };
 
-        logEl.addEventListener('wheel', userScrolled);
-        logEl.addEventListener('touchmove', userScrolled);
+        logEl.addEventListener('wheel', userInteracted);
+        logEl.addEventListener('touchmove', userInteracted);
         logEl.addEventListener('mousedown', (e) => {
             // Check if the mousedown is on the scrollbar itself
             if (e instanceof MouseEvent && e.offsetX > logEl.clientWidth) {
-                userScrolled();
+                userInteracted();
             }
         });
     
         scrollBtn.addEventListener('click', () => {
             isAutoScrollingLog = true;
-            logEl.scrollTop = 0;
+            logEl.scrollTop = logEl.scrollHeight;
             scrollBtn.classList.add('hidden');
         });
     }

@@ -205,23 +205,34 @@ select option {
     border-radius: 8px; 
     border: 1px solid #4a637e; 
 }
+/* New style for log entries to enable word-break control */
+#game-log p.log-entry {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline; /* Aligns text parts nicely */
+    line-height: 1.4;
+}
+#game-log p.log-entry > .highlight {
+    display: inline-block; /* Treat highlight as a single block */
+    margin: 0 4px; /* Add a little space around highlights */
+}
 
-#game-log p span.uncommon {
+#game-log p span.uncommon, #game-log .uncommon {
     color: inherit;
     text-shadow: 0 0 5px #2ecc71;
     font-weight: bold;
 }
-#game-log p span.rare {
+#game-log p span.rare, #game-log .rare {
     color: inherit;
     text-shadow: 0 0 5px #3498db;
     font-weight: bold;
 }
-#game-log p span.epic {
+#game-log p span.epic, #game-log .epic {
     color: inherit;
     text-shadow: 0 0 6px #9b59b6;
     font-weight: bold;
 }
-#game-log p span.legendary {
+#game-log p span.legendary, #game-log .legendary {
     color: inherit;
     text-shadow: 0 0 7px #f39c12;
     font-weight: bold;
@@ -373,7 +384,7 @@ h5 .common { color: #bdc3c7; }
 h5 .uncommon { color: #2ecc71; }
 h5 .rare { color: #3498db; }
 h5 .epic { color: #9b59b6; }
-h5 .legendary { color: #f1c40f; }
+h5 .legendary { color: #f39c12; }
 
 .unique-item-name { color: #f39c12 !important; text-shadow: 0 0 5px #f39c12; }
 
