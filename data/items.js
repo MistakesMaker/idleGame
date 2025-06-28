@@ -1,6 +1,4 @@
 // --- START OF FILE items.js ---
-
-import { Socket } from 'socket.io';
 import { STATS } from './stat_pools.js';
 
 /*
