@@ -55,12 +55,12 @@ export const PERMANENT_UPGRADES = {
     PRESTIGE_POWER: {
         id: 'PRESTIGE_POWER',
         name: "Prestige Power",
-        description: "Bonuses from <b>Absorbed Stats</b> are increased by <span>+0.25%</span> for each Prestige, per level.",
+        description: "For each Prestige, increase absorbed stat bonuses by <span>{value}%</span>.",
         icon: 'fas fa-award',
         baseCost: 100000,
         costScalar: 3,
         bonusType: 'PERCENT',
-        bonusPerLevel: 0.25, // +0.25% per prestige count, per level
+        bonusPerLevel: 0.25, // %0.25 per level
         maxLevel: Infinity,
     },
     SCRAP_SCAVENGER: {
