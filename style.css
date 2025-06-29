@@ -180,6 +180,8 @@ select option {
 
 .damage-popup.crit { font-size: 32px; color: #e74c3c; animation: float-up 1.2s ease-out forwards; }
 .dps-popup.crit { font-size: 26px; color: #f39c12; }
+.info-popup { position: absolute; font-family: 'Cinzel', serif; font-weight: bold; text-shadow: 2px 2px 4px #000; animation: float-up 2s ease-out forwards; user-select: none; }
+
 
 .tabs { display: flex; border-bottom: 2px solid #4a637e; margin-bottom: 15px; }
 .tab-button { flex-grow: 1; padding: 10px; margin: 0; border-radius: 5px 5px 0 0; border-bottom: none; background: #34495e; font-size: 1em; }

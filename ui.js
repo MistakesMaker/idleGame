@@ -3,18 +3,20 @@
 import { STATS } from './data/stat_pools.js';
 import { getXpForNextLevel, getUpgradeCost, formatNumber, findSubZoneByLevel, getCombinedItemStats, findEmptySpot } from './utils.js';
 import { ITEMS } from './data/items.js';
+import { GEMS } from './data/gems.js';
 import { MONSTERS } from './data/monsters.js';
 import { UNIQUE_EFFECTS } from './data/unique_effects.js';
 import * as player from './player_actions.js';
 
 /**
- * Checks if an item is a "boss unique" by seeing if it only drops from one boss monster in the entire game.
- * @param {string} itemId The base ID of the item to check.
+ * Checks if a dropped item should be considered a "boss unique".
+ * This is now based on the `isUnique` flag in the item's definition and if it drops from only one boss.
+ * @param {string} itemId The base ID of the item or gem to check.
  * @returns {boolean} True if the item is a unique boss drop, false otherwise.
  */
 function isBossUnique(itemId) {
     // First, check if the item itself is defined as a unique.
-    const itemBase = ITEMS[itemId];
+    const itemBase = ITEMS[itemId] || Object.values(GEMS).find(g => g.id === itemId);
     if (!itemBase || !itemBase.isUnique) {
         return false;
     }
@@ -35,7 +37,7 @@ function isBossUnique(itemId) {
         }
     }
 
-    // Now, it must be a unique item that drops from exactly one source, and that source must be a boss.
+    // It must be a unique item that drops from exactly one source, and that source must be a boss.
     return dropCount === 1 && fromBoss;
 }
 
@@ -955,8 +957,9 @@ export function showGoldPopup(popupContainerEl, gold) {
  * Creates a temporary image element and adds it to the monster area to show a visual item drop.
  * @param {HTMLElement} popupContainerEl - The container inside the monster display area.
  * @param {object} item - The dropped item object.
+ * @param {number} [animationIndex=0] - An index to vary the animation for multiple drops.
  */
-export function showItemDropAnimation(popupContainerEl, item) {
+export function showItemDropAnimation(popupContainerEl, item, animationIndex = 0) {
     if (!item || !item.icon) return;
 
     const wrapper = document.createElement('div');
@@ -971,15 +974,15 @@ export function showItemDropAnimation(popupContainerEl, item) {
         itemImg.classList.add('sparkle-animation');
     }
 
-    const startX = 40 + Math.random() * 20;
-    const startY = 40 + Math.random() * 20;
+    const startX = 40 + (Math.random() * 20) + (animationIndex * 15);
+    const startY = 40 + (Math.random() * 20) - (animationIndex * 15);
     wrapper.style.left = `${startX}%`;
     wrapper.style.top = `${startY}%`;
 
     const horizontalDirection = Math.random() < 0.5 ? -1 : 1;
-    const peakX = (50 + Math.random() * 50) * horizontalDirection;
+    const peakX = (50 + Math.random() * 50 + (animationIndex * 20)) * horizontalDirection;
     const peakY = -(150 + Math.random() * 50);
-    const endX = (100 + Math.random() * 50) * horizontalDirection;
+    const endX = (100 + Math.random() * 50 + (animationIndex * 30)) * horizontalDirection;
     const endY = 100;
 
     wrapper.style.setProperty('--peak-x', `${peakX}px`);
@@ -1018,6 +1021,35 @@ export function showDpsPopup(popupContainerEl, damage, isCrit = false, isMultiSt
 
     popupContainerEl.appendChild(popup);
     setTimeout(() => popup.remove(), 800);
+}
+
+/**
+ * Shows a large informational popup in the monster area (e.g., for special events).
+ * @param {HTMLElement} popupContainerEl - The container to add the popup to.
+ * @param {string} text - The text to display.
+ * @param {object} [options={}] - Customization options.
+ * @param {string} [options.color='#9b59b6'] - The color of the text.
+ * @param {string} [options.fontSize='3em'] - The font size.
+ * @param {number} [options.duration=2000] - The duration in ms.
+ */
+export function showInfoPopup(popupContainerEl, text, options = {}) {
+    const {
+        color = '#9b59b6', // Default to purple for gems
+        fontSize = '3em',
+        duration = 2000
+    } = options;
+
+    const popup = document.createElement('div');
+    popup.textContent = text;
+    popup.className = 'info-popup';
+    popup.style.color = color;
+    popup.style.fontSize = fontSize;
+    popup.style.left = '50%';
+    popup.style.top = '30%';
+    popup.style.transform = 'translateX(-50%)';
+    
+    popupContainerEl.appendChild(popup);
+    setTimeout(() => popup.remove(), duration);
 }
 
 export function createMapNode(name, iconSrc, coords, isUnlocked, isCompleted, currentFightingLevel, levelRange = null, isBoss = false) {

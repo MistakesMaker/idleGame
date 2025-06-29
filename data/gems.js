@@ -62,6 +62,7 @@ export const GEMS = {
         name: 'T1 Gem (Amethyst)',
         type: 'amethyst',
         tier: 1,
+        isUnique: true,
         icon: 'images/gems/amethyst_1.png',
         width: 1, height: 1,
         synergy: {

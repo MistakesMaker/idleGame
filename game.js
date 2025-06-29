@@ -229,8 +229,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
         ui.showGoldPopup(elements.popupContainerEl, result.goldGained);
         
-        if (result.droppedItem) {
-            ui.showItemDropAnimation(elements.popupContainerEl, result.droppedItem);
+        if (result.droppedItems) {
+            result.droppedItems.forEach((item, index) => {
+                ui.showItemDropAnimation(elements.popupContainerEl, item, index);
+            });
+        }
+        if (result.droppedGems) {
+            if (result.droppedGems.length > 1) {
+                ui.showInfoPopup(elements.popupContainerEl, "Double Gem!");
+            }
+            result.droppedGems.forEach((gem, index) => {
+                ui.showItemDropAnimation(elements.popupContainerEl, gem, index);
+            });
         }
 
         const levelUpLogs = player.gainXP(gameState, result.xpGained);
@@ -264,8 +274,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         }, 300);
     }
-
-    function startNewMonster() {
+        function startNewMonster() {
         const { newMonster, newMonsterState } = logic.generateMonster(gameState.currentFightingLevel, gameState.specialEncounter);
         currentMonster = newMonster;
         gameState.monster = newMonsterState;
@@ -527,9 +536,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 elements.mapContainerEl.appendChild(node);
             }
         }
-    }
-
-    function renderRealmTabs() {
+    }  function renderRealmTabs() {
         elements.realmTabsContainerEl.innerHTML = '';
         REALMS.forEach((realm, index) => {
             const isUnlocked = gameState.maxLevel >= realm.requiredLevel;
@@ -641,9 +648,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         };
         populateStats(currentTier);
-    }
-
-    function showSubZoneModal(subZone) {
+    }    function showSubZoneModal(subZone) {
         elements.modalTitleEl.textContent = subZone.name;
         elements.modalBodyEl.innerHTML = '';
         elements.modalCloseBtnEl.classList.remove('hidden');
