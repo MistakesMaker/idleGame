@@ -148,8 +148,8 @@ document.addEventListener('DOMContentLoaded', () => {
             nextPrestigeLevel: 100,
             specialEncounter: null,
             goldenSlimeStreak: 0,
-            maxGoldenSlimeStreak: 0, // NEW
-            maxGoldenSlimeStreakGold: 0, // NEW
+            maxGoldenSlimeStreak: 0, 
+            maxGoldenSlimeStreakGold: 0, 
             hero: {
                 level: 1, xp: 0, attributePoints: 0,
                 attributes: { strength: 0, agility: 0, luck: 0 }
@@ -164,14 +164,14 @@ document.addEventListener('DOMContentLoaded', () => {
             currentRunCompletedLevels: [],
             isFarming: true,
             isAutoProgressing: true,
-            isSlimeSplitEnabled: true, // --- NEW: Slime Split Toggle ---
+            isSlimeSplitEnabled: true, 
             currentRealmIndex: 0,
             lastSaveTimestamp: null,
             permanentUpgrades: defaultPermUpgrades,
             presetSystemMigrated: true, // New saves will have the correct structure
             salvageFilter: {
                 enabled: false,
-                autoSalvageGems: false, // NEW
+                autoSalvageGems: false, 
                 keepRarity: 'uncommon',
                 keepSockets: 0,
                 keepStats: defaultKeepStats
@@ -198,6 +198,9 @@ document.addEventListener('DOMContentLoaded', () => {
             multiStrike: (permUpgrades.SWIFT_STRIKES || 0) * permUpgradeDefs.SWIFT_STRIKES.bonusPerLevel,
             legacyKeeper: (permUpgrades.LEGACY_KEEPER || 0) * permUpgradeDefs.LEGACY_KEEPER.bonusPerLevel,
         };
+        
+        // --- FIX: Prestige Power calculation moved here ---
+        const prestigeMultiplier = 1 + ((permanentUpgradeBonuses.prestigePower * (gameState.prestigeCount || 0)) / 100);
 
         const newCalculatedStats = {
             baseClickDamage: 1,
@@ -206,14 +209,16 @@ document.addEventListener('DOMContentLoaded', () => {
             magicFind: permanentUpgradeBonuses.magicFind,
         };
 
+        // --- FIX: Apply Prestige Power only to absorbed stats ---
         for (const statKey in absorbed) {
-            if (STATS.CLICK_DAMAGE.key === statKey) newCalculatedStats.baseClickDamage += absorbed[statKey];
-            if (STATS.DPS.key === statKey) newCalculatedStats.baseDps += absorbed[statKey];
-            if (STATS.GOLD_GAIN.key === statKey) newCalculatedStats.bonusGold += absorbed[statKey];
-            if (STATS.MAGIC_FIND.key === statKey) newCalculatedStats.magicFind += absorbed[statKey];
+            const boostedValue = absorbed[statKey] * prestigeMultiplier;
+            if (STATS.CLICK_DAMAGE.key === statKey) newCalculatedStats.baseClickDamage += boostedValue;
+            if (STATS.DPS.key === statKey) newCalculatedStats.baseDps += boostedValue;
+            if (STATS.GOLD_GAIN.key === statKey) newCalculatedStats.bonusGold += boostedValue;
+            if (STATS.MAGIC_FIND.key === statKey) newCalculatedStats.magicFind += boostedValue;
         }
 
-        let totalSynergyValue = 0; // CORRECTED: Initialize here
+        let totalSynergyValue = 0;
 
         const allItems = Object.values(gameState.equipment);
 
@@ -228,7 +233,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (STATS.MAGIC_FIND.key === statKey) newCalculatedStats.magicFind += value;
                 }
                 
-                // CORRECTED: Calculate synergy from currently equipped gems
                 if (item.sockets) {
                     for (const gem of item.sockets) {
                         if (gem && gem.synergy && gem.synergy.source === 'dps' && gem.synergy.target === 'clickDamage') {
@@ -260,13 +264,13 @@ document.addEventListener('DOMContentLoaded', () => {
         const finalBonusGold = newCalculatedStats.bonusGold + luckBonusGold;
         const finalMagicFind = newCalculatedStats.magicFind;
 
-        const prestigeMultiplier = 1 + ((permanentUpgradeBonuses.prestigePower * (gameState.prestigeCount || 0)) / 100);
-        finalClickDamage *= prestigeMultiplier;
-        finalDps *= prestigeMultiplier;
+        // --- FIX: Remove old global prestige multiplier application ---
+        // finalClickDamage *= prestigeMultiplier;
+        // finalDps *= prestigeMultiplier;
 
-        // CORRECTED: Add absorbed synergy value to the total from equipped gems
+        // --- FIX: Apply Prestige Power to absorbed synergies ---
         const dpsToClickSynergyValue = (gameState.absorbedSynergies && gameState.absorbedSynergies['dps_to_clickDamage']) || 0;
-        totalSynergyValue += dpsToClickSynergyValue;
+        totalSynergyValue += (dpsToClickSynergyValue * prestigeMultiplier);
         
         if (totalSynergyValue > 0) {
             finalClickDamage += finalDps * totalSynergyValue;
@@ -306,22 +310,17 @@ document.addEventListener('DOMContentLoaded', () => {
             ui.showInfoPopup(elements.popupContainerEl, 'Double Gem!', {
                 top: '10%', // Higher on the screen
                 fontSize: '3.5em' // Slightly bigger
-                // You could also change color, duration, etc. here
-                // color: '#f1c40f', 
-                // duration: 3000
             });
         }
 
         ui.showGoldPopup(elements.popupContainerEl, result.goldGained);
         
-        // --- FIX START: Animate all dropped items and gems ---
         const allDrops = [...(result.droppedItems || []), ...(result.droppedGems || [])];
         if (allDrops.length > 0) {
             allDrops.forEach((drop, index) => {
                 ui.showItemDropAnimation(elements.popupContainerEl, drop, index);
             });
         }
-        // --- FIX END ---
 
         const levelUpLogs = player.gainXP(gameState, result.xpGained);
         levelUpLogs.forEach(msg => {
@@ -367,30 +366,16 @@ document.addEventListener('DOMContentLoaded', () => {
     
         // Background logic
         if (currentMonster.data.background) {
-            // Use the monster's specific background if it exists
             elements.monsterAreaEl.style.backgroundImage = `url('${currentMonster.data.background}')`;
         } else if (currentMonster.data.isSpecial) {
-            // Fallback for special monsters without a specific background
             elements.monsterAreaEl.style.backgroundImage = `url('images/backgrounds/bg_treasure_realm.png')`;
         } else {
-            // Default logic for regular zone monsters
             const subZone = findSubZoneByLevel(gameState.currentFightingLevel);
             if (subZone && subZone.parentZone) {
                 elements.monsterAreaEl.style.backgroundImage = `url('${subZone.parentZone.monsterAreaBg}')`;
             } else {
                 elements.monsterAreaEl.style.backgroundImage = `url('${REALMS[0].zones.green_meadows.monsterAreaBg}')`;
             }
-        }
-        
-        // Handle Golden Slime Streak logic
-        if (currentMonster.data.id !== 'GOLDEN_SLIME' && gameState.goldenSlimeStreak > 0) {
-            const streakEl = elements.goldenSlimeStreakEl;
-            streakEl.classList.add('streak-fade-out');
-            setTimeout(() => {
-                streakEl.classList.remove('streak-fade-out');
-                streakEl.classList.add('hidden');
-            }, 2000);
-            gameState.goldenSlimeStreak = 0;
         }
     }
 
@@ -465,7 +450,6 @@ document.addEventListener('DOMContentLoaded', () => {
         renderRealmTabs();
         renderPermanentUpgrades();
         
-        // --- NEW: Gem Selection Highlight Logic ---
         document.querySelectorAll('.gem-wrapper.selected-gem').forEach(el => el.classList.remove('selected-gem'));
         document.querySelectorAll('.socket-target').forEach(el => el.classList.remove('socket-target'));
 
@@ -473,7 +457,6 @@ document.addEventListener('DOMContentLoaded', () => {
             const gemEl = document.querySelector(`.gem-wrapper[data-id="${selectedGemForSocketing.id}"]`);
             if (gemEl) gemEl.classList.add('selected-gem');
             
-            // Highlight potential socket targets in inventory
             gameState.inventory.forEach((item) => {
                 if (item.sockets && item.sockets.includes(null)) {
                     const itemEl = document.querySelector(`#inventory-slots .item-wrapper[data-id="${item.id}"]`);
@@ -481,7 +464,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             });
 
-            // Highlight potential socket targets on paperdoll
             for (const slotName in gameState.equipment) {
                 const item = gameState.equipment[slotName];
                 if (item && item.sockets && item.sockets.includes(null)) {
@@ -490,7 +472,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
         }
-        // --- END: Gem Selection Highlight Logic ---
     }
 
     function autoSave() {
@@ -833,26 +814,19 @@ document.addEventListener('DOMContentLoaded', () => {
         const timeToKill = monsterHp / playerStats.totalDps;
         const killsPerSecond = 1 / timeToKill;
 
-        // --- FIX START: Corrected Offline Reward Calculation ---
-        // This logic is now a direct copy from `monsterDefeated` in `game_logic.js` for consistency.
-
-        // Tier and effective level calculation
         const tier = Math.floor((level - 1) / 10);
         const difficultyResetFactor = 1;
         const effectiveLevel = level - (tier * difficultyResetFactor);
 
-        // Gold calculation
         const baseGold = 10;
         const goldFactor = 3;
         const goldPower = 2.0;
         let goldPerKill = baseGold + (goldFactor * Math.pow(effectiveLevel, goldPower));
         goldPerKill = Math.ceil(goldPerKill * (1 + (playerStats.bonusGold / 100)));
 
-        // XP Calculation
         const baseXp = 20;
         const xpPower = 1.2;
         let xpPerKill = baseXp * Math.pow(level, xpPower);
-        // --- FIX END ---
         
         if (isBigBossLevel(level)) {
             xpPerKill *= 3;
@@ -968,21 +942,18 @@ document.addEventListener('DOMContentLoaded', () => {
         if (savedData) {
             let loadedState = JSON.parse(savedData);
             
-            // First, migrate the preset system if necessary
             if (!loadedState.presetSystemMigrated) {
                  loadedState = migrateToPresetInventories(loadedState);
             }
 
-            // Then, merge with the default state to ensure new properties like salvageFilter exist
             const baseState = getDefaultGameState();
             gameState = { 
                 ...baseState, 
                 ...loadedState,
-                permanentUpgrades: { // Ensure permanent upgrades from default are present
+                permanentUpgrades: { 
                     ...baseState.permanentUpgrades,
                     ...(loadedState.permanentUpgrades || {})
                 },
-                // Ensure synergies is an object, not an array from old saves
                 absorbedSynergies: (typeof loadedState.absorbedSynergies === 'object' && !Array.isArray(loadedState.absorbedSynergies)) ? loadedState.absorbedSynergies : {},
                 salvageFilter: {
                     ...baseState.salvageFilter,
@@ -994,13 +965,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             };
             
-            // Ensure equipment is a reference to the active preset's equipment
             gameState.equipment = gameState.presets[gameState.activePresetIndex].equipment;
             
             calculateOfflineProgress();
         } else {
             gameState = getDefaultGameState();
-            // On a new game, also set the equipment reference correctly
             gameState.equipment = gameState.presets[gameState.activePresetIndex].equipment;
         }
         
@@ -1040,17 +1009,11 @@ document.addEventListener('DOMContentLoaded', () => {
             lastMousePosition.y = e.clientY;
         });
         
-        // --- START OF CLICK FIX: ROBUST CLICK HANDLING ---
-        // Replacing all 'click' listeners with the 'addTapListener' helper
-
-        // Delegated listener for Attribute buttons
         addTapListener(document.getElementById('attributes-area'), (e) => {
             if (!(e.target instanceof Element)) return;
             const button = e.target.closest('.attribute-btn');
-            // Check if it's a button, and if it's disabled.
             if (button instanceof HTMLButtonElement && !button.disabled) {
                 const attributeRow = button.closest('.attribute-row');
-                // Check if the row and its dataset exist
                 if (attributeRow instanceof HTMLElement && attributeRow.dataset.attribute) {
                     player.spendAttributePoint(gameState, attributeRow.dataset.attribute);
                     recalculateStats();
@@ -1060,7 +1023,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-        // --- NEW: Delegated listener for Prestige Bonuses (for Slime Split Toggle) ---
         addTapListener(elements.absorbedStatsListEl, (e) => {
             if (!(e.target instanceof Element)) return;
             const toggleButton = e.target.closest('.slime-split-toggle-btn');
@@ -1073,7 +1035,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
 
-        // Delegated listener for Gold Upgrade buttons
         addTapListener(document.getElementById('upgrades-area'), (e) => {
             if (!(e.target instanceof Element)) return;
             const upgradeButton = e.target.closest('.upgrade-button');
@@ -1084,7 +1045,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 } else if (upgradeButton.id === 'upgrade-dps') {
                     upgradeType = 'dps';
                 } else {
-                    return; // Not a recognized upgrade button
+                    return; 
                 }
 
                 if (e.target.closest('.buy-max-btn')) {
@@ -1404,7 +1365,6 @@ document.addEventListener('DOMContentLoaded', () => {
             bulkCombineDeselectedIds.clear();
             populateBulkCombineControls();
 
-            // --- NEW LOGIC TO REMEMBER STAT ---
             if (lastBulkCombineStatKey) {
                 const statSelect = (/** @type {HTMLSelectElement} */ (elements.bulkCombineStatSelect));
                 const optionExists = statSelect.querySelector(`option[value="${lastBulkCombineStatKey}"]`);
@@ -1413,8 +1373,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     bulkCombineSelection.selectionKey = lastBulkCombineStatKey;
                 }
             }
-            // --- END OF NEW LOGIC ---
-
+            
             updateAll();
         });
 
@@ -1450,7 +1409,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-        // Add tooltip listeners for the ring selection modal
         elements.ringSelectionSlot1.addEventListener('mouseover', (e) => {
             if (pendingRingEquip && e.currentTarget instanceof HTMLElement) {
                 showRingComparisonTooltip(pendingRingEquip, gameState.equipment.ring1, e.currentTarget);
@@ -1483,7 +1441,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         
         document.querySelectorAll('.preset-btn').forEach((btn, index) => {
-            // Tap to select preset
             addTapListener(btn, () => {
                 player.activatePreset(gameState, index);
                 logMessage(elements.gameLogEl, `Activated preset: <b>${gameState.presets[index].name}</b>`, '', isAutoScrollingLog);
@@ -1492,7 +1449,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 autoSave();
             });
 
-            // Long press / dblclick to rename
             let pressTimer;
             btn.addEventListener('touchstart', () => {
                 pressTimer = window.setTimeout(() => {
@@ -1504,7 +1460,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         updateAll();
                         autoSave();
                     }
-                }, 1000); // 1-second long press
+                }, 1000); 
             }, { passive: true });
 
             const clearPressTimer = () => clearTimeout(pressTimer);
@@ -1512,7 +1468,6 @@ document.addEventListener('DOMContentLoaded', () => {
             btn.addEventListener('touchmove', clearPressTimer);
             btn.addEventListener('touchcancel', clearPressTimer);
 
-            // Fallback for desktop
             btn.addEventListener('dblclick', () => {
                 const currentName = gameState.presets[index].name;
                 const newName = prompt("Enter a new name for the preset:", currentName);
@@ -1669,7 +1624,6 @@ document.addEventListener('DOMContentLoaded', () => {
         logEl.addEventListener('wheel', userInteracted);
         logEl.addEventListener('touchmove', userInteracted);
         logEl.addEventListener('mousedown', (e) => {
-            // Check if the mousedown is on the scrollbar itself
             if (e instanceof MouseEvent && e.offsetX > logEl.clientWidth) {
                 userInteracted();
             }
@@ -1689,12 +1643,12 @@ document.addEventListener('DOMContentLoaded', () => {
             filterKeepSockets,
             filterKeepStatsContainer,
             salvageFilterControls,
-            enableGemSalvage // NEW
+            enableGemSalvage 
         } = ui.initSalvageFilterDOMElements();
     
         const updateFilter = () => {
             gameState.salvageFilter.enabled = (/** @type {HTMLInputElement} */ (enableSalvageFilter)).checked;
-            gameState.salvageFilter.autoSalvageGems = (/** @type {HTMLInputElement} */ (enableGemSalvage)).checked; // NEW
+            gameState.salvageFilter.autoSalvageGems = (/** @type {HTMLInputElement} */ (enableGemSalvage)).checked; 
             gameState.salvageFilter.keepRarity = (/** @type {HTMLSelectElement} */ (filterKeepRarity)).value;
             gameState.salvageFilter.keepSockets = parseInt((/** @type {HTMLInputElement} */ (filterKeepSockets)).value, 10) || 0;
             
@@ -1710,12 +1664,11 @@ document.addEventListener('DOMContentLoaded', () => {
         };
     
         enableSalvageFilter.addEventListener('change', updateFilter);
-        enableGemSalvage.addEventListener('change', updateFilter); // NEW
+        enableGemSalvage.addEventListener('change', updateFilter);
         filterKeepRarity.addEventListener('change', updateFilter);
         filterKeepSockets.addEventListener('change', updateFilter);
         filterKeepStatsContainer.addEventListener('change', updateFilter);
 
-        // Listeners to open and close the modal itself
         const salvageFilterBtn = document.getElementById('auto-salvage-filter-btn');
         const modalBackdrop = document.getElementById('salvage-filter-modal-backdrop');
         const closeBtn = document.getElementById('salvage-filter-close-btn');
@@ -1872,12 +1825,11 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!itemBase) return;
             elements.tooltipEl.className = 'hidden';
             
-            if (itemBase.tier >= 1) { // It's a gem
+            if (itemBase.tier >= 1) {
                 elements.tooltipEl.innerHTML = ui.createGemTooltipHTML(itemBase);
                 elements.tooltipEl.classList.add('gem-quality');
             }
             else if (isShiftPressed) {
-                // Show comparison when shift is held
                 if (itemBase.type === 'ring') {
                     elements.tooltipEl.innerHTML = ui.createLootComparisonTooltipHTML(itemBase, gameState.equipment.ring1, gameState.equipment.ring2);
                 } else {
@@ -1885,7 +1837,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     elements.tooltipEl.innerHTML = ui.createLootComparisonTooltipHTML(itemBase, equippedItem);
                 }
             } else {
-                // Default to showing potential ranges
                 elements.tooltipEl.innerHTML = ui.createLootTableTooltipHTML(itemBase);
             }
             const rect = entryEl.getBoundingClientRect();
@@ -1988,7 +1939,6 @@ document.addEventListener('DOMContentLoaded', () => {
             updateAll();
         });
     
-        // Unequip from paperdoll
         addTapListener(elements.prestigeEquipmentPaperdoll, (event) => {
             if (!(event.target instanceof Element)) return;
             const slotEl = event.target.closest('.equipment-slot');
@@ -2000,7 +1950,6 @@ document.addEventListener('DOMContentLoaded', () => {
             autoSave();
         });
 
-        // Equip from filtered inventory
         addTapListener(elements.prestigeInventoryDisplay, (event) => {
             if (!(event.target instanceof Element)) return;
             const wrapper = event.target.closest('.item-wrapper');
@@ -2032,7 +1981,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 .filter(Boolean);
             
             const newAbsorbedStats = {};
-            const newAbsorbedSynergies = {}; // CORRECTED: Now an object
+            const newAbsorbedSynergies = {}; 
             const newAbsorbedUniqueEffects = {};
     
             for (const item of itemsToAbsorb) {
@@ -2043,7 +1992,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (item.sockets) {
                     for (const gem of item.sockets) {
                         if (gem && gem.synergy) {
-                            // CORRECTED: Aggregate synergy values into an object
                             const key = `${gem.synergy.source}_to_${gem.synergy.target}`;
                             newAbsorbedSynergies[key] = (newAbsorbedSynergies[key] || 0) + gem.synergy.value;
                         }
@@ -2068,7 +2016,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 finalAbsorbedStats[statKey] = (finalAbsorbedStats[statKey] || 0) + newAbsorbedStats[statKey];
             }
 
-            // CORRECTED: This now correctly merges the new synergy values with the old ones.
             const oldAbsorbedSynergies = gameState.absorbedSynergies || {};
             const finalAbsorbedSynergies = { ...oldAbsorbedSynergies };
             for (const key in newAbsorbedSynergies) {
@@ -2096,24 +2043,21 @@ document.addEventListener('DOMContentLoaded', () => {
     
             gameState = {
                 ...baseState,
-                // Persist these through prestige
                 permanentUpgrades: gameState.permanentUpgrades,
                 salvageFilter: gameState.salvageFilter, 
-                // Merge old and new absorbed stats
                 unlockedPrestigeSlots: gameState.unlockedPrestigeSlots,
                 absorbedStats: finalAbsorbedStats,
                 absorbedSynergies: finalAbsorbedSynergies,
                 absorbedUniqueEffects: finalAbsorbedUniqueEffects,
                 prestigeCount: oldPrestigeCount + 1,
-                completedLevels: gameState.completedLevels, // Keep completed level history
-                // Reset run-specific data
+                completedLevels: gameState.completedLevels, 
                 maxLevel: 1,
                 nextPrestigeLevel: currentPrestigeLevel + 100,
                 hero: prestgedHeroState,
                 currentFightingLevel: 1,
                 currentRunCompletedLevels: [],
-                maxGoldenSlimeStreak: 0, // NEW: Reset streak on prestige
-                maxGoldenSlimeStreakGold: 0, // NEW: Reset streak gold on prestige
+                maxGoldenSlimeStreak: 0, 
+                maxGoldenSlimeStreakGold: 0, 
             };
             gameState.equipment = gameState.presets[gameState.activePresetIndex].equipment;
 
@@ -2226,17 +2170,14 @@ document.addEventListener('DOMContentLoaded', () => {
         console.log("Old preset system detected. Migrating to new independent preset inventories...");
         const migratedState = getDefaultGameState();
 
-        // Copy over all simple, top-level data
         Object.keys(migratedState).forEach(key => {
             if (typeof loadedState[key] !== 'undefined' && !['presets', 'equipment', 'inventory'].includes(key)) {
                 migratedState[key] = loadedState[key];
             }
         });
 
-        // The player's currently worn gear goes into the first preset's equipment
         migratedState.presets[0].equipment = { ...loadedState.equipment };
 
-        // All items that were in the global inventory or stored in other old presets become "loose" items
         const looseItems = [...(loadedState.inventory || [])];
         if (loadedState.presets && loadedState.presets.length > 1) {
             for (let i = 1; i < loadedState.presets.length; i++) {
@@ -2250,7 +2191,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         migratedState.inventory = looseItems;
         
-        // Set the active preset index and the active equipment reference correctly
         migratedState.activePresetIndex = loadedState.activePresetIndex || 0;
         if(migratedState.activePresetIndex >= migratedState.presets.length) {
             migratedState.activePresetIndex = 0;

@@ -55,7 +55,7 @@ export const PERMANENT_UPGRADES = {
     PRESTIGE_POWER: {
         id: 'PRESTIGE_POWER',
         name: "Prestige Power",
-        description: "All damage is increased by <span>{value}%</span> for each Prestige.",
+        description: "Bonuses from <b>Absorbed Stats</b> are increased by <span>{value}%</span> for each Prestige.",
         icon: 'fas fa-award',
         baseCost: 100000,
         costScalar: 3,
