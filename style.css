@@ -1002,7 +1002,6 @@ h5 .legendary { color: #f39c12; }
 }
 #view-slots-paperdoll .equipment-slot.view-locked {
     filter: grayscale(1) brightness(0.6);
-    position: relative; /* Needed for pseudo-element positioning */
 }
 #view-slots-paperdoll .equipment-slot.view-locked::after {
     content: '\f023'; /* fa-lock */
