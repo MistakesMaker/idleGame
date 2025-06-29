@@ -25,18 +25,20 @@ body {
 }
 
 h2, h3, h4 { font-family: 'Cinzel', serif; color: #f1c40f; text-shadow: 1px 1px 2px #000; }
+
+/* --- THE FIX IS HERE --- */
+/* We are replacing 'gap' with 'margin' to avoid a flexbox rendering bug */
 .game-container { 
     display: flex; 
     flex-wrap: nowrap; 
-    gap: 20px; 
+    /* gap: 20px;  <-- REMOVED THIS */
     width: 95%; 
     max-width: 1800px; 
     height: calc(100vh - 40px); 
     align-items: flex-start;
-    position: relative; /* Needed for absolute positioning of the prestige panel */
+    position: relative;
 }
 
-/* --- THE FIX IS HERE --- */
 .panel { 
     background-color: rgba(30, 40, 50, 0.7); 
     padding: 20px; 
@@ -49,18 +51,19 @@ h2, h3, h4 { font-family: 'Cinzel', serif; color: #f1c40f; text-shadow: 1px 1px 
     overflow: hidden; 
     height: 100%; 
     min-height: 0;
-    /* Add position:relative to allow z-index to work */
-    position: relative; 
 }
-.left-panel { flex: 2; min-width: 400px; z-index: 1; }
-.middle-panel { 
-    flex: 3; 
-    min-width: 660px; 
-    /* Give the middle panel a higher stacking order to prevent overlap from its neighbors */
-    z-index: 2; 
+
+/* Add margin to all panels except the first to create the spacing */
+.panel + .panel {
+    margin-left: 20px;
 }
-.actions-panel { flex: 1.5; min-width: 250px; z-index: 1; }
-.upgrades-panel { flex: 1.75; min-width: 300px; z-index: 1; }
+/* --- END OF FIX --- */
+
+
+.left-panel { flex: 2; min-width: 400px; }
+.middle-panel { flex: 3; min-width: 660px; }
+.actions-panel { flex: 1.5; min-width: 250px; }
+.upgrades-panel { flex: 1.75; min-width: 300px; }
 
 
 button, select {
