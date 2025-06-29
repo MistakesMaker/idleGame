@@ -229,18 +229,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         ui.showGoldPopup(elements.popupContainerEl, result.goldGained);
         
-        if (result.droppedItems) {
-            result.droppedItems.forEach((item, index) => {
-                ui.showItemDropAnimation(elements.popupContainerEl, item, index);
-            });
-        }
-        if (result.droppedGems) {
-            if (result.droppedGems.length > 1) {
-                ui.showInfoPopup(elements.popupContainerEl, "Double Gem!");
-            }
-            result.droppedGems.forEach((gem, index) => {
-                ui.showItemDropAnimation(elements.popupContainerEl, gem, index);
-            });
+        if (result.droppedItem) {
+            ui.showItemDropAnimation(elements.popupContainerEl, result.droppedItem);
         }
 
         const levelUpLogs = player.gainXP(gameState, result.xpGained);
@@ -871,7 +861,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function setupEventListeners() {
         window.addEventListener('beforeunload', saveOnExit);
-
         window.addEventListener('keydown', (e) => {
             if (e.key === 'Shift' && !isShiftPressed) {
                 isShiftPressed = true;
@@ -895,13 +884,59 @@ document.addEventListener('DOMContentLoaded', () => {
             lastMousePosition.x = e.clientX;
             lastMousePosition.y = e.clientY;
         });
+
+        // --- START OF CLICK FIX: EVENT DELEGATION ---
+        document.body.addEventListener('click', (e) => {
+            if (!(e.target instanceof Element)) return;
+
+            // --- Attribute Buttons ---
+            const attrButton = e.target.closest('.attribute-btn');
+            if (attrButton instanceof HTMLButtonElement && !attrButton.disabled) {
+                const attributeRow = attrButton.closest('.attribute-row');
+                if (attributeRow instanceof HTMLElement && attributeRow.dataset.attribute) {
+                    player.spendAttributePoint(gameState, attributeRow.dataset.attribute);
+                    recalculateStats();
+                    updateAll();
+                    autoSave();
+                    return; // Action handled
+                }
+            }
+
+            // --- Gold Upgrades ---
+            const upgradeButton = e.target.closest('.upgrade-button');
+            if (upgradeButton instanceof HTMLElement && !upgradeButton.classList.contains('disabled')) {
+                let upgradeType;
+                if (upgradeButton.id === 'upgrade-click-damage') upgradeType = 'clickDamage';
+                else if (upgradeButton.id === 'upgrade-dps') upgradeType = 'dps';
+
+                if (upgradeType) {
+                    if (e.target.closest('.buy-max-btn')) {
+                        const result = player.buyMaxUpgrade(gameState, upgradeType);
+                        if (result.levelsBought > 0) {
+                            logMessage(elements.gameLogEl, `Bought ${result.levelsBought} ${upgradeType === 'dps' ? 'DPS' : 'Click Damage'} levels!`, '', isAutoScrollingLog);
+                        } else {
+                            logMessage(elements.gameLogEl, "Not enough gold for even one level!", '', isAutoScrollingLog);
+                        }
+                    } else {
+                        const cost = getUpgradeCost(upgradeType, gameState.upgrades[upgradeType]);
+                        const result = player.buyUpgrade(gameState, upgradeType, cost);
+                        logMessage(elements.gameLogEl, result.message, '', isAutoScrollingLog);
+                    }
+                    recalculateStats();
+                    updateAll();
+                    autoSave();
+                    return; // Action handled
+                }
+            }
+        });
+        // --- END OF CLICK FIX ---
         
         elements.monsterImageEl.addEventListener('click', clickMonster);
         document.getElementById('buy-loot-crate-btn').addEventListener('click', () => {
             const result = player.buyLootCrate(gameState, logic.generateItem);
             logMessage(elements.gameLogEl, result.message, '', isAutoScrollingLog);
-            if(result.success && result.item) {
-                 logMessage(elements.gameLogEl, `The crate contained: <span class="${result.item.rarity}">${result.item.name}</span>`, '', isAutoScrollingLog);
+            if (result.success && result.item) {
+                logMessage(elements.gameLogEl, `The crate contained: <span class="${result.item.rarity}">${result.item.name}</span>`, '', isAutoScrollingLog);
             }
             updateAll();
             autoSave();
@@ -938,19 +973,18 @@ document.addEventListener('DOMContentLoaded', () => {
             updateAll();
         });
         document.getElementById('select-all-salvage-btn').addEventListener('click', () => {
-             // CORRECTED: Exclude all equipped items from "Select All"
-             const equippedIds = player.getAllEquippedItemIds(gameState);
-             salvageMode.selections = player.getAllItems(gameState).filter(item => !item.locked && !equippedIds.has(item.id));
-             const salvageCountEl = document.getElementById('salvage-count');
-             if (salvageCountEl) salvageCountEl.textContent = salvageMode.selections.length.toString();
-             updateAll();
+            const equippedIds = player.getAllEquippedItemIds(gameState);
+            salvageMode.selections = player.getAllItems(gameState).filter(item => !item.locked && !equippedIds.has(item.id));
+            const salvageCountEl = document.getElementById('salvage-count');
+            if (salvageCountEl) salvageCountEl.textContent = salvageMode.selections.length.toString();
+            updateAll();
         });
         document.getElementById('confirm-salvage-btn').addEventListener('click', () => {
             const result = player.salvageSelectedItems(gameState, salvageMode, playerStats);
             if (result.count > 0) {
-                 logMessage(elements.gameLogEl, `Salvaged ${result.count} items for a total of ${formatNumber(result.scrapGained)} Scrap.`, 'uncommon', isAutoScrollingLog);
+                logMessage(elements.gameLogEl, `Salvaged ${result.count} items for a total of ${formatNumber(result.scrapGained)} Scrap.`, 'uncommon', isAutoScrollingLog);
             } else {
-                 logMessage(elements.gameLogEl, "No items selected for salvage.", '', isAutoScrollingLog);
+                logMessage(elements.gameLogEl, "No items selected for salvage.", '', isAutoScrollingLog);
             }
 
             salvageMode.active = false;
@@ -1053,7 +1087,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     const message = player.toggleItemLock(gameState, item);
                     if (message) logMessage(elements.gameLogEl, message, '', isAutoScrollingLog);
                 } else if (salvageMode.active) {
-                    // NEW: Check if item is equipped in any preset before salvaging
                     const isEquipped = player.getAllEquippedItemIds(gameState).has(item.id);
 
                     if (isEquipped) {
@@ -1256,47 +1289,7 @@ document.addEventListener('DOMContentLoaded', () => {
             logMessage(elements.gameLogEl, `Auto-progress ${gameState.isAutoProgressing ? 'enabled' : 'disabled'}.`, '', isAutoScrollingLog);
             autoSave();
         });
-        elements.addStrengthBtn.addEventListener('click', () => { player.spendAttributePoint(gameState, 'strength'); recalculateStats(); updateAll(); autoSave(); });
-        elements.addAgilityBtn.addEventListener('click', () => { player.spendAttributePoint(gameState, 'agility'); recalculateStats(); updateAll(); autoSave(); });
-        elements.addLuckBtn.addEventListener('click', () => { player.spendAttributePoint(gameState, 'luck'); recalculateStats(); updateAll(); autoSave(); });
-        document.getElementById('upgrade-click-damage').addEventListener('click', (e) => {
-            if (!(e.target instanceof Element)) return;
-            if (e.target.classList.contains('buy-max-btn')) {
-                const result = player.buyMaxUpgrade(gameState, 'clickDamage');
-                if (result.levelsBought > 0) {
-                    logMessage(elements.gameLogEl, `Bought ${result.levelsBought} Click Damage levels!`, '', isAutoScrollingLog);
-                    recalculateStats();
-                    updateAll();
-                    autoSave();
-                } else {
-                    logMessage(elements.gameLogEl, "Not enough gold for even one level!", '', isAutoScrollingLog);
-                }
-            } else {
-                const cost = getUpgradeCost('clickDamage', gameState.upgrades.clickDamage);
-                const result = player.buyUpgrade(gameState, 'clickDamage', cost);
-                logMessage(elements.gameLogEl, result.message, '', isAutoScrollingLog);
-                if (result.success) { recalculateStats(); updateAll(); autoSave(); }
-            }
-        });
-        document.getElementById('upgrade-dps').addEventListener('click', (e) => {
-            if (!(e.target instanceof Element)) return;
-            if (e.target.classList.contains('buy-max-btn')) {
-                const result = player.buyMaxUpgrade(gameState, 'dps');
-                if (result.levelsBought > 0) {
-                    logMessage(elements.gameLogEl, `Bought ${result.levelsBought} DPS levels!`, '', isAutoScrollingLog);
-                    recalculateStats();
-                    updateAll();
-                    autoSave();
-                } else {
-                    logMessage(elements.gameLogEl, "Not enough gold for even one level!", '', isAutoScrollingLog);
-                }
-            } else {
-                const cost = getUpgradeCost('dps', gameState.upgrades.dps);
-                const result = player.buyUpgrade(gameState, 'dps', cost);
-                logMessage(elements.gameLogEl, result.message, '', isAutoScrollingLog);
-                if (result.success) { recalculateStats(); updateAll(); autoSave(); }
-            }
-        });
+        
         document.querySelectorAll('.preset-btn').forEach((btn, index) => {
             btn.addEventListener('click', () => {
                 player.activatePreset(gameState, index);
