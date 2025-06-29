@@ -308,28 +308,53 @@ export function monsterDefeated(gameState, playerStats, currentMonster) {
     }
     
     // --- Check for unique effects ---
-    let slimeSplitChance = 0;
+    let initialSlimeSplitChance = 0;
     
     // Check equipped item
     const equippedSword = gameState.equipment.sword;
     const swordBase = equippedSword ? ITEMS[equippedSword.baseId] : null;
     if (swordBase && swordBase.uniqueEffect === 'slimeSplit') {
-        slimeSplitChance += 10; // Base 10% chance
+        initialSlimeSplitChance += 10; // Base 10% chance
     }
 
     // Check absorbed effects
     if (gameState.absorbedUniqueEffects && gameState.absorbedUniqueEffects['slimeSplit']) {
-        slimeSplitChance += gameState.absorbedUniqueEffects['slimeSplit'] * 10;
+        initialSlimeSplitChance += gameState.absorbedUniqueEffects['slimeSplit'] * 10;
     }
 
-    if (slimeSplitChance > 0 && Math.random() * 100 < slimeSplitChance) {
-        logMessages.push({ message: 'The defeated monster splits into a <span class="legendary">Golden Slime!</span>', class: '' });
-        gameState.specialEncounter = {
-            type: 'GOLDEN_SLIME',
-            hp: previousMonsterMaxHp / 2,
-            goldReward: goldGained * 3,
-        };
+    // --- NEW: Cascading Slime Split Logic ---
+    if (initialSlimeSplitChance > 0) {
+        let slimeCounter = 0;
+        let currentSplitChance = Math.min(100, initialSlimeSplitChance); // Cap initial chance at 100%
+
+        while (Math.random() * 100 < currentSplitChance) {
+            slimeCounter++;
+            currentSplitChance *= 0.9; // Reduce chance for the next potential split
+        }
+
+        if (slimeCounter > 0) {
+            const slimeText = slimeCounter === 1 ? "a Golden Slime" : `${slimeCounter} Golden Slimes in a chain reaction`;
+            logMessages.push({ message: `The defeated monster splits into <span class="legendary">${slimeText}!</span>`, class: '' });
+            
+            gameState.specialEncounter = {
+                type: 'GOLDEN_SLIME',
+                // HP scales with the number of slimes, but not linearly to avoid impossible fights
+                hp: (previousMonsterMaxHp / 2) * (1 + (slimeCounter / 2)),
+                // Gold reward is multiplied directly by the number of slimes
+                goldReward: (goldGained * 2) * slimeCounter, 
+            };
+        } else {
+            // No slimes spawned, proceed with auto-progress
+            if (gameState.isAutoProgressing) {
+                const nextLevel = level + 1;
+                const nextSubZone = findSubZoneByLevel(nextLevel);
+                if (nextSubZone) {
+                    gameState.currentFightingLevel = nextLevel;
+                }
+            }
+        }
     } else {
+        // No chance to split at all, proceed with auto-progress
         if (gameState.isAutoProgressing) {
             const nextLevel = level + 1;
             const nextSubZone = findSubZoneByLevel(nextLevel);
