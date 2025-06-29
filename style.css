@@ -194,8 +194,8 @@ select option {
 #currency-display i { margin-right: 8px; color: #f1c40f; }
 /* Currency Milestone Colors */
 .currency-tier-0 { color: #ecf0f1; text-shadow: none; }
-.currency-tier-1 { color: #2ecc71; text-shadow: 0 0 5px #27ae60; } /* K */
-.currency-tier-2 { color: #3498db; text-shadow: 0 0 6px #2980b9; } /* M */
+.currency-tier-1 { color: #2ecc71; text-shadow: none; } /* K */
+.currency-tier-2 { color: #3498db; text-shadow: none; } /* M */
 .currency-tier-3 { color: #9b59b6; text-shadow: 0 0 7px #8e44ad; } /* B */
 .currency-tier-4 { color: #f1c40f; text-shadow: 0 0 8px #f39c12; } /* T */
 .currency-tier-5 { color: #e74c3c; text-shadow: 0 0 9px #c0392b; } /* Qa */

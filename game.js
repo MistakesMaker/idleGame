@@ -80,7 +80,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let selectedItemForForge = null;
     let isResetting = false; 
     let pendingLegacyKeeperUpgrade = false; 
-    let bulkCombineSelection = { tier: null, statKey: null };
+    let bulkCombineSelection = { tier: null, selectionKey: null };
     let bulkCombineDeselectedIds = new Set();
     let isAutoScrollingLog = true;
 
@@ -129,6 +129,8 @@ document.addEventListener('DOMContentLoaded', () => {
             nextPrestigeLevel: 100,
             specialEncounter: null,
             goldenSlimeStreak: 0,
+            maxGoldenSlimeStreak: 0, // NEW
+            maxGoldenSlimeStreakGold: 0, // NEW
             hero: {
                 level: 1, xp: 0, attributePoints: 0,
                 attributes: { strength: 0, agility: 0, luck: 0 }
@@ -652,24 +654,27 @@ document.addEventListener('DOMContentLoaded', () => {
         const bulkCombineStatSelect = /** @type {HTMLSelectElement} */ (elements.bulkCombineStatSelect);
         
         const availableTiers = new Set();
-        const availableStats = new Map();
+        const availableOptions = new Map(); // tier -> Set of stat keys or synergy keys
 
         gameState.gems.forEach(gem => {
             if (gem.tier) {
                 availableTiers.add(gem.tier);
+                if (!availableOptions.has(gem.tier)) {
+                    availableOptions.set(gem.tier, new Set());
+                }
                 if (gem.stats) {
                     for (const statKey in gem.stats) {
-                        if (!availableStats.has(gem.tier)) {
-                            availableStats.set(gem.tier, new Set());
-                        }
-                        availableStats.get(gem.tier).add(statKey);
+                        availableOptions.get(gem.tier).add(statKey);
                     }
+                }
+                if (gem.synergy) {
+                    availableOptions.get(gem.tier).add(`synergy_${gem.synergy.source}_to_${gem.synergy.target}`);
                 }
             }
         });
 
         const currentTier = bulkCombineSelection.tier;
-        const currentStat = bulkCombineSelection.statKey;
+        const currentSelectionKey = bulkCombineSelection.selectionKey;
 
         // Populate Tier Select
         bulkCombineTierSelect.innerHTML = '<option value="">Select Tier</option>';
@@ -681,25 +686,29 @@ document.addEventListener('DOMContentLoaded', () => {
             bulkCombineTierSelect.appendChild(option);
         });
         
-        // Populate Stat Select based on Tier
-        const populateStats = (tier) => {
-            bulkCombineStatSelect.innerHTML = '<option value="">Select Stat</option>';
+        // Populate Stat/Synergy Select based on Tier
+        const populateOptions = (tier) => {
+            bulkCombineStatSelect.innerHTML = '<option value="">Select Stat/Synergy</option>';
             bulkCombineStatSelect.disabled = true;
-            if (tier && availableStats.has(tier)) {
+            if (tier && availableOptions.has(tier)) {
                 bulkCombineStatSelect.disabled = false;
-                availableStats.get(tier).forEach(statKey => {
-                    const statInfo = Object.values(STATS).find(s => s.key === statKey);
-                    if (statInfo) {
-                        const option = document.createElement('option');
-                        option.value = statKey;
-                        option.textContent = statInfo.name;
-                        if (statKey === currentStat) option.selected = true;
-                        bulkCombineStatSelect.appendChild(option);
+                availableOptions.get(tier).forEach(key => {
+                    const option = document.createElement('option');
+                    option.value = key;
+
+                    if (key.startsWith('synergy_')) {
+                        option.textContent = "Synergy: DPS to Click Dmg";
+                    } else {
+                        const statInfo = Object.values(STATS).find(s => s.key === key);
+                        option.textContent = statInfo ? statInfo.name : key;
                     }
+
+                    if (key === currentSelectionKey) option.selected = true;
+                    bulkCombineStatSelect.appendChild(option);
                 });
             }
         };
-        populateStats(currentTier);
+        populateOptions(currentTier);
     }    function showSubZoneModal(subZone) {
         elements.modalTitleEl.textContent = subZone.name;
         elements.modalBodyEl.innerHTML = '';
@@ -921,7 +930,59 @@ document.addEventListener('DOMContentLoaded', () => {
     /** Generic mouseout handler for item grids. */
     const onGridMouseOut = () => elements.tooltipEl.classList.add('hidden');
 
-    function setupEventListeners() {
+    function main() {
+        elements = ui.initDOMElements();
+        
+        const savedData = localStorage.getItem('idleRPGSaveData');
+        if (savedData) {
+            let loadedState = JSON.parse(savedData);
+            
+            // First, migrate the preset system if necessary
+            if (!loadedState.presetSystemMigrated) {
+                 loadedState = migrateToPresetInventories(loadedState);
+            }
+
+            // Then, merge with the default state to ensure new properties like salvageFilter exist
+            const baseState = getDefaultGameState();
+            gameState = { 
+                ...baseState, 
+                ...loadedState,
+                permanentUpgrades: { // Ensure permanent upgrades from default are present
+                    ...baseState.permanentUpgrades,
+                    ...(loadedState.permanentUpgrades || {})
+                },
+                // Ensure synergies is an object, not an array from old saves
+                absorbedSynergies: (typeof loadedState.absorbedSynergies === 'object' && !Array.isArray(loadedState.absorbedSynergies)) ? loadedState.absorbedSynergies : {},
+                salvageFilter: {
+                    ...baseState.salvageFilter,
+                    ...(loadedState.salvageFilter || {}),
+                    keepStats: {
+                        ...baseState.salvageFilter.keepStats,
+                        ...((loadedState.salvageFilter || {}).keepStats || {})
+                    }
+                }
+            };
+            
+            // Ensure equipment is a reference to the active preset's equipment
+            gameState.equipment = gameState.presets[gameState.activePresetIndex].equipment;
+            
+            calculateOfflineProgress();
+        } else {
+            gameState = getDefaultGameState();
+            // On a new game, also set the equipment reference correctly
+            gameState.equipment = gameState.presets[gameState.activePresetIndex].equipment;
+        }
+        
+        setupEventListeners();
+        recalculateStats();
+        startNewMonster();
+        logMessage(elements.gameLogEl, savedData ? "Saved game loaded!" : "Welcome! Your progress will be saved automatically.", '', isAutoScrollingLog);
+        updateAll();
+        
+        autoSave(); 
+        setInterval(autoSave, 30000);
+        setInterval(gameLoop, 1000);
+    }    function setupEventListeners() {
         window.addEventListener('beforeunload', saveOnExit);
 
         window.addEventListener('keydown', (e) => {
@@ -1110,7 +1171,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!item) return;
 
             if (isGem) {
-                const isBulkSelected = bulkCombineSelection.tier && bulkCombineSelection.statKey && item.tier === bulkCombineSelection.tier && item.stats?.[bulkCombineSelection.statKey];
+                const isBulkSelected = bulkCombineSelection.tier && bulkCombineSelection.selectionKey && item.tier === bulkCombineSelection.tier;
                 if (isBulkSelected) {
                     if (bulkCombineDeselectedIds.has(item.id)) {
                         bulkCombineDeselectedIds.delete(item.id);
@@ -1276,11 +1337,11 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         addTapListener(elements.bulkCombineBtn, () => {
-            if (!bulkCombineSelection.tier || !bulkCombineSelection.statKey) {
+            if (!bulkCombineSelection.tier || !bulkCombineSelection.selectionKey) {
                 logMessage(elements.gameLogEl, "Please select a tier and a stat to bulk combine.", "rare", isAutoScrollingLog);
                 return;
             }
-            const result = player.bulkCombineGems(gameState, bulkCombineSelection.tier, bulkCombineSelection.statKey, bulkCombineDeselectedIds);
+            const result = player.bulkCombineGems(gameState, bulkCombineSelection.tier, bulkCombineSelection.selectionKey, bulkCombineDeselectedIds);
             logMessage(elements.gameLogEl, result.message, result.success ? 'uncommon' : 'rare', isAutoScrollingLog);
             
             bulkCombineDeselectedIds.clear();
@@ -1294,16 +1355,15 @@ document.addEventListener('DOMContentLoaded', () => {
         
         elements.bulkCombineTierSelect.addEventListener('change', () => {
             const selectedTier = parseInt((/** @type {HTMLSelectElement} */ (elements.bulkCombineTierSelect)).value, 10);
-            const previousStatKey = bulkCombineSelection.statKey;
             bulkCombineSelection.tier = selectedTier || null;
-            bulkCombineSelection.statKey = previousStatKey;
+            bulkCombineSelection.selectionKey = null; // Reset stat/synergy when tier changes
             bulkCombineDeselectedIds.clear();
             populateBulkCombineControls(); 
             updateAll();
         });
 
         elements.bulkCombineStatSelect.addEventListener('change', () => {
-            bulkCombineSelection.statKey = (/** @type {HTMLSelectElement} */ (elements.bulkCombineStatSelect)).value || null;
+            bulkCombineSelection.selectionKey = (/** @type {HTMLSelectElement} */ (elements.bulkCombineStatSelect)).value || null;
             bulkCombineDeselectedIds.clear(); // Clear deselections
             updateAll();
         });
@@ -1995,6 +2055,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 hero: prestgedHeroState,
                 currentFightingLevel: 1,
                 currentRunCompletedLevels: [],
+                maxGoldenSlimeStreak: 0, // NEW: Reset streak on prestige
+                maxGoldenSlimeStreakGold: 0, // NEW: Reset streak gold on prestige
             };
             gameState.equipment = gameState.presets[gameState.activePresetIndex].equipment;
 
@@ -2143,60 +2205,6 @@ document.addEventListener('DOMContentLoaded', () => {
         logMessage(elements.gameLogEl, "Your equipment presets have been updated to a new system! You may need to re-organize your gear.", "uncommon", isAutoScrollingLog);
 
         return migratedState;
-    }
-
-    function main() {
-        elements = ui.initDOMElements();
-        
-        const savedData = localStorage.getItem('idleRPGSaveData');
-        if (savedData) {
-            let loadedState = JSON.parse(savedData);
-            
-            // First, migrate the preset system if necessary
-            if (!loadedState.presetSystemMigrated) {
-                 loadedState = migrateToPresetInventories(loadedState);
-            }
-
-            // Then, merge with the default state to ensure new properties like salvageFilter exist
-            const baseState = getDefaultGameState();
-            gameState = { 
-                ...baseState, 
-                ...loadedState,
-                permanentUpgrades: { // Ensure permanent upgrades from default are present
-                    ...baseState.permanentUpgrades,
-                    ...(loadedState.permanentUpgrades || {})
-                },
-                // Ensure synergies is an object, not an array from old saves
-                absorbedSynergies: (typeof loadedState.absorbedSynergies === 'object' && !Array.isArray(loadedState.absorbedSynergies)) ? loadedState.absorbedSynergies : {},
-                salvageFilter: {
-                    ...baseState.salvageFilter,
-                    ...(loadedState.salvageFilter || {}),
-                    keepStats: {
-                        ...baseState.salvageFilter.keepStats,
-                        ...((loadedState.salvageFilter || {}).keepStats || {})
-                    }
-                }
-            };
-            
-            // Ensure equipment is a reference to the active preset's equipment
-            gameState.equipment = gameState.presets[gameState.activePresetIndex].equipment;
-            
-            calculateOfflineProgress();
-        } else {
-            gameState = getDefaultGameState();
-            // On a new game, also set the equipment reference correctly
-            gameState.equipment = gameState.presets[gameState.activePresetIndex].equipment;
-        }
-        
-        setupEventListeners();
-        recalculateStats();
-        startNewMonster();
-        logMessage(elements.gameLogEl, savedData ? "Saved game loaded!" : "Welcome! Your progress will be saved automatically.", '', isAutoScrollingLog);
-        updateAll();
-        
-        autoSave(); 
-        setInterval(autoSave, 30000);
-        setInterval(gameLoop, 1000);
     }
 
     main();

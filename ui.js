@@ -239,8 +239,17 @@ export function renderGrid(containerEl, items, options = {}) {
             if (selectedItem && selectedItem.id === item.id) wrapper.classList.add('selected-for-forge');
             if (salvageSelections.some(sel => sel.id === item.id)) wrapper.classList.add('selected-for-salvage');
 
-            if (type === 'gem' && bulkCombineSelection && bulkCombineSelection.tier && bulkCombineSelection.statKey) {
-                if (item.tier === bulkCombineSelection.tier && item.stats && item.stats[bulkCombineSelection.statKey] && !bulkCombineDeselectedIds.has(item.id)) {
+            if (type === 'gem' && bulkCombineSelection && bulkCombineSelection.tier && bulkCombineSelection.selectionKey) {
+                const isSynergyCombine = bulkCombineSelection.selectionKey.startsWith('synergy_');
+                let isMatch = false;
+                if (isSynergyCombine) {
+                    const synergyKey = bulkCombineSelection.selectionKey.replace('synergy_', '');
+                    isMatch = item.synergy && `${item.synergy.source}_to_${item.synergy.target}` === synergyKey;
+                } else {
+                    isMatch = item.stats && item.stats[bulkCombineSelection.selectionKey];
+                }
+
+                if (item.tier === bulkCombineSelection.tier && isMatch && !bulkCombineDeselectedIds.has(item.id)) {
                     wrapper.classList.add('selected-for-bulk-combine');
                 }
             }
@@ -492,12 +501,21 @@ export function updateUI(elements, gameState, playerStats, currentMonster, salva
     (/** @type {HTMLInputElement} */ (autoProgressCheckboxEl)).checked = gameState.isAutoProgressing;
     const monsterDef = currentMonster.data;
     if (monsterDef) {
-        // --- NEW: Kill Count Display Logic ---
+        // --- NEW: Kill Count and Max Streak Display Logic ---
         const monsterKey = Object.keys(MONSTERS).find(key => MONSTERS[key] === monsterDef);
         const killCount = (monsterKey && gameState.monsterKillCounts && gameState.monsterKillCounts[monsterKey]) ? gameState.monsterKillCounts[monsterKey] : 0;
         const killCountTier = getNumberTier(killCount);
-        lootMonsterNameEl.innerHTML = `${currentMonster.name} <span style="font-size: 0.7em; color: #bdc3c7;">(Kills: <span class="currency-tier-${killCountTier}">${formatNumber(killCount)}</span>)</span>`;
-        // --- END: Kill Count Display Logic ---
+        let monsterNameHTML = `${currentMonster.name} <span style="font-size: 0.7em; color: #bdc3c7;">(Kills: <span class="currency-tier-${killCountTier}">${formatNumber(killCount)}</span>)</span>`;
+        
+        // If it's a golden slime and there's a record, add the max streak info
+        if (monsterDef.id === 'GOLDEN_SLIME' && (gameState.maxGoldenSlimeStreak || 0) > 0) {
+            const maxGold = gameState.maxGoldenSlimeStreakGold || 0;
+            const maxGoldTier = getNumberTier(maxGold);
+            monsterNameHTML += `<br><small style="color: #bdc3c7; font-size: 0.7em;">Max Streak: <span style="color: #f1c40f; font-size: 1.1em; font-weight: bold;">${gameState.maxGoldenSlimeStreak}</span> (<span class="currency-tier-${maxGoldTier}">${formatNumber(maxGold)}</span> Gold)</small>`;
+        }
+        
+        lootMonsterNameEl.innerHTML = monsterNameHTML;
+        // --- END: Kill Count and Max Streak Display Logic ---
 
         lootTableDisplayEl.innerHTML = '';
         if(monsterDef.lootTable && monsterDef.lootTable.length > 0) {

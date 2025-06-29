@@ -274,6 +274,12 @@ export function monsterDefeated(gameState, playerStats, currentMonster) {
         goldGained = gameState.specialEncounter.goldReward * gameState.goldenSlimeStreak;
         xpGained = 0;
 
+        // Check for and update the max streak for this run
+        if (gameState.goldenSlimeStreak > (gameState.maxGoldenSlimeStreak || 0)) {
+            gameState.maxGoldenSlimeStreak = gameState.goldenSlimeStreak;
+            gameState.maxGoldenSlimeStreakGold = goldGained; // Record the gold from this new max streak
+        }
+
         const getNumberTier = (amount) => {
             if (amount < 1e3) return 0; if (amount < 1e6) return 1; if (amount < 1e9) return 2;
             if (amount < 1e12) return 3; if (amount < 1e15) return 4; if (amount < 1e18) return 5;
