@@ -273,13 +273,17 @@ export function monsterDefeated(gameState, playerStats, currentMonster) {
 
     if (currentMonster.data.isSpecial && currentMonster.data.id === 'GOLDEN_SLIME') {
         gameState.goldenSlimeStreak = (gameState.goldenSlimeStreak || 0) + 1;
-        goldGained = gameState.specialEncounter.goldReward * gameState.goldenSlimeStreak;
+        // --- FIX START: Corrected Golden Slime gold reward logic ---
+        // The reward is now taken directly from the encounter data, without the extra streak multiplier.
+        goldGained = gameState.specialEncounter.goldReward;
+        // --- FIX END ---
         xpGained = 0;
 
         // Check for and update the max streak for this run
         if (gameState.goldenSlimeStreak > (gameState.maxGoldenSlimeStreak || 0)) {
             gameState.maxGoldenSlimeStreak = gameState.goldenSlimeStreak;
-            gameState.maxGoldenSlimeStreakGold = goldGained; // Record the gold from this new max streak
+            // Record the gold from this new max streak. Note: This uses the already calculated goldGained.
+            gameState.maxGoldenSlimeStreakGold = goldGained;
         }
 
         const getNumberTier = (amount) => {
