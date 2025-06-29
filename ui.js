@@ -269,27 +269,34 @@ export function updateUI(elements, gameState, playerStats, currentMonster, salva
     // --- Stats and Hero Info ---
     const xpToNextLevel = getXpForNextLevel(gameState.hero.level);
 
-    // --- Currency Formatting & Coloring ---
-    const currencyMilestones = [1e18, 1e15, 1e12, 1e9, 1e6, 1e3]; // From highest to lowest
-    const getCurrencyTier = (amount) => {
-        for (let i = 0; i < currencyMilestones.length; i++) {
-            if (amount >= currencyMilestones[i]) {
-                return currencyMilestones.length - i;
-            }
-        }
-        return 0;
+    // --- Currency/Stat Formatting & Coloring ---
+    const getNumberTier = (amount) => {
+        if (amount < 1e3) return 0;
+        if (amount < 1e6) return 1;
+        if (amount < 1e9) return 2;
+        if (amount < 1e12) return 3;
+        if (amount < 1e15) return 4;
+        if (amount < 1e18) return 5;
+        return 6;
     };
-    const goldTier = getCurrencyTier(gameState.gold);
-    const scrapTier = getCurrencyTier(gameState.scrap);
+    
+    const goldTier = getNumberTier(gameState.gold);
+    const scrapTier = getNumberTier(gameState.scrap);
     goldStatEl.className = `currency-tier-${goldTier}`;
     scrapStatEl.className = `currency-tier-${scrapTier}`;
     goldStatEl.textContent = formatNumber(gameState.gold);
     scrapStatEl.textContent = formatNumber(gameState.scrap);
+
+    const dpsTier = getNumberTier(playerStats.totalDps);
+    const clickTier = getNumberTier(playerStats.totalClickDamage);
+    dpsStatEl.className = `currency-tier-${dpsTier}`;
+    clickDamageStatEl.className = `currency-tier-${clickTier}`;
+    clickDamageStatEl.textContent = formatNumber(playerStats.totalClickDamage);
+    dpsStatEl.textContent = formatNumber(playerStats.totalDps);
+    
     // --- End Currency Formatting ---
 
     heroXpTextEl.textContent = `${formatNumber(gameState.hero.xp)} / ${formatNumber(xpToNextLevel)}`;
-    clickDamageStatEl.textContent = formatNumber(playerStats.totalClickDamage);
-    dpsStatEl.textContent = formatNumber(playerStats.totalDps);
     heroLevelEl.textContent = gameState.hero.level.toString();
     heroXpBarEl.style.width = `${(gameState.hero.xp / xpToNextLevel) * 100}%`;
     attributePointsEl.textContent = gameState.hero.attributePoints.toString();
@@ -486,7 +493,8 @@ export function updateUI(elements, gameState, playerStats, currentMonster, salva
         // --- NEW: Kill Count Display Logic ---
         const monsterKey = Object.keys(MONSTERS).find(key => MONSTERS[key] === monsterDef);
         const killCount = (monsterKey && gameState.monsterKillCounts && gameState.monsterKillCounts[monsterKey]) ? gameState.monsterKillCounts[monsterKey] : 0;
-        lootMonsterNameEl.innerHTML = `${currentMonster.name} <span style="font-size: 0.7em; color: #bdc3c7;">(Kill Count: ${formatNumber(killCount)})</span>`;
+        const killCountTier = getNumberTier(killCount);
+        lootMonsterNameEl.innerHTML = `${currentMonster.name} <span style="font-size: 0.7em; color: #bdc3c7;">(Kills: <span class="currency-tier-${killCountTier}">${formatNumber(killCount)}</span>)</span>`;
         // --- END: Kill Count Display Logic ---
 
         lootTableDisplayEl.innerHTML = '';
@@ -621,6 +629,10 @@ export function createTooltipHTML(item) {
 
 /**
  * Creates the HTML for an item comparison tooltip, now with embedded differences.
+ * @param {object} hoveredItem The item being hovered over.
+ * @param {object|null} equippedItem The first equipped item to compare against.
+ * @param {object|null} [equippedItem2=null] The second equipped item (only used for rings).
+ * @returns {string} The complete HTML for the tooltip.
  */
 export function createItemComparisonTooltipHTML(hoveredItem, equippedItem, equippedItem2 = null) {
     if (!hoveredItem) return '';
@@ -633,49 +645,42 @@ export function createItemComparisonTooltipHTML(hoveredItem, equippedItem, equip
 
     // --- Stats & Comparison ---
     const hoveredStats = getCombinedItemStats(hoveredItem);
-    
-    // For rings, we compare against the better of the two equipped rings for simplicity.
-    // A more advanced comparison might show diffs for both.
-    let comparisonTargetStats = equippedItem ? getCombinedItemStats(equippedItem) : {};
-    if (hoveredItem.type === 'ring') {
-        const equippedStats1 = equippedItem ? getCombinedItemStats(equippedItem) : {};
-        const equippedStats2 = equippedItem2 ? getCombinedItemStats(equippedItem2) : {};
-        const sum1 = Object.values(equippedStats1).reduce((s, a) => s + a, 0);
-        const sum2 = Object.values(equippedStats2).reduce((s, a) => s + a, 0);
-        comparisonTargetStats = sum1 > sum2 ? equippedStats1 : equippedStats2;
+    let statsHTML = '';
+
+    if (hoveredItem.type === 'ring' && equippedItem2) {
+        // --- DUAL RING COMPARISON ---
+        statsHTML = createDualRingComparison(hoveredStats, equippedItem, equippedItem2);
+    } else {
+        // --- STANDARD SINGLE COMPARISON ---
+        const comparisonTargetStats = equippedItem ? getCombinedItemStats(equippedItem) : {};
+        const allStatKeys = new Set([...Object.keys(hoveredStats), ...Object.keys(comparisonTargetStats)]);
+        
+        let statListHtml = '<ul>';
+        allStatKeys.forEach(statKey => {
+            const hoveredValue = hoveredStats[statKey] || 0;
+            const equippedValue = comparisonTargetStats[statKey] || 0;
+            const diff = hoveredValue - equippedValue;
+
+            const statInfo = Object.values(STATS).find(s => s.key === statKey) || { name: statKey, type: 'flat' };
+            const isPercent = statInfo.type === 'percent';
+            const valueStr = isPercent ? `${hoveredValue.toFixed(1)}%` : formatNumber(hoveredValue);
+            
+            let diffSpan = '';
+            if (equippedItem && Math.abs(diff) > 0.001) {
+                const diffClass = diff > 0 ? 'stat-better' : 'stat-worse';
+                const sign = diff > 0 ? '+' : '';
+                const diffStr = isPercent ? `${diff.toFixed(1)}%` : formatNumber(diff);
+                diffSpan = ` <span class="${diffClass}">(${sign}${diffStr})</span>`;
+            }
+            statListHtml += `<li>+${valueStr} ${statInfo.name}${diffSpan}</li>`;
+        });
+        statListHtml += '</ul>';
+        statsHTML = statListHtml;
     }
     
-    // CORRECTED: Combine keys from both items to ensure all stats are compared.
-    const allStatKeys = new Set([...Object.keys(hoveredStats), ...Object.keys(comparisonTargetStats)]);
-    
-    let statsHTML = '<ul>';
-    allStatKeys.forEach(statKey => {
-        const hoveredValue = hoveredStats[statKey] || 0;
-        const equippedValue = comparisonTargetStats[statKey] || 0;
-        const diff = hoveredValue - equippedValue;
-
-        const statInfo = Object.values(STATS).find(s => s.key === statKey) || { name: statKey, type: 'flat' };
-        const isPercent = statInfo.type === 'percent';
-        
-        const valueStr = isPercent ? `${hoveredValue.toFixed(1)}%` : formatNumber(hoveredValue);
-        
-        let diffSpan = '';
-        // Only show diff if there's an item to compare against.
-        if (equippedItem && Math.abs(diff) > 0.001) {
-            const diffClass = diff > 0 ? 'stat-better' : 'stat-worse';
-            const sign = diff > 0 ? '+' : '';
-            const diffStr = isPercent ? `${diff.toFixed(1)}%` : formatNumber(diff);
-            diffSpan = ` <span class="${diffClass}">(${sign}${diffStr})</span>`;
-        }
-
-        statsHTML += `<li>+${valueStr} ${statInfo.name}${diffSpan}</li>`;
-    });
-    statsHTML += '</ul>';
     html += statsHTML;
 
-
     // --- Gem & Unique Blueprints (for hovered item only) ---
-    // We call the detailed block function but remove the stat list it generates, as we've already created our own with comparisons.
     html += createDetailedItemStatBlockHTML(hoveredItem).replace(/<ul>.*?<\/ul>/, ''); 
 
     // --- Sockets Visual ---
@@ -689,6 +694,57 @@ export function createItemComparisonTooltipHTML(hoveredItem, equippedItem, equip
 
     return html;
 }
+
+/**
+ * Helper function to create the dual-ring comparison HTML block.
+ * @param {object} hoveredStats - The combined stats of the hovered ring.
+ * @param {object|null} equippedRing1 - The first equipped ring.
+ * @param {object|null} equippedRing2 - The second equipped ring.
+ * @returns {string} The HTML string for the comparison.
+ */
+function createDualRingComparison(hoveredStats, equippedRing1, equippedRing2) {
+    let html = '<div class="tooltip-ring-comparison">';
+    
+    // Function to generate one side of the comparison
+    const generateComparisonSide = (equippedRing, title) => {
+        let sideHtml = `<div><h5>vs. ${title}</h5>`;
+        const equippedStats = equippedRing ? getCombinedItemStats(equippedRing) : {};
+        const allStatKeys = new Set([...Object.keys(hoveredStats), ...Object.keys(equippedStats)]);
+        
+        let statListHtml = '<ul>';
+        if (allStatKeys.size === 0 && !equippedRing) {
+             statListHtml += '<li>(Empty Slot)</li>';
+        } else if (allStatKeys.size === 0 && equippedRing) {
+             statListHtml += '<li>(No stats)</li>';
+        }else {
+            allStatKeys.forEach(statKey => {
+                const hoveredValue = hoveredStats[statKey] || 0;
+                const equippedValue = equippedStats[statKey] || 0;
+                const diff = hoveredValue - equippedValue;
+                const statInfo = Object.values(STATS).find(s => s.key === statKey) || { name: statKey, type: 'flat' };
+                const isPercent = statInfo.type === 'percent';
+                
+                let diffSpan = '';
+                if (Math.abs(diff) > 0.001) {
+                    const diffClass = diff > 0 ? 'stat-better' : 'stat-worse';
+                    const sign = diff > 0 ? '+' : '';
+                    const diffStr = isPercent ? `${diff.toFixed(1)}%` : formatNumber(diff);
+                    diffSpan = ` <span class="${diffClass}">(${sign}${diffStr})</span>`;
+                }
+                statListHtml += `<li>${statInfo.name}${diffSpan}</li>`;
+            });
+        }
+        statListHtml += '</ul>';
+        sideHtml += statListHtml + '</div>';
+        return sideHtml;
+    };
+
+    html += generateComparisonSide(equippedRing1, 'Ring 1');
+    html += generateComparisonSide(equippedRing2, 'Ring 2');
+    html += '</div>';
+    return html;
+}
+
 
 
 export function createGemTooltipHTML(gem) {

@@ -808,6 +808,62 @@ document.addEventListener('DOMContentLoaded', () => {
         elements.offlineProgressModalBackdrop.classList.remove('hidden');
     }
 
+    /**
+     * Shows a dynamic tooltip for an item.
+     * @param {object | null} item The item to display.
+     * @param {HTMLElement} element The element to anchor the tooltip to.
+     */
+    function showItemTooltip(item, element) {
+        if (!item) return;
+
+        elements.tooltipEl.className = 'hidden';
+        elements.tooltipEl.classList.add(item.rarity);
+
+        if (isShiftPressed) {
+            const itemBase = ITEMS[item.baseId];
+            if (itemBase) {
+                elements.tooltipEl.innerHTML = ui.createLootTableTooltipHTML(itemBase);
+            } else {
+                elements.tooltipEl.innerHTML = ui.createTooltipHTML(item);
+            }
+        } else {
+            if (item.type === 'ring') {
+                elements.tooltipEl.innerHTML = ui.createItemComparisonTooltipHTML(item, gameState.equipment.ring1, gameState.equipment.ring2);
+            } else {
+                const equippedItem = gameState.equipment[item.type];
+                elements.tooltipEl.innerHTML = ui.createItemComparisonTooltipHTML(item, equippedItem);
+            }
+        }
+
+        const rect = element.getBoundingClientRect();
+        elements.tooltipEl.style.left = `${rect.right + 10}px`;
+        elements.tooltipEl.style.top = `${rect.top}px`;
+        elements.tooltipEl.classList.remove('hidden');
+    }
+    
+    /**
+     * Shows a focused comparison tooltip for a pending ring vs one equipped ring.
+     * @param {object} pendingItem The new ring to be equipped.
+     * @param {object | null} equippedItem The specific equipped ring to compare against.
+     * @param {HTMLElement} element The element to anchor the tooltip to.
+     */
+    function showRingComparisonTooltip(pendingItem, equippedItem, element) {
+        if (!pendingItem) return;
+        elements.tooltipEl.className = 'hidden';
+        elements.tooltipEl.classList.add(pendingItem.rarity);
+
+        // Pass null for the third argument to force a 1-to-1 comparison
+        elements.tooltipEl.innerHTML = ui.createItemComparisonTooltipHTML(pendingItem, equippedItem, null);
+        
+        const rect = element.getBoundingClientRect();
+        elements.tooltipEl.style.left = `${rect.right + 10}px`;
+        elements.tooltipEl.style.top = `${rect.top}px`;
+        elements.tooltipEl.classList.remove('hidden');
+    }
+
+    /** Generic mouseout handler for item grids. */
+    const onGridMouseOut = () => elements.tooltipEl.classList.add('hidden');
+
     function setupEventListeners() {
         window.addEventListener('beforeunload', saveOnExit);
 
@@ -1164,6 +1220,22 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
+        // Add tooltip listeners for the ring selection modal
+        elements.ringSelectionSlot1.addEventListener('mouseover', (e) => {
+            if (pendingRingEquip && e.currentTarget instanceof HTMLElement) {
+                showRingComparisonTooltip(pendingRingEquip, gameState.equipment.ring1, e.currentTarget);
+            }
+        });
+        elements.ringSelectionSlot1.addEventListener('mouseout', onGridMouseOut);
+        
+        elements.ringSelectionSlot2.addEventListener('mouseover', (e) => {
+            if (pendingRingEquip && e.currentTarget instanceof HTMLElement) {
+                showRingComparisonTooltip(pendingRingEquip, gameState.equipment.ring2, e.currentTarget);
+            }
+        });
+        elements.ringSelectionSlot2.addEventListener('mouseout', onGridMouseOut);
+
+
         elements.offlineProgressCloseBtn.addEventListener('click', () => {
             elements.offlineProgressModalBackdrop.classList.add('hidden');
         });
@@ -1454,35 +1526,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     function setupItemTooltipListeners() {
-        const showTooltip = (item, element) => {
-            if (!item) return;
-
-            elements.tooltipEl.className = 'hidden';
-            elements.tooltipEl.classList.add(item.rarity);
-
-            if (isShiftPressed) {
-                const itemBase = ITEMS[item.baseId];
-                if(itemBase) {
-                     elements.tooltipEl.innerHTML = ui.createLootTableTooltipHTML(itemBase);
-                } else {
-                     elements.tooltipEl.innerHTML = ui.createTooltipHTML(item);
-                }
-            } else {
-                if (item.type === 'ring') {
-                    elements.tooltipEl.innerHTML = ui.createItemComparisonTooltipHTML(item, gameState.equipment.ring1, gameState.equipment.ring2);
-                } else {
-                    const equippedItem = gameState.equipment[item.type];
-                    elements.tooltipEl.innerHTML = ui.createItemComparisonTooltipHTML(item, equippedItem);
-                }
-            }
-
-            const rect = element.getBoundingClientRect();
-            elements.tooltipEl.style.left = `${rect.right + 10}px`;
-            elements.tooltipEl.style.top = `${rect.top}px`;
-            elements.tooltipEl.classList.remove('hidden');
-        };
-
-        const onMouseOver = (event) => {
+        const onGridMouseOver = (event) => {
             if (!(event.target instanceof Element)) return;
             const wrapper = event.target.closest('.item-wrapper');
             if (!(wrapper instanceof HTMLElement)) return;
@@ -1491,14 +1535,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const item = player.findItemFromAllSources(gameState, id);
             if(item) {
-                showTooltip(item, wrapper);
+                showItemTooltip(item, wrapper);
             }
         };
 
-        const onMouseOut = () => elements.tooltipEl.classList.add('hidden');
-
-        elements.inventorySlotsEl.addEventListener('mouseover', onMouseOver);
-        elements.inventorySlotsEl.addEventListener('mouseout', onMouseOut);
+        elements.inventorySlotsEl.addEventListener('mouseover', onGridMouseOver);
+        elements.inventorySlotsEl.addEventListener('mouseout', onGridMouseOut);
     
         const equipmentSlots = document.getElementById('equipment-paperdoll');
         equipmentSlots.addEventListener('mouseover', (event) => {
@@ -1506,24 +1548,24 @@ document.addEventListener('DOMContentLoaded', () => {
             const slotEl = event.target.closest('.equipment-slot');
             if (!(slotEl instanceof HTMLElement)) return;
             const item = gameState.equipment[slotEl.id.replace('slot-','')];
-            showTooltip(item, slotEl);
+            showItemTooltip(item, slotEl);
         });
-        equipmentSlots.addEventListener('mouseout', onMouseOut);
+        equipmentSlots.addEventListener('mouseout', onGridMouseOut);
         
-        elements.forgeInventorySlotsEl.addEventListener('mouseover', onMouseOver);
-        elements.forgeInventorySlotsEl.addEventListener('mouseout', onMouseOut);
+        elements.forgeInventorySlotsEl.addEventListener('mouseover', onGridMouseOver);
+        elements.forgeInventorySlotsEl.addEventListener('mouseout', onGridMouseOut);
         
-        elements.prestigeInventoryDisplay.addEventListener('mouseover', onMouseOver);
-        elements.prestigeInventoryDisplay.addEventListener('mouseout', onMouseOut);
+        elements.prestigeInventoryDisplay.addEventListener('mouseover', onGridMouseOver);
+        elements.prestigeInventoryDisplay.addEventListener('mouseout', onGridMouseOut);
         elements.prestigeEquipmentPaperdoll.addEventListener('mouseover', (event) => {
             if (!(event.target instanceof Element)) return;
             const slotEl = event.target.closest('.equipment-slot');
             if (!(slotEl instanceof HTMLElement)) return;
             const slotName = slotEl.id.replace('prestige-slot-', '');
             const item = gameState.equipment[slotName];
-            if (item) showTooltip(item, slotEl);
+            if (item) showItemTooltip(item, slotEl);
         });
-        elements.prestigeEquipmentPaperdoll.addEventListener('mouseout', onMouseOut);
+        elements.prestigeEquipmentPaperdoll.addEventListener('mouseout', onGridMouseOut);
     }
     
     function setupGemTooltipListeners(){
