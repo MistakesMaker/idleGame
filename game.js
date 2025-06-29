@@ -1,3 +1,5 @@
+// game.js
+
 import { REALMS } from './data/realms.js';
 import { MONSTERS } from './data/monsters.js';
 import { ITEMS } from './data/items.js';
