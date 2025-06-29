@@ -1046,15 +1046,21 @@ export function showDpsPopup(popupContainerEl, damage, isCrit = false, isMultiSt
  * @param {HTMLElement} popupContainerEl - The container to add the popup to.
  * @param {string} text - The text to display.
  * @param {object} [options={}] - Customization options.
- * @param {string} [options.color='#9b59b6'] - The color of the text.
- * @param {string} [options.fontSize='3em'] - The font size.
- * @param {number} [options.duration=2000] - The duration in ms.
+ * @param {string} [options.color] - The color of the text.
+ * @param {string} [options.fontSize] - The font size.
+ * @param {number} [options.duration] - The duration in ms.
+ * @param {string} [options.top] - The vertical position (e.g., '10%').
+ * @param {string} [options.left] - The horizontal position (e.g., '50%').
+ * @param {string} [options.transform] - The CSS transform (e.g., 'translateX(-50%)').
  */
 export function showInfoPopup(popupContainerEl, text, options = {}) {
     const {
-        color = '#9b59b6', // Default to purple for gems
+        color = '#9b59b6',
         fontSize = '3em',
-        duration = 2000
+        duration = 2000,
+        top = '30%',
+        left = '50%',
+        transform = 'translateX(-50%)'
     } = options;
 
     const popup = document.createElement('div');
@@ -1062,9 +1068,9 @@ export function showInfoPopup(popupContainerEl, text, options = {}) {
     popup.className = 'info-popup';
     popup.style.color = color;
     popup.style.fontSize = fontSize;
-    popup.style.left = '-20%';
-    popup.style.top = '30%';
-    popup.style.transform = 'translateX(-50%)';
+    popup.style.top = top;
+    popup.style.left = left;
+    popup.style.transform = transform;
     
     popupContainerEl.appendChild(popup);
     setTimeout(() => popup.remove(), duration);

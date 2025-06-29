@@ -100,6 +100,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let pendingLegacyKeeperUpgrade = false; 
     let bulkCombineSelection = { tier: null, selectionKey: null };
     let bulkCombineDeselectedIds = new Set();
+    let lastBulkCombineStatKey = null;
     let isAutoScrollingLog = true;
 
     /** @type {DOMElements} */
@@ -297,10 +298,18 @@ document.addEventListener('DOMContentLoaded', () => {
         result.logMessages.forEach(msg => {
             logMessage(elements.gameLogEl, msg.message, msg.class, isAutoScrollingLog);
         });
-            // Check for the new gem find event
-    if (result.events && result.events.includes('gemFind')) {
-        ui.showInfoPopup(elements.popupContainerEl, 'Double Gem!');
-    }
+
+        // Check for the new gem find event
+        if (result.events && result.events.includes('gemFind')) {
+            // Here you can customize the popup for this specific event
+            ui.showInfoPopup(elements.popupContainerEl, 'Double Gem!', {
+                top: '10%', // Higher on the screen
+                fontSize: '3.5em' // Slightly bigger
+                // You could also change color, duration, etc. here
+                // color: '#f1c40f', 
+                // duration: 3000
+            });
+        }
 
         ui.showGoldPopup(elements.popupContainerEl, result.goldGained);
         
@@ -951,8 +960,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     /** Generic mouseout handler for item grids. */
     const onGridMouseOut = () => elements.tooltipEl.classList.add('hidden');
-
-    function main() {
+        function main() {
         elements = ui.initDOMElements();
         
         const savedData = localStorage.getItem('idleRPGSaveData');
@@ -1380,12 +1388,25 @@ document.addEventListener('DOMContentLoaded', () => {
             bulkCombineSelection.tier = selectedTier || null;
             bulkCombineSelection.selectionKey = null; // Reset stat/synergy when tier changes
             bulkCombineDeselectedIds.clear();
-            populateBulkCombineControls(); 
+            populateBulkCombineControls();
+
+            // --- NEW LOGIC TO REMEMBER STAT ---
+            if (lastBulkCombineStatKey) {
+                const statSelect = (/** @type {HTMLSelectElement} */ (elements.bulkCombineStatSelect));
+                const optionExists = statSelect.querySelector(`option[value="${lastBulkCombineStatKey}"]`);
+                if (optionExists) {
+                    statSelect.value = lastBulkCombineStatKey;
+                    bulkCombineSelection.selectionKey = lastBulkCombineStatKey;
+                }
+            }
+            // --- END OF NEW LOGIC ---
+
             updateAll();
         });
 
         elements.bulkCombineStatSelect.addEventListener('change', () => {
             bulkCombineSelection.selectionKey = (/** @type {HTMLSelectElement} */ (elements.bulkCombineStatSelect)).value || null;
+            lastBulkCombineStatKey = bulkCombineSelection.selectionKey;
             bulkCombineDeselectedIds.clear(); // Clear deselections
             updateAll();
         });
