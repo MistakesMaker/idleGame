@@ -68,7 +68,7 @@ export const GEMS = {
         synergy: {
             source: 'dps',
             target: 'clickDamage',
-            value: 0.1
+            value: 0.05
         }
     },
 };
