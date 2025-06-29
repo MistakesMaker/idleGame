@@ -1,5 +1,3 @@
-// game.js
-
 import { REALMS } from './data/realms.js';
 import { MONSTERS } from './data/monsters.js';
 import { ITEMS } from './data/items.js';
@@ -1032,8 +1030,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Delegated listener for Attribute buttons
         addTapListener(document.getElementById('attributes-area'), (e) => {
+            // --- START DIAGNOSTIC LOGS ---
+            console.log(`[Attributes Area] Event fired. Type: ${e.type}`);
+            console.log('[Attributes Area] Target:', e.target);
+            console.log('[Attributes Area] Current Target:', e.currentTarget);
+            // --- END DIAGNOSTIC LOGS ---
+
             if (!(e.target instanceof Element)) return;
             const button = e.target.closest('.attribute-btn');
+
+            // --- START DIAGNOSTIC LOGS ---
+            if (button) {
+                console.log('[Attributes Area] Found attribute button via .closest()');
+            } else {
+                console.log('[Attributes Area] Did NOT find an attribute button from the target.');
+            }
+            // --- END DIAGNOSTIC LOGS ---
+
             // Check if it's a button, and if it's disabled.
             if (button instanceof HTMLButtonElement && !button.disabled) {
                 const attributeRow = button.closest('.attribute-row');
@@ -1049,8 +1062,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Delegated listener for Gold Upgrade buttons
         addTapListener(document.getElementById('upgrades-area'), (e) => {
+            // --- START DIAGNOSTIC LOGS ---
+            console.log(`[Upgrades Area] Event fired. Type: ${e.type}`);
+            console.log('[Upgrades Area] Target:', e.target);
+            console.log('[Upgrades Area] Current Target:', e.currentTarget);
+            // --- END DIAGNOSTIC LOGS ---
+
             if (!(e.target instanceof Element)) return;
             const upgradeButton = e.target.closest('.upgrade-button');
+
+            // --- START DIAGNOSTIC LOGS ---
+            if (upgradeButton) {
+                console.log('[Upgrades Area] Found upgrade button:', upgradeButton.id);
+            } else {
+                console.log('[Upgrades Area] Did NOT find an upgrade button from the target.');
+            }
+            // --- END DIAGNOSTIC LOGS ---
+
             if (upgradeButton instanceof HTMLElement && !upgradeButton.classList.contains('disabled')) {
                 let upgradeType;
                 if (upgradeButton.id === 'upgrade-click-damage') {
