@@ -274,7 +274,7 @@ export function monsterDefeated(gameState, playerStats, currentMonster) {
         const goldTier = getNumberTier(goldGained);
         const goldText = `<span class="currency-tier-${goldTier}">${formatNumber(goldGained)}</span>`;
 
-        logMessages.push({ message: `Golden Slime defeated! (Streak: ${gameState.goldenSlimeStreak}) You gained a massive bonus of ${goldText} gold!`, class: '' });
+        logMessages.push({ message: `Golden Slime defeated! (Streak: <span class="golden-streak-text">${gameState.goldenSlimeStreak}</span>) You gained a massive bonus of ${goldText} gold!`, class: '' });
         gameState.specialEncounter = null;
     } else {
         if (isBigBossLevel(level)) {

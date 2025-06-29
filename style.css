@@ -248,6 +248,11 @@ select option {
     text-shadow: 0 0 7px #f39c12;
     font-weight: bold;
 }
+#game-log .golden-streak-text {
+    color: #f1c40f;
+    font-weight: normal;
+    text-shadow: none;
+}
 
 
 #hero-level-info { margin-bottom: 20px; }
