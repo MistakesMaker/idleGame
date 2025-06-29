@@ -511,7 +511,7 @@ export function updateUI(elements, gameState, playerStats, currentMonster, salva
         if (monsterDef.id === 'GOLDEN_SLIME' && (gameState.maxGoldenSlimeStreak || 0) > 0) {
             const maxGold = gameState.maxGoldenSlimeStreakGold || 0;
             const maxGoldTier = getNumberTier(maxGold);
-            monsterNameHTML += `<br><small style="color: #bdc3c7; font-size: 0.7em;">Max Streak: <span style="color: #f1c40f; font-size: 1.1em; font-weight: bold;">${gameState.maxGoldenSlimeStreak}</span> (<span class="currency-tier-${maxGoldTier}">${formatNumber(maxGold)}</span> Gold)</small>`;
+            monsterNameHTML += `<br><small style="color: #bdc3c7; font-size: 0.7em;">Max Streak: ${gameState.maxGoldenSlimeStreak} (<span class="currency-tier-${maxGoldTier}">${formatNumber(maxGold)}</span> Gold)</small>`;
         }
         
         lootMonsterNameEl.innerHTML = monsterNameHTML;

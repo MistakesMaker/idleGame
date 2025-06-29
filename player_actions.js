@@ -507,19 +507,25 @@ export function combineGems(gameState, craftingGems) {
  * Automatically combines all matching gems of a given tier and stat.
  * @param {object} gameState - The main game state object.
  * @param {number} tier - The tier of gems to combine.
- * @param {string} statKey - The stat key of gems to combine.
+ * @param {string} selectionKey - The stat key or a special key (like 'synergy_dps_to_clickDamage') of gems to combine.
  * @param {Set<any>} excludedIds - A set of gem IDs to exclude from this operation.
  * @returns {{success: boolean, message: string, successes: number, failures: number, cost: number}}
  */
-export function bulkCombineGems(gameState, tier, statKey, excludedIds) {
+export function bulkCombineGems(gameState, tier, selectionKey, excludedIds) {
     const costPerCombine = 100;
+    const isSynergyCombine = selectionKey.startsWith('synergy_');
     
-    const matchingGems = gameState.gems.filter(gem => 
-        gem.tier === tier && 
-        gem.stats && 
-        gem.stats[statKey] &&
-        !excludedIds.has(gem.id) // Exclude manually deselected gems
-    );
+    const matchingGems = gameState.gems.filter(gem => {
+        if (gem.tier !== tier || excludedIds.has(gem.id)) {
+            return false;
+        }
+        if (isSynergyCombine) {
+            const synergyKey = selectionKey.replace('synergy_', '');
+            return gem.synergy && `${gem.synergy.source}_to_${gem.synergy.target}` === synergyKey;
+        } else {
+            return gem.stats && gem.stats[selectionKey];
+        }
+    });
 
     if (matchingGems.length < 2) {
         return { success: false, message: "Not enough matching gems to combine.", successes: 0, failures: 0, cost: 0 };
