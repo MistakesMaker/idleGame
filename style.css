@@ -26,12 +26,12 @@ body {
 
 h2, h3, h4 { font-family: 'Cinzel', serif; color: #f1c40f; text-shadow: 1px 1px 2px #000; }
 
-/* --- THE FIX IS HERE --- */
-/* We are replacing 'gap' with 'margin' to avoid a flexbox rendering bug */
+/* --- THE DEFINITIVE FIX IS HERE --- */
+/* We are replacing 'gap' with 'margin' to avoid a flexbox rendering/overlap bug on some mobile browsers. */
 .game-container { 
     display: flex; 
     flex-wrap: nowrap; 
-    /* gap: 20px;  <-- REMOVED THIS */
+    /* gap: 20px;  <-- REMOVED THIS to prevent the overlap bug. */
     width: 95%; 
     max-width: 1800px; 
     height: calc(100vh - 40px); 
@@ -53,12 +53,11 @@ h2, h3, h4 { font-family: 'Cinzel', serif; color: #f1c40f; text-shadow: 1px 1px 
     min-height: 0;
 }
 
-/* Add margin to all panels except the first to create the spacing */
+/* Add margin to all panels EXCEPT the very first one to create the spacing. */
 .panel + .panel {
     margin-left: 20px;
 }
 /* --- END OF FIX --- */
-
 
 .left-panel { flex: 2; min-width: 400px; }
 .middle-panel { flex: 3; min-width: 660px; }
