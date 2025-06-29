@@ -147,9 +147,6 @@ document.addEventListener('DOMContentLoaded', () => {
             prestigeCount: 0,
             nextPrestigeLevel: 100,
             specialEncounter: null,
-            goldenSlimeStreak: 0,
-            maxGoldenSlimeStreak: 0, 
-            maxGoldenSlimeStreakGold: 0, 
             hero: {
                 level: 1, xp: 0, attributePoints: 0,
                 attributes: { strength: 0, agility: 0, luck: 0 }
@@ -624,7 +621,6 @@ document.addEventListener('DOMContentLoaded', () => {
             const cost = Math.floor(upgrade.baseCost * Math.pow(upgrade.costScalar, currentLevel));
             const isMaxed = currentLevel >= upgrade.maxLevel;
             
-            // --- FIX: Removed special calculation for Prestige Power display ---
             const bonus = upgrade.bonusPerLevel * currentLevel;
             
             const card = document.createElement('div');
@@ -655,7 +651,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const bulkCombineStatSelect = /** @type {HTMLSelectElement} */ (elements.bulkCombineStatSelect);
         
         const availableTiers = new Set();
-        const availableOptions = new Map(); // tier -> Set of stat keys or synergy keys
+        const availableOptions = new Map();
 
         gameState.gems.forEach(gem => {
             if (gem.tier) {
@@ -677,7 +673,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const currentTier = bulkCombineSelection.tier;
         const currentSelectionKey = bulkCombineSelection.selectionKey;
 
-        // Populate Tier Select
         bulkCombineTierSelect.innerHTML = '<option value="">Select Tier</option>';
         Array.from(availableTiers).sort((a,b) => a-b).forEach(tier => {
             const option = document.createElement('option');
@@ -687,7 +682,6 @@ document.addEventListener('DOMContentLoaded', () => {
             bulkCombineTierSelect.appendChild(option);
         });
         
-        // Populate Stat/Synergy Select based on Tier
         const populateOptions = (tier) => {
             bulkCombineStatSelect.innerHTML = '<option value="">Select Stat</option>';
             bulkCombineStatSelect.disabled = true;
@@ -814,6 +808,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const baseXp = 20;
         const xpPower = 1.2;
+        // --- FIX: Use the correct `level` variable for XP calculation, matching the online formula ---
         let xpPerKill = baseXp * Math.pow(level, xpPower);
         
         if (isBigBossLevel(level)) {
@@ -2043,8 +2038,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 hero: prestgedHeroState,
                 currentFightingLevel: 1,
                 currentRunCompletedLevels: [],
-                maxGoldenSlimeStreak: 0, 
-                maxGoldenSlimeStreakGold: 0, 
             };
             gameState.equipment = gameState.presets[gameState.activePresetIndex].equipment;
 
