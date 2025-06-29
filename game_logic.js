@@ -273,17 +273,13 @@ export function monsterDefeated(gameState, playerStats, currentMonster) {
 
     if (currentMonster.data.isSpecial && currentMonster.data.id === 'GOLDEN_SLIME') {
         gameState.goldenSlimeStreak = (gameState.goldenSlimeStreak || 0) + 1;
-        // --- FIX START: Corrected Golden Slime gold reward logic ---
-        // The reward is now taken directly from the encounter data, without the extra streak multiplier.
         goldGained = gameState.specialEncounter.goldReward;
-        // --- FIX END ---
         xpGained = 0;
 
         // Check for and update the max streak for this run
         if (gameState.goldenSlimeStreak > (gameState.maxGoldenSlimeStreak || 0)) {
             gameState.maxGoldenSlimeStreak = gameState.goldenSlimeStreak;
-            // Record the gold from this new max streak. Note: This uses the already calculated goldGained.
-            gameState.maxGoldenSlimeStreakGold = goldGained;
+            gameState.maxGoldenSlimeStreakGold = goldGained; 
         }
 
         const getNumberTier = (amount) => {
@@ -330,6 +326,7 @@ export function monsterDefeated(gameState, playerStats, currentMonster) {
         }
     }
     
+    // --- FIX START: Simplified Slime Split Logic ---
     let initialSlimeSplitChance = 0;
     
     const equippedSword = gameState.equipment.sword;
@@ -342,38 +339,26 @@ export function monsterDefeated(gameState, playerStats, currentMonster) {
         initialSlimeSplitChance += gameState.absorbedUniqueEffects['slimeSplit'] * 10;
     }
 
-    if (initialSlimeSplitChance > 0) {
-        let slimeCounter = 0;
-        let currentSplitChance = Math.min(100, initialSlimeSplitChance);
+    // Check if a slime will be spawned OR if we need to auto-progress
+    const shouldSpawnSlime = initialSlimeSplitChance > 0 && (Math.random() * 100) < initialSlimeSplitChance;
 
-        while (Math.random() * 100 < currentSplitChance) {
-            slimeCounter++;
-            currentSplitChance *= 0.9;
-        }
-
-        if (slimeCounter > 0) {
-            const mutationText = slimeCounter === 1 ? "once" : `${slimeCounter} times`;
-            logMessages.push({ message: `The monster's essence mutates <span class="legendary">${mutationText}</span>, creating a powerful Golden Slime!`, class: '' });
-            
-            gameState.specialEncounter = {
-                type: 'GOLDEN_SLIME',
-                hp: (previousMonsterMaxHp / 2) * Math.pow(1.5, slimeCounter),
-                goldReward: goldGained * Math.pow(5, slimeCounter), 
-            };
-        } else {
-            if (gameState.isAutoProgressing) {
-                const nextLevel = level + 1;
-                const nextSubZone = findSubZoneByLevel(nextLevel);
-                if (nextSubZone) gameState.currentFightingLevel = nextLevel;
-            }
-        }
+    if (shouldSpawnSlime) {
+        // A single check succeeded. Spawn one slime. No loops, no counters.
+        gameState.specialEncounter = {
+            type: 'GOLDEN_SLIME',
+            hp: previousMonsterMaxHp * 1.5, // A tougher slime
+            goldReward: goldGained * 5,    // 5x the gold of the original monster
+        };
+        // No special log message is needed here. The appearance of the slime is the notification.
     } else {
+        // No slime spawned, so check for auto-progression.
         if (gameState.isAutoProgressing) {
             const nextLevel = level + 1;
             const nextSubZone = findSubZoneByLevel(nextLevel);
             if (nextSubZone) gameState.currentFightingLevel = nextLevel;
         }
     }
+    // --- FIX END ---
 
     gameState.gold += goldGained;
 
