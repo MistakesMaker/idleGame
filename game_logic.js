@@ -160,7 +160,7 @@ export function dropLoot(currentMonster, gameState, playerStats) {
         roll -= entry.weight;
     }
 
-    if (!itemBaseToDrop) return { droppedItems: [], droppedGems: [], logMessages: [], events };
+    if (!itemBaseToDrop) return { droppedItems: [], droppedGems: [], logMessages: [], events: [] };
 
     const isGem = itemBaseToDrop.tier >= 1;
 
@@ -348,13 +348,13 @@ export function monsterDefeated(gameState, playerStats, currentMonster) {
         }
 
         if (slimeCounter > 0) {
-            const slimeText = slimeCounter === 1 ? "a Golden Slime" : `${slimeCounter} Golden Slimes`;
-            logMessages.push({ message: `The defeated monster splits into <span class="legendary">${slimeText}!</span>`, class: '' });
+            const mutationText = slimeCounter === 1 ? "once" : `${slimeCounter} times`;
+            logMessages.push({ message: `The monster's essence mutates <span class="legendary">${mutationText}</span>, creating a powerful Golden Slime!`, class: '' });
             
             gameState.specialEncounter = {
                 type: 'GOLDEN_SLIME',
-                hp: (previousMonsterMaxHp / 2) * (1 + (slimeCounter / 2)),
-                goldReward: (goldGained * 2) * slimeCounter, 
+                hp: (previousMonsterMaxHp / 2) * Math.pow(1.5, slimeCounter),
+                goldReward: goldGained * Math.pow(5, slimeCounter), 
             };
         } else {
             if (gameState.isAutoProgressing) {

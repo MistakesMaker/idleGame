@@ -13,7 +13,7 @@
 export const UNIQUE_EFFECTS = {
     slimeSplit: {
         name: "Slime Split",
-        description: "On kill, has a 10% chance to spawn a Golden Slime which drops 2x gold."
+        description: "On kill, has a 10% chance to spawn a Golden Slime which drops 5x gold."
     },
     // Future unique effects can be added here
     // exampleEffect: {
