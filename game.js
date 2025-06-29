@@ -22,7 +22,6 @@ export const rarities = ['common', 'uncommon', 'rare', 'epic', 'legendary'];
 function addTapListener(element, handler) {
     let startX, startY;
     let touchMoved = false;
-    let touchStartTime = 0;
 
     const handleTouchStart = (e) => {
         // We only care about the first touch to avoid issues with multi-touch gestures.
@@ -34,7 +33,6 @@ function addTapListener(element, handler) {
         startX = touch.clientX;
         startY = touch.clientY;
         touchMoved = false; // Reset on new touch
-        touchStartTime = Date.now(); // Record time to distinguish from a ghost click
     };
 
     const handleTouchMove = (e) => {
@@ -49,30 +47,35 @@ function addTapListener(element, handler) {
     const handleTouchEnd = (e) => {
         // Only trigger handler if it was a tap, not a scroll.
         if (!touchMoved) {
-            // The handler is called by touchend for a touch tap.
-            // The subsequent synthetic 'click' will be ignored by the click handler.
+            // This was a tap. We immediately trigger the action.
+            // We must prevent the default action, which is to fire a
+            // synthetic click event later. This is the primary mechanism
+            // for preventing "ghost clicks".
+            e.preventDefault();
             handler(e);
         }
     };
 
     const handleClick = (e) => {
-        // If a click event happens within 500ms of a touchstart, we assume it's a "ghost click"
-        // and that the touchend handler already did the job.
-        if (Date.now() - touchStartTime < 500) {
-            e.preventDefault();
-            e.stopPropagation();
+        // If e.defaultPrevented is true, it means the touchend handler already
+        // ran and called e.preventDefault(). We must not run the handler again.
+        if (e.defaultPrevented) {
             return;
         }
-        // Otherwise, it's a genuine mouse click.
+        
+        // This is a genuine mouse click that was not handled by touch.
         handler(e);
     };
 
-    // All touch listeners are now passive, which is better for performance.
+    // Touch listeners are passive for good scrolling performance.
     element.addEventListener('touchstart', handleTouchStart, { passive: true });
     element.addEventListener('touchmove', handleTouchMove, { passive: true });
-    element.addEventListener('touchend', handleTouchEnd, { passive: true });
     
-    // This click handler now intelligently filters out "ghost clicks" from touch events.
+    // touchend listener must NOT be passive so that it can call preventDefault().
+    element.addEventListener('touchend', handleTouchEnd, { passive: false });
+    
+    // The click handler now correctly distinguishes between genuine mouse clicks
+    // and synthetic clicks from touch events.
     element.addEventListener('click', handleClick);
 }
 
