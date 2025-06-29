@@ -1,3 +1,4 @@
+
 /* global io */
 import { REALMS } from './data/realms.js';
 import { MONSTERS } from './data/monsters.js';
@@ -861,6 +862,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function setupEventListeners() {
         window.addEventListener('beforeunload', saveOnExit);
+
         window.addEventListener('keydown', (e) => {
             if (e.key === 'Shift' && !isShiftPressed) {
                 isShiftPressed = true;
@@ -884,51 +886,59 @@ document.addEventListener('DOMContentLoaded', () => {
             lastMousePosition.x = e.clientX;
             lastMousePosition.y = e.clientY;
         });
+        
+        // --- START OF CLICK FIX: ROBUST CLICK HANDLING ---
 
-        // --- START OF CLICK FIX: EVENT DELEGATION ---
-        document.body.addEventListener('click', (e) => {
+        // Delegated listener for Attribute buttons
+        document.getElementById('attributes-area').addEventListener('click', (e) => {
             if (!(e.target instanceof Element)) return;
-
-            // --- Attribute Buttons ---
-            const attrButton = e.target.closest('.attribute-btn');
-            if (attrButton instanceof HTMLButtonElement && !attrButton.disabled) {
-                const attributeRow = attrButton.closest('.attribute-row');
+            const button = e.target.closest('.attribute-btn');
+            // Check if it's a button, and if it's disabled.
+            if (button instanceof HTMLButtonElement && !button.disabled) {
+                const attributeRow = button.closest('.attribute-row');
+                // Check if the row and its dataset exist
                 if (attributeRow instanceof HTMLElement && attributeRow.dataset.attribute) {
                     player.spendAttributePoint(gameState, attributeRow.dataset.attribute);
                     recalculateStats();
                     updateAll();
                     autoSave();
-                    return; // Action handled
-                }
-            }
-
-            // --- Gold Upgrades ---
-            const upgradeButton = e.target.closest('.upgrade-button');
-            if (upgradeButton instanceof HTMLElement && !upgradeButton.classList.contains('disabled')) {
-                let upgradeType;
-                if (upgradeButton.id === 'upgrade-click-damage') upgradeType = 'clickDamage';
-                else if (upgradeButton.id === 'upgrade-dps') upgradeType = 'dps';
-
-                if (upgradeType) {
-                    if (e.target.closest('.buy-max-btn')) {
-                        const result = player.buyMaxUpgrade(gameState, upgradeType);
-                        if (result.levelsBought > 0) {
-                            logMessage(elements.gameLogEl, `Bought ${result.levelsBought} ${upgradeType === 'dps' ? 'DPS' : 'Click Damage'} levels!`, '', isAutoScrollingLog);
-                        } else {
-                            logMessage(elements.gameLogEl, "Not enough gold for even one level!", '', isAutoScrollingLog);
-                        }
-                    } else {
-                        const cost = getUpgradeCost(upgradeType, gameState.upgrades[upgradeType]);
-                        const result = player.buyUpgrade(gameState, upgradeType, cost);
-                        logMessage(elements.gameLogEl, result.message, '', isAutoScrollingLog);
-                    }
-                    recalculateStats();
-                    updateAll();
-                    autoSave();
-                    return; // Action handled
                 }
             }
         });
+
+        // Delegated listener for Gold Upgrade buttons
+        document.getElementById('upgrades-area').addEventListener('click', (e) => {
+            if (!(e.target instanceof Element)) return;
+            const upgradeButton = e.target.closest('.upgrade-button');
+            if (upgradeButton instanceof HTMLElement && !upgradeButton.classList.contains('disabled')) {
+                let upgradeType;
+                if (upgradeButton.id === 'upgrade-click-damage') {
+                    upgradeType = 'clickDamage';
+                } else if (upgradeButton.id === 'upgrade-dps') {
+                    upgradeType = 'dps';
+                } else {
+                    return; // Not a recognized upgrade button
+                }
+
+                if (e.target.closest('.buy-max-btn')) {
+                    const result = player.buyMaxUpgrade(gameState, upgradeType);
+                    if (result.levelsBought > 0) {
+                        logMessage(elements.gameLogEl, `Bought ${result.levelsBought} ${upgradeType === 'dps' ? 'DPS' : 'Click Damage'} levels!`, '', isAutoScrollingLog);
+                    } else {
+                        logMessage(elements.gameLogEl, "Not enough gold for even one level!", '', isAutoScrollingLog);
+                    }
+                } else {
+                    const cost = getUpgradeCost(upgradeType, gameState.upgrades[upgradeType]);
+                    const result = player.buyUpgrade(gameState, upgradeType, cost);
+                    logMessage(elements.gameLogEl, result.message, '', isAutoScrollingLog);
+                }
+
+                recalculateStats();
+                updateAll();
+                autoSave();
+            }
+        });
+
         // --- END OF CLICK FIX ---
         
         elements.monsterImageEl.addEventListener('click', clickMonster);
