@@ -41,6 +41,15 @@ h2, h3, h4 { font-family: 'Cinzel', serif; color: #f1c40f; text-shadow: 1px 1px 
 .actions-panel { flex: 1.5; min-width: 250px; }
 .upgrades-panel { flex: 1.75; min-width: 300px; }
 
+/* --- FIX for Rendering/Event Bug --- */
+/* This forces these panels onto a new GPU compositing layer, which can resolve
+   bizarre hit-testing and event dispatching bugs on certain platforms. */
+.middle-panel,
+.actions-panel,
+.upgrades-panel {
+    transform: translateZ(0);
+}
+
 
 button, select {
     font-family: 'Cinzel', serif; background: linear-gradient(145deg, #3498db, #2980b9); color: white; border: none; padding: 10px 15px; border-radius: 5px;
@@ -1019,24 +1028,4 @@ h5 .legendary { color: #f39c12; }
 #view-slots-close-btn {
     margin-top: 15px;
     background: #7f8c8d; border-bottom-color: #6c7a7b;
-}
-
-/* --- CLICK FIX FOR ANDROID MOUSE --- */
-/* This block restores clickability to interactive elements that might be nested
-   inside a container with `pointer-events: none` on certain browsers/OSes. */
-button,
-input,
-select,
-a,
-.upgrade-button,
-.attribute-row,
-.item-wrapper,
-.gem-wrapper,
-.equipment-slot,
-.preset-btn,
-.tab-button,
-.map-node,
-.gem-crafting-slot,
-.buy-max-btn {
-  pointer-events: auto;
 }
