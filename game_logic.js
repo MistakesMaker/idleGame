@@ -246,136 +246,112 @@ export function monsterDefeated(gameState, playerStats, currentMonster) {
     const logMessages = [];
     const previousMonsterMaxHp = gameState.monster.maxHp;
 
-    const monsterKey = Object.keys(MONSTERS).find(key => MONSTERS[key] === currentMonster.data);
-    if (monsterKey) {
-        if (!gameState.monsterKillCounts) gameState.monsterKillCounts = {};
-        gameState.monsterKillCounts[monsterKey] = (gameState.monsterKillCounts[monsterKey] || 0) + 1;
-    }
+    // --- Path 1: Player defeated a Golden Slime ---
+    if (currentMonster.data.id === 'GOLDEN_SLIME') {
+        const encounter = gameState.specialEncounter;
+        const continueCheck = Math.random() * 100 < encounter.nextChance;
 
-    if (!gameState.completedLevels.includes(level)) gameState.completedLevels.push(level);
-    if (!gameState.currentRunCompletedLevels.includes(level)) gameState.currentRunCompletedLevels.push(level);
+        if (continueCheck) {
+            // The chain continues!
+            const nextChainLevel = encounter.chainLevel + 1;
+            const nextChance = encounter.nextChance * 0.9;
+            const newHp = encounter.baseHp * Math.pow(1.5, nextChainLevel);
+            const newGoldReward = encounter.baseGold * Math.pow(5, nextChainLevel);
 
-    const tier = Math.floor((level - 1) / 10);
-    const difficultyResetFactor = 1;
-    const effectiveLevel = level - (tier * difficultyResetFactor);
-
-    const baseGold = 10;
-    const goldFactor = 3;
-    const goldPower = 2.0;
-    let goldGained = baseGold + (goldFactor * Math.pow(effectiveLevel, goldPower));
-    goldGained = Math.ceil(goldGained * (1 + (playerStats.bonusGold / 100)));
-
-    const baseXp = 20;
-    const xpPower = 1.2;
-    let xpGained = baseXp * Math.pow(level, xpPower);
-
-    let lootResult = { droppedItems: [], droppedGems: [], logMessages: [], events: [] };
-
-    if (currentMonster.data.isSpecial && currentMonster.data.id === 'GOLDEN_SLIME') {
-        gameState.goldenSlimeStreak = (gameState.goldenSlimeStreak || 0) + 1;
-        goldGained = gameState.specialEncounter.goldReward;
-        xpGained = 0;
-
-        // Check for and update the max streak for this run
-        if (gameState.goldenSlimeStreak > (gameState.maxGoldenSlimeStreak || 0)) {
-            gameState.maxGoldenSlimeStreak = gameState.goldenSlimeStreak;
-            gameState.maxGoldenSlimeStreakGold = goldGained; 
-        }
-
-        const getNumberTier = (amount) => {
-            if (amount < 1e3) return 0; if (amount < 1e6) return 1; if (amount < 1e9) return 2;
-            if (amount < 1e12) return 3; if (amount < 1e15) return 4; if (amount < 1e18) return 5;
-            return 6;
-        };
-        const goldTier = getNumberTier(goldGained);
-        const goldText = `<span class="currency-tier-${goldTier}">${formatNumber(goldGained)}</span>`;
-
-        logMessages.push({ message: `Golden Slime defeated! (Streak: <span class="golden-streak-text">${gameState.goldenSlimeStreak}</span>) You gained a massive bonus of ${goldText} gold!`, class: '' });
-        gameState.specialEncounter = null;
-    } else {
-        if (isBigBossLevel(level)) {
-            xpGained *= 3;
-            goldGained *= 3;
-        } else if (isBossLevel(level)) {
-            xpGained *= 2;
-            goldGained *= 2;
-        } else if (isMiniBossLevel(level)) {
-            xpGained *= 1.5;
-            goldGained *= 1.5;
-        }
-        
-        xpGained = Math.ceil(xpGained);
-        goldGained = Math.ceil(goldGained);
-
-        logMessages.push({ message: `You defeated the ${currentMonster.name} and gained ${formatNumber(goldGained)} gold and ${formatNumber(xpGained)} XP.`, class: '' });
-
-        const dropRoll = Math.random() * 100;
-        if (dropRoll < currentMonster.data.dropChance) {
-            lootResult = dropLoot(currentMonster, gameState, playerStats);
-            lootResult.logMessages.forEach(msg => logMessages.push(msg));
-
-            const allDrops = [...lootResult.droppedItems, ...lootResult.droppedGems];
-            if (allDrops.length > 0) {
-                logMessages.push({ message: `The ${currentMonster.name} dropped something!`, class: '' });
-                allDrops.forEach(droppedItem => {
-                    const isGem = droppedItem.tier >= 1;
-                    const rarityClass = isGem ? 'epic' : droppedItem.rarity;
-                    logMessages.push({ message: `<span class="${rarityClass}">${droppedItem.name}</span>`, class: '' });
-                });
-            }
-        }
-    }
-    
-    // --- FIX START: Restored Cascading Slime Split Logic ---
-    let initialSlimeSplitChance = 0;
-    
-    const equippedSword = gameState.equipment.sword;
-    const swordBase = equippedSword ? ITEMS[equippedSword.baseId] : null;
-    if (swordBase && swordBase.uniqueEffect === 'slimeSplit') {
-        initialSlimeSplitChance += 10;
-    }
-
-    if (gameState.absorbedUniqueEffects && gameState.absorbedUniqueEffects['slimeSplit']) {
-        initialSlimeSplitChance += gameState.absorbedUniqueEffects['slimeSplit'] * 10;
-    }
-
-    if (initialSlimeSplitChance > 0) {
-        let slimeCounter = 0;
-        let currentSplitChance = Math.min(100, initialSlimeSplitChance);
-
-        while (Math.random() * 100 < currentSplitChance) {
-            slimeCounter++;
-            currentSplitChance *= 0.9; // Diminishing returns for the next check
-        }
-
-        if (slimeCounter > 0) {
-            const mutationText = slimeCounter === 1 ? "once" : `${slimeCounter} times`;
-            logMessages.push({ message: `The monster's essence mutates <span class="legendary">${mutationText}</span>, creating a powerful Golden Slime!`, class: '' });
-            
             gameState.specialEncounter = {
-                type: 'GOLDEN_SLIME',
-                hp: (previousMonsterMaxHp / 2) * Math.pow(1.5, slimeCounter),
-                goldReward: goldGained * Math.pow(5, slimeCounter), 
+                ...encounter,
+                chainLevel: nextChainLevel,
+                hp: newHp,
+                goldReward: newGoldReward,
+                nextChance: nextChance,
             };
+            logMessages.push({ message: `The chain continues! The slime grows stronger... (Next chance: ${nextChance.toFixed(1)}%)`, class: 'legendary' });
         } else {
-            // No slime spawned, check for auto-progression.
+            // The chain breaks! Award the gold from the slime that was just defeated.
+            const goldGained = encounter.goldReward;
+            gameState.gold += goldGained;
+            const goldTier = Math.floor(Math.log10(goldGained) / 3);
+            const goldText = `<span class="currency-tier-${goldTier}">${formatNumber(goldGained)}</span>`;
+            logMessages.push({ message: `The chain breaks! You receive a massive bonus of ${goldText} gold!`, class: 'legendary' });
+            
+            // Reset the encounter and progress to the next level.
+            gameState.specialEncounter = null;
             if (gameState.isAutoProgressing) {
                 const nextLevel = level + 1;
                 const nextSubZone = findSubZoneByLevel(nextLevel);
                 if (nextSubZone) gameState.currentFightingLevel = nextLevel;
             }
         }
+        // No XP or regular loot is given from Golden Slimes.
+        return { goldGained: 0, xpGained: 0, droppedItems: [], droppedGems: [], logMessages, events: [] };
+    }
+    
+    // --- Path 2: Player defeated a normal monster ---
+    if (!gameState.completedLevels.includes(level)) gameState.completedLevels.push(level);
+    if (!gameState.currentRunCompletedLevels.includes(level)) gameState.currentRunCompletedLevels.push(level);
+
+    const monsterKey = Object.keys(MONSTERS).find(key => MONSTERS[key] === currentMonster.data);
+    if (monsterKey) {
+        if (!gameState.monsterKillCounts) gameState.monsterKillCounts = {};
+        gameState.monsterKillCounts[monsterKey] = (gameState.monsterKillCounts[monsterKey] || 0) + 1;
+    }
+
+    // Calculate base rewards
+    const tier = Math.floor((level - 1) / 10);
+    const difficultyResetFactor = 1;
+    const effectiveLevel = level - (tier * difficultyResetFactor);
+
+    let goldGained = 10 + (3 * Math.pow(effectiveLevel, 2.0));
+    let xpGained = 20 * Math.pow(level, 1.2);
+    
+    if (isBigBossLevel(level)) { xpGained *= 3; goldGained *= 3; } 
+    else if (isBossLevel(level)) { xpGained *= 2; goldGained *= 2; } 
+    else if (isMiniBossLevel(level)) { xpGained *= 1.5; goldGained *= 1.5; }
+    
+    goldGained = Math.ceil(goldGained * (1 + (playerStats.bonusGold / 100)));
+    xpGained = Math.ceil(xpGained);
+
+    // Give XP and handle item drops immediately
+    gameState.xpGained += xpGained;
+    const lootResult = (Math.random() * 100 < currentMonster.data.dropChance) ? dropLoot(currentMonster, gameState, playerStats) : { droppedItems: [], droppedGems: [], logMessages: [], events: [] };
+    logMessages.push({ message: `You defeated the ${currentMonster.name} and gained ${formatNumber(xpGained)} XP.`, class: '' });
+    lootResult.logMessages.forEach(msg => logMessages.push(msg));
+    if (lootResult.droppedItems.length > 0 || lootResult.droppedGems.length > 0) {
+        logMessages.push({ message: `The ${currentMonster.name} dropped something!`, class: '' });
+        [...lootResult.droppedItems, ...lootResult.droppedGems].forEach(drop => {
+            logMessages.push({ message: `<span class="${drop.rarity || 'epic'}">${drop.name}</span>`, class: '' });
+        });
+    }
+
+    // Check if a slime chain starts
+    let initialSlimeSplitChance = 0;
+    const equippedSword = gameState.equipment.sword;
+    const swordBase = equippedSword ? ITEMS[equippedSword.baseId] : null;
+    if (swordBase && swordBase.uniqueEffect === 'slimeSplit') initialSlimeSplitChance += 10;
+    if (gameState.absorbedUniqueEffects && gameState.absorbedUniqueEffects['slimeSplit']) initialSlimeSplitChance += gameState.absorbedUniqueEffects['slimeSplit'] * 10;
+
+    if (initialSlimeSplitChance > 0 && Math.random() * 100 < initialSlimeSplitChance) {
+        // A chain starts! Withhold gold and create the first slime.
+        logMessages.push({ message: `The monster's essence coalesces into a <span class="legendary">Golden Slime!</span>`, class: '' });
+        gameState.specialEncounter = {
+            type: 'GOLDEN_SLIME',
+            chainLevel: 1,
+            baseHp: previousMonsterMaxHp,
+            baseGold: goldGained, // Store the gold that would have been gained
+            hp: previousMonsterMaxHp * 1.5,
+            goldReward: goldGained * 5,
+            nextChance: initialSlimeSplitChance * 0.9,
+        };
     } else {
-        // No slime chance, check for auto-progression.
+        // No chain started. Give the normal gold and progress.
+        gameState.gold += goldGained;
+        logMessages.push({ message: `You gained ${formatNumber(goldGained)} gold.`, class: '' });
         if (gameState.isAutoProgressing) {
             const nextLevel = level + 1;
             const nextSubZone = findSubZoneByLevel(nextLevel);
             if (nextSubZone) gameState.currentFightingLevel = nextLevel;
         }
     }
-    // --- FIX END ---
-
-    gameState.gold += goldGained;
 
     if (gameState.currentFightingLevel > gameState.maxLevel) {
         gameState.maxLevel = gameState.currentFightingLevel;
@@ -383,6 +359,7 @@ export function monsterDefeated(gameState, playerStats, currentMonster) {
     
     return { goldGained, xpGained, droppedItems: lootResult.droppedItems, droppedGems: lootResult.droppedGems, logMessages, events: lootResult.events };
 }
+
 
 /**
  * Generates a new monster based on the current fighting level.
