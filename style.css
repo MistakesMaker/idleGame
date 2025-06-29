@@ -1020,3 +1020,21 @@ h5 .legendary { color: #f39c12; }
     margin-top: 15px;
     background: #7f8c8d; border-bottom-color: #6c7a7b;
 }
+
+/* --- Slime Split Toggle Button --- */
+.slime-split-toggle-btn {
+    padding: 3px 8px;
+    font-size: 0.8em;
+    margin-right: 10px;
+    min-width: 45px; /* Ensures button doesn't resize too much */
+}
+
+.slime-split-toggle-btn.toggle-on {
+    background: linear-gradient(145deg, #27ae60, #2ecc71);
+    border-bottom-color: #229954;
+}
+
+.slime-split-toggle-btn.toggle-off {
+    background: linear-gradient(145deg, #c0392b, #e74c3c);
+    border-bottom-color: #922b21;
+}

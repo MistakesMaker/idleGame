@@ -323,14 +323,16 @@ export function monsterDefeated(gameState, playerStats, currentMonster) {
         });
     }
 
-    // Check if a slime chain starts
+    // --- FIX: Check for Slime Split ---
+    // First, determine the player's total chance from all sources
     let initialSlimeSplitChance = 0;
     const equippedSword = gameState.equipment.sword;
     const swordBase = equippedSword ? ITEMS[equippedSword.baseId] : null;
     if (swordBase && swordBase.uniqueEffect === 'slimeSplit') initialSlimeSplitChance += 10;
     if (gameState.absorbedUniqueEffects && gameState.absorbedUniqueEffects['slimeSplit']) initialSlimeSplitChance += gameState.absorbedUniqueEffects['slimeSplit'] * 10;
 
-    if (initialSlimeSplitChance > 0 && Math.random() * 100 < initialSlimeSplitChance) {
+    // Now check if the effect is toggled on and if the roll succeeds
+    if (gameState.isSlimeSplitEnabled && initialSlimeSplitChance > 0 && Math.random() * 100 < initialSlimeSplitChance) {
         // A chain starts! Withhold gold and create the first slime.
         logMessages.push({ message: `The monster's essence coalesces into a <span class="legendary">Golden Slime!</span>`, class: '' });
         gameState.specialEncounter = {
@@ -352,7 +354,7 @@ export function monsterDefeated(gameState, playerStats, currentMonster) {
             if (nextSubZone) gameState.currentFightingLevel = nextLevel;
         }
     }
-
+    
     if (gameState.currentFightingLevel > gameState.maxLevel) {
         gameState.maxLevel = gameState.currentFightingLevel;
     }

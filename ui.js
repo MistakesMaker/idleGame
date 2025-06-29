@@ -428,6 +428,7 @@ export function updateUI(elements, gameState, playerStats, currentMonster, salva
     }
     
     const absorbedUniqueEffects = gameState.absorbedUniqueEffects || {};
+    // --- FIX START: Logic to render Slime Split with a toggle ---
     for (const [effectKey, count] of Object.entries(absorbedUniqueEffects)) {
         if (count > 0) {
             const effectData = UNIQUE_EFFECTS[effectKey];
@@ -435,12 +436,29 @@ export function updateUI(elements, gameState, playerStats, currentMonster, salva
                 const stackText = count > 1 ? ` (x${count})` : '';
                 const effectEl = document.createElement('div');
                 effectEl.className = 'prestige-stat-entry';
-                effectEl.innerHTML = `<i class="fas fa-magic"></i><div class="prestige-stat-text"><div>Absorbed Unique:</div><div>${effectData.name}${stackText}</div></div>`;
-                effectEl.title = effectData.description;
+
+                if (effectKey === 'slimeSplit') {
+                    const isEnabled = gameState.isSlimeSplitEnabled !== false; // Default to true if undefined
+                    const buttonText = isEnabled ? 'ON' : 'OFF';
+                    const buttonClass = isEnabled ? 'toggle-on' : 'toggle-off';
+                    effectEl.innerHTML = `
+                        <button class="slime-split-toggle-btn ${buttonClass}">${buttonText}</button>
+                        <div class="prestige-stat-text">
+                            <div>Absorbed Unique:</div>
+                            <div>${effectData.name}${stackText}</div>
+                        </div>
+                    `;
+                    effectEl.title = `${effectData.description} Click to toggle ON/OFF.`;
+                } else {
+                    effectEl.innerHTML = `<i class="fas fa-magic"></i><div class="prestige-stat-text"><div>Absorbed Unique:</div><div>${effectData.name}${stackText}</div></div>`;
+                    effectEl.title = effectData.description;
+                }
+                
                 absorbedStatsListEl.appendChild(effectEl);
             }
         }
     }
+    // --- FIX END ---
 
     // --- CORRECTED: Display Absorbed Amethyst Synergy ---
     const absorbedSynergies = gameState.absorbedSynergies || {};

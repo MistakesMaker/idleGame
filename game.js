@@ -164,6 +164,7 @@ document.addEventListener('DOMContentLoaded', () => {
             currentRunCompletedLevels: [],
             isFarming: true,
             isAutoProgressing: true,
+            isSlimeSplitEnabled: true, // --- NEW: Slime Split Toggle ---
             currentRealmIndex: 0,
             lastSaveTimestamp: null,
             permanentUpgrades: defaultPermUpgrades,
@@ -1058,6 +1059,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
         });
+
+        // --- NEW: Delegated listener for Prestige Bonuses (for Slime Split Toggle) ---
+        addTapListener(elements.absorbedStatsListEl, (e) => {
+            if (!(e.target instanceof Element)) return;
+            const toggleButton = e.target.closest('.slime-split-toggle-btn');
+            if (toggleButton) {
+                gameState.isSlimeSplitEnabled = !gameState.isSlimeSplitEnabled;
+                logMessage(elements.gameLogEl, `Slime Split effect is now <b class="legendary">${gameState.isSlimeSplitEnabled ? 'ON' : 'OFF'}</b>.`, '', isAutoScrollingLog);
+                updateAll();
+                autoSave();
+            }
+        });
+
 
         // Delegated listener for Gold Upgrade buttons
         addTapListener(document.getElementById('upgrades-area'), (e) => {
