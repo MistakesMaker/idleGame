@@ -141,12 +141,13 @@ export function generateItem(rarity, itemLevel, itemBase) {
 export function dropLoot(currentMonster, gameState, playerStats) {
     const monsterDef = currentMonster.data;
     if (!monsterDef || !monsterDef.lootTable || monsterDef.lootTable.length === 0) {
-        return { droppedItems: [], droppedGems: [], logMessages: [] };
+        return { droppedItems: [], droppedGems: [], logMessages: [], events: [] };
     }
 
     const logMessages = [];
     const droppedItems = [];
     const droppedGems = [];
+    const events = [];
     const totalWeight = monsterDef.lootTable.reduce((sum, entry) => sum + entry.weight, 0);
     let roll = Math.random() * totalWeight;
 
@@ -159,7 +160,7 @@ export function dropLoot(currentMonster, gameState, playerStats) {
         roll -= entry.weight;
     }
 
-    if (!itemBaseToDrop) return { droppedItems: [], droppedGems: [], logMessages: [] };
+    if (!itemBaseToDrop) return { droppedItems: [], droppedGems: [], logMessages: [], events };
 
     const isGem = itemBaseToDrop.tier >= 1;
 
@@ -174,7 +175,7 @@ export function dropLoot(currentMonster, gameState, playerStats) {
             const scrapGained = 100;
             gameState.scrap += scrapGained;
             logMessages.push({ message: `Auto-salvaged <span class="epic">${gem.name}</span> for ${scrapGained} scrap.`, class: '' });
-            return { droppedItems: [], droppedGems: [], logMessages };
+            return { droppedItems: [], droppedGems: [], logMessages, events };
         }
 
         if (!gameState.gems) gameState.gems = [];
@@ -193,9 +194,10 @@ export function dropLoot(currentMonster, gameState, playerStats) {
             gameState.gems.push(duplicateGem);
             droppedGems.push(duplicateGem); // Add the duplicate to the dropped list for UI feedback
             logMessages.push({ message: `Gem Find! You found a duplicate <span class="epic">${duplicateGem.name}</span>!`, class: '' });
+            events.push('gemFind');
         }
         
-        return { droppedItems, droppedGems, logMessages };
+        return { droppedItems, droppedGems, logMessages, events };
     }
     
     // It's a regular item
@@ -219,7 +221,7 @@ export function dropLoot(currentMonster, gameState, playerStats) {
         const scrapGained = Math.ceil(Math.pow(4, rarityIndex) * playerStats.scrapBonus);
         gameState.scrap += scrapGained;
         logMessages.push({ message: `Auto-salvaged <span class="${item.rarity}">${item.name}</span> for ${scrapGained} scrap.`, class: '' });
-        return { droppedItems: [], droppedGems: [], logMessages };
+        return { droppedItems: [], droppedGems: [], logMessages, events };
     }
 
     const spot = findEmptySpot(item.width, item.height, gameState.inventory);
@@ -233,7 +235,7 @@ export function dropLoot(currentMonster, gameState, playerStats) {
         logMessages.push({ message: `The ${currentMonster.name} dropped an item, but your inventory is full!`, class: 'rare' });
     }
 
-    return { droppedItems, droppedGems, logMessages };
+    return { droppedItems, droppedGems, logMessages, events };
 }
 
 /**
@@ -267,7 +269,7 @@ export function monsterDefeated(gameState, playerStats, currentMonster) {
     const xpPower = 1.2;
     let xpGained = baseXp * Math.pow(level, xpPower);
 
-    let lootResult = { droppedItems: [], droppedGems: [], logMessages: [] };
+    let lootResult = { droppedItems: [], droppedGems: [], logMessages: [], events: [] };
 
     if (currentMonster.data.isSpecial && currentMonster.data.id === 'GOLDEN_SLIME') {
         gameState.goldenSlimeStreak = (gameState.goldenSlimeStreak || 0) + 1;
@@ -375,7 +377,7 @@ export function monsterDefeated(gameState, playerStats, currentMonster) {
         gameState.maxLevel = gameState.currentFightingLevel;
     }
     
-    return { goldGained, xpGained, droppedItems: lootResult.droppedItems, droppedGems: lootResult.droppedGems, logMessages };
+    return { goldGained, xpGained, droppedItems: lootResult.droppedItems, droppedGems: lootResult.droppedGems, logMessages, events: lootResult.events };
 }
 
 /**

@@ -1062,7 +1062,7 @@ export function showInfoPopup(popupContainerEl, text, options = {}) {
     popup.className = 'info-popup';
     popup.style.color = color;
     popup.style.fontSize = fontSize;
-    popup.style.left = '50%';
+    popup.style.left = '-20%';
     popup.style.top = '30%';
     popup.style.transform = 'translateX(-50%)';
     

@@ -297,6 +297,10 @@ document.addEventListener('DOMContentLoaded', () => {
         result.logMessages.forEach(msg => {
             logMessage(elements.gameLogEl, msg.message, msg.class, isAutoScrollingLog);
         });
+            // Check for the new gem find event
+    if (result.events && result.events.includes('gemFind')) {
+        ui.showInfoPopup(elements.popupContainerEl, 'Double Gem!');
+    }
 
         ui.showGoldPopup(elements.popupContainerEl, result.goldGained);
         
