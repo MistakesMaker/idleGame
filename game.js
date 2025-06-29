@@ -688,7 +688,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // Populate Stat/Synergy Select based on Tier
         const populateOptions = (tier) => {
-            bulkCombineStatSelect.innerHTML = '<option value="">Select Stat/Synergy</option>';
+            bulkCombineStatSelect.innerHTML = '<option value="">Select Stat</option>';
             bulkCombineStatSelect.disabled = true;
             if (tier && availableOptions.has(tier)) {
                 bulkCombineStatSelect.disabled = false;
@@ -697,7 +697,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     option.value = key;
 
                     if (key.startsWith('synergy_')) {
-                        option.textContent = "Synergy: DPS to Click Dmg";
+                        option.textContent = "DPS to Click Dmg";
                     } else {
                         const statInfo = Object.values(STATS).find(s => s.key === key);
                         option.textContent = statInfo ? statInfo.name : key;
