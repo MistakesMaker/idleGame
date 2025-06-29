@@ -14,68 +14,70 @@ export const rarities = ['common', 'uncommon', 'rare', 'epic', 'legendary'];
 
 /**
  * Attaches a 'tap' event listener that works for both click and touch events.
- * This is crucial for mobile compatibility, especially on Android.
- * It handles scroll detection to prevent firing on scroll, and prevents 'ghost clicks'.
+ * This robust version avoids preventDefault() and stopPropagation() to maximize compatibility,
+ * especially with mouse input on touch-capable OSes like Android.
+ * It uses a flag to prevent the 'ghost click' that follows a touch event.
  * @param {EventTarget} element The DOM element to attach the listener to.
  * @param {function(Event): void} handler The event handler function.
  */
 function addTapListener(element, handler) {
     let startX, startY;
     let touchMoved = false;
+    // This flag is the key. We'll set it on touchend to signal that a click event
+    // which follows shortly after is a "ghost" and should be ignored.
+    let touchEndedRecently = false;
 
     const handleTouchStart = (e) => {
-        // We only care about the first touch to avoid issues with multi-touch gestures.
         if (e.touches.length > 1) {
-            touchMoved = true; // Treat multi-touch as a reason to not fire the tap.
+            touchMoved = true;
             return;
         }
         const touch = e.touches[0];
         startX = touch.clientX;
         startY = touch.clientY;
-        touchMoved = false; // Reset on new touch
+        touchMoved = false;
     };
 
     const handleTouchMove = (e) => {
-        if (touchMoved) return; // No need to check again
-        if (e.touches.length === 0) return; // Handle edge cases
-        // If finger moves more than 10px, it's a scroll.
+        if (touchMoved) return;
+        if (e.touches.length === 0) return;
         if (Math.abs(e.touches[0].clientX - startX) > 10 || Math.abs(e.touches[0].clientY - startY) > 10) {
             touchMoved = true;
         }
     };
     
     const handleTouchEnd = (e) => {
-        // Only trigger handler if it was a tap, not a scroll.
         if (!touchMoved) {
-            // This was a tap. We immediately trigger the action.
-            // We must prevent the default action, which is to fire a
-            // synthetic click event later. This is the primary mechanism
-            // for preventing "ghost clicks".
-            e.preventDefault();
-            handler(e);
+            // This was a valid touch tap.
+            handler(e); // Execute the action immediately for a responsive feel.
+
+            // Set the flag and a short timeout to clear it.
+            // Any 'click' event that fires within this window is considered a ghost.
+            touchEndedRecently = true;
+            setTimeout(() => {
+                touchEndedRecently = false;
+            }, 300); // 300ms is a safe and standard window for this.
         }
     };
 
     const handleClick = (e) => {
-        // If e.defaultPrevented is true, it means the touchend handler already
-        // ran and called e.preventDefault(). We must not run the handler again.
-        if (e.defaultPrevented) {
+        // If the flag is set, it means touchend just handled this.
+        // We do nothing. This is for finger taps on a touch screen.
+        if (touchEndedRecently) {
             return;
         }
         
-        // This is a genuine mouse click that was not handled by touch.
+        // If the flag is not set, this is a genuine mouse click.
+        // We execute the handler. This is for PC clicks OR mouse clicks on Android.
         handler(e);
     };
 
-    // Touch listeners are passive for good scrolling performance.
+    // All listeners can be passive because we are not calling preventDefault.
     element.addEventListener('touchstart', handleTouchStart, { passive: true });
     element.addEventListener('touchmove', handleTouchMove, { passive: true });
+    element.addEventListener('touchend', handleTouchEnd, { passive: true });
     
-    // touchend listener must NOT be passive so that it can call preventDefault().
-    element.addEventListener('touchend', handleTouchEnd, { passive: false });
-    
-    // The click handler now correctly distinguishes between genuine mouse clicks
-    // and synthetic clicks from touch events.
+    // The click handler intelligently filters out ghost clicks.
     element.addEventListener('click', handleClick);
 }
 
@@ -1030,23 +1032,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Delegated listener for Attribute buttons
         addTapListener(document.getElementById('attributes-area'), (e) => {
-            // --- START DIAGNOSTIC LOGS ---
-            console.log(`[Attributes Area] Event fired. Type: ${e.type}`);
-            console.log('[Attributes Area] Target:', e.target);
-            console.log('[Attributes Area] Current Target:', e.currentTarget);
-            // --- END DIAGNOSTIC LOGS ---
-
             if (!(e.target instanceof Element)) return;
             const button = e.target.closest('.attribute-btn');
-
-            // --- START DIAGNOSTIC LOGS ---
-            if (button) {
-                console.log('[Attributes Area] Found attribute button via .closest()');
-            } else {
-                console.log('[Attributes Area] Did NOT find an attribute button from the target.');
-            }
-            // --- END DIAGNOSTIC LOGS ---
-
             // Check if it's a button, and if it's disabled.
             if (button instanceof HTMLButtonElement && !button.disabled) {
                 const attributeRow = button.closest('.attribute-row');
@@ -1062,23 +1049,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Delegated listener for Gold Upgrade buttons
         addTapListener(document.getElementById('upgrades-area'), (e) => {
-            // --- START DIAGNOSTIC LOGS ---
-            console.log(`[Upgrades Area] Event fired. Type: ${e.type}`);
-            console.log('[Upgrades Area] Target:', e.target);
-            console.log('[Upgrades Area] Current Target:', e.currentTarget);
-            // --- END DIAGNOSTIC LOGS ---
-
             if (!(e.target instanceof Element)) return;
             const upgradeButton = e.target.closest('.upgrade-button');
-
-            // --- START DIAGNOSTIC LOGS ---
-            if (upgradeButton) {
-                console.log('[Upgrades Area] Found upgrade button:', upgradeButton.id);
-            } else {
-                console.log('[Upgrades Area] Did NOT find an upgrade button from the target.');
-            }
-            // --- END DIAGNOSTIC LOGS ---
-
             if (upgradeButton instanceof HTMLElement && !upgradeButton.classList.contains('disabled')) {
                 let upgradeType;
                 if (upgradeButton.id === 'upgrade-click-damage') {
