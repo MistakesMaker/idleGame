@@ -735,23 +735,36 @@ document.addEventListener('DOMContentLoaded', () => {
         const timeToKill = monsterHp / playerStats.totalDps;
         const killsPerSecond = 1 / timeToKill;
 
-        const tier = Math.floor((level - 1) / 10);
-        const difficultyResetFactor = 4;
-        const effectiveLevel = level - (tier * difficultyResetFactor);
-        const goldExponent = 1.17;
-        const baseGold = 15;
-        let goldPerKill = Math.ceil(baseGold * Math.pow(goldExponent, effectiveLevel) * (1 + (playerStats.bonusGold / 100)));
-        let xpPerKill = level * 5;
+        // --- FIX START: Corrected Offline Reward Calculation ---
+        // This logic is now a direct copy from `monsterDefeated` in `game_logic.js` for consistency.
 
+        // Tier and effective level calculation
+        const tier = Math.floor((level - 1) / 10);
+        const difficultyResetFactor = 1;
+        const effectiveLevel = level - (tier * difficultyResetFactor);
+
+        // Gold calculation
+        const baseGold = 10;
+        const goldFactor = 3;
+        const goldPower = 2.0;
+        let goldPerKill = baseGold + (goldFactor * Math.pow(effectiveLevel, goldPower));
+        goldPerKill = Math.ceil(goldPerKill * (1 + (playerStats.bonusGold / 100)));
+
+        // XP Calculation
+        const baseXp = 20;
+        const xpPower = 1.2;
+        let xpPerKill = baseXp * Math.pow(level, xpPower);
+        // --- FIX END ---
+        
         if (isBigBossLevel(level)) {
-            xpPerKill *= 5;
-            goldPerKill *= 5;
-        } else if (isBossLevel(level)) {
             xpPerKill *= 3;
             goldPerKill *= 3;
-        } else if(isMiniBossLevel(level)) {
+        } else if (isBossLevel(level)) {
             xpPerKill *= 2;
             goldPerKill *= 2;
+        } else if(isMiniBossLevel(level)) {
+            xpPerKill *= 1.5;
+            goldPerKill *= 1.5;
         }
 
         const goldPerSecond = goldPerKill * killsPerSecond;
@@ -1389,11 +1402,9 @@ document.addEventListener('DOMContentLoaded', () => {
             filterKeepRarity,
             filterKeepSockets,
             filterKeepStatsContainer,
-            salvageFilterControls
+            salvageFilterControls,
+            enableGemSalvage // NEW
         } = ui.initSalvageFilterDOMElements();
-
-        // NEW: Get the gem salvage checkbox
-        const enableGemSalvage = document.getElementById('enable-gem-salvage');
     
         const updateFilter = () => {
             gameState.salvageFilter.enabled = (/** @type {HTMLInputElement} */ (enableSalvageFilter)).checked;
