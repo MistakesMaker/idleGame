@@ -326,7 +326,7 @@ export function monsterDefeated(gameState, playerStats, currentMonster) {
         }
     }
     
-    // --- FIX START: Simplified Slime Split Logic ---
+    // --- FIX START: Restored Cascading Slime Split Logic ---
     let initialSlimeSplitChance = 0;
     
     const equippedSword = gameState.equipment.sword;
@@ -339,19 +339,34 @@ export function monsterDefeated(gameState, playerStats, currentMonster) {
         initialSlimeSplitChance += gameState.absorbedUniqueEffects['slimeSplit'] * 10;
     }
 
-    // Check if a slime will be spawned OR if we need to auto-progress
-    const shouldSpawnSlime = initialSlimeSplitChance > 0 && (Math.random() * 100) < initialSlimeSplitChance;
+    if (initialSlimeSplitChance > 0) {
+        let slimeCounter = 0;
+        let currentSplitChance = Math.min(100, initialSlimeSplitChance);
 
-    if (shouldSpawnSlime) {
-        // A single check succeeded. Spawn one slime. No loops, no counters.
-        gameState.specialEncounter = {
-            type: 'GOLDEN_SLIME',
-            hp: previousMonsterMaxHp * 1.5, // A tougher slime
-            goldReward: goldGained * 5,    // 5x the gold of the original monster
-        };
-        // No special log message is needed here. The appearance of the slime is the notification.
+        while (Math.random() * 100 < currentSplitChance) {
+            slimeCounter++;
+            currentSplitChance *= 0.9; // Diminishing returns for the next check
+        }
+
+        if (slimeCounter > 0) {
+            const mutationText = slimeCounter === 1 ? "once" : `${slimeCounter} times`;
+            logMessages.push({ message: `The monster's essence mutates <span class="legendary">${mutationText}</span>, creating a powerful Golden Slime!`, class: '' });
+            
+            gameState.specialEncounter = {
+                type: 'GOLDEN_SLIME',
+                hp: (previousMonsterMaxHp / 2) * Math.pow(1.5, slimeCounter),
+                goldReward: goldGained * Math.pow(5, slimeCounter), 
+            };
+        } else {
+            // No slime spawned, check for auto-progression.
+            if (gameState.isAutoProgressing) {
+                const nextLevel = level + 1;
+                const nextSubZone = findSubZoneByLevel(nextLevel);
+                if (nextSubZone) gameState.currentFightingLevel = nextLevel;
+            }
+        }
     } else {
-        // No slime spawned, so check for auto-progression.
+        // No slime chance, check for auto-progression.
         if (gameState.isAutoProgressing) {
             const nextLevel = level + 1;
             const nextSubZone = findSubZoneByLevel(nextLevel);
