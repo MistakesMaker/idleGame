@@ -1,5 +1,3 @@
-
-/* global io */
 import { REALMS } from './data/realms.js';
 import { MONSTERS } from './data/monsters.js';
 import { ITEMS } from './data/items.js';
@@ -13,58 +11,6 @@ import * as logic from './game_logic.js';
 export const rarities = ['common', 'uncommon', 'rare', 'epic', 'legendary'];
 
 /** @typedef {Object<string, HTMLElement|HTMLButtonElement|HTMLInputElement|HTMLImageElement|HTMLSelectElement>} DOMElements */
-
-/**
- * Attaches a 'tap' event listener that works for both click and touch events.
- * This is crucial for mobile compatibility, especially on Android.
- * It handles scroll detection to prevent firing on scroll, and prevents 'ghost clicks'.
- * @param {EventTarget} element The DOM element to attach the listener to.
- * @param {function(Event): void} handler The event handler function.
- */
-function addTapListener(element, handler) {
-    let startX, startY;
-    let touchMoved = false;
-
-    const handleTouchStart = (e) => {
-        // We only care about the first touch to avoid issues with multi-touch gestures.
-        if (e.touches.length > 1) {
-            touchMoved = true; // Treat multi-touch as a reason to not fire the tap.
-            return;
-        }
-        const touch = e.touches[0];
-        startX = touch.clientX;
-        startY = touch.clientY;
-        touchMoved = false; // Reset on new touch
-    };
-
-    const handleTouchMove = (e) => {
-        if (touchMoved) return; // No need to check again
-        if (e.touches.length === 0) return; // Handle edge cases
-        // If finger moves more than 10px, it's a scroll.
-        if (Math.abs(e.touches[0].clientX - startX) > 10 || Math.abs(e.touches[0].clientY - startY) > 10) {
-            touchMoved = true;
-        }
-    };
-    
-    const handleTouchEnd = (e) => {
-        // Only trigger handler if it was a tap, not a scroll.
-        if (!touchMoved) {
-            // This is KEY to prevent the 'click' event from firing after the touchend.
-            e.preventDefault(); 
-            handler(e);
-        }
-    };
-
-    // Note: 'passive: true' is not used on 'touchend' because we need to call preventDefault().
-    element.addEventListener('touchstart', handleTouchStart, { passive: true });
-    element.addEventListener('touchmove', handleTouchMove, { passive: true });
-    element.addEventListener('touchend', handleTouchEnd);
-
-    // This now serves as the handler for mouse-based clicks on desktop AND Android (if a mouse is connected).
-    // The e.preventDefault() in touchend should stop this from firing on a screen tap.
-    element.addEventListener('click', handler);
-}
-
 
 document.addEventListener('DOMContentLoaded', () => {
 
@@ -282,9 +228,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
         ui.showGoldPopup(elements.popupContainerEl, result.goldGained);
         
-        if (result.droppedItem) {
-            ui.showItemDropAnimation(elements.popupContainerEl, result.droppedItem);
+        // --- FIX START: Animate all dropped items and gems ---
+        const allDrops = [...(result.droppedItems || []), ...(result.droppedGems || [])];
+        if (allDrops.length > 0) {
+            allDrops.forEach((drop, index) => {
+                ui.showItemDropAnimation(elements.popupContainerEl, drop, index);
+            });
         }
+        // --- FIX END ---
 
         const levelUpLogs = player.gainXP(gameState, result.xpGained);
         levelUpLogs.forEach(msg => {
@@ -499,9 +450,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const zone = realm.zones[zoneId];
                 const isUnlocked = gameState.maxLevel >= findFirstLevelOfZone(zone);
                 const node = ui.createMapNode(zone.name, zone.icon, zone.coords, isUnlocked, false, gameState.currentFightingLevel, zone.subZones[Object.keys(zone.subZones)[0]].levelRange);
-                if (isUnlocked) {
-                    addTapListener(node, () => { currentMap = zoneId; renderMap(); });
-                }
+                if (isUnlocked) node.onclick = () => { currentMap = zoneId; renderMap(); };
                 elements.mapContainerEl.appendChild(node);
             }
         } else {
@@ -577,9 +526,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const isCompleted = gameState.completedLevels.includes(subZone.levelRange[1]);
                 const icon = 'images/icons/sword.png';
                 const node = ui.createMapNode(subZone.name, icon, subZone.coords, isUnlocked, isCompleted, gameState.currentFightingLevel, subZone.levelRange, subZone.isBoss);
-                if (isUnlocked) {
-                    addTapListener(node, () => showSubZoneModal(subZone));
-                }
+                if (isUnlocked) node.onclick = () => showSubZoneModal(subZone);
                 elements.mapContainerEl.appendChild(node);
             }
         }
@@ -592,16 +539,14 @@ document.addEventListener('DOMContentLoaded', () => {
             tab.textContent = realm.name;
             tab.disabled = !isUnlocked;
             if (index === gameState.currentRealmIndex) tab.classList.add('active');
-            
-            addTapListener(tab, () => {
-                if (tab.disabled) return;
+            tab.onclick = () => {
                 gameState.currentRealmIndex = index;
                 currentMap = 'world';
                 renderMap();
                 renderRealmTabs();
                 startNewMonster(); 
                 autoSave();
-            });
+            };
             elements.realmTabsContainerEl.appendChild(tab);
         });
     }
@@ -721,7 +666,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const bossLevel = startLevel;
             const fightBossButton = document.createElement('button');
             fightBossButton.textContent = gameState.completedLevels.includes(bossLevel) ? `Re-fight Boss (Lvl ${bossLevel})` : `Fight Boss (Lvl ${bossLevel})`;
-            addTapListener(fightBossButton, () => startCombat(bossLevel, false));
+            fightBossButton.onclick = () => startCombat(bossLevel, false);
             elements.modalBodyEl.appendChild(fightBossButton);
 
         } else {
@@ -733,13 +678,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const continueButton = document.createElement('button');
             continueButton.textContent = isNewZone ? `Start at Lvl ${startLevel}` : `Continue at Lvl ${levelToStart}`;
-            addTapListener(continueButton, () => startCombat(levelToStart, true));
+            continueButton.onclick = () => startCombat(levelToStart, true);
             elements.modalBodyEl.appendChild(continueButton);
 
             if (!isNewZone && highestCompleted < finalLevel) {
                 const restartButton = document.createElement('button');
                 restartButton.textContent = `Restart at Lvl ${startLevel}`;
-                addTapListener(restartButton, () => startCombat(startLevel, true));
+                restartButton.onclick = () => startCombat(startLevel, true);
                 elements.modalBodyEl.appendChild(restartButton);
             }
         }
@@ -946,10 +891,9 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         
         // --- START OF CLICK FIX: ROBUST CLICK HANDLING ---
-        // Replacing all 'click' listeners with the 'addTapListener' helper
 
         // Delegated listener for Attribute buttons
-        addTapListener(document.getElementById('attributes-area'), (e) => {
+        document.getElementById('attributes-area').addEventListener('click', (e) => {
             if (!(e.target instanceof Element)) return;
             const button = e.target.closest('.attribute-btn');
             // Check if it's a button, and if it's disabled.
@@ -966,7 +910,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         // Delegated listener for Gold Upgrade buttons
-        addTapListener(document.getElementById('upgrades-area'), (e) => {
+        document.getElementById('upgrades-area').addEventListener('click', (e) => {
             if (!(e.target instanceof Element)) return;
             const upgradeButton = e.target.closest('.upgrade-button');
             if (upgradeButton instanceof HTMLElement && !upgradeButton.classList.contains('disabled')) {
@@ -997,10 +941,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 autoSave();
             }
         });
-        
-        addTapListener(elements.monsterImageEl, clickMonster);
 
-        addTapListener(document.getElementById('buy-loot-crate-btn'), () => {
+        // --- END OF CLICK FIX ---
+        
+        elements.monsterImageEl.addEventListener('click', clickMonster);
+        document.getElementById('buy-loot-crate-btn').addEventListener('click', () => {
             const result = player.buyLootCrate(gameState, logic.generateItem);
             logMessage(elements.gameLogEl, result.message, '', isAutoScrollingLog);
             if (result.success && result.item) {
@@ -1009,8 +954,7 @@ document.addEventListener('DOMContentLoaded', () => {
             updateAll();
             autoSave();
         });
-
-        addTapListener(document.getElementById('salvage-mode-btn'), () => {
+        document.getElementById('salvage-mode-btn').addEventListener('click', () => {
             salvageMode.active = !salvageMode.active;
             const salvageBtn = document.getElementById('salvage-mode-btn');
             const confirmBtn = document.getElementById('confirm-salvage-btn');
@@ -1041,16 +985,14 @@ document.addEventListener('DOMContentLoaded', () => {
             if (salvageCountEl) salvageCountEl.textContent = '0';
             updateAll();
         });
-
-        addTapListener(document.getElementById('select-all-salvage-btn'), () => {
+        document.getElementById('select-all-salvage-btn').addEventListener('click', () => {
             const equippedIds = player.getAllEquippedItemIds(gameState);
             salvageMode.selections = player.getAllItems(gameState).filter(item => !item.locked && !equippedIds.has(item.id));
             const salvageCountEl = document.getElementById('salvage-count');
             if (salvageCountEl) salvageCountEl.textContent = salvageMode.selections.length.toString();
             updateAll();
         });
-
-        addTapListener(document.getElementById('confirm-salvage-btn'), () => {
+        document.getElementById('confirm-salvage-btn').addEventListener('click', () => {
             const result = player.salvageSelectedItems(gameState, salvageMode, playerStats);
             if (result.count > 0) {
                 logMessage(elements.gameLogEl, `Salvaged ${result.count} items for a total of ${formatNumber(result.scrapGained)} Scrap.`, 'uncommon', isAutoScrollingLog);
@@ -1079,8 +1021,7 @@ document.addEventListener('DOMContentLoaded', () => {
             updateAll();
             autoSave();
         });
-
-        addTapListener(document.getElementById('salvage-by-rarity-controls'), (e) => {
+        document.getElementById('salvage-by-rarity-controls').addEventListener('click', (e) => {
             if (!(e.target instanceof HTMLElement) || !e.target.dataset.rarity) return;
             const rarity = e.target.dataset.rarity;
             const result = player.salvageByRarity(gameState, rarity, playerStats);
@@ -1195,10 +1136,10 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         };
 
-        addTapListener(elements.inventorySlotsEl, gridClickHandler);
-        addTapListener(elements.gemSlotsEl, gridClickHandler);
+        elements.inventorySlotsEl.addEventListener('click', gridClickHandler);
+        elements.gemSlotsEl.addEventListener('click', gridClickHandler);
         
-        addTapListener(document.getElementById('equipment-paperdoll'), (event) => {
+        document.getElementById('equipment-paperdoll').addEventListener('click', (event) => {
             if (!(event.target instanceof Element)) return;
             const slotElement = event.target.closest('.equipment-slot');
             if (!(slotElement instanceof HTMLElement)) return;
@@ -1229,7 +1170,7 @@ document.addEventListener('DOMContentLoaded', () => {
             autoSave();
         });
 
-        addTapListener(elements.gemCraftingSlotsContainer, (e) => {
+        elements.gemCraftingSlotsContainer.addEventListener('click', (e) => {
             if (!(e.target instanceof HTMLElement)) return;
             const slot = e.target.closest('.gem-crafting-slot');
             if (!(slot instanceof HTMLElement)) return;
@@ -1260,7 +1201,7 @@ document.addEventListener('DOMContentLoaded', () => {
             updateAll();
         });
 
-        addTapListener(elements.gemCraftBtn, () => {
+        elements.gemCraftBtn.addEventListener('click', () => {
             if (craftingGems.length !== 2) return;
             
             const result = player.combineGems(gameState, craftingGems);
@@ -1272,23 +1213,6 @@ document.addEventListener('DOMContentLoaded', () => {
             autoSave();
         });
 
-        addTapListener(elements.bulkCombineBtn, () => {
-            if (!bulkCombineSelection.tier || !bulkCombineSelection.statKey) {
-                logMessage(elements.gameLogEl, "Please select a tier and a stat to bulk combine.", "rare", isAutoScrollingLog);
-                return;
-            }
-            const result = player.bulkCombineGems(gameState, bulkCombineSelection.tier, bulkCombineSelection.statKey, bulkCombineDeselectedIds);
-            logMessage(elements.gameLogEl, result.message, result.success ? 'uncommon' : 'rare', isAutoScrollingLog);
-            
-            bulkCombineDeselectedIds.clear();
-            if (result.success) {
-                recalculateStats();
-                populateBulkCombineControls(); // Repopulate selectors
-                updateAll();
-                autoSave();
-            }
-        });
-        
         elements.bulkCombineTierSelect.addEventListener('change', () => {
             const selectedTier = parseInt((/** @type {HTMLSelectElement} */ (elements.bulkCombineTierSelect)).value, 10);
             const previousStatKey = bulkCombineSelection.statKey;
@@ -1305,7 +1229,24 @@ document.addEventListener('DOMContentLoaded', () => {
             updateAll();
         });
 
-        addTapListener(elements.ringSelectionSlot1, () => {
+        elements.bulkCombineBtn.addEventListener('click', () => {
+            if (!bulkCombineSelection.tier || !bulkCombineSelection.statKey) {
+                logMessage(elements.gameLogEl, "Please select a tier and a stat to bulk combine.", "rare", isAutoScrollingLog);
+                return;
+            }
+            const result = player.bulkCombineGems(gameState, bulkCombineSelection.tier, bulkCombineSelection.statKey, bulkCombineDeselectedIds);
+            logMessage(elements.gameLogEl, result.message, result.success ? 'uncommon' : 'rare', isAutoScrollingLog);
+            
+            bulkCombineDeselectedIds.clear();
+            if (result.success) {
+                recalculateStats();
+                populateBulkCombineControls(); // Repopulate selectors
+                updateAll();
+                autoSave();
+            }
+        });
+
+        elements.ringSelectionSlot1.addEventListener('click', () => {
             if (pendingRingEquip) {
                 player.equipRing(gameState, pendingRingEquip, 'ring1');
                 recalculateStats();
@@ -1314,7 +1255,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 hideRingSelectionModal();
             }
         });
-        addTapListener(elements.ringSelectionSlot2, () => {
+        elements.ringSelectionSlot2.addEventListener('click', () => {
             if (pendingRingEquip) {
                 player.equipRing(gameState, pendingRingEquip, 'ring2');
                 recalculateStats();
@@ -1323,8 +1264,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 hideRingSelectionModal();
             }
         });
-        addTapListener(elements.ringSelectionCancelBtn, hideRingSelectionModal);
-        addTapListener(elements.ringSelectionModalBackdrop, (e) => {
+        elements.ringSelectionCancelBtn.addEventListener('click', hideRingSelectionModal);
+        elements.ringSelectionModalBackdrop.addEventListener('click', (e) => {
             if (e.target === elements.ringSelectionModalBackdrop) {
                 hideRingSelectionModal();
             }
@@ -1345,17 +1286,17 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         elements.ringSelectionSlot2.addEventListener('mouseout', onGridMouseOut);
 
-        addTapListener(elements.offlineProgressCloseBtn, () => {
+
+        elements.offlineProgressCloseBtn.addEventListener('click', () => {
             elements.offlineProgressModalBackdrop.classList.add('hidden');
         });
 
-        addTapListener(document.getElementById('reset-game-btn'), resetGame);
-        addTapListener(elements.backToWorldMapBtnEl, () => { currentMap = 'world'; renderMap(); });
-        addTapListener(elements.modalCloseBtnEl, () => elements.modalBackdropEl.classList.add('hidden'));
-        addTapListener(elements.modalBackdropEl, (e) => {
+        document.getElementById('reset-game-btn').addEventListener('click', resetGame);
+        elements.backToWorldMapBtnEl.addEventListener('click', () => { currentMap = 'world'; renderMap(); });
+        elements.modalCloseBtnEl.addEventListener('click', () => elements.modalBackdropEl.classList.add('hidden'));
+        elements.modalBackdropEl.addEventListener('click', (e) => {
             if (e.target === elements.modalBackdropEl) elements.modalBackdropEl.classList.add('hidden');
         });
-
         elements.autoProgressCheckboxEl.addEventListener('change', () => {
             gameState.isAutoProgressing = (/** @type {HTMLInputElement} */ (elements.autoProgressCheckboxEl)).checked;
             logMessage(elements.gameLogEl, `Auto-progress ${gameState.isAutoProgressing ? 'enabled' : 'disabled'}.`, '', isAutoScrollingLog);
@@ -1363,45 +1304,22 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         
         document.querySelectorAll('.preset-btn').forEach((btn, index) => {
-            // Tap to select preset
-            addTapListener(btn, () => {
+            btn.addEventListener('click', () => {
                 player.activatePreset(gameState, index);
                 logMessage(elements.gameLogEl, `Activated preset: <b>${gameState.presets[index].name}</b>`, '', isAutoScrollingLog);
                 recalculateStats();
                 updateAll();
                 autoSave();
             });
-
-            // Long press / dblclick to rename
-            let pressTimer;
-            btn.addEventListener('touchstart', () => {
-                pressTimer = window.setTimeout(() => {
-                    const currentName = gameState.presets[index].name;
-                    const newName = prompt("Enter a new name for the preset:", currentName);
-                    if (newName && newName.trim() !== "") {
-                        gameState.presets[index].name = newName.trim();
-                        logMessage(elements.gameLogEl, `Renamed preset to: <b>${newName.trim()}</b>`, '', isAutoScrollingLog);
-                        updateAll();
-                        autoSave();
-                    }
-                }, 1000); // 1-second long press
-            }, { passive: true });
-
-            const clearPressTimer = () => clearTimeout(pressTimer);
-            btn.addEventListener('touchend', clearPressTimer);
-            btn.addEventListener('touchmove', clearPressTimer);
-            btn.addEventListener('touchcancel', clearPressTimer);
-
-            // Fallback for desktop
             btn.addEventListener('dblclick', () => {
-                const currentName = gameState.presets[index].name;
-                const newName = prompt("Enter a new name for the preset:", currentName);
-                if (newName && newName.trim() !== "") {
-                    gameState.presets[index].name = newName.trim();
-                    logMessage(elements.gameLogEl, `Renamed preset to: <b>${newName.trim()}</b>`, '', isAutoScrollingLog);
-                    updateAll();
-                    autoSave();
-                }
+                 const currentName = gameState.presets[index].name;
+                 const newName = prompt("Enter a new name for the preset:", currentName);
+                 if (newName && newName.trim() !== "") {
+                     gameState.presets[index].name = newName.trim();
+                     logMessage(elements.gameLogEl, `Renamed preset to: <b>${newName.trim()}</b>`, '', isAutoScrollingLog);
+                     updateAll();
+                     autoSave();
+                 }
             });
         });
         
@@ -1413,8 +1331,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const viewId = tab.dataset.view;
                 if (!viewId) return;
 
-                addTapListener(tab, () => {
-                    if (tab.classList.contains('active')) return;
+                tab.addEventListener('click', () => {
                     if (elements.prestigeView.classList.contains('active')) {
                         logMessage(elements.gameLogEl, "You must confirm or cancel prestige first.", "rare", isAutoScrollingLog);
                         return;
@@ -1438,7 +1355,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
 
-        addTapListener(document.getElementById('toggle-loot-log-btn'), (e) => {
+        document.getElementById('toggle-loot-log-btn').addEventListener('click', (e) => {
             if (!(e.currentTarget instanceof HTMLButtonElement)) return;
 
             const btn = e.currentTarget;
@@ -1458,7 +1375,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
         
-        addTapListener(elements.forgeInventorySlotsEl, (e) => {
+        elements.forgeInventorySlotsEl.addEventListener('click', (e) => {
             if (!(e.target instanceof Element)) return;
             const wrapper = e.target.closest('.item-wrapper');
             if (!(wrapper instanceof HTMLElement)) return;
@@ -1475,7 +1392,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-        addTapListener(elements.forgeRerollBtn, () => {
+        elements.forgeRerollBtn.addEventListener('click', () => {
             if (!selectedItemForForge) {
                 logMessage(elements.gameLogEl, "No item selected to reroll.", 'rare', isAutoScrollingLog);
                 return;
@@ -1491,7 +1408,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-        addTapListener(elements.permanentUpgradesContainerEl, (e) => {
+        elements.permanentUpgradesContainerEl.addEventListener('click', (e) => {
             if (!(e.target instanceof Element)) return;
             const buyButton = (e.target).closest('.buy-permanent-upgrade-btn');
             if (!buyButton || !(buyButton instanceof HTMLButtonElement) || buyButton.disabled) return;
@@ -1555,7 +1472,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     
-        addTapListener(scrollBtn, () => {
+        scrollBtn.addEventListener('click', () => {
             isAutoScrollingLog = true;
             logEl.scrollTop = logEl.scrollHeight;
             scrollBtn.classList.add('hidden');
@@ -1601,17 +1518,17 @@ document.addEventListener('DOMContentLoaded', () => {
         const closeBtn = document.getElementById('salvage-filter-close-btn');
 
         if (salvageFilterBtn && modalBackdrop) {
-            addTapListener(salvageFilterBtn, () => {
+            salvageFilterBtn.addEventListener('click', () => {
                 modalBackdrop.classList.remove('hidden');
             });
         }
         if (closeBtn && modalBackdrop) {
-            addTapListener(closeBtn, () => {
+            closeBtn.addEventListener('click', () => {
                 modalBackdrop.classList.add('hidden');
             });
         }
         if (modalBackdrop) {
-            addTapListener(modalBackdrop, (e) => {
+            modalBackdrop.addEventListener('click', (e) => {
                 if (e.target === modalBackdrop) {
                     modalBackdrop.classList.add('hidden');
                 }
@@ -1787,7 +1704,7 @@ document.addEventListener('DOMContentLoaded', () => {
         raidPanel = document.getElementById('raid-panel');
         const attackButton = document.getElementById('raid-attack-button');
         if (attackButton) {
-            addTapListener(attackButton, () => {
+            attackButton.addEventListener('click', () => {
                 socket.emit('attackRaidBoss', { damage: playerStats.totalClickDamage });
             });
         }
@@ -1831,7 +1748,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         };
 
-        addTapListener(raidBtn, () => {
+        raidBtn.addEventListener('click', () => {
             if (raidPanel) {
                 destroyRaidPanel();
                 socket.disconnect();
@@ -1854,14 +1771,14 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function setupPrestigeListeners() {
-        addTapListener(elements.prestigeButton, () => {
+        elements.prestigeButton.addEventListener('click', () => {
             document.querySelector('.actions-panel').classList.add('hidden');
             document.querySelector('.upgrades-panel').classList.add('hidden');
             ui.switchView(elements, 'prestige-view');
             updateAll();
         });
     
-        addTapListener(elements.cancelPrestigeButton, () => {
+        elements.cancelPrestigeButton.addEventListener('click', () => {
             document.querySelector('.actions-panel').classList.remove('hidden');
             document.querySelector('.upgrades-panel').classList.remove('hidden');
             ui.switchView(elements, 'map-view');
@@ -1869,7 +1786,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     
         // Unequip from paperdoll
-        addTapListener(elements.prestigeEquipmentPaperdoll, (event) => {
+        elements.prestigeEquipmentPaperdoll.addEventListener('click', (event) => {
             if (!(event.target instanceof Element)) return;
             const slotEl = event.target.closest('.equipment-slot');
             if (!(slotEl instanceof HTMLElement)) return;
@@ -1881,7 +1798,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         // Equip from filtered inventory
-        addTapListener(elements.prestigeInventoryDisplay, (event) => {
+        elements.prestigeInventoryDisplay.addEventListener('click', (event) => {
             if (!(event.target instanceof Element)) return;
             const wrapper = event.target.closest('.item-wrapper');
             if (!(wrapper instanceof HTMLElement)) return;
@@ -1906,7 +1823,7 @@ document.addEventListener('DOMContentLoaded', () => {
             autoSave();
         });
     
-        addTapListener(elements.confirmPrestigeButton, () => {
+        elements.confirmPrestigeButton.addEventListener('click', () => {
             const itemsToAbsorb = gameState.unlockedPrestigeSlots
                 .map(slotName => gameState.equipment[slotName])
                 .filter(Boolean);
@@ -2034,9 +1951,9 @@ document.addEventListener('DOMContentLoaded', () => {
             elements.modalCloseBtnEl.classList.remove('hidden');
         };
 
-        addTapListener(cancelBtn, closeThisModal);
+        cancelBtn.onclick = closeThisModal;
 
-        addTapListener(confirmBtn, () => {
+        confirmBtn.onclick = () => {
             const upgrade = PERMANENT_UPGRADES.LEGACY_KEEPER;
             const currentLevel = gameState.permanentUpgrades.LEGACY_KEEPER || 0;
             const cost = Math.floor(upgrade.baseCost * Math.pow(upgrade.costScalar, currentLevel));
@@ -2053,13 +1970,13 @@ document.addEventListener('DOMContentLoaded', () => {
             recalculateStats();
             updateAll();
             autoSave();
-        });
+        };
 
         elements.modalBackdropEl.classList.remove('hidden');
     }
 
     function setupLegacyKeeperModalListeners() {
-        addTapListener(elements.unlockSlotPaperdoll, (e) => {
+        elements.unlockSlotPaperdoll.addEventListener('click', (e) => {
             if (!pendingLegacyKeeperUpgrade) return;
             if (!(e.target instanceof Element)) return;
             const slotEl = e.target.closest('.equipment-slot');
@@ -2070,12 +1987,12 @@ document.addEventListener('DOMContentLoaded', () => {
             showUnlockConfirmationModal(slotName);
         });
 
-        addTapListener(elements.unlockSlotCancelBtn, () => {
+        elements.unlockSlotCancelBtn.addEventListener('click', () => {
             pendingLegacyKeeperUpgrade = false;
             ui.hideUnlockSlotModal(elements);
         });
 
-        addTapListener(elements.unlockSlotModalBackdrop, (e) => {
+        elements.unlockSlotModalBackdrop.addEventListener('click', (e) => {
             if (e.target === elements.unlockSlotModalBackdrop) {
                 pendingLegacyKeeperUpgrade = false;
                 ui.hideUnlockSlotModal(elements);
@@ -2086,14 +2003,14 @@ document.addEventListener('DOMContentLoaded', () => {
     function setupViewSlotsListeners() {
         const { viewPrestigeSlotsBtn, viewSlotsModalBackdrop, viewSlotsCloseBtn } = elements;
 
-        addTapListener(viewPrestigeSlotsBtn, () => {
+        viewPrestigeSlotsBtn.addEventListener('click', () => {
             ui.showViewSlotsModal(elements, gameState.unlockedPrestigeSlots);
         });
 
         const close = () => viewSlotsModalBackdrop.classList.add('hidden');
 
-        addTapListener(viewSlotsCloseBtn, close);
-        addTapListener(viewSlotsModalBackdrop, (e) => {
+        viewSlotsCloseBtn.addEventListener('click', close);
+        viewSlotsModalBackdrop.addEventListener('click', (e) => {
             if (e.target === viewSlotsModalBackdrop) {
                 close();
             }

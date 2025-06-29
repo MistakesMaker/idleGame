@@ -164,7 +164,11 @@ export function dropLoot(currentMonster, gameState, playerStats) {
     const isGem = itemBaseToDrop.tier >= 1;
 
     if (isGem) {
-        const gem = { ...itemBaseToDrop, id: Date.now() + Math.random() };
+        const gem = {
+            ...itemBaseToDrop,
+            id: Date.now() + Math.random(),
+            baseId: itemBaseToDrop.id
+        };
 
         if (gameState.salvageFilter.autoSalvageGems) {
             const scrapGained = 100;
@@ -181,7 +185,11 @@ export function dropLoot(currentMonster, gameState, playerStats) {
         
         // Check for the Gem Find (duplication) bonus
         if (playerStats.gemFindChance > 0 && Math.random() * 100 < playerStats.gemFindChance) {
-            const duplicateGem = { ...itemBaseToDrop, id: Date.now() + Math.random() + 1 };
+            const duplicateGem = {
+                ...itemBaseToDrop,
+                id: Date.now() + Math.random() + 1,
+                baseId: itemBaseToDrop.id
+            };
             gameState.gems.push(duplicateGem);
             droppedGems.push(duplicateGem); // Add the duplicate to the dropped list for UI feedback
             logMessages.push({ message: `Gem Find! You found a duplicate <span class="epic">${duplicateGem.name}</span>!`, class: '' });
