@@ -142,7 +142,7 @@ document.addEventListener('DOMContentLoaded', () => {
             monsterKillCounts: {},
             unlockedPrestigeSlots: ['sword'], 
             absorbedStats: {},
-            absorbedSynergies: {}, // CORRECTED: Changed from array to object
+            absorbedSynergies: {},
             absorbedUniqueEffects: {},
             prestigeCount: 0,
             nextPrestigeLevel: 100,
@@ -168,7 +168,7 @@ document.addEventListener('DOMContentLoaded', () => {
             currentRealmIndex: 0,
             lastSaveTimestamp: null,
             permanentUpgrades: defaultPermUpgrades,
-            presetSystemMigrated: true, // New saves will have the correct structure
+            presetSystemMigrated: true,
             salvageFilter: {
                 enabled: false,
                 autoSalvageGems: false, 
@@ -199,7 +199,6 @@ document.addEventListener('DOMContentLoaded', () => {
             legacyKeeper: (permUpgrades.LEGACY_KEEPER || 0) * permUpgradeDefs.LEGACY_KEEPER.bonusPerLevel,
         };
         
-        // --- FIX: Prestige Power calculation moved here ---
         const prestigeMultiplier = 1 + ((permanentUpgradeBonuses.prestigePower * (gameState.prestigeCount || 0)) / 100);
 
         const newCalculatedStats = {
@@ -209,7 +208,6 @@ document.addEventListener('DOMContentLoaded', () => {
             magicFind: permanentUpgradeBonuses.magicFind,
         };
 
-        // --- FIX: Apply Prestige Power only to absorbed stats ---
         for (const statKey in absorbed) {
             const boostedValue = absorbed[statKey] * prestigeMultiplier;
             if (STATS.CLICK_DAMAGE.key === statKey) newCalculatedStats.baseClickDamage += boostedValue;
@@ -264,11 +262,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const finalBonusGold = newCalculatedStats.bonusGold + luckBonusGold;
         const finalMagicFind = newCalculatedStats.magicFind;
 
-        // --- FIX: Remove old global prestige multiplier application ---
-        // finalClickDamage *= prestigeMultiplier;
-        // finalDps *= prestigeMultiplier;
-
-        // --- FIX: Apply Prestige Power to absorbed synergies ---
         const dpsToClickSynergyValue = (gameState.absorbedSynergies && gameState.absorbedSynergies['dps_to_clickDamage']) || 0;
         totalSynergyValue += (dpsToClickSynergyValue * prestigeMultiplier);
         
@@ -304,12 +297,10 @@ document.addEventListener('DOMContentLoaded', () => {
             logMessage(elements.gameLogEl, msg.message, msg.class, isAutoScrollingLog);
         });
 
-        // Check for the new gem find event
         if (result.events && result.events.includes('gemFind')) {
-            // Here you can customize the popup for this specific event
             ui.showInfoPopup(elements.popupContainerEl, 'Double Gem!', {
-                top: '10%', // Higher on the screen
-                fontSize: '3.5em' // Slightly bigger
+                top: '10%', 
+                fontSize: '3.5em' 
             });
         }
 
@@ -364,7 +355,6 @@ document.addEventListener('DOMContentLoaded', () => {
     
         elements.monsterNameEl.textContent = currentMonster.name;
     
-        // Background logic
         if (currentMonster.data.background) {
             elements.monsterAreaEl.style.backgroundImage = `url('${currentMonster.data.background}')`;
         } else if (currentMonster.data.isSpecial) {
@@ -634,10 +624,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const cost = Math.floor(upgrade.baseCost * Math.pow(upgrade.costScalar, currentLevel));
             const isMaxed = currentLevel >= upgrade.maxLevel;
             
-            let bonus = upgrade.bonusPerLevel * currentLevel;
-            if (upgrade.id === 'PRESTIGE_POWER') {
-                bonus *= (gameState.prestigeCount || 0);
-            }
+            // --- FIX: Removed special calculation for Prestige Power display ---
+            const bonus = upgrade.bonusPerLevel * currentLevel;
             
             const card = document.createElement('div');
             card.className = 'permanent-upgrade-card';
@@ -924,7 +912,6 @@ document.addEventListener('DOMContentLoaded', () => {
         elements.tooltipEl.className = 'hidden';
         elements.tooltipEl.classList.add(pendingItem.rarity);
 
-        // Pass null for the third argument to force a 1-to-1 comparison
         elements.tooltipEl.innerHTML = ui.createItemComparisonTooltipHTML(pendingItem, equippedItem, null);
         
         const rect = element.getBoundingClientRect();
@@ -1352,7 +1339,7 @@ document.addEventListener('DOMContentLoaded', () => {
             bulkCombineDeselectedIds.clear();
             if (result.success) {
                 recalculateStats();
-                populateBulkCombineControls(); // Repopulate selectors
+                populateBulkCombineControls(); 
                 updateAll();
                 autoSave();
             }
@@ -1361,7 +1348,7 @@ document.addEventListener('DOMContentLoaded', () => {
         elements.bulkCombineTierSelect.addEventListener('change', () => {
             const selectedTier = parseInt((/** @type {HTMLSelectElement} */ (elements.bulkCombineTierSelect)).value, 10);
             bulkCombineSelection.tier = selectedTier || null;
-            bulkCombineSelection.selectionKey = null; // Reset stat/synergy when tier changes
+            bulkCombineSelection.selectionKey = null; 
             bulkCombineDeselectedIds.clear();
             populateBulkCombineControls();
 
@@ -1380,7 +1367,7 @@ document.addEventListener('DOMContentLoaded', () => {
         elements.bulkCombineStatSelect.addEventListener('change', () => {
             bulkCombineSelection.selectionKey = (/** @type {HTMLSelectElement} */ (elements.bulkCombineStatSelect)).value || null;
             lastBulkCombineStatKey = bulkCombineSelection.selectionKey;
-            bulkCombineDeselectedIds.clear(); // Clear deselections
+            bulkCombineDeselectedIds.clear(); 
             updateAll();
         });
 
