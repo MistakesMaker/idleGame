@@ -384,14 +384,17 @@ export function monsterDefeated(gameState, playerStats, currentMonster) {
         }
 
         const baseHealthFactor = 4;
-        const healthPower = 2.7;
+        const healthPower = 2.6;
+
 
         monsterHealth = (baseHealthFactor * Math.pow(level, healthPower));
+
+       //console.log("DEBUG: Calculated Base HP (pre-multiplier):", monsterHealth);
 
         // ... world tier multiplier ...
         const worldTier = Math.floor((level - 1) / 100);
         if (worldTier > 0) {
-            const spikeMultiplier = 4;
+            const spikeMultiplier = 6;
             const worldTierMultiplier = 1 + (worldTier * spikeMultiplier);
             monsterHealth *= worldTierMultiplier;
         }
@@ -400,9 +403,9 @@ export function monsterDefeated(gameState, playerStats, currentMonster) {
         if (isBigBossLevel(level)) {
             monsterHealth *= 15.546;
         } else if (isBossLevel(level)) {
-            monsterHealth *= 7.287;
+            monsterHealth *= 9.287;
         } else if (isMiniBossLevel(level)) {
-            monsterHealth *= 3.1123;
+            monsterHealth *= 5.1123;
 
         }
     }
