@@ -57,16 +57,59 @@ select option {
 
 .control-group { display: flex; align-items: center; gap: 8px; margin: 0 10px; }
 
-#realm-tabs-container { display: flex; border-bottom: 2px solid #4a637e; margin-bottom: 10px; }
-.realm-tab-btn { flex-grow: 1; padding: 8px; margin: 0; border-radius: 5px 5px 0 0; border-bottom: none; background: #34495e; font-size: 0.9em; }
-.realm-tab-btn.active { background: linear-gradient(145deg, #4a637e, #34495e); color: #f1c40f; }
-.realm-tab-btn:disabled { color: #95a5a6; }
+/* --- NEW: Map Accordion System --- */
+#map-accordion-container {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    margin-bottom: 10px;
+    flex-shrink: 0;
+}
+.accordion-item .accordion-header {
+    background: #34495e;
+    padding: 10px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.accordion-item .accordion-header:hover {
+    background: #4a637e;
+}
+.accordion-item .accordion-header.active {
+    background: linear-gradient(145deg, #4a637e, #34495e);
+    color: #f1c40f;
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+}
+.accordion-item .accordion-header::after {
+    content: '\f078'; /* Font Awesome down arrow */
+    font-family: "Font Awesome 5 Free";
+    font-weight: 900;
+    transition: transform 0.3s ease;
+}
+.accordion-item .accordion-header.active::after {
+    transform: rotate(180deg);
+}
+.accordion-content {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.4s ease-out;
+    background-color: rgba(0,0,0,0.2);
+    border: 1px solid #4a637e;
+    border-top: none;
+    border-radius: 0 0 5px 5px;
+    padding: 0; /* Padding will be on inner elements */
+}
+/* --- END: Map Accordion System --- */
 
-#map-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+#map-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding: 0 15px; }
 #map-header h2 { margin: 0; }
 #back-to-world-map-btn { padding: 5px 10px; font-size: 14px; margin: 0; }
 
-#map-container { width: 100%; aspect-ratio: 16 / 9; background-image: url('images/world_map.png'); background-size: cover; background-position: center; position: relative; border-radius: 8px; overflow: hidden; border: 2px solid #4a637e; transition: background-image 0.5s ease-in-out; }
+#map-container { width: 100%; aspect-ratio: 16 / 9; background-image: url('images/world_map.png'); background-size: cover; background-position: center; position: relative; border-radius: 8px; overflow: hidden; border: 2px solid #4a637e; transition: background-image 0.5s ease-in-out; margin: 15px; }
 .map-node { position: absolute; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; cursor: pointer; transition: transform 0.2s ease; z-index: 1; }
 .map-node:hover { transform: translate(-50%, -50%) scale(1.1); }
 .map-node.locked { cursor: not-allowed; filter: grayscale(80%) brightness(0.7); }

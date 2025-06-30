@@ -1,12 +1,13 @@
 // --- START OF FILE ui.js ---
 
 import { STATS } from './data/stat_pools.js';
-import { getXpForNextLevel, getUpgradeCost, formatNumber, findSubZoneByLevel, getCombinedItemStats, findEmptySpot } from './utils.js';
+import { getXpForNextLevel, getUpgradeCost, formatNumber, findSubZoneByLevel, getCombinedItemStats, findEmptySpot, findFirstLevelOfZone } from './utils.js';
 import { ITEMS } from './data/items.js';
 import { GEMS } from './data/gems.js';
 import { MONSTERS } from './data/monsters.js';
 import { UNIQUE_EFFECTS } from './data/unique_effects.js';
 import * as player from './player_actions.js';
+import { REALMS } from './data/realms.js';
 
 /**
  * Checks if a dropped item should be considered a "boss unique".
@@ -86,16 +87,12 @@ export function initDOMElements() {
         prestigeCountStatEl: document.getElementById('prestige-count-stat'),
         absorbedStatsListEl: document.getElementById('absorbed-stats-list'),
         prestigeRequirementTextEl: document.getElementById('prestige-requirement-text'),
-        mapContainerEl: document.getElementById('map-container'),
-        mapTitleEl: document.getElementById('map-title'),
-        backToWorldMapBtnEl: document.getElementById('back-to-world-map-btn'),
+        mapAccordionContainerEl: document.getElementById('map-accordion-container'),
         modalBackdropEl: document.getElementById('modal-backdrop'),
         modalContentEl: document.getElementById('modal-content'),
         modalTitleEl: document.getElementById('modal-title'),
         modalBodyEl: document.getElementById('modal-body'),
         modalCloseBtnEl: document.getElementById('modal-close-btn'),
-        autoProgressCheckboxEl: document.getElementById('auto-progress-checkbox'),
-        realmTabsContainerEl: document.getElementById('realm-tabs-container'),
         gemSlotsEl: document.getElementById('gem-slots'),
         gemCraftingSlotsContainer: document.getElementById('gem-crafting-slots'),
         gemCraftBtn: document.getElementById('gem-craft-btn'),
@@ -269,12 +266,12 @@ export function updateUI(elements, gameState, playerStats, currentMonster, salva
         monsterHealthTextEl, upgradeClickCostEl, upgradeDpsCostEl, heroLevelEl,
         heroXpBarEl, attributePointsEl, attrStrengthEl, attrAgilityEl, attrLuckEl, addStrengthBtn,
         addAgilityBtn, addLuckBtn, bonusGoldStatEl, magicFindStatEl, prestigeCountStatEl,
-        prestigeRequirementTextEl, currentLevelEl, autoProgressCheckboxEl, monsterHealthBarEl,
+        prestigeRequirementTextEl, currentLevelEl, monsterHealthBarEl,
         upgradeClickLevelEl, upgradeDpsLevelEl, inventorySlotsEl, lootMonsterNameEl,
         lootTableDisplayEl, prestigeButton, gemSlotsEl, gemCraftingSlotsContainer, gemCraftBtn,
         forgeInventorySlotsEl, forgeSelectedItemEl, forgeRerollBtn,
         prestigeEquipmentPaperdoll, prestigeInventoryDisplay, prestigeSelectionCount, prestigeSelectionMax,
-        goldenSlimeStreakEl
+        goldenSlimeStreakEl, mapAccordionContainerEl
     } = elements;
 
     // --- Stats and Hero Info ---
@@ -515,8 +512,7 @@ export function updateUI(elements, gameState, playerStats, currentMonster, salva
     }
 
 
-    // --- Map and Monster Info ---
-    (/** @type {HTMLInputElement} */ (autoProgressCheckboxEl)).checked = gameState.isAutoProgressing;
+    // --- Monster Info ---
     const monsterDef = currentMonster.data;
     if (monsterDef) {
         // --- NEW: Kill Count and Max Streak Display Logic ---
@@ -1208,4 +1204,131 @@ export function switchView(elements, viewIdToShow) {
 
     if (viewElement) viewElement.classList.add('active');
     if (tabElement) tabElement.classList.add('active');
+}
+
+
+/**
+ * Renders the new accordion-style map view.
+ * @param {object} elements - DOMElements object.
+ * @param {object} gameState - The current game state.
+ * @param {number} viewingRealmIndex - The index of the realm currently being viewed.
+ * @param {string} viewingZoneId - The ID of the zone currently being viewed within the realm.
+ * @param {object} callbacks - An object containing the callback functions.
+ * @param {(realmIndex: number) => void} callbacks.onRealmHeaderClick - Callback for when a realm header is clicked.
+ * @param {(realmIndex: number, zoneId: string) => void} callbacks.onZoneNodeClick - Callback for when a zone node is clicked.
+ * @param {(subZone: object) => void} callbacks.onSubZoneNodeClick - Callback for when a sub-zone node is clicked.
+ * @param {(realmIndex: number) => void} callbacks.onBackToWorldClick - Callback for clicking the 'back to world' button.
+ */
+export function renderMapAccordion(elements, gameState, viewingRealmIndex, viewingZoneId, callbacks) {
+    const { onRealmHeaderClick, onZoneNodeClick, onSubZoneNodeClick, onBackToWorldClick } = callbacks;
+    const container = elements.mapAccordionContainerEl;
+    container.innerHTML = '';
+
+    REALMS.forEach((realm, index) => {
+        const isUnlocked = gameState.maxLevel >= realm.requiredLevel;
+        if (!isUnlocked) return;
+
+        const isActive = index === viewingRealmIndex;
+
+        const accordionItem = document.createElement('div');
+        accordionItem.className = 'accordion-item';
+
+        const header = document.createElement('div');
+        header.className = `accordion-header ${isActive ? 'active' : ''}`;
+        header.textContent = realm.name;
+        header.dataset.realmIndex = index.toString();
+        header.addEventListener('click', () => onRealmHeaderClick(index));
+
+        const content = document.createElement('div');
+        content.className = 'accordion-content';
+
+        if (isActive) {
+            renderMap(content, realm, viewingZoneId, gameState, { onZoneNodeClick, onSubZoneNodeClick, onBackToWorldClick });
+            // Set max-height after a short delay to allow the content to be added to the DOM first
+            setTimeout(() => {
+                const contentEl = /** @type {HTMLElement} */ (content);
+                contentEl.style.maxHeight = contentEl.scrollHeight + 'px';
+            }, 0);
+        }
+
+        accordionItem.appendChild(header);
+        accordionItem.appendChild(content);
+        container.appendChild(accordionItem);
+    });
+}
+
+
+/**
+ * Renders a specific map (world or zone) into a given container.
+ * @param {HTMLElement} contentEl - The accordion content element to render into.
+ * @param {object} realm - The realm object from REALMS data.
+ * @param {string} viewingZoneId - The ID of the zone to view. 'world' for the realm map.
+ * @param {object} gameState - The current game state.
+ * @param {object} callbacks - Click handler callbacks.
+ * @param {(realmIndex: number, zoneId: string) => void} callbacks.onZoneNodeClick
+ * @param {(subZone: object) => void} callbacks.onSubZoneNodeClick
+ * @param {(realmIndex: number) => void} callbacks.onBackToWorldClick
+ */
+function renderMap(contentEl, realm, viewingZoneId, gameState, { onZoneNodeClick, onSubZoneNodeClick, onBackToWorldClick }) {
+    contentEl.innerHTML = `
+        <div id="map-header">
+            <h2 id="map-title"></h2>
+            <div class="control-group">
+                <input type="checkbox" id="auto-progress-checkbox" ${gameState.isAutoProgressing ? 'checked' : ''}>
+                <label for="auto-progress-checkbox">Auto-Progress</label>
+            </div>
+            <button id="back-to-world-map-btn" class="hidden">Back to World</button>
+        </div>
+        <div id="map-container" class="map-container-instance"></div>
+    `;
+
+    // Re-query elements within the newly created scope
+    const mapTitleEl = /** @type {HTMLHeadingElement} */ (contentEl.querySelector('#map-title'));
+    const mapContainerEl = /** @type {HTMLElement} */ (contentEl.querySelector('.map-container-instance'));
+    const backBtn = /** @type {HTMLButtonElement} */ (contentEl.querySelector('#back-to-world-map-btn'));
+    const autoProgressCheckbox = /** @type {HTMLInputElement} */ (contentEl.querySelector('#auto-progress-checkbox'));
+    
+    // Attach event listener for the auto-progress checkbox
+    autoProgressCheckbox.addEventListener('change', (e) => {
+        const target = /** @type {HTMLInputElement} */ (e.target);
+        gameState.isAutoProgressing = target.checked;
+        // The main game loop will handle saving, just update the state here.
+    });
+
+
+    backBtn.addEventListener('click', () => onBackToWorldClick(REALMS.indexOf(realm)));
+
+    if (viewingZoneId === 'world') {
+        mapTitleEl.textContent = realm.name;
+        backBtn.classList.add('hidden');
+        mapContainerEl.style.backgroundImage = `url('${realm.mapImage}')`;
+        for (const zoneId in realm.zones) {
+            const zone = realm.zones[zoneId];
+            const isUnlocked = gameState.maxLevel >= findFirstLevelOfZone(zone);
+            const node = createMapNode(zone.name, zone.icon, zone.coords, isUnlocked, false, gameState.currentFightingLevel, null);
+            if (isUnlocked) {
+                node.addEventListener('click', () => onZoneNodeClick(REALMS.indexOf(realm), zoneId));
+            }
+            mapContainerEl.appendChild(node);
+        }
+    } else {
+        const zone = realm.zones[viewingZoneId];
+        if (!zone) return;
+
+        mapTitleEl.textContent = zone.name;
+        backBtn.classList.remove('hidden');
+        mapContainerEl.style.backgroundImage = `url('${zone.mapImage}')`;
+
+        const subZonesArray = Object.values(zone.subZones).sort((a, b) => a.levelRange[0] - b.levelRange[0]);
+        for (const subZone of subZonesArray) {
+            const isUnlocked = gameState.maxLevel >= subZone.levelRange[0];
+            const isCompleted = gameState.completedLevels.includes(subZone.levelRange[1]);
+            const icon = 'images/icons/sword.png';
+            const node = createMapNode(subZone.name, icon, subZone.coords, isUnlocked, isCompleted, gameState.currentFightingLevel, subZone.levelRange, subZone.isBoss);
+            if (isUnlocked) {
+                node.addEventListener('click', () => onSubZoneNodeClick(subZone));
+            }
+            mapContainerEl.appendChild(node);
+        }
+    }
 }

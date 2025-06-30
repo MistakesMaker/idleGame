@@ -85,7 +85,12 @@ function addTapListener(element, handler) {
 document.addEventListener('DOMContentLoaded', () => {
 
     let gameState = {};
-    let currentMap = 'world';
+    
+    // --- Separate state for UI/View concerns ---
+    let currentViewingRealmIndex = 0;
+    let currentViewingZoneId = 'world';
+    let isMapRenderPending = true; // Flag to control map re-rendering
+
     let currentMonster = { name: "Slime", data: MONSTERS.SLIME };
     let playerStats = { baseClickDamage: 1, baseDps: 0, totalClickDamage: 1, totalDps: 0, bonusGold: 0, magicFind: 0 };
     let salvageMode = { active: false, selections: [] };
@@ -162,7 +167,6 @@ document.addEventListener('DOMContentLoaded', () => {
             isFarming: true,
             isAutoProgressing: true,
             isSlimeSplitEnabled: true, 
-            currentRealmIndex: 0,
             lastSaveTimestamp: null,
             permanentUpgrades: defaultPermUpgrades,
             presetSystemMigrated: true,
@@ -315,9 +319,18 @@ document.addEventListener('DOMContentLoaded', () => {
             logMessage(elements.gameLogEl, msg, 'legendary', isAutoScrollingLog);
         });
 
-        const nextRealmIndex = gameState.currentRealmIndex + 1;
+        const currentFightingRealmIndex = REALMS.findIndex(realm => 
+            Object.values(realm.zones).some(zone => 
+                Object.values(zone.subZones).some(sz => 
+                    gameState.currentFightingLevel >= sz.levelRange[0] && gameState.currentFightingLevel <= sz.levelRange[1]
+                )
+            )
+        ) || 0;
+
+        const nextRealmIndex = currentFightingRealmIndex + 1;
         if (REALMS[nextRealmIndex] && gameState.maxLevel >= REALMS[nextRealmIndex].requiredLevel && !gameState.completedLevels.includes(REALMS[nextRealmIndex].requiredLevel - 1)) {
             logMessage(elements.gameLogEl, `A new realm has been unlocked: <b>${REALMS[nextRealmIndex].name}</b>!`, 'legendary', isAutoScrollingLog);
+            isMapRenderPending = true; // Flag map for re-render to show the new realm
         }
         autoSave();
         setTimeout(() => {
@@ -352,16 +365,17 @@ document.addEventListener('DOMContentLoaded', () => {
     
         elements.monsterNameEl.textContent = currentMonster.name;
     
+        const monsterAreaEl = document.getElementById('monster-area');
         if (currentMonster.data.background) {
-            elements.monsterAreaEl.style.backgroundImage = `url('${currentMonster.data.background}')`;
+            monsterAreaEl.style.backgroundImage = `url('${currentMonster.data.background}')`;
         } else if (currentMonster.data.isSpecial) {
-            elements.monsterAreaEl.style.backgroundImage = `url('images/backgrounds/bg_treasure_realm.png')`;
+            monsterAreaEl.style.backgroundImage = `url('images/backgrounds/bg_treasure_realm.png')`;
         } else {
             const subZone = findSubZoneByLevel(gameState.currentFightingLevel);
             if (subZone && subZone.parentZone) {
-                elements.monsterAreaEl.style.backgroundImage = `url('${subZone.parentZone.monsterAreaBg}')`;
+                monsterAreaEl.style.backgroundImage = `url('${subZone.parentZone.monsterAreaBg}')`;
             } else {
-                elements.monsterAreaEl.style.backgroundImage = `url('${REALMS[0].zones.green_meadows.monsterAreaBg}')`;
+                monsterAreaEl.style.backgroundImage = `url('${REALMS[0].zones.green_meadows.monsterAreaBg}')`;
             }
         }
     }
@@ -433,8 +447,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function updateAll() {
         ui.updateUI(elements, gameState, playerStats, currentMonster, salvageMode, craftingGems, selectedItemForForge, bulkCombineSelection, bulkCombineDeselectedIds);
-        renderMap();
-        renderRealmTabs();
+        
+        // --- NEW: Conditional Map Rendering ---
+        if (isMapRenderPending) {
+            renderMapAccordion();
+            isMapRenderPending = false;
+        }
+        // --- END ---
+        
         renderPermanentUpgrades();
         
         document.querySelectorAll('.gem-wrapper.selected-gem').forEach(el => el.classList.remove('selected-gem'));
@@ -488,129 +508,45 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    function renderMap() {
-        elements.mapContainerEl.innerHTML = '';
-        const realm = REALMS[gameState.currentRealmIndex];
-        if (!realm) {
-            gameState.currentRealmIndex = 0;
-            renderMap();
-            return;
-        }
-        if (currentMap === 'world') {
-            elements.mapTitleEl.textContent = realm.name;
-            elements.backToWorldMapBtnEl.classList.add('hidden');
-            elements.mapContainerEl.style.backgroundImage = `url('${realm.mapImage}')`;
-            for (const zoneId in realm.zones) {
-                const zone = realm.zones[zoneId];
-                const isUnlocked = gameState.maxLevel >= findFirstLevelOfZone(zone);
-                const node = ui.createMapNode(zone.name, zone.icon, zone.coords, isUnlocked, false, gameState.currentFightingLevel, zone.subZones[Object.keys(zone.subZones)[0]].levelRange);
-                if (isUnlocked) {
-                    addTapListener(node, () => { currentMap = zoneId; renderMap(); });
-                }
-                elements.mapContainerEl.appendChild(node);
-            }
+    function renderMapAccordion() {
+        const callbacks = {
+            onRealmHeaderClick: handleRealmHeaderClick,
+            onZoneNodeClick: handleZoneNodeClick,
+            onSubZoneNodeClick: handleSubZoneNodeClick,
+            onBackToWorldClick: handleBackToWorldClick,
+        };
+        ui.renderMapAccordion(elements, gameState, currentViewingRealmIndex, currentViewingZoneId, callbacks);
+    }
+    
+    function handleRealmHeaderClick(realmIndex) {
+        if (currentViewingRealmIndex === realmIndex) {
+            currentViewingRealmIndex = -1;
         } else {
-            const zone = realm.zones[currentMap];
-            if (!zone) { currentMap = 'world'; renderMap(); return; }
-            elements.mapTitleEl.textContent = zone.name;
-            elements.backToWorldMapBtnEl.classList.remove('hidden');
-            elements.mapContainerEl.style.backgroundImage = `url('${zone.mapImage}')`;
-            
-            const subZonesArray = Object.values(zone.subZones).sort((a, b) => a.levelRange[0] - b.levelRange[0]);
-            
-            const unlockedNodes = subZonesArray.filter(sz => gameState.maxLevel >= sz.levelRange[0]);
-
-            if (unlockedNodes.length > 1) {
-                const mapWidth = elements.mapContainerEl.clientWidth;
-                const mapHeight = elements.mapContainerEl.clientHeight;
-                const NODE_RADIUS = 21;
-
-                const points = unlockedNodes.map(sz => ({
-                    x: parseFloat(sz.coords.left) / 100 * mapWidth,
-                    y: parseFloat(sz.coords.top) / 100 * mapHeight,
-                }));
-                
-                const svgNS = "http://www.w3.org/2000/svg";
-                const svgEl = document.createElementNS(svgNS, 'svg');
-                svgEl.setAttribute('class', 'map-path-svg');
-                svgEl.setAttribute('viewBox', `0 0 ${mapWidth} ${mapHeight}`);
-
-                for (let i = 0; i < points.length - 1; i++) {
-                    const p1 = points[i];
-                    const p2 = points[i+1];
-
-                    const dx = p2.x - p1.x;
-                    const dy = p2.y - p1.y;
-                    const mag = Math.sqrt(dx * dx + dy * dy);
-                    if (mag < NODE_RADIUS * 2) continue;
-
-                    const unitX = dx / mag;
-                    const unitY = dy / mag;
-
-                    const startX = p1.x + unitX * NODE_RADIUS;
-                    const startY = p1.y + unitY * NODE_RADIUS;
-
-                    const endX = p2.x - unitX * NODE_RADIUS;
-                    const endY = p2.y - unitY * NODE_RADIUS;
-                    
-                    const segDx = endX - startX;
-                    const segDy = endY - startY;
-                    const segDist = Math.sqrt(segDx * segDx + segDy * segDy);
-                    if (segDist < 1) continue;
-
-                    const midX = (startX + endX) / 2;
-                    const midY = (startY + endY) / 2;
-
-                    const waviness = ((i + 1) % 2 === 1) ? 1 : -1;
-                    const offsetMagnitude = Math.min(segDist / 8, 15) * waviness;
-
-                    const controlX = midX - segDy * (offsetMagnitude / segDist);
-                    const controlY = midY + segDx * (offsetMagnitude / segDist);
-                    
-                    const pathEl = document.createElementNS(svgNS, 'path');
-                    pathEl.setAttribute('d', `M ${startX} ${startY} Q ${controlX} ${controlY} ${endX} ${endY}`);
-                    pathEl.setAttribute('class', 'map-path-line');
-                    
-                    svgEl.appendChild(pathEl);
-                }
-
-                elements.mapContainerEl.appendChild(svgEl);
-            }
-
-            for (const subZone of subZonesArray) {
-                const isUnlocked = gameState.maxLevel >= subZone.levelRange[0];
-                const isCompleted = gameState.completedLevels.includes(subZone.levelRange[1]);
-                const icon = 'images/icons/sword.png';
-                const node = ui.createMapNode(subZone.name, icon, subZone.coords, isUnlocked, isCompleted, gameState.currentFightingLevel, subZone.levelRange, subZone.isBoss);
-                if (isUnlocked) {
-                    addTapListener(node, () => showSubZoneModal(subZone));
-                }
-                elements.mapContainerEl.appendChild(node);
-            }
+            currentViewingRealmIndex = realmIndex;
         }
-    }  function renderRealmTabs() {
-        elements.realmTabsContainerEl.innerHTML = '';
-        REALMS.forEach((realm, index) => {
-            const isUnlocked = gameState.maxLevel >= realm.requiredLevel;
-            const tab = document.createElement('button');
-            tab.className = 'realm-tab-btn';
-            tab.textContent = realm.name;
-            tab.disabled = !isUnlocked;
-            if (index === gameState.currentRealmIndex) tab.classList.add('active');
-            
-            addTapListener(tab, () => {
-                if (tab.disabled) return;
-                gameState.currentRealmIndex = index;
-                currentMap = 'world';
-                renderMap();
-                renderRealmTabs();
-                startNewMonster(); 
-                autoSave();
-            });
-            elements.realmTabsContainerEl.appendChild(tab);
-        });
+        currentViewingZoneId = 'world';
+        isMapRenderPending = true;
+        updateAll();
+    }
+    
+    function handleZoneNodeClick(realmIndex, zoneId) {
+        currentViewingRealmIndex = realmIndex;
+        currentViewingZoneId = zoneId;
+        isMapRenderPending = true;
+        updateAll();
+    }
+    
+    function handleSubZoneNodeClick(subZone) {
+        showSubZoneModal(subZone);
     }
 
+    function handleBackToWorldClick(realmIndex) {
+        currentViewingRealmIndex = realmIndex;
+        currentViewingZoneId = 'world';
+        isMapRenderPending = true;
+        updateAll();
+    }
+    
     function renderPermanentUpgrades() {
         const container = elements.permanentUpgradesContainerEl;
         container.innerHTML = '';
@@ -716,7 +652,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const startCombat = (level, isFarming) => {
             gameState.currentFightingLevel = level;
             gameState.isFarming = isFarming;
-            gameState.isAutoProgressing = isFarming ? (/** @type {HTMLInputElement} */ (elements.autoProgressCheckboxEl)).checked : false;
+            // The auto-progress checkbox is now dynamically created, so we need to find it
+            const autoProgressCheckbox = document.querySelector('#map-view #auto-progress-checkbox');
+            gameState.isAutoProgressing = isFarming ? (autoProgressCheckbox && (/** @type {HTMLInputElement} */ (autoProgressCheckbox)).checked) : false;
             logMessage(elements.gameLogEl, `Traveling to level ${level}.`, '', isAutoScrollingLog);
             elements.modalBackdropEl.classList.add('hidden');
             startNewMonster();
@@ -954,6 +892,10 @@ document.addEventListener('DOMContentLoaded', () => {
             gameState = getDefaultGameState();
             gameState.equipment = gameState.presets[gameState.activePresetIndex].equipment;
         }
+        
+        // Set initial view state
+        const firstUnlockedRealm = REALMS.findIndex(r => gameState.maxLevel >= r.requiredLevel);
+        currentViewingRealmIndex = firstUnlockedRealm !== -1 ? firstUnlockedRealm : 0;
         
         setupEventListeners();
         recalculateStats();
@@ -1410,16 +1352,9 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         addTapListener(document.getElementById('reset-game-btn'), resetGame);
-        addTapListener(elements.backToWorldMapBtnEl, () => { currentMap = 'world'; renderMap(); });
         addTapListener(elements.modalCloseBtnEl, () => elements.modalBackdropEl.classList.add('hidden'));
         addTapListener(elements.modalBackdropEl, (e) => {
             if (e.target === elements.modalBackdropEl) elements.modalBackdropEl.classList.add('hidden');
-        });
-
-        elements.autoProgressCheckboxEl.addEventListener('change', () => {
-            gameState.isAutoProgressing = (/** @type {HTMLInputElement} */ (elements.autoProgressCheckboxEl)).checked;
-            logMessage(elements.gameLogEl, `Auto-progress ${gameState.isAutoProgressing ? 'enabled' : 'disabled'}.`, '', isAutoScrollingLog);
-            autoSave();
         });
         
         document.querySelectorAll('.preset-btn').forEach((btn, index) => {
