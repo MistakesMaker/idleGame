@@ -354,7 +354,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         }, 300);
     }
-        function startNewMonster() {
+    
+    function startNewMonster() {
         const { newMonster, newMonsterState } = logic.generateMonster(gameState.currentFightingLevel, gameState.specialEncounter);
         currentMonster = newMonster;
         gameState.monster = newMonsterState;
@@ -644,7 +645,9 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         };
         populateOptions(currentTier);
-    }    function showSubZoneModal(subZone) {
+    }    
+    
+    function showSubZoneModal(subZone) {
         elements.modalTitleEl.textContent = subZone.name;
         elements.modalBodyEl.innerHTML = '';
         elements.modalCloseBtnEl.classList.remove('hidden');
@@ -859,7 +862,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     /** Generic mouseout handler for item grids. */
     const onGridMouseOut = () => elements.tooltipEl.classList.add('hidden');
-        function main() {
+    
+    function main() {
         elements = ui.initDOMElements();
         
         const savedData = localStorage.getItem('idleRPGSaveData');
@@ -920,7 +924,9 @@ document.addEventListener('DOMContentLoaded', () => {
         autoSave(); 
         setInterval(autoSave, 30000);
         setInterval(gameLoop, 1000);
-    }    function setupEventListeners() {
+    }    
+    
+    function setupEventListeners() {
         window.addEventListener('beforeunload', saveOnExit);
 
         window.addEventListener('keydown', (e) => {

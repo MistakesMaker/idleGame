@@ -365,14 +365,14 @@ export function monsterDefeated(gameState, playerStats, currentMonster) {
 
 /**
  * Generates a new monster based on the current fighting level.
- */
-export function generateMonster(level, specialEncounter = null) {
+ */export function generateMonster(level, specialEncounter = null) {
+    console.log("--- STARTING MONSTER GENERATION --- For level:", level); // MODIFIED
+
     let monsterData;
     let monsterHealth;
 
     if (specialEncounter && specialEncounter.type === 'GOLDEN_SLIME') {
-        monsterData = MONSTERS.GOLDEN_SLIME;
-        monsterHealth = specialEncounter.hp;
+        // ... (this part is fine)
     } else {
         const subZone = findSubZoneByLevel(level);
 
@@ -384,14 +384,19 @@ export function generateMonster(level, specialEncounter = null) {
         }
 
         const baseHealthFactor = 4;
-        const healthPower = 2.4;
-        
+        const healthPower = 2.25;
         const tier = Math.floor((level - 1) / 10);
-        const difficultyResetFactor = 1;
-        const effectiveLevel = level - (tier * difficultyResetFactor);
+        //const difficultyResetFactor = 1;
+        //const effectiveLevel = level - (tier * difficultyResetFactor);
 
-        monsterHealth = 10 + (baseHealthFactor * Math.pow(effectiveLevel, healthPower));
+        // --- THE MOST IMPORTANT LOGS ARE HERE ---
+        // console.log(`DEBUG: Level is ${level}, EffectiveLevel is ${effectiveLevel}`);
 
+        monsterHealth = (baseHealthFactor * Math.pow(level, healthPower));
+
+       //console.log("DEBUG: Calculated Base HP (pre-multiplier):", monsterHealth);
+
+        // ... world tier multiplier ...
         const worldTier = Math.floor((level - 1) / 100);
         if (worldTier > 0) {
             const spikeMultiplier = 4;
@@ -399,15 +404,24 @@ export function generateMonster(level, specialEncounter = null) {
             monsterHealth *= worldTierMultiplier;
         }
 
-        if (isBigBossLevel(level)) monsterHealth *= 5;
-        else if (isBossLevel(level)) monsterHealth *= 3;
-        else if (isMiniBossLevel(level)) monsterHealth *= 2;
+        // Apply boss multipliers sequentially.
+        if (isBigBossLevel(level)) {
+            monsterHealth *= 15.546;
+        } else if (isBossLevel(level)) {
+            monsterHealth *= 9.287;
+        } else if (isMiniBossLevel(level)) {
+            monsterHealth *= 5.1123;
+
+        }
     }
     
     monsterHealth = Math.ceil(monsterHealth);
+    
+    console.log("--- FINAL HP SET TO:", monsterHealth, "---"); // MODIFIED
 
     const newMonster = { name: monsterData.name, data: monsterData };
     const newMonsterState = { hp: monsterHealth, maxHp: monsterHealth };
     
     return { newMonster, newMonsterState };
+
 }
