@@ -55,7 +55,7 @@ export const GEMS = {
         tier: 1,
         icon: 'images/gems/topaz_1.png',
         width: 1, height: 1,
-        stats: { [STATS.MAGIC_FIND.key]: 1 }
+        stats: { [STATS.MAGIC_FIND.key]: 0.5 }
     },
     BASE_AMETHYST: {
         id: 'BASE_AMETHYST',
