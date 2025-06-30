@@ -1090,7 +1090,7 @@ export function showInfoPopup(popupContainerEl, text, options = {}) {
     setTimeout(() => popup.remove(), duration);
 }
 
-export function createMapNode(name, iconSrc, coords, isUnlocked, isCompleted, currentFightingLevel, levelRange = null, isBoss = false) {
+export function createMapNode(name, iconSrc, coords, isUnlocked, isCompleted, currentFightingLevel, levelRange = null, isBoss = false, isFightingZone = false) {
     const node = document.createElement('div');
     node.className = 'map-node';
     if (!isUnlocked) node.classList.add('locked');
@@ -1099,6 +1099,10 @@ export function createMapNode(name, iconSrc, coords, isUnlocked, isCompleted, cu
     const currentFightingSubZone = findSubZoneByLevel(currentFightingLevel);
     if (currentFightingSubZone && currentFightingSubZone.name === name) {
         node.classList.add('active-zone');
+    }
+
+    if (isFightingZone) {
+        node.classList.add('active-fighting-zone');
     }
 
     node.style.top = coords.top;
@@ -1213,14 +1217,16 @@ export function switchView(elements, viewIdToShow) {
  * @param {object} gameState - The current game state.
  * @param {number} viewingRealmIndex - The index of the realm currently being viewed.
  * @param {string} viewingZoneId - The ID of the zone currently being viewed within the realm.
+ * @param {number} fightingRealmIndex - The index of the realm the player is in.
+ * @param {string} fightingZoneId - The ID of the zone the player is in.
  * @param {object} callbacks - An object containing the callback functions.
  * @param {(realmIndex: number) => void} callbacks.onRealmHeaderClick - Callback for when a realm header is clicked.
  * @param {(realmIndex: number, zoneId: string) => void} callbacks.onZoneNodeClick - Callback for when a zone node is clicked.
  * @param {(subZone: object) => void} callbacks.onSubZoneNodeClick - Callback for when a sub-zone node is clicked.
  * @param {(realmIndex: number) => void} callbacks.onBackToWorldClick - Callback for clicking the 'back to world' button.
  */
-export function renderMapAccordion(elements, gameState, viewingRealmIndex, viewingZoneId, callbacks) {
-    const { onRealmHeaderClick, onZoneNodeClick, onSubZoneNodeClick, onBackToWorldClick } = callbacks;
+export function renderMapAccordion(elements, gameState, viewingRealmIndex, viewingZoneId, fightingRealmIndex, fightingZoneId, callbacks) {
+    const { onRealmHeaderClick } = callbacks;
     const container = elements.mapAccordionContainerEl;
     container.innerHTML = '';
 
@@ -1228,13 +1234,14 @@ export function renderMapAccordion(elements, gameState, viewingRealmIndex, viewi
         const isUnlocked = gameState.maxLevel >= realm.requiredLevel;
         if (!isUnlocked) return;
 
-        const isActive = index === viewingRealmIndex;
+        const isViewing = index === viewingRealmIndex;
+        const isFightingInThisRealm = index === fightingRealmIndex;
 
         const accordionItem = document.createElement('div');
         accordionItem.className = 'accordion-item';
 
         const header = document.createElement('div');
-        header.className = `accordion-header ${isActive ? 'active' : ''}`;
+        header.className = `accordion-header ${isViewing ? 'active' : ''} ${isFightingInThisRealm ? 'active-fighting-realm' : ''}`;
         header.textContent = realm.name;
         header.dataset.realmIndex = index.toString();
         header.addEventListener('click', () => onRealmHeaderClick(index));
@@ -1242,12 +1249,19 @@ export function renderMapAccordion(elements, gameState, viewingRealmIndex, viewi
         const content = document.createElement('div');
         content.className = 'accordion-content';
 
-        if (isActive) {
-            renderMap(content, realm, viewingZoneId, gameState, { onZoneNodeClick, onSubZoneNodeClick, onBackToWorldClick });
-            // Set max-height after a short delay to allow the content to be added to the DOM first
+        if (isViewing) {
+            renderMap(/** @type {HTMLElement} */(content), realm, viewingZoneId, gameState, fightingZoneId, callbacks);
+            const contentEl = /** @type {HTMLElement} */ (content);
             setTimeout(() => {
-                const contentEl = /** @type {HTMLElement} */ (content);
                 contentEl.style.maxHeight = contentEl.scrollHeight + 'px';
+                 // Add a transitionend listener to draw paths after animation
+                contentEl.addEventListener('transitionend', function onTransitionEnd() {
+                    const mapContainerEl = contentEl.querySelector('.map-container-instance');
+                    if(mapContainerEl) {
+                        drawMapPaths(/** @type {HTMLElement} */(mapContainerEl), realm, viewingZoneId, gameState);
+                    }
+                    contentEl.removeEventListener('transitionend', onTransitionEnd);
+                });
             }, 0);
         }
 
@@ -1264,12 +1278,10 @@ export function renderMapAccordion(elements, gameState, viewingRealmIndex, viewi
  * @param {object} realm - The realm object from REALMS data.
  * @param {string} viewingZoneId - The ID of the zone to view. 'world' for the realm map.
  * @param {object} gameState - The current game state.
+ * @param {string} fightingZoneId - The ID of the zone the player is fighting in.
  * @param {object} callbacks - Click handler callbacks.
- * @param {(realmIndex: number, zoneId: string) => void} callbacks.onZoneNodeClick
- * @param {(subZone: object) => void} callbacks.onSubZoneNodeClick
- * @param {(realmIndex: number) => void} callbacks.onBackToWorldClick
  */
-function renderMap(contentEl, realm, viewingZoneId, gameState, { onZoneNodeClick, onSubZoneNodeClick, onBackToWorldClick }) {
+function renderMap(contentEl, realm, viewingZoneId, gameState, fightingZoneId, { onZoneNodeClick, onSubZoneNodeClick, onBackToWorldClick }) {
     contentEl.innerHTML = `
         <div id="map-header">
             <h2 id="map-title"></h2>
@@ -1292,7 +1304,6 @@ function renderMap(contentEl, realm, viewingZoneId, gameState, { onZoneNodeClick
     autoProgressCheckbox.addEventListener('change', (e) => {
         const target = /** @type {HTMLInputElement} */ (e.target);
         gameState.isAutoProgressing = target.checked;
-        // The main game loop will handle saving, just update the state here.
     });
 
 
@@ -1305,7 +1316,8 @@ function renderMap(contentEl, realm, viewingZoneId, gameState, { onZoneNodeClick
         for (const zoneId in realm.zones) {
             const zone = realm.zones[zoneId];
             const isUnlocked = gameState.maxLevel >= findFirstLevelOfZone(zone);
-            const node = createMapNode(zone.name, zone.icon, zone.coords, isUnlocked, false, gameState.currentFightingLevel, null);
+            const isFightingInThisZone = zoneId === fightingZoneId;
+            const node = createMapNode(zone.name, zone.icon, zone.coords, isUnlocked, false, gameState.currentFightingLevel, null, false, isFightingInThisZone);
             if (isUnlocked) {
                 node.addEventListener('click', () => onZoneNodeClick(REALMS.indexOf(realm), zoneId));
             }
@@ -1324,11 +1336,89 @@ function renderMap(contentEl, realm, viewingZoneId, gameState, { onZoneNodeClick
             const isUnlocked = gameState.maxLevel >= subZone.levelRange[0];
             const isCompleted = gameState.completedLevels.includes(subZone.levelRange[1]);
             const icon = 'images/icons/sword.png';
-            const node = createMapNode(subZone.name, icon, subZone.coords, isUnlocked, isCompleted, gameState.currentFightingLevel, subZone.levelRange, subZone.isBoss);
+            const node = createMapNode(subZone.name, icon, subZone.coords, isUnlocked, isCompleted, gameState.currentFightingLevel, subZone.levelRange, subZone.isBoss, false);
             if (isUnlocked) {
                 node.addEventListener('click', () => onSubZoneNodeClick(subZone));
             }
             mapContainerEl.appendChild(node);
         }
+    }
+}
+
+/**
+ * Draws the SVG paths between nodes on a zone map.
+ * @param {HTMLElement} mapContainerEl - The specific map container instance to draw in.
+ * @param {object} realm - The realm object from REALMS data.
+ * @param {string} viewingZoneId - The ID of the zone being viewed.
+ * @param {object} gameState - The current game state.
+ */
+function drawMapPaths(mapContainerEl, realm, viewingZoneId, gameState) {
+    const zone = realm.zones[viewingZoneId];
+    if (!zone || !mapContainerEl) return;
+
+    const subZonesArray = Object.values(zone.subZones).sort((a, b) => a.levelRange[0] - b.levelRange[0]);
+    const unlockedNodes = subZonesArray.filter(sz => gameState.maxLevel >= sz.levelRange[0]);
+
+    if (unlockedNodes.length > 1) {
+        const mapWidth = mapContainerEl.clientWidth;
+        const mapHeight = mapContainerEl.clientHeight;
+        if (mapWidth === 0 || mapHeight === 0) return; // Don't draw if map isn't visible
+        
+        const NODE_RADIUS = 21;
+
+        const points = unlockedNodes.map(sz => ({
+            x: parseFloat(sz.coords.left) / 100 * mapWidth,
+            y: parseFloat(sz.coords.top) / 100 * mapHeight,
+        }));
+        
+        const svgNS = "http://www.w3.org/2000/svg";
+        const svgEl = document.createElementNS(svgNS, 'svg');
+        svgEl.setAttribute('class', 'map-path-svg');
+        svgEl.setAttribute('viewBox', `0 0 ${mapWidth} ${mapHeight}`);
+
+        for (let i = 0; i < points.length - 1; i++) {
+            const p1 = points[i];
+            const p2 = points[i+1];
+
+            const dx = p2.x - p1.x;
+            const dy = p2.y - p1.y;
+            const mag = Math.sqrt(dx * dx + dy * dy);
+            if (mag < NODE_RADIUS * 2) continue;
+
+            const unitX = dx / mag;
+            const unitY = dy / mag;
+
+            const startX = p1.x + unitX * NODE_RADIUS;
+            const startY = p1.y + unitY * NODE_RADIUS;
+
+            const endX = p2.x - unitX * NODE_RADIUS;
+            const endY = p2.y - unitY * NODE_RADIUS;
+            
+            const segDx = endX - startX;
+            const segDy = endY - startY;
+            const segDist = Math.sqrt(segDx * segDx + segDy * segDy);
+            if (segDist < 1) continue;
+
+            const midX = (startX + endX) / 2;
+            const midY = (startY + endY) / 2;
+
+            const waviness = ((i + 1) % 2 === 1) ? 1 : -1;
+            const offsetMagnitude = Math.min(segDist / 8, 15) * waviness;
+
+            const controlX = midX - segDy * (offsetMagnitude / segDist);
+            const controlY = midY + segDx * (offsetMagnitude / segDist);
+            
+            const pathEl = document.createElementNS(svgNS, 'path');
+            pathEl.setAttribute('d', `M ${startX} ${startY} Q ${controlX} ${controlY} ${endX} ${endY}`);
+            pathEl.setAttribute('class', 'map-path-line');
+            
+            svgEl.appendChild(pathEl);
+        }
+        
+        // Remove old path before adding new one
+        const oldSvg = mapContainerEl.querySelector('.map-path-svg');
+        if (oldSvg) oldSvg.remove();
+        
+        mapContainerEl.appendChild(svgEl);
     }
 }

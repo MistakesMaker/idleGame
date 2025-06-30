@@ -448,12 +448,11 @@ document.addEventListener('DOMContentLoaded', () => {
     function updateAll() {
         ui.updateUI(elements, gameState, playerStats, currentMonster, salvageMode, craftingGems, selectedItemForForge, bulkCombineSelection, bulkCombineDeselectedIds);
         
-        // --- NEW: Conditional Map Rendering ---
+        // --- Conditional Map Rendering ---
         if (isMapRenderPending) {
             renderMapAccordion();
             isMapRenderPending = false;
         }
-        // --- END ---
         
         renderPermanentUpgrades();
         
@@ -509,13 +508,18 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function renderMapAccordion() {
+        // Determine player's current fighting location
+        const fightingSubZone = findSubZoneByLevel(gameState.currentFightingLevel);
+        const fightingRealmIndex = fightingSubZone ? REALMS.findIndex(r => Object.values(r.zones).some(z => z === fightingSubZone.parentZone)) : -1;
+        const fightingZoneId = fightingSubZone ? Object.keys(REALMS[fightingRealmIndex].zones).find(id => REALMS[fightingRealmIndex].zones[id] === fightingSubZone.parentZone) : null;
+
         const callbacks = {
             onRealmHeaderClick: handleRealmHeaderClick,
             onZoneNodeClick: handleZoneNodeClick,
             onSubZoneNodeClick: handleSubZoneNodeClick,
             onBackToWorldClick: handleBackToWorldClick,
         };
-        ui.renderMapAccordion(elements, gameState, currentViewingRealmIndex, currentViewingZoneId, callbacks);
+        ui.renderMapAccordion(elements, gameState, currentViewingRealmIndex, currentViewingZoneId, fightingRealmIndex, fightingZoneId, callbacks);
     }
     
     function handleRealmHeaderClick(realmIndex) {
@@ -893,9 +897,19 @@ document.addEventListener('DOMContentLoaded', () => {
             gameState.equipment = gameState.presets[gameState.activePresetIndex].equipment;
         }
         
-        // Set initial view state
-        const firstUnlockedRealm = REALMS.findIndex(r => gameState.maxLevel >= r.requiredLevel);
-        currentViewingRealmIndex = firstUnlockedRealm !== -1 ? firstUnlockedRealm : 0;
+        // --- Set initial map view state based on current fighting level ---
+        const fightingSubZone = findSubZoneByLevel(gameState.currentFightingLevel);
+        const fightingRealmIndex = fightingSubZone ? REALMS.findIndex(r => Object.values(r.zones).some(z => z === fightingSubZone.parentZone)) : -1;
+        const fightingZoneId = fightingSubZone ? Object.keys(REALMS[fightingRealmIndex].zones).find(id => REALMS[fightingRealmIndex].zones[id] === fightingSubZone.parentZone) : null;
+
+        if (fightingRealmIndex !== -1) {
+            currentViewingRealmIndex = fightingRealmIndex;
+            currentViewingZoneId = fightingZoneId || 'world';
+        } else {
+            // Fallback for cases where level is out of defined bounds (e.g., new game)
+            currentViewingRealmIndex = 0;
+            currentViewingZoneId = 'world';
+        }
         
         setupEventListeners();
         recalculateStats();
@@ -1416,6 +1430,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                     if (viewId === 'inventory-view') {
                         ui.populateSalvageFilter(elements, gameState);
+                    }
+                    if (viewId === 'map-view') {
+                        isMapRenderPending = true; // Ensure map is rendered when switching to tab
                     }
                     tabs.forEach(t => t.classList.remove('active'));
                     tab.classList.add('active');
