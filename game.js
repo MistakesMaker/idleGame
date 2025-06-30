@@ -1,5 +1,3 @@
-// game.js
-
 import { REALMS } from './data/realms.js';
 import { MONSTERS } from './data/monsters.js';
 import { ITEMS } from './data/items.js';
@@ -292,41 +290,62 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function handleMonsterDefeated() {
+        // --- Get location info BEFORE progressing ---
+        const oldSubZone = findSubZoneByLevel(gameState.currentFightingLevel);
+        const oldRealmIndex = oldSubZone ? REALMS.findIndex(r => Object.values(r.zones).some(z => z === oldSubZone.parentZone)) : -1;
+    
         const result = logic.monsterDefeated(gameState, playerStats, currentMonster);
-        
+    
         result.logMessages.forEach(msg => {
             logMessage(elements.gameLogEl, msg.message, msg.class, isAutoScrollingLog);
         });
-
+    
         if (result.events && result.events.includes('gemFind')) {
             ui.showInfoPopup(elements.popupContainerEl, 'Double Gem!', {
-                top: '10%', 
-                fontSize: '3.5em' 
+                top: '10%',
+                fontSize: '3.5em'
             });
         }
-
+    
         ui.showGoldPopup(elements.popupContainerEl, result.goldGained);
-        
+    
         const allDrops = [...(result.droppedItems || []), ...(result.droppedGems || [])];
         if (allDrops.length > 0) {
             allDrops.forEach((drop, index) => {
                 ui.showItemDropAnimation(elements.popupContainerEl, drop, index);
             });
         }
-
+    
         const levelUpLogs = player.gainXP(gameState, result.xpGained);
         levelUpLogs.forEach(msg => {
             logMessage(elements.gameLogEl, msg, 'legendary', isAutoScrollingLog);
         });
-
-        const currentFightingRealmIndex = REALMS.findIndex(realm => 
-            Object.values(realm.zones).some(zone => 
-                Object.values(zone.subZones).some(sz => 
+    
+        // --- NEW LOGIC: Check for location change and update map view ---
+        if (gameState.isAutoProgressing) {
+            const newSubZone = findSubZoneByLevel(gameState.currentFightingLevel);
+            if (newSubZone) {
+                const newRealmIndex = REALMS.findIndex(r => Object.values(r.zones).some(z => z === newSubZone.parentZone));
+                // Check if we've entered a new realm or sub-zone
+                if (newRealmIndex !== -1 && (newRealmIndex !== oldRealmIndex || (oldSubZone && newSubZone.name !== oldSubZone.name))) {
+                    const newZoneId = Object.keys(REALMS[newRealmIndex].zones).find(id => REALMS[newRealmIndex].zones[id] === newSubZone.parentZone);
+                    
+                    // Update the view to follow the player
+                    currentViewingRealmIndex = newRealmIndex;
+                    currentViewingZoneId = newZoneId || 'world'; // Fallback to world map
+                    isMapRenderPending = true;
+                }
+            }
+        }
+    
+        const currentFightingRealmIndex = REALMS.findIndex(realm =>
+            Object.values(realm.zones).some(zone =>
+                Object.values(zone.subZones).some(sz =>
                     gameState.currentFightingLevel >= sz.levelRange[0] && gameState.currentFightingLevel <= sz.levelRange[1]
                 )
             )
         ) || 0;
-
+    
         const nextRealmIndex = currentFightingRealmIndex + 1;
         if (REALMS[nextRealmIndex] && gameState.maxLevel >= REALMS[nextRealmIndex].requiredLevel && !gameState.completedLevels.includes(REALMS[nextRealmIndex].requiredLevel - 1)) {
             logMessage(elements.gameLogEl, `A new realm has been unlocked: <b>${REALMS[nextRealmIndex].name}</b>!`, 'legendary', isAutoScrollingLog);
@@ -340,10 +359,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 gems: elements.gemSlotsEl.parentElement.scrollTop,
                 actionsPanel: document.querySelector('.actions-panel')?.scrollTop || 0
             };
-
+    
             startNewMonster();
             updateAll();
-            
+    
             elements.inventorySlotsEl.parentElement.scrollTop = scrollPositions.inventory;
             elements.forgeInventorySlotsEl.parentElement.scrollTop = scrollPositions.forge;
             elements.gemSlotsEl.parentElement.scrollTop = scrollPositions.gems;
@@ -351,7 +370,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (actionsPanel) {
                 actionsPanel.scrollTop = scrollPositions.actionsPanel;
             }
-
+    
         }, 300);
     }
         function startNewMonster() {
@@ -511,7 +530,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Determine player's current fighting location
         const fightingSubZone = findSubZoneByLevel(gameState.currentFightingLevel);
         const fightingRealmIndex = fightingSubZone ? REALMS.findIndex(r => Object.values(r.zones).some(z => z === fightingSubZone.parentZone)) : -1;
-        const fightingZoneId = fightingSubZone ? Object.keys(REALMS[fightingRealmIndex].zones).find(id => REALMS[fightingRealmIndex].zones[id] === fightingSubZone.parentZone) : null;
+        const fightingZoneId = fightingSubZone && fightingRealmIndex !== -1 ? Object.keys(REALMS[fightingRealmIndex].zones).find(id => REALMS[fightingRealmIndex].zones[id] === fightingSubZone.parentZone) : null;
 
         const callbacks = {
             onRealmHeaderClick: handleRealmHeaderClick,
@@ -656,9 +675,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const startCombat = (level, isFarming) => {
             gameState.currentFightingLevel = level;
             gameState.isFarming = isFarming;
-            // The auto-progress checkbox is now dynamically created, so we need to find it
-            const autoProgressCheckbox = document.querySelector('#map-view #auto-progress-checkbox');
-            gameState.isAutoProgressing = isFarming ? (autoProgressCheckbox && (/** @type {HTMLInputElement} */ (autoProgressCheckbox)).checked) : false;
+            
+            gameState.isAutoProgressing = isFarming ? gameState.isAutoProgressing : false;
+
             logMessage(elements.gameLogEl, `Traveling to level ${level}.`, '', isAutoScrollingLog);
             elements.modalBackdropEl.classList.add('hidden');
             startNewMonster();
@@ -900,7 +919,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // --- Set initial map view state based on current fighting level ---
         const fightingSubZone = findSubZoneByLevel(gameState.currentFightingLevel);
         const fightingRealmIndex = fightingSubZone ? REALMS.findIndex(r => Object.values(r.zones).some(z => z === fightingSubZone.parentZone)) : -1;
-        const fightingZoneId = fightingSubZone ? Object.keys(REALMS[fightingRealmIndex].zones).find(id => REALMS[fightingRealmIndex].zones[id] === fightingSubZone.parentZone) : null;
+        const fightingZoneId = fightingSubZone && fightingRealmIndex !== -1 ? Object.keys(REALMS[fightingRealmIndex].zones).find(id => REALMS[fightingRealmIndex].zones[id] === fightingSubZone.parentZone) : null;
 
         if (fightingRealmIndex !== -1) {
             currentViewingRealmIndex = fightingRealmIndex;
@@ -963,7 +982,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         addTapListener(elements.absorbedStatsListEl, (e) => {
             if (!(e.target instanceof Element)) return;
-            const toggleButton = e.target.closest('.slime-split-toggle-btn');
+            const toggleButton = e.target.closest('.slime-split-toggle-img');
             if (toggleButton) {
                 gameState.isSlimeSplitEnabled = !gameState.isSlimeSplitEnabled;
                 logMessage(elements.gameLogEl, `Slime Split effect is now <b class="legendary">${gameState.isSlimeSplitEnabled ? 'ON' : 'OFF'}</b>.`, '', isAutoScrollingLog);
@@ -1237,7 +1256,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         addTapListener(elements.gemCraftingSlotsContainer, (e) => {
-            if (!(e.target instanceof HTMLElement)) return;
+            if (!(e.target instanceof Element)) return;
             const slot = e.target.closest('.gem-crafting-slot');
             if (!(slot instanceof HTMLElement)) return;
         
@@ -1369,6 +1388,13 @@ document.addEventListener('DOMContentLoaded', () => {
         addTapListener(elements.modalCloseBtnEl, () => elements.modalBackdropEl.classList.add('hidden'));
         addTapListener(elements.modalBackdropEl, (e) => {
             if (e.target === elements.modalBackdropEl) elements.modalBackdropEl.classList.add('hidden');
+        });
+
+        addTapListener(elements.autoProgressToggleEl, () => {
+            gameState.isAutoProgressing = !gameState.isAutoProgressing;
+            logMessage(elements.gameLogEl, `Auto-progress ${gameState.isAutoProgressing ? 'enabled' : 'disabled'}.`, '', isAutoScrollingLog);
+            autoSave();
+            updateAll();
         });
         
         document.querySelectorAll('.preset-btn').forEach((btn, index) => {
