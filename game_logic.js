@@ -365,14 +365,17 @@ export function monsterDefeated(gameState, playerStats, currentMonster) {
 
 /**
  * Generates a new monster based on the current fighting level.
- */export function generateMonster(level, specialEncounter = null) {
-    console.log("--- STARTING MONSTER GENERATION --- For level:", level); // MODIFIED
-
+ */
+export function generateMonster(level, specialEncounter = null) {
     let monsterData;
     let monsterHealth;
 
     if (specialEncounter && specialEncounter.type === 'GOLDEN_SLIME') {
-        // ... (this part is fine)
+        // ** THE FIX IS HERE **
+        // This logic was missing. It needs to be restored so the game doesn't crash
+        // when trying to generate a Golden Slime.
+        monsterData = MONSTERS.GOLDEN_SLIME;
+        monsterHealth = specialEncounter.hp;
     } else {
         const subZone = findSubZoneByLevel(level);
 
@@ -383,15 +386,14 @@ export function monsterDefeated(gameState, playerStats, currentMonster) {
             monsterData = MONSTERS.SLIME;
         }
 
+        // Your new tuned values for monster HP calculation
         const baseHealthFactor = 4;
         const healthPower = 2.6;
 
-
+        // Base HP calculation
         monsterHealth = (baseHealthFactor * Math.pow(level, healthPower));
 
-       //console.log("DEBUG: Calculated Base HP (pre-multiplier):", monsterHealth);
-
-        // ... world tier multiplier ...
+        // World tier multiplier
         const worldTier = Math.floor((level - 1) / 100);
         if (worldTier > 0) {
             const spikeMultiplier = 6;
@@ -406,17 +408,13 @@ export function monsterDefeated(gameState, playerStats, currentMonster) {
             monsterHealth *= 9.287;
         } else if (isMiniBossLevel(level)) {
             monsterHealth *= 5.1123;
-
         }
     }
     
     monsterHealth = Math.ceil(monsterHealth);
     
-    console.log("--- FINAL HP SET TO:", monsterHealth, "---"); // MODIFIED
-
     const newMonster = { name: monsterData.name, data: monsterData };
     const newMonsterState = { hp: monsterHealth, maxHp: monsterHealth };
     
     return { newMonster, newMonsterState };
-
 }
