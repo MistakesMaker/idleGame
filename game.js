@@ -663,7 +663,9 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         };
         populateOptions(currentTier);
-    }    function showSubZoneModal(subZone) {
+    }    
+    
+    function showSubZoneModal(subZone) {
         elements.modalTitleEl.textContent = subZone.name;
         elements.modalBodyEl.innerHTML = '';
         elements.modalCloseBtnEl.classList.remove('hidden');
@@ -678,10 +680,23 @@ document.addEventListener('DOMContentLoaded', () => {
             
             gameState.isAutoProgressing = isFarming ? gameState.isAutoProgressing : false;
 
+            // --- NEW LOGIC for manual travel map update ---
+            const newSubZone = findSubZoneByLevel(gameState.currentFightingLevel);
+            if (newSubZone) {
+                const newRealmIndex = REALMS.findIndex(r => Object.values(r.zones).some(z => z === newSubZone.parentZone));
+                if (newRealmIndex !== -1) {
+                    const newZoneId = Object.keys(REALMS[newRealmIndex].zones).find(id => REALMS[newRealmIndex].zones[id] === newSubZone.parentZone);
+                    currentViewingRealmIndex = newRealmIndex;
+                    currentViewingZoneId = newZoneId || 'world';
+                    isMapRenderPending = true;
+                }
+            }
+            // --- END NEW LOGIC ---
+
             logMessage(elements.gameLogEl, `Traveling to level ${level}.`, '', isAutoScrollingLog);
             elements.modalBackdropEl.classList.add('hidden');
             startNewMonster();
-            updateAll();
+            updateAll(); // This will now re-render the map if the flag is set
             autoSave();
         };
 
