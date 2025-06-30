@@ -88,6 +88,7 @@ export function initDOMElements() {
         absorbedStatsListEl: document.getElementById('absorbed-stats-list'),
         prestigeRequirementTextEl: document.getElementById('prestige-requirement-text'),
         mapAccordionContainerEl: document.getElementById('map-accordion-container'),
+        autoProgressToggleEl: document.getElementById('auto-progress-toggle'),
         modalBackdropEl: document.getElementById('modal-backdrop'),
         modalContentEl: document.getElementById('modal-content'),
         modalTitleEl: document.getElementById('modal-title'),
@@ -266,12 +267,12 @@ export function updateUI(elements, gameState, playerStats, currentMonster, salva
         monsterHealthTextEl, upgradeClickCostEl, upgradeDpsCostEl, heroLevelEl,
         heroXpBarEl, attributePointsEl, attrStrengthEl, attrAgilityEl, attrLuckEl, addStrengthBtn,
         addAgilityBtn, addLuckBtn, bonusGoldStatEl, magicFindStatEl, prestigeCountStatEl,
-        prestigeRequirementTextEl, currentLevelEl, monsterHealthBarEl,
+        prestigeRequirementTextEl, currentLevelEl, autoProgressToggleEl, monsterHealthBarEl,
         upgradeClickLevelEl, upgradeDpsLevelEl, inventorySlotsEl, lootMonsterNameEl,
         lootTableDisplayEl, prestigeButton, gemSlotsEl, gemCraftingSlotsContainer, gemCraftBtn,
         forgeInventorySlotsEl, forgeSelectedItemEl, forgeRerollBtn,
         prestigeEquipmentPaperdoll, prestigeInventoryDisplay, prestigeSelectionCount, prestigeSelectionMax,
-        goldenSlimeStreakEl, mapAccordionContainerEl
+        goldenSlimeStreakEl
     } = elements;
 
     // --- Stats and Hero Info ---
@@ -425,7 +426,6 @@ export function updateUI(elements, gameState, playerStats, currentMonster, salva
     }
     
     const absorbedUniqueEffects = gameState.absorbedUniqueEffects || {};
-    // --- FIX START: Logic to render Slime Split with a toggle ---
     for (const [effectKey, count] of Object.entries(absorbedUniqueEffects)) {
         if (count > 0) {
             const effectData = UNIQUE_EFFECTS[effectKey];
@@ -436,10 +436,9 @@ export function updateUI(elements, gameState, playerStats, currentMonster, salva
 
                 if (effectKey === 'slimeSplit') {
                     const isEnabled = gameState.isSlimeSplitEnabled !== false; // Default to true if undefined
-                    const buttonText = isEnabled ? 'ON' : 'OFF';
-                    const buttonClass = isEnabled ? 'toggle-on' : 'toggle-off';
+                    const imgSrc = isEnabled ? 'images/game_assets/on_button.png' : 'images/game_assets/off_button.png';
                     effectEl.innerHTML = `
-                        <button class="slime-split-toggle-btn ${buttonClass}">${buttonText}</button>
+                        <img src="${imgSrc}" class="toggle-switch-img slime-split-toggle-img" alt="Toggle Slime Split">
                         <div class="prestige-stat-text">
                             <div>Absorbed Unique:</div>
                             <div>${effectData.name}${stackText}</div>
@@ -455,9 +454,8 @@ export function updateUI(elements, gameState, playerStats, currentMonster, salva
             }
         }
     }
-    // --- FIX END ---
 
-    // --- CORRECTED: Display Absorbed Amethyst Synergy ---
+    // --- Amethyst Synergy ---
     const absorbedSynergies = gameState.absorbedSynergies || {};
     const amethystSynergyValue = absorbedSynergies['dps_to_clickDamage'] || 0;
     if (amethystSynergyValue > 0) {
@@ -468,14 +466,13 @@ export function updateUI(elements, gameState, playerStats, currentMonster, salva
         synergyEl.title = `Converts ${synergyValueText}% of your total DPS into Click Damage.`;
         absorbedStatsListEl.appendChild(synergyEl);
     }
-    // --- END: Display Absorbed Amethyst Synergy ---
 
     const nextPrestigeLevel = gameState.nextPrestigeLevel || 100;
     prestigeCountStatEl.textContent = (gameState.prestigeCount || 0).toString();
     prestigeRequirementTextEl.innerHTML = `Defeat the boss at Level <b>${nextPrestigeLevel}</b> to Prestige.`;
     (/** @type {HTMLButtonElement} */ (prestigeButton)).disabled = !gameState.currentRunCompletedLevels.includes(nextPrestigeLevel);
 
-    // --- New Prestige View UI ---
+    // --- Prestige View ---
     if (elements.prestigeView.classList.contains('active')) {
         const unlockedItemTypes = gameState.unlockedPrestigeSlots.map(slot => slot.replace(/\d/g, ''));
         const allItems = player.getAllItems(gameState);
@@ -512,16 +509,14 @@ export function updateUI(elements, gameState, playerStats, currentMonster, salva
     }
 
 
-    // --- Monster Info ---
+    // --- Monster & Loot Info ---
     const monsterDef = currentMonster.data;
     if (monsterDef) {
-        // --- NEW: Kill Count and Max Streak Display Logic ---
         const monsterKey = Object.keys(MONSTERS).find(key => MONSTERS[key] === monsterDef);
         const killCount = (monsterKey && gameState.monsterKillCounts && gameState.monsterKillCounts[monsterKey]) ? gameState.monsterKillCounts[monsterKey] : 0;
         const killCountTier = getNumberTier(killCount);
         let monsterNameHTML = `${currentMonster.name} <span style="font-size: 0.7em; color: #bdc3c7;">(Kills: <span class="currency-tier-${killCountTier}">${formatNumber(killCount)}</span>)</span>`;
         
-        // If it's a golden slime and there's a record, add the max streak info
         if (monsterDef.id === 'GOLDEN_SLIME' && (gameState.maxGoldenSlimeStreak || 0) > 0) {
             const maxGold = gameState.maxGoldenSlimeStreakGold || 0;
             const maxGoldTier = getNumberTier(maxGold);
@@ -529,8 +524,6 @@ export function updateUI(elements, gameState, playerStats, currentMonster, salva
         }
         
         lootMonsterNameEl.innerHTML = monsterNameHTML;
-        // --- END: Kill Count and Max Streak Display Logic ---
-
         lootTableDisplayEl.innerHTML = '';
         if(monsterDef.lootTable && monsterDef.lootTable.length > 0) {
             const totalWeight = monsterDef.lootTable.reduce((sum, entry) => sum + entry.weight, 0);
@@ -547,11 +540,14 @@ export function updateUI(elements, gameState, playerStats, currentMonster, salva
         }
     }
 
+    // --- Global Toggles ---
+    (/** @type {HTMLImageElement} */ (autoProgressToggleEl)).src = gameState.isAutoProgressing ? 'images/game_assets/on_button.png' : 'images/game_assets/off_button.png';
+
     // --- Salvage Filter ---
     const filterElements = initSalvageFilterDOMElements();
     const filter = gameState.salvageFilter;
     (/** @type {HTMLInputElement} */ (filterElements.enableSalvageFilter)).checked = filter.enabled;
-    (/** @type {HTMLInputElement} */ (filterElements.enableGemSalvage)).checked = filter.autoSalvageGems; // NEW
+    (/** @type {HTMLInputElement} */ (filterElements.enableGemSalvage)).checked = filter.autoSalvageGems;
     filterElements.salvageFilterControls.classList.toggle('hidden', !filter.enabled);
     (/** @type {HTMLSelectElement} */ (filterElements.filterKeepRarity)).value = filter.keepRarity;
     (/** @type {HTMLInputElement} */ (filterElements.filterKeepSockets)).value = String(filter.keepSockets);
@@ -1287,10 +1283,6 @@ function renderMap(contentEl, realm, viewingZoneId, gameState, fightingZoneId, {
     contentEl.innerHTML = `
         <div id="map-header">
             <h2 id="map-title"></h2>
-            <div class="control-group">
-                <input type="checkbox" id="auto-progress-checkbox" ${gameState.isAutoProgressing ? 'checked' : ''}>
-                <label for="auto-progress-checkbox">Auto-Progress</label>
-            </div>
             <button id="back-to-world-map-btn" class="hidden">Back to World</button>
         </div>
         <div id="map-container" class="map-container-instance"></div>
@@ -1300,15 +1292,7 @@ function renderMap(contentEl, realm, viewingZoneId, gameState, fightingZoneId, {
     const mapTitleEl = /** @type {HTMLHeadingElement} */ (contentEl.querySelector('#map-title'));
     const mapContainerEl = /** @type {HTMLElement} */ (contentEl.querySelector('.map-container-instance'));
     const backBtn = /** @type {HTMLButtonElement} */ (contentEl.querySelector('#back-to-world-map-btn'));
-    const autoProgressCheckbox = /** @type {HTMLInputElement} */ (contentEl.querySelector('#auto-progress-checkbox'));
     
-    // Attach event listener for the auto-progress checkbox
-    autoProgressCheckbox.addEventListener('change', (e) => {
-        const target = /** @type {HTMLInputElement} */ (e.target);
-        gameState.isAutoProgressing = target.checked;
-    });
-
-
     backBtn.addEventListener('click', () => onBackToWorldClick(REALMS.indexOf(realm)));
 
     if (viewingZoneId === 'world') {
