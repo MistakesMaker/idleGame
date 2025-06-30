@@ -1126,10 +1126,12 @@ export function createMapNode(name, iconSrc, coords, isUnlocked, isCompleted, cu
     if (!isUnlocked) {
         iconHtml += `<i class="fas fa-lock map-node-lock-icon"></i>`;
     }
+    
+    const displayName = isFightingZone ? `<b>${name}</b>` : name;
 
     node.innerHTML = `
         ${iconHtml}
-        <span class="map-node-label">${name}${levelText}</span>
+        <span class="map-node-label">${displayName}${levelText}</span>
     `;
     return node;
 }
@@ -1218,7 +1220,7 @@ export function switchView(elements, viewIdToShow) {
  * @param {number} viewingRealmIndex - The index of the realm currently being viewed.
  * @param {string} viewingZoneId - The ID of the zone currently being viewed within the realm.
  * @param {number} fightingRealmIndex - The index of the realm the player is in.
- * @param {string} fightingZoneId - The ID of the zone the player is in.
+ * @param {string | null} fightingZoneId - The ID of the zone the player is in.
  * @param {object} callbacks - An object containing the callback functions.
  * @param {(realmIndex: number) => void} callbacks.onRealmHeaderClick - Callback for when a realm header is clicked.
  * @param {(realmIndex: number, zoneId: string) => void} callbacks.onZoneNodeClick - Callback for when a zone node is clicked.
@@ -1278,7 +1280,7 @@ export function renderMapAccordion(elements, gameState, viewingRealmIndex, viewi
  * @param {object} realm - The realm object from REALMS data.
  * @param {string} viewingZoneId - The ID of the zone to view. 'world' for the realm map.
  * @param {object} gameState - The current game state.
- * @param {string} fightingZoneId - The ID of the zone the player is fighting in.
+ * @param {string | null} fightingZoneId - The ID of the zone the player is fighting in.
  * @param {object} callbacks - Click handler callbacks.
  */
 function renderMap(contentEl, realm, viewingZoneId, gameState, fightingZoneId, { onZoneNodeClick, onSubZoneNodeClick, onBackToWorldClick }) {
