@@ -384,17 +384,9 @@ export function monsterDefeated(gameState, playerStats, currentMonster) {
         }
 
         const baseHealthFactor = 4;
-        const healthPower = 2.25;
-        const tier = Math.floor((level - 1) / 10);
-        //const difficultyResetFactor = 1;
-        //const effectiveLevel = level - (tier * difficultyResetFactor);
-
-        // --- THE MOST IMPORTANT LOGS ARE HERE ---
-        // console.log(`DEBUG: Level is ${level}, EffectiveLevel is ${effectiveLevel}`);
+        const healthPower = 2.7;
 
         monsterHealth = (baseHealthFactor * Math.pow(level, healthPower));
-
-       //console.log("DEBUG: Calculated Base HP (pre-multiplier):", monsterHealth);
 
         // ... world tier multiplier ...
         const worldTier = Math.floor((level - 1) / 100);
@@ -408,9 +400,9 @@ export function monsterDefeated(gameState, playerStats, currentMonster) {
         if (isBigBossLevel(level)) {
             monsterHealth *= 15.546;
         } else if (isBossLevel(level)) {
-            monsterHealth *= 9.287;
+            monsterHealth *= 7.287;
         } else if (isMiniBossLevel(level)) {
-            monsterHealth *= 5.1123;
+            monsterHealth *= 3.1123;
 
         }
     }
