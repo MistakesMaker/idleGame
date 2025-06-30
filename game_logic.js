@@ -405,9 +405,9 @@ export function generateMonster(level, specialEncounter = null) {
         if (isBigBossLevel(level)) {
             monsterHealth *= 15.546;
         } else if (isBossLevel(level)) {
-            monsterHealth *= 9.287;
+            monsterHealth *= 6.287;
         } else if (isMiniBossLevel(level)) {
-            monsterHealth *= 5.1123;
+            monsterHealth *= 3.1123;
         }
     }
     
