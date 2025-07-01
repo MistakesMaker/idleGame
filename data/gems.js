@@ -28,7 +28,7 @@ export const GEMS = {
         tier: 1,
         icon: 'images/gems/ruby_1.png',
         width: 1, height: 1,
-        stats: { [STATS.CLICK_DAMAGE.key]: 500 }
+        stats: { [STATS.CLICK_DAMAGE.key]: 250 }
     },
     BASE_SAPPHIRE: {
         id: 'BASE_SAPPHIRE',
@@ -68,7 +68,7 @@ export const GEMS = {
         synergy: {
             source: 'dps',
             target: 'clickDamage',
-            value: 0.05
+            value: 0.01
         }
     },
 };
