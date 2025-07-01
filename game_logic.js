@@ -275,12 +275,18 @@ export function monsterDefeated(gameState, playerStats, currentMonster) {
         } else {
             // The chain breaks! Award the gold from the slime that was just defeated.
 
-            // --- FIX: Update the max streak counter ---
+            // --- FIX: Update the max streak counter AND max gold ---
             if (!gameState.goldenSlimeStreak) {
-                gameState.goldenSlimeStreak = { max: 0 };
+                gameState.goldenSlimeStreak = { max: 0, maxGold: 0 };
             }
-            if (encounter.chainLevel > gameState.goldenSlimeStreak.max) {
+            
+            const newStreakIsLonger = encounter.chainLevel > gameState.goldenSlimeStreak.max;
+            const newStreakIsEqual = encounter.chainLevel === gameState.goldenSlimeStreak.max;
+            const newGoldIsHigher = encounter.goldReward > gameState.goldenSlimeStreak.maxGold;
+
+            if (newStreakIsLonger || (newStreakIsEqual && newGoldIsHigher)) {
                 gameState.goldenSlimeStreak.max = encounter.chainLevel;
+                gameState.goldenSlimeStreak.maxGold = encounter.goldReward;
             }
             // --- End of Fix ---
 
