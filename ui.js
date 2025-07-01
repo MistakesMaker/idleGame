@@ -515,7 +515,7 @@ export function updateUI(elements, gameState, playerStats, currentMonster, salva
         const monsterKey = Object.keys(MONSTERS).find(key => MONSTERS[key] === monsterDef);
         const killCount = (monsterKey && gameState.monsterKillCounts && gameState.monsterKillCounts[monsterKey]) ? gameState.monsterKillCounts[monsterKey] : 0;
         const killCountTier = getNumberTier(killCount);
-        let monsterNameHTML = `${currentMonster.name} <span style="font-size: 0.7em; color: #bdc3c7;">(Kills: <span class="currency-tier-${killCountTier}">${formatNumber(killCount)}</span>)</span>`;
+        let monsterNameHTML = `${currentMonster.name} <span style="font-size: 0.7em; color: #bdc3c7;">(Kill Count: <span class="currency-tier-${killCountTier}">${formatNumber(killCount)}</span>)</span>`;
         
         if (monsterDef.id === 'GOLDEN_SLIME' && (gameState.maxGoldenSlimeStreak || 0) > 0) {
             const maxGold = gameState.maxGoldenSlimeStreakGold || 0;

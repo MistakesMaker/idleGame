@@ -265,7 +265,9 @@ export function monsterDefeated(gameState, playerStats, currentMonster) {
             // The chain continues!
             const nextChainLevel = encounter.chainLevel + 1;
             const nextChance = encounter.nextChance * 0.9;
-            const newHp = encounter.baseHp * Math.pow(1.5, nextChainLevel);
+            // FIX: The Golden Slime's HP should not increase during the chain.
+            // It should always be 50% of the original monster's HP.
+            const newHp = encounter.baseHp * 0.5;
             const newGoldReward = encounter.baseGold * Math.pow(5, nextChainLevel);
 
             gameState.specialEncounter = {
