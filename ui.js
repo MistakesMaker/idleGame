@@ -329,14 +329,13 @@ export function updateUI(elements, gameState, playerStats, currentMonster, salva
     else if (healthPercent < 60) monsterHealthBarEl.style.background = 'linear-gradient(to right, #f39c12, #e67e22)';
     else monsterHealthBarEl.style.background = 'linear-gradient(to right, #2ecc71, #27ae60)';
 
-    // Golden Slime Streak UI
-    if (gameState.goldenSlimeStreak > 1 && currentMonster.data.id === 'GOLDEN_SLIME') {
+    const encounter = gameState.specialEncounter;
+    if (encounter && encounter.type === 'GOLDEN_SLIME' && encounter.chainLevel > 1) {
         goldenSlimeStreakEl.classList.remove('hidden', 'streak-fade-out');
         const span = goldenSlimeStreakEl.querySelector('span');
-        if(span) span.textContent = gameState.goldenSlimeStreak.toString();
+        if (span) span.textContent = `x${encounter.chainLevel}`;
     } else {
          if (!goldenSlimeStreakEl.classList.contains('hidden') && !goldenSlimeStreakEl.classList.contains('streak-fade-out')) {
-            // This condition is met when the streak has just been broken.
             goldenSlimeStreakEl.classList.add('streak-fade-out');
             setTimeout(() => {
                 goldenSlimeStreakEl.classList.add('hidden');
@@ -517,10 +516,12 @@ export function updateUI(elements, gameState, playerStats, currentMonster, salva
         const killCountTier = getNumberTier(killCount);
         let monsterNameHTML = `${currentMonster.name} <span style="font-size: 0.7em; color: #bdc3c7;">(Kill Count: <span class="currency-tier-${killCountTier}">${formatNumber(killCount)}</span>)</span>`;
         
-        if (monsterDef.id === 'GOLDEN_SLIME' && (gameState.maxGoldenSlimeStreak || 0) > 0) {
-            const maxGold = gameState.maxGoldenSlimeStreakGold || 0;
+        // --- FIX: Display the max golden slime streak AND GOLD below the kill count ---
+        if (monsterDef.id === 'GOLDEN_SLIME' && gameState.goldenSlimeStreak && gameState.goldenSlimeStreak.max > 0) {
+            const maxStreak = gameState.goldenSlimeStreak.max;
+            const maxGold = gameState.goldenSlimeStreak.maxGold || 0;
             const maxGoldTier = getNumberTier(maxGold);
-            monsterNameHTML += `<br><small style="color: #bdc3c7; font-size: 0.7em;">Max Streak: ${gameState.maxGoldenSlimeStreak} (<span class="currency-tier-${maxGoldTier}">${formatNumber(maxGold)}</span> Gold)</small>`;
+            monsterNameHTML += `<br><small style="color: #f1c40f; font-size: 0.7em;">Max Streak: ${maxStreak} (<span class="currency-tier-${maxGoldTier}">${formatNumber(maxGold)}</span> Gold)</small>`;
         }
         
         lootMonsterNameEl.innerHTML = monsterNameHTML;

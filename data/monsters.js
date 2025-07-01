@@ -313,8 +313,8 @@ const undeadDesertMonsters = {
         image: 'images/monsters/skeleton.png',
         dropChance: 25,
         lootTable: [
-            { item: ITEMS.MITHRIL_SCIMITAR, weight: 10 },
-            { item: ITEMS.STEEL_GREAVES, weight: 8 },
+            { item: ITEMS.MITHRIL_SCIMITAR, weight: 5 },
+            { item: ITEMS.STEEL_GREAVES, weight: 18 },
             { item: GEMS.BASE_SAPPHIRE, weight: 0.2 }
         ]
     },

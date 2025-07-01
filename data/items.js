@@ -536,7 +536,7 @@ const orcVolcanoItems = {
         width: 2, height: 3,
         canHaveSockets: true,
         maxSockets: 3,
-        possibleStats: [ { key: STATS.CLICK_DAMAGE.key, min: 1250, max: 2100 } ]
+        possibleStats: [ { key: STATS.CLICK_DAMAGE.key, min: 1250, max: 5500 } ]
     },
 
     // --- Sub-Zone: Volcano Peak (Boss Lvl 200) ---

@@ -246,10 +246,6 @@ export function monsterDefeated(gameState, playerStats, currentMonster) {
     const logMessages = [];
     const previousMonsterMaxHp = gameState.monster.maxHp;
 
-    // ** THE FIX IS HERE **
-    // This block has been moved from below. By placing it at the top,
-    // it will now run for ALL monsters, including Golden Slimes, before
-    // the code splits into different paths.
     const monsterKey = Object.keys(MONSTERS).find(key => MONSTERS[key] === currentMonster.data);
     if (monsterKey) {
         if (!gameState.monsterKillCounts) gameState.monsterKillCounts = {};
@@ -265,8 +261,6 @@ export function monsterDefeated(gameState, playerStats, currentMonster) {
             // The chain continues!
             const nextChainLevel = encounter.chainLevel + 1;
             const nextChance = encounter.nextChance * 0.9;
-            // FIX: The Golden Slime's HP should not increase during the chain.
-            // It should always be 50% of the original monster's HP.
             const newHp = encounter.baseHp * 0.5;
             const newGoldReward = encounter.baseGold * Math.pow(5, nextChainLevel);
 
@@ -280,6 +274,16 @@ export function monsterDefeated(gameState, playerStats, currentMonster) {
             logMessages.push({ message: `The chain continues! The slime grows stronger... (Next chance: ${nextChance.toFixed(1)}%)`, class: 'legendary' });
         } else {
             // The chain breaks! Award the gold from the slime that was just defeated.
+
+            // --- FIX: Update the max streak counter ---
+            if (!gameState.goldenSlimeStreak) {
+                gameState.goldenSlimeStreak = { max: 0 };
+            }
+            if (encounter.chainLevel > gameState.goldenSlimeStreak.max) {
+                gameState.goldenSlimeStreak.max = encounter.chainLevel;
+            }
+            // --- End of Fix ---
+
             const goldGained = encounter.goldReward;
             gameState.gold += goldGained;
             const goldTier = Math.floor(Math.log10(goldGained) / 3);
@@ -329,8 +333,7 @@ export function monsterDefeated(gameState, playerStats, currentMonster) {
         });
     }
 
-    // --- FIX: Check for Slime Split ---
-    // First, determine the player's total chance from all sources
+    // Check for Slime Split
     let initialSlimeSplitChance = 0;
     const equippedSword = gameState.equipment.sword;
     const swordBase = equippedSword ? ITEMS[equippedSword.baseId] : null;
