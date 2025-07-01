@@ -754,7 +754,7 @@ const undeadDesertItems = {
         canHaveSockets: true,
         maxSockets: 3,
         possibleStats: [
-            { key: STATS.CLICK_DAMAGE.key, min: 2500, max: 7000 },
+            { key: STATS.CLICK_DAMAGE.key, min: 2500, max: 11000 },
             { key: STATS.MAGIC_FIND.key, min: 1, max: 3 }
         ]
     },
