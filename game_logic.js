@@ -246,6 +246,16 @@ export function monsterDefeated(gameState, playerStats, currentMonster) {
     const logMessages = [];
     const previousMonsterMaxHp = gameState.monster.maxHp;
 
+    // ** THE FIX IS HERE **
+    // This block has been moved from below. By placing it at the top,
+    // it will now run for ALL monsters, including Golden Slimes, before
+    // the code splits into different paths.
+    const monsterKey = Object.keys(MONSTERS).find(key => MONSTERS[key] === currentMonster.data);
+    if (monsterKey) {
+        if (!gameState.monsterKillCounts) gameState.monsterKillCounts = {};
+        gameState.monsterKillCounts[monsterKey] = (gameState.monsterKillCounts[monsterKey] || 0) + 1;
+    }
+
     // --- Path 1: Player defeated a Golden Slime ---
     if (currentMonster.data.id === 'GOLDEN_SLIME') {
         const encounter = gameState.specialEncounter;
@@ -289,12 +299,6 @@ export function monsterDefeated(gameState, playerStats, currentMonster) {
     // --- Path 2: Player defeated a normal monster ---
     if (!gameState.completedLevels.includes(level)) gameState.completedLevels.push(level);
     if (!gameState.currentRunCompletedLevels.includes(level)) gameState.currentRunCompletedLevels.push(level);
-
-    const monsterKey = Object.keys(MONSTERS).find(key => MONSTERS[key] === currentMonster.data);
-    if (monsterKey) {
-        if (!gameState.monsterKillCounts) gameState.monsterKillCounts = {};
-        gameState.monsterKillCounts[monsterKey] = (gameState.monsterKillCounts[monsterKey] || 0) + 1;
-    }
 
     // Calculate base rewards
     const tier = Math.floor((level - 1) / 10);
@@ -340,7 +344,7 @@ export function monsterDefeated(gameState, playerStats, currentMonster) {
             chainLevel: 1,
             baseHp: previousMonsterMaxHp,
             baseGold: goldGained, // Store the gold that would have been gained
-            hp: previousMonsterMaxHp * 1.5,
+            hp: previousMonsterMaxHp * 0.5,
             goldReward: goldGained * 5,
             nextChance: initialSlimeSplitChance * 0.9,
         };
@@ -371,9 +375,6 @@ export function generateMonster(level, specialEncounter = null) {
     let monsterHealth;
 
     if (specialEncounter && specialEncounter.type === 'GOLDEN_SLIME') {
-        // ** THE FIX IS HERE **
-        // This logic was missing. It needs to be restored so the game doesn't crash
-        // when trying to generate a Golden Slime.
         monsterData = MONSTERS.GOLDEN_SLIME;
         monsterHealth = specialEncounter.hp;
     } else {
