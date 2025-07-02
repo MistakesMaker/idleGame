@@ -935,6 +935,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                                 monster: monster,
                                                 chance: (lootEntry.weight / totalWeight) * monster.dropChance,
                                                 location: `${zone.name} - Lvl ${subZone.levelRange[0]}`,
+                                                level: subZone.levelRange[0],
                                                 realmIndex: i
                                             });
                                             // Found it, no need to check other zones in this realm for this monster
@@ -2251,13 +2252,28 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
     
+    function handleWikiTravel(level) {
+        gameState.isAutoProgressing = false;
+        elements.modalBackdropEl.classList.add('hidden');
+        
+        logMessage(elements.gameLogEl, `Traveling to fight monsters at level ${level}.`, 'uncommon', isAutoScrollingLog);
+        
+        gameState.currentFightingLevel = level;
+        startNewMonster();
+        
+        recalculateStats();
+        updateAll();
+        autoSave();
+    }
+
     function setupWikiListeners() {
         const {
             wikiSearchInput,
             wikiTypeFilter,
             wikiSocketsFilter,
             wikiStatsFilterContainer,
-            wikiResetFiltersBtn
+            wikiResetFiltersBtn,
+            wikiResultsContainer
         } = elements;
 
         const updateAndApplyFilters = () => {
@@ -2297,6 +2313,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             });
             updateAndApplyFilters();
+        });
+
+        addTapListener(wikiResultsContainer, (e) => {
+            const card = (/** @type {HTMLElement} */ (e.target)).closest('.wiki-item-card');
+            if (card instanceof HTMLElement && card.dataset.itemId) {
+                const itemData = wikiData.find(item => item.id === card.dataset.itemId);
+                if (itemData && itemData.dropSources.length > 0) {
+                    ui.showWikiTravelModal(elements, itemData.dropSources, gameState.maxLevel, handleWikiTravel);
+                }
+            }
         });
     }
 

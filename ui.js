@@ -1493,6 +1493,7 @@ export function renderWikiResults(containerEl, filteredWikiData) {
     filteredWikiData.forEach(itemData => {
         const card = document.createElement('div');
         card.className = 'wiki-item-card';
+        card.dataset.itemId = itemData.id; // Add ID for click handling
         card.innerHTML = createWikiItemCardHTML(itemData);
         containerEl.appendChild(card);
     });
@@ -1560,4 +1561,53 @@ function createWikiItemCardHTML(itemData) {
             </div>
         </div>
     `;
+}
+
+/**
+ * Shows the modal for selecting a monster to travel to.
+ * @param {object} elements - The main DOM elements object.
+ * @param {Array<object>} dropSources - The sources for a specific item.
+ * @param {number} playerMaxLevel - The highest level the player has reached.
+ * @param {function(number): void} travelCallback - Function to call when a travel button is clicked.
+ */
+export function showWikiTravelModal(elements, dropSources, playerMaxLevel, travelCallback) {
+    elements.modalTitleEl.textContent = 'Travel to Monster';
+    
+    const list = document.createElement('ul');
+    list.className = 'wiki-travel-options-list';
+
+    if (dropSources.length > 0) {
+        const sortedSources = dropSources.sort((a, b) => a.level - b.level);
+        sortedSources.forEach(source => {
+            const isUnlocked = playerMaxLevel >= source.level;
+            const li = document.createElement('li');
+            li.className = 'wiki-travel-option';
+
+            const travelBtn = document.createElement('button');
+            travelBtn.className = 'wiki-travel-btn';
+            travelBtn.textContent = 'Travel';
+            travelBtn.disabled = !isUnlocked;
+            if (isUnlocked) {
+                travelBtn.addEventListener('click', () => travelCallback(source.level));
+            }
+            
+            li.innerHTML = `
+                <img src="${source.monster.image}" alt="${source.monster.name}" class="wiki-travel-monster-icon">
+                <div class="wiki-travel-monster-details">
+                    <span class="wiki-monster-name">${source.monster.name}</span>
+                    <span class="wiki-monster-location">${source.location}</span>
+                </div>
+            `;
+            li.appendChild(travelBtn);
+            list.appendChild(li);
+        });
+    } else {
+        list.innerHTML = '<li>No known drop sources for this item.</li>';
+    }
+
+    elements.modalBodyEl.innerHTML = '';
+    elements.modalBodyEl.appendChild(list);
+    
+    elements.modalCloseBtnEl.classList.remove('hidden');
+    elements.modalBackdropEl.classList.remove('hidden');
 }
