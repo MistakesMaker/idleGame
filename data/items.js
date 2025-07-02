@@ -975,10 +975,13 @@ const finalDungeonItems = {
 };
 
 // ====================================================================================
-// --- The Underdark Zone (Levels 401-800) ---
+// --- The Underdark Zone (Levels 401-700) ---
 // ====================================================================================
 const underdarkItems = {
-    // --- Crystal Caverns (Levels 401-500) ---
+    // --- Sub-Zone: Glimmering Path (Levels 401-424) ---
+    // (Currently no new items are introduced here)
+
+    // --- Sub-Zone: Crystal Golem (Boss Lvl 425) ---
     CROWN_OF_WISDOM: {
         id: 'CROWN_OF_WISDOM',
         name: "Crown of Wisdom",
@@ -993,7 +996,19 @@ const underdarkItems = {
         ]
     },
     
-    // --- Fungal Forest (Levels 501-600) ---
+    // --- Sub-Zone: Resonant Tunnels (Levels 426-449) ---
+    // (Currently no new items are introduced here)
+
+    // --- Sub-Zone: Crystal Guardian's Lair (Boss Lvl 450) ---
+    // (Currently no new items are introduced here)
+
+    // --- Sub-Zone: Deep Caverns (Levels 451-499) ---
+    // (Currently no new items are introduced here)
+
+    // --- Sub-Zone: Crystal Heart (Boss Lvl 500) ---
+    // (Currently no new items are introduced here)
+
+    // --- Sub-Zone: Spore Meadows (Levels 501-524) ---
     ROBE_OF_THE_ARCHMAGE: {
         id: 'ROBE_OF_THE_ARCHMAGE',
         name: "Robe of the Archmage",
@@ -1007,6 +1022,30 @@ const underdarkItems = {
             { key: STATS.MAGIC_FIND.key, min: 1, max: 3 },
         ]
     },
+
+    // --- Sub-Zone: Fungal Guardian (Boss Lvl 525) ---
+    // (Currently no new items are introduced here)
+
+    // --- Sub-Zone: Mycelial Network (Levels 526-549) ---
+    // (This item was moved to Green Meadows)
+
+    // --- Sub-Zone: Fungal Behemoth's Cave (Boss Lvl 550) ---
+    // (Currently no new items are introduced here)
+
+    // --- Sub-Zone: Shrieking Hollows (Levels 551-599) ---
+    // (Currently no new items are introduced here)
+
+    // --- Sub-Zone: The Great Fungus (Boss Lvl 600) ---
+    // (Currently no new items are introduced here)
+    
+    // --- Sub-Zone: Outer Spires (Levels 601-624) ---
+    // (Currently no new items are introduced here)
+
+    // --- Sub-Zone: Drow Patrol (Boss Lvl 625) ---
+    // (Currently no new items are introduced here)
+
+    // --- Sub-Zone: Webbed Catacombs (Levels 626-649) ---
+    // (Currently no new items are introduced here)
 
     // --- Abyssal Rift (Levels 701-800) ---
     VOIDFORGED_HELM: {

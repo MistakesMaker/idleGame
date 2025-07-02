@@ -110,7 +110,7 @@ export const REALMS = [
             }
         }
     },
-    {
+        {
         name: "The Underdark",
         mapImage: "images/underground_world_map.png", 
         requiredLevel: 401,
@@ -119,14 +119,20 @@ export const REALMS = [
                 name: "Crystal Caverns",
                 mapImage: "images/map_caves_zoomed.png",
                 monsterAreaBg: "images/backgrounds/bg_caves.png",
-                coords: { top: '80%', left: '15%' },
+                coords: { top: '70%', left: '25%' },
                 icon: 'images/icons/ring.png',
                 subZones: {
+                    // --- Sub-Zone: Glimmering Path (Levels 401-424) ---
                     "glimmering_path": { name: "Glimmering Path", levelRange: [401, 424], monsterPool: [MONSTERS.CRYSTAL_SPIDER, MONSTERS.SHARD_SLIME], coords: {top: '80%', left: '20%'} },
-                    "crystal_golem_boss": { name: "Crystal Golem", levelRange: [425, 425], monsterPool: [MONSTERS.CRYSTAL_GOLEM], coords: {top: '80%', left: '50%'}, isBoss: true },
+                    // --- Sub-Zone: Crystal Golem (Boss Lvl 425) ---
+                    "crystal_golem": { name: "Crystal Golem", levelRange: [425, 425], monsterPool: [MONSTERS.CRYSTAL_GOLEM], coords: {top: '80%', left: '50%'}, isBoss: true },
+                    // --- Sub-Zone: Resonant Tunnels (Levels 426-449) ---
                     "resonant_tunnels": { name: "Resonant Tunnels", levelRange: [426, 449], monsterPool: [MONSTERS.DEEP_GNOME_MINER, MONSTERS.CAVE_LURKER], coords: {top: '80%', left: '80%'} },
+                    // --- Sub-Zone: Crystal Guardian's Lair (Boss Lvl 450) ---
                     "crystal_guardian_lair": { name: "Crystal Guardian's Lair", levelRange: [450, 450], monsterPool: [MONSTERS.CRYSTALLINE_ELEMENTAL], coords: {top: '50%', left: '75%'}, isBoss: true },
+                    // --- Sub-Zone: Deep Caverns (Levels 451-499) ---
                     "deep_caverns": { name: "Deep Caverns", levelRange: [451, 499], monsterPool: [MONSTERS.CAVE_LURKER, MONSTERS.DEEP_GNOME_MINER, MONSTERS.CRYSTAL_SPIDER], coords: {top: '50%', left: '45%'} },
+                    // --- Sub-Zone: Crystal Heart (Boss Lvl 500) ---
                     "crystal_heart": { name: "Crystal Heart", levelRange: [500, 500], monsterPool: [MONSTERS.CRYSTAL_KING], coords: {top: '15%', left: '70%'}, isBoss: true }
                 }
             },
@@ -134,14 +140,20 @@ export const REALMS = [
                 name: "Fungal Forest",
                 mapImage: "images/map_fungal_zoomed.png",
                 monsterAreaBg: "images/backgrounds/bg_fungal.png",
-                coords: { top: '65%', left: '40%' },
+                coords: { top: '40%', left: '50%' },
                 icon: 'images/icons/necklace.png',
                 subZones: {
+                    // --- Sub-Zone: Spore Meadows (Levels 501-524) ---
                     "spore_meadows": { name: "Spore Meadows", levelRange: [501, 524], monsterPool: [MONSTERS.MYCONID_SPOREKEEPER, MONSTERS.SPORE_BAT], coords: {top: '80%', left: '20%'} },
+                    // --- Sub-Zone: Fungal Guardian (Boss Lvl 525) ---
                     "fungal_guardian": { name: "Fungal Guardian", levelRange: [525, 525], monsterPool: [MONSTERS.FUNGAL_BEHEMOTH], coords: {top: '80%', left: '50%'}, isBoss: true },
+                    // --- Sub-Zone: Mycelial Network (Levels 526-549) ---
                     "mycelial_network": { name: "Mycelial Network", levelRange: [526, 549], monsterPool: [MONSTERS.FUNGAL_CRAWLER, MONSTERS.SHRIEKER], coords: {top: '80%', left: '80%'} },
+                    // --- Sub-Zone: Fungal Behemoth's Cave (Boss Lvl 550) ---
                     "fungal_behemoth_cave": { name: "Fungal Behemoth's Cave", levelRange: [550, 550], monsterPool: [MONSTERS.GAS_SPORE], coords: {top: '50%', left: '75%'}, isBoss: true },
+                    // --- Sub-Zone: Shrieking Hollows (Levels 551-599) ---
                     "shrieking_hollows": { name: "Shrieking Hollows", levelRange: [551, 599], monsterPool: [MONSTERS.SHRIEKER, MONSTERS.MYCONID_SPOREKEEPER, MONSTERS.FUNGAL_CRAWLER], coords: {top: '50%', left: '45%'} },
+                    // --- Sub-Zone: The Great Fungus (Boss Lvl 600) ---
                     "the_great_fungus": { name: "The Great Fungus", levelRange: [600, 600], monsterPool: [MONSTERS.THE_GREAT_MYCELIUM], coords: {top: '15%', left: '70%'}, isBoss: true }
                 }
             },
@@ -149,14 +161,20 @@ export const REALMS = [
                 name: "Drow City",
                 mapImage: "images/map_drow_zoomed.png",
                 monsterAreaBg: "images/backgrounds/bg_drow.png",
-                coords: { top: '35%', left: '65%' },
+                coords: { top: '25%', left: '75%' },
                 icon: 'images/icons/belt.png',
                 subZones: {
+                    // --- Sub-Zone: Outer Spires (Levels 601-624) ---
                     "outer_spires": { name: "Outer Spires", levelRange: [601, 624], monsterPool: [MONSTERS.DROW_WARRIOR, MONSTERS.GIANT_CAVE_SPIDER], coords: {top: '80%', left: '20%'} },
+                    // --- Sub-Zone: Drow Patrol (Boss Lvl 625) ---
                     "drow_patrol": { name: "Drow Patrol", levelRange: [625, 625], monsterPool: [MONSTERS.DRIDER], coords: {top: '80%', left: '50%'}, isBoss: true },
+                    // --- Sub-Zone: Webbed Catacombs (Levels 626-649) ---
                     "webbed_catacombs": { name: "Webbed Catacombs", levelRange: [626, 649], monsterPool: [MONSTERS.DROW_MAGE, MONSTERS.SHADOW_STALKER], coords: {top: '80%', left: '80%'} },
+                    // --- Sub-Zone: Drow Barracks (Boss Lvl 650) ---
                     "drow_barracks": { name: "Drow Barracks", levelRange: [650, 650], monsterPool: [MONSTERS.DROW_PRIESTESS], coords: {top: '50%', left: '75%'}, isBoss: true },
+                    // --- Sub-Zone: Noble District (Levels 651-699) ---
                     "noble_district": { name: "Noble District", levelRange: [651, 699], monsterPool: [MONSTERS.DROW_WARRIOR, MONSTERS.DROW_MAGE, MONSTERS.SHADOW_STALKER], coords: {top: '50%', left: '45%'} },
+                    // --- Sub-Zone: Spider Queen's Lair (Boss Lvl 700) ---
                     "spider_queen_lair": { name: "Spider Queen's Lair", levelRange: [700, 700], monsterPool: [MONSTERS.SPIDER_QUEEN_MATRON], coords: {top: '15%', left: '70%'}, isBoss: true }
                 }
             },
