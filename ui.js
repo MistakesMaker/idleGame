@@ -437,8 +437,6 @@ export function updateLootPanel(elements, currentMonster, gameState) {
     const monsterDef = currentMonster.data;
     if (!monsterDef) return;
 
-    // *** THIS IS THE FIX ***
-    // The function now uses the real gameState to get the kill count.
     const monsterKey = Object.keys(MONSTERS).find(key => MONSTERS[key] === monsterDef);
     const killCount = (monsterKey && gameState.monsterKillCounts && gameState.monsterKillCounts[monsterKey]) ? gameState.monsterKillCounts[monsterKey] : 0;
     
@@ -567,7 +565,7 @@ export function updateUI(elements, gameState, playerStats, currentMonster, salva
     updateStatsPanel(elements, playerStats);
     updateUpgrades(elements, gameState);
     updateMonsterUI(elements, gameState, currentMonster);
-    updateLootPanel(elements, currentMonster, gameState); // *** FIX: Pass gameState here ***
+    updateLootPanel(elements, currentMonster, gameState);
     updatePrestigeUI(elements, gameState);
 
     // Grid Renders
@@ -1561,13 +1559,25 @@ function createWikiItemCardHTML(itemData) {
         const statName = Object.values(STATS).find(s => s.key === stat.key)?.name || stat.key;
         statsHtml += `<li>+${stat.min} to ${stat.max} ${statName}</li>`;
     });
+    
+    // *** START OF FIX ***
+    // 1. Display sockets right after stats, before special effects.
+    // 2. Remove custom styling to match other stats.
+    if (itemBase.canHaveSockets && itemBase.maxSockets > 0) {
+        statsHtml += `<li>Sockets: 0 - ${itemBase.maxSockets}</li>`;
+    }
+    
     if (itemBase.synergy) {
         statsHtml += `<li class="stat-special">Special: +${(itemBase.synergy.value * 100).toFixed(2)}% of total DPS to Click Dmg</li>`;
     }
+    
+    // 3. Display unique effect last, with a margin for separation but no glow.
     if (itemBase.uniqueEffect) {
         const effect = UNIQUE_EFFECTS[itemBase.uniqueEffect];
-        statsHtml += `<li class="legendary" style="margin-top: 8px;"><b>${effect.name}:</b> ${effect.description}</li>`;
+        statsHtml += `<li style="margin-top: 8px;"><b>${effect.name}:</b> ${effect.description}</li>`;
     }
+    // *** END OF FIX ***
+
     statsHtml += '</ul>';
 
     let dropsHtml = '<ul>';
