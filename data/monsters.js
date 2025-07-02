@@ -552,10 +552,10 @@ const finalDungeonMonsters = {
 };
 
 // ====================================================================================
-// --- The Underdark Zone Monsters (Levels 401-700) ---
+// --- The Underdark Zone Monsters (Levels 401-800) ---
 // ====================================================================================
 const underdarkMonsters = {
-    // --- Sub-Zone: Crystal Caverns (Levels 401-500) ---
+    // --- Zone: Crystal Caverns (Levels 401-500) ---
     CRYSTAL_SPIDER: {
         name: 'Crystal Spider',
         image: 'images/monsters/crystal_spider.png',
@@ -626,7 +626,7 @@ const underdarkMonsters = {
         ]
     },
 
-    // --- Sub-Zone: Fungal Forest (Levels 501-600) ---
+    // --- Zone: Fungal Forest (Levels 501-600) ---
     MYCONID_SPOREKEEPER: {
         name: 'Myconid Sporekeeper',
         image: 'images/monsters/myconid_sporekeeper.png',
@@ -694,7 +694,7 @@ const underdarkMonsters = {
         ]
     },
 
-    // --- Sub-Zone: Drow City (Levels 601-700) ---
+    // --- Zone: Drow City (Levels 601-700) ---
     DROW_WARRIOR: {
         name: 'Drow Warrior',
         image: 'images/monsters/drow_warrior.png',
@@ -760,7 +760,456 @@ const underdarkMonsters = {
             { item: ITEMS.BLADE_OF_THE_SPECTRE, weight: 15 },
         ]
     },
+    // --- Zone: Abyssal Rift (Levels 701-800) ---
+    SHADOW_FIEND: {
+        name: 'Shadow Fiend',
+        image: 'images/monsters/shadow_stalker.png',
+        dropChance: 30,
+        lootTable: [
+            { item: ITEMS.VOIDFORGED_HELM, weight: 2 },
+            { item: ITEMS.SHADOW_WEAVE_TUNIC, weight: 1 },
+            { item: ITEMS.VOIDFORGED_GREAVES, weight: 2 },
+            { item: ITEMS.SHADOW_WEAVE_SASH, weight: 1 },
+        ]
+    },
+    ABYSSAL_LEECH: {
+        name: 'Abyssal Leech',
+        image: 'images/monsters/abyssal_leech.png',
+        dropChance: 28,
+        lootTable: [
+            { item: ITEMS.ABYSSAL_EDGE, weight: 1 },
+            { item: ITEMS.RIFT_WARD, weight: 1 },
+        ]
+    },
+    VOID_WRAITH: {
+        name: 'Void Wraith',
+        image: 'images/monsters/sand_wraith.png',
+        dropChance: 35,
+        lootTable: [
+            { item: ITEMS.RING_OF_DESPAIR, weight: 1 },
+            { item: GEMS.BASE_AMETHYST, weight: 0.1 },
+            { item: ITEMS.SOULCAGE_AMULET, weight: 0.2 },
+        ]
+    },
+    DEMONIC_OVERSEER: {
+        name: 'Demonic Overseer',
+        image: 'images/monsters/demonic_overseer.png',
+        isBoss: true,
+        dropChance: 100,
+        lootTable: [
+            { item: ITEMS.SOULCAGE_AMULET, weight: 5 },
+            { item: ITEMS.ABYSSAL_EDGE, weight: 10 },
+            { item: ITEMS.VOIDFORGED_HELM, weight: 10 },
+        ]
+    },
+    BALOR: {
+        name: 'Balor',
+        image: 'images/monsters/balor.png',
+        isBoss: true,
+        dropChance: 100,
+        lootTable: [
+            { item: ITEMS.BALORS_WHIP, weight: 5 },
+            { item: ITEMS.RIFT_WARD, weight: 10 },
+            { item: GEMS.BASE_RUBY, weight: 20 },
+        ]
+    },
+    MAW_OF_THE_ABYSS: {
+        name: 'Maw of the Abyss',
+        image: 'images/monsters/maw_of_the_abyss.png',
+        isBoss: true,
+        dropChance: 100,
+        lootTable: [
+            { item: ITEMS.CHAOS_CORE, weight: 5 },
+            { item: ITEMS.SOULCAGE_AMULET, weight: 10 },
+            { item: ITEMS.BALORS_WHIP, weight: 2 },
+        ]
+    }
 };
+
+// ====================================================================================
+// --- The Sunken World Realm (Levels 801-1200) ---
+// ====================================================================================
+const sunkenWorldMonsters = {
+    // --- Zone: Tide-Wracked Coast (Levels 801-900) ---
+    GHOSTLY_PIRATE: {
+        name: "Ghostly Pirate",
+        image: "images/monsters/ghostly_pirate.png",
+        dropChance: 30,
+        lootTable: [
+            { item: ITEMS.TRIDENT_OF_TIDES, weight: 1 },
+            { item: ITEMS.CORAL_PLATEMAIL, weight: 1 },
+            { item: ITEMS.HELMET_OF_THE_TIDES, weight: 1 }
+        ]
+    },
+    SIREN: {
+        name: "Siren",
+        image: "images/monsters/siren.png",
+        dropChance: 25,
+        lootTable: [
+            { item: ITEMS.PEARL_OF_WISDOM, weight: 1 },
+            { item: ITEMS.SIRENSONG_CHARM, weight: 1 }
+        ]
+    },
+    TIDAL_ELEMENTAL: {
+        name: "Tidal Elemental",
+        image: "images/monsters/tidal_elemental.png",
+        isBoss: true,
+        dropChance: 100,
+        lootTable: [
+            { item: ITEMS.TRIDENT_OF_TIDES, weight: 5 },
+            { item: ITEMS.CORAL_PLATEMAIL, weight: 5 },
+            { item: ITEMS.HELMET_OF_THE_TIDES, weight: 5 }
+        ]
+    },
+    // --- Zone: Sunken City (Levels 901-1000) ---
+    DEEP_SEA_SERPENT: {
+        name: "Deep Sea Serpent",
+        image: "images/monsters/deep_sea_serpent.png",
+        dropChance: 30,
+        lootTable: [
+            { item: ITEMS.KRAKEN_HIDE_LEGGINGS, weight: 1 },
+            { item: ITEMS.PEARL_OF_WISDOM, weight: 1 },
+            { item: ITEMS.RING_OF_THE_DEEP, weight: 1 }
+        ]
+    },
+    ANGLERFISH_HORROR: {
+        name: "Anglerfish Horror",
+        image: "images/monsters/anglerfish_horror.png",
+        dropChance: 25,
+        lootTable: [
+            { item: ITEMS.ABYSSAL_LANTERN, weight: 1 },
+            { item: ITEMS.CRUSHING_GRASP_GAUNTLETS, weight: 1 }
+        ]
+    },
+    THE_KRAKEN: {
+        name: "The Kraken",
+        image: "images/monsters/the_kraken.png",
+        isBoss: true,
+        dropChance: 100,
+        lootTable: [
+            { item: ITEMS.KRAKEN_HIDE_LEGGINGS, weight: 5 },
+            { item: ITEMS.ABYSSAL_LANTERN, weight: 5 },
+            { item: ITEMS.RING_OF_THE_DEEP, weight: 5 }
+        ]
+    },
+    // --- Zone: Bioluminescent Trench (Levels 1001-1100) ---
+    VOLCANIC_TUBE_WORM: {
+        name: "Volcanic Tube Worm",
+        image: "images/monsters/volcanic_tube_worm.png",
+        dropChance: 30,
+        lootTable: [
+            { item: ITEMS.HELM_OF_THE_DEEP, weight: 1 },
+            { item: ITEMS.ABYSSAL_LANTERN, weight: 1 },
+            { item: ITEMS.PRESSUREPLATE_ARMOR, weight: 1 }
+        ]
+    },
+    MAGMA_CRAB: {
+        name: "Magma Crab",
+        image: "images/monsters/magma_crab.png",
+        dropChance: 25,
+        lootTable: [
+            { item: ITEMS.LEVIATHANS_BITE, weight: 0.5 },
+            { item: ITEMS.VOLCANIC_LOOP, weight: 1 }
+        ]
+    },
+    ANCIENT_LEVIATHAN: {
+        name: "Ancient Leviathan",
+        image: "images/monsters/ancient_leviathan.png",
+        isBoss: true,
+        dropChance: 100,
+        lootTable: [
+            { item: ITEMS.HELM_OF_THE_DEEP, weight: 5 },
+            { item: ITEMS.LEVIATHANS_BITE, weight: 2 },
+            { item: ITEMS.PRESSUREPLATE_ARMOR, weight: 5 }
+        ]
+    },
+    // --- Zone: Void Maw (Levels 1101-1200) ---
+    FACELESS_ONE: {
+        name: "Faceless One",
+        image: "images/monsters/faceless_one.png",
+        dropChance: 30,
+        lootTable: [
+            { item: ITEMS.EYE_OF_THE_MAELSTROM, weight: 1 },
+            { item: ITEMS.LEVIATHANS_BITE, weight: 0.5 }
+        ]
+    },
+    ELDRITCH_TENTACLE: {
+        name: "Eldritch Tentacle",
+        image: "images/monsters/eldritch_tentacle.png",
+        dropChance: 25,
+        lootTable: [
+            { item: ITEMS.EYE_OF_THE_MAELSTROM, weight: 1 },
+            { item: GEMS.BASE_AMETHYST, weight: 0.2 }
+        ]
+    },
+    CTHULIAN_ASPECT: {
+        name: "Cthulian Aspect",
+        image: "images/monsters/cthulian_aspect.png",
+        isBoss: true,
+        dropChance: 100,
+        lootTable: [
+            { item: ITEMS.LEVIATHANS_BITE, weight: 5 },
+            { item: ITEMS.EYE_OF_THE_MAELSTROM, weight: 5 }
+        ]
+    }
+};
+
+// ====================================================================================
+// --- The Celestial Planes Realm (Levels 1201-1600) ---
+// ====================================================================================
+const celestialPlanesMonsters = {
+    // --- Zone: Azure Pathway (Levels 1201-1300) ---
+    CLOUD_SERPENT: {
+        name: "Cloud Serpent",
+        image: "images/monsters/cloud_serpent.png",
+        dropChance: 30,
+        lootTable: [
+            { item: ITEMS.BLADE_OF_THE_SERAPH, weight: 1 },
+            { item: ITEMS.ARCHONS_PLATEMAIL, weight: 1 },
+            { item: ITEMS.CLOUDSTRIDER_BOOTS, weight: 1 }
+        ]
+    },
+    SKY_WISP: {
+        name: "Sky Wisp",
+        image: "images/monsters/sky_wisp.png",
+        dropChance: 25,
+        lootTable: [
+            { item: ITEMS.RING_OF_CONSTELLATIONS, weight: 1 },
+            { item: ITEMS.GALEFORCE_GUARD, weight: 1 }
+        ]
+    },
+    GRYPHON_SENTINEL: {
+        name: "Gryphon Sentinel",
+        image: "images/monsters/gryphon_sentinel.png",
+        isBoss: true,
+        dropChance: 100,
+        lootTable: [
+            { item: ITEMS.BLADE_OF_THE_SERAPH, weight: 5 },
+            { item: ITEMS.ARCHONS_PLATEMAIL, weight: 5 },
+            { item: ITEMS.CLOUDSTRIDER_BOOTS, weight: 5 }
+        ]
+    },
+    // --- Zone: Halls of Valor (Levels 1301-1400) ---
+    VALKYRIE: {
+        name: "Valkyrie",
+        image: "images/monsters/valkyrie.png",
+        dropChance: 30,
+        lootTable: [
+            { item: ITEMS.STARFORGED_GREAVES, weight: 1 },
+            { item: ITEMS.RING_OF_CONSTELLATIONS, weight: 1 },
+            { item: ITEMS.EINHERJARS_AXE, weight: 1 }
+        ]
+    },
+    EINHERJAR: {
+        name: "Einherjar",
+        image: "images/monsters/einherjar.png",
+        dropChance: 25,
+        lootTable: [
+            { item: ITEMS.AEGIS_OF_DAWN, weight: 1 },
+            { item: ITEMS.VALKYRIES_EMBRACE, weight: 1 }
+        ]
+    },
+    ODINS_RAVEN: {
+        name: "Odin's Raven",
+        image: "images/monsters/odins_raven.png",
+        isBoss: true,
+        dropChance: 100,
+        lootTable: [
+            { item: ITEMS.STARFORGED_GREAVES, weight: 5 },
+            { item: ITEMS.AEGIS_OF_DAWN, weight: 5 },
+            { item: ITEMS.VALKYRIES_EMBRACE, weight: 5 }
+        ]
+    },
+    // --- Zone: The Astral Sea (Levels 1401-1500) ---
+    STARWHALE: {
+        name: "Star-whale",
+        image: "images/monsters/starwhale.png",
+        dropChance: 30,
+        lootTable: [
+            { item: ITEMS.HALO_OF_LIGHT, weight: 1 },
+            { item: ITEMS.AEGIS_OF_DAWN, weight: 1 },
+            { item: ITEMS.STARWHALE_TALISMAN, weight: 1 }
+        ]
+    },
+    COMET_ELEMENTAL: {
+        name: "Comet Elemental",
+        image: "images/monsters/comet_elemental.png",
+        dropChance: 25,
+        lootTable: [
+            { item: ITEMS.CELESTIAL_DECREE, weight: 0.5 },
+            { item: ITEMS.COMETSTONE_BELT, weight: 1 }
+        ]
+    },
+    THE_LIVING_CONSTELLATION: {
+        name: "The Living Constellation",
+        image: "images/monsters/the_living_constellation.png",
+        isBoss: true,
+        dropChance: 100,
+        lootTable: [
+            { item: ITEMS.HALO_OF_LIGHT, weight: 5 },
+            { item: ITEMS.CELESTIAL_DECREE, weight: 2 },
+            { item: ITEMS.STARWHALE_TALISMAN, weight: 5 }
+        ]
+    },
+    // --- Zone: The Empyrean Throne (Levels 1501-1600) ---
+    SERAPH: {
+        name: "Seraph",
+        image: "images/monsters/seraph.png",
+        dropChance: 30,
+        lootTable: [
+            { item: ITEMS.HEART_OF_A_STAR, weight: 1 },
+            { item: ITEMS.CELESTIAL_DECREE, weight: 0.5 }
+        ]
+    },
+    ARCHON: {
+        name: "Archon",
+        image: "images/monsters/archon.png",
+        dropChance: 25,
+        lootTable: [
+            { item: ITEMS.HEART_OF_A_STAR, weight: 1 },
+            { item: GEMS.BASE_AMETHYST, weight: 0.3 }
+        ]
+    },
+    CELESTIAL_JUDGE: {
+        name: "Celestial Judge",
+        image: "images/monsters/celestial_judge.png",
+        isBoss: true,
+        dropChance: 100,
+        lootTable: [
+            { item: ITEMS.CELESTIAL_DECREE, weight: 5 },
+            { item: ITEMS.HEART_OF_A_STAR, weight: 5 }
+        ]
+    }
+};
+
+// ====================================================================================
+// --- The Aetherium Forge Realm (Levels 1601-2000) ---
+// ====================================================================================
+const aetheriumForgeMonsters = {
+    // --- Zone: Mana Wastes (Levels 1601-1700) ---
+    MANA_WRAITH: {
+        name: "Mana Wraith",
+        image: "images/monsters/mana_wraith.png",
+        dropChance: 30,
+        lootTable: [
+            { item: ITEMS.REALITY_CUTTER, weight: 1 },
+            { item: ITEMS.CLOCKWORK_PAULDRONS, weight: 1 },
+            { item: ITEMS.AUTOMATONS_EYE, weight: 1 }
+        ]
+    },
+    CHAOS_SPAWN: {
+        name: "Chaos Spawn",
+        image: "images/monsters/chaos_spawn.png",
+        dropChance: 25,
+        lootTable: [
+            { item: ITEMS.BAND_OF_INFINITE_POTENTIAL, weight: 1 },
+            { item: ITEMS.MANAWEAVE_LEGGINGS, weight: 1 }
+        ]
+    },
+    GUARDIAN_AUTOMATON: {
+        name: "Guardian Automaton",
+        image: "images/monsters/guardian_automaton.png",
+        isBoss: true,
+        dropChance: 100,
+        lootTable: [
+            { item: ITEMS.REALITY_CUTTER, weight: 5 },
+            { item: ITEMS.CLOCKWORK_PAULDRONS, weight: 5 },
+            { item: ITEMS.MANAWEAVE_LEGGINGS, weight: 5 }
+        ]
+    },
+    // --- Zone: Clockwork City (Levels 1701-1800) ---
+    LIVING_SPELLBOOK: {
+        name: "Living Spellbook",
+        image: "images/monsters/living_spellbook.png",
+        dropChance: 30,
+        lootTable: [
+            { item: ITEMS.RUNEFORGED_LEGGINGS, weight: 1 },
+            { item: ITEMS.BAND_OF_INFINITE_POTENTIAL, weight: 1 },
+            { item: ITEMS.SCROLL_OF_POWER, weight: 1 }
+        ]
+    },
+    RUNE_GOLEM: {
+        name: "Rune Golem",
+        image: "images/monsters/rune_golem.png",
+        dropChance: 25,
+        lootTable: [
+            { item: ITEMS.AEGIS_OF_THE_MAKER, weight: 1 },
+            { item: ITEMS.HELM_OF_FORBIDDEN_KNOWLEDGE, weight: 1 }
+        ]
+    },
+    THE_LIBRARIAN: {
+        name: "The Librarian",
+        image: "images/monsters/the_librarian.png",
+        isBoss: true,
+        dropChance: 100,
+        lootTable: [
+            { item: ITEMS.RUNEFORGED_LEGGINGS, weight: 5 },
+            { item: ITEMS.AEGIS_OF_THE_MAKER, weight: 5 },
+            { item: ITEMS.SCROLL_OF_POWER, weight: 5 }
+        ]
+    },
+    // --- Zone: Rune Scriptorium (Levels 1801-1900) ---
+    AETHER_ELEMENTAL: {
+        name: "Aether Elemental",
+        image: "images/monsters/aether_elemental.png",
+        dropChance: 30,
+        lootTable: [
+            { item: ITEMS.CROWN_OF_THE_ARCHITECT, weight: 1 },
+            { item: ITEMS.AEGIS_OF_THE_MAKER, weight: 1 },
+            { item: ITEMS.NEXUS_SHARD_PENDANT, weight: 1 }
+        ]
+    },
+    NEXUS_STALKER: {
+        name: "Nexus Stalker",
+        image: "images/monsters/nexus_stalker.png",
+        dropChance: 25,
+        lootTable: [
+            { item: ITEMS.THE_UNMAKER, weight: 0.5 },
+            { item: ITEMS.AETHERIUM_WEAVE_ROBES, weight: 1 }
+        ]
+    },
+    THE_FORGEMASTER: {
+        name: "The Forgemaster",
+        image: "images/monsters/the_forgemaster.png",
+        isBoss: true,
+        dropChance: 100,
+        lootTable: [
+            { item: ITEMS.CROWN_OF_THE_ARCHITECT, weight: 5 },
+            { item: ITEMS.THE_UNMAKER, weight: 2 },
+            { item: ITEMS.AETHERIUM_WEAVE_ROBES, weight: 5 }
+        ]
+    },
+    // --- Zone: Nexus of Creation (Levels 1901-2000) ---
+    PRIMORDIAL_BEING: {
+        name: "Primordial Being",
+        image: "images/monsters/primordial_being.png",
+        dropChance: 30,
+        lootTable: [
+            { item: ITEMS.THE_FIRST_SPARK, weight: 1 },
+            { item: ITEMS.THE_UNMAKER, weight: 0.5 }
+        ]
+    },
+    ECHO_OF_CREATION: {
+        name: "Echo of Creation",
+        image: "images/monsters/echo_of_creation.png",
+        dropChance: 25,
+        lootTable: [
+            { item: ITEMS.THE_FIRST_SPARK, weight: 1 },
+            { item: GEMS.BASE_AMETHYST, weight: 0.4 }
+        ]
+    },
+    THE_FIRST_SENTIENCE: {
+        name: "The First Sentience",
+        image: "images/monsters/the_first_sentience.png",
+        isBoss: true,
+        dropChance: 100,
+        lootTable: [
+            { item: ITEMS.THE_UNMAKER, weight: 5 },
+            { item: ITEMS.THE_FIRST_SPARK, weight: 5 }
+        ]
+    }
+};
+
 
 // ====================================================================================
 // --- Special & Generic Monsters ---
@@ -806,5 +1255,8 @@ export const MONSTERS = {
     ...undeadDesertMonsters,
     ...finalDungeonMonsters,
     ...underdarkMonsters,
+    ...sunkenWorldMonsters,
+    ...celestialPlanesMonsters,
+    ...aetheriumForgeMonsters,
     ...otherMonsters
 };
