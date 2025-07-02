@@ -156,6 +156,7 @@ document.addEventListener('DOMContentLoaded', () => {
             gems: [],
             monsterKillCounts: {},
             unlockedPrestigeSlots: ['sword'], 
+            goldenSlimeStreak: { max: 0, maxGold: 0 },
             absorbedStats: {},
             absorbedSynergies: {},
             absorbedUniqueEffects: {},
@@ -324,15 +325,12 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
         
-        // --- FIX: Logic to correctly place new gems ---
         if (result.droppedGems && result.droppedGems.length > 0) {
-            // Find all newly dropped gems that are still in the state (i.e., not yet placed)
             const newGemsToPlace = result.droppedGems.filter(droppedGem =>
                 gameState.gems.some(gemInState => gemInState.id === droppedGem.id && (gemInState.x === undefined || gemInState.x === -1))
             );
         
             newGemsToPlace.forEach((gemToPlace, index) => {
-                // Find a spot for the new gem, considering all *already placed* gems
                 const placedGems = gameState.gems.filter(g => g.x !== undefined && g.x !== -1);
                 const spot = findNextAvailableSpot(gemToPlace.width, gemToPlace.height, placedGems);
         
@@ -342,18 +340,15 @@ document.addEventListener('DOMContentLoaded', () => {
                         gemInState.x = spot.x;
                         gemInState.y = spot.y;
         
-                        // Now, add it to the UI grid
                         ui.showItemDropAnimation(elements.popupContainerEl, gemInState, index);
                         ui.addItemToGrid(elements.gemSlotsEl, gemInState, 'gem');
                     }
                 } else {
                     logMessage(elements.gameLogEl, `Your gem pouch is full! A ${gemToPlace.name} was lost.`, 'rare', isAutoScrollingLog);
-                    // Remove the unplaceable gem from the game state
                     gameState.gems = gameState.gems.filter(g => g.id !== gemToPlace.id);
                 }
             });
         }
-        // --- END OF FIX ---
     
         const levelUpLogs = player.gainXP(gameState, result.xpGained);
         if (levelUpLogs.length > 0) {
@@ -362,10 +357,14 @@ document.addEventListener('DOMContentLoaded', () => {
             ui.updateStatsPanel(elements, playerStats);
         }
         
+        // *** START OF FIX ***
+        // Update the upgrade buttons whenever currency changes
         ui.updateHeroPanel(elements, gameState);
         ui.updatePrestigeUI(elements, gameState);
         ui.updateCurrency(elements, gameState);
         ui.updateUpgrades(elements, gameState);
+        ui.renderPermanentUpgrades(elements, gameState);
+        // *** END OF FIX ***
     
         if (gameState.isAutoProgressing) {
             const newSubZone = findSubZoneByLevel(gameState.currentFightingLevel);
@@ -933,7 +932,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Explicitly ensure crucial properties are of the correct type,
                 // falling back to the base state's value if the loaded one is corrupt or missing.
                 inventory: loadedState.inventory || [],
-                gems: loadedState.gems || [], // <-- THIS IS THE KEY FIX
+                gems: loadedState.gems || [],
                 presets: loadedState.presets || baseState.presets,
                 upgrades: { ...baseState.upgrades, ...(loadedState.upgrades || {}) },
                 hero: {
@@ -958,7 +957,9 @@ document.addEventListener('DOMContentLoaded', () => {
                         ...baseState.salvageFilter.keepStats,
                         ...((loadedState.salvageFilter || {}).keepStats || {})
                     }
-                }
+                },
+                // Ensure goldenSlimeStreak is an object
+                goldenSlimeStreak: loadedState.goldenSlimeStreak && typeof loadedState.goldenSlimeStreak === 'object' ? loadedState.goldenSlimeStreak : baseState.goldenSlimeStreak,
             };
             
             if (!gameState.presetSystemMigrated) {

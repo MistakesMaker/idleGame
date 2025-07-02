@@ -127,6 +127,9 @@ export function initDOMElements() {
         unlockSlotPaperdoll: document.getElementById('unlock-slot-paperdoll'),
         unlockSlotCancelBtn: document.getElementById('unlock-slot-cancel-btn'),
         goldenSlimeStreakEl: document.getElementById('golden-slime-streak'),
+        goldenSlimeRecordsEl: document.getElementById('golden-slime-records'),
+        maxStreakStatEl: document.getElementById('max-streak-stat'),
+        maxGoldStatEl: document.getElementById('max-gold-stat'),
         viewPrestigeSlotsBtn: document.getElementById('view-prestige-slots-btn'),
         viewSlotsModalBackdrop: document.getElementById('view-slots-modal-backdrop'),
         viewSlotsPaperdoll: document.getElementById('view-slots-paperdoll'),
@@ -217,7 +220,6 @@ export function renderGrid(containerEl, items, options = {}) {
         
         let pos;
         if (calculatePositions) {
-            // --- FIX: Use the correct placement function to fill from the top down. ---
             pos = findEmptySpot(item.width, item.height, tempPlacement);
             if (pos) {
                 // Update the item's position in the main state array if it's being calculated
@@ -369,7 +371,7 @@ export function updateUpgrades(elements, gameState) {
  * @param {object} currentMonster The current monster object.
  */
 export function updateMonsterUI(elements, gameState, currentMonster) {
-    const { monsterImageEl, monsterNameEl, currentLevelEl, monsterAreaEl, goldenSlimeStreakEl } = elements;
+    const { monsterImageEl, monsterNameEl, currentLevelEl, monsterAreaEl, goldenSlimeStreakEl, goldenSlimeRecordsEl, maxStreakStatEl, maxGoldStatEl } = elements;
     
     if (monsterImageEl instanceof HTMLImageElement) {
         monsterImageEl.src = currentMonster.data.image;
@@ -377,16 +379,33 @@ export function updateMonsterUI(elements, gameState, currentMonster) {
     monsterImageEl.classList.toggle('boss-image', !!currentMonster.data.isBoss);
     monsterNameEl.textContent = currentMonster.name;
     
-    const isSpecialMonster = currentMonster && currentMonster.data.isSpecial;
+    const isSpecialMonster = currentMonster?.data.isSpecial;
     currentLevelEl.textContent = isSpecialMonster ? '??' : gameState.currentFightingLevel.toString();
     
     const encounter = gameState.specialEncounter;
-    if (encounter && encounter.type === 'GOLDEN_SLIME' && encounter.chainLevel > 1) {
-        goldenSlimeStreakEl.classList.remove('hidden', 'streak-fade-out');
-        const span = goldenSlimeStreakEl.querySelector('span');
-        if (span) span.textContent = `x${encounter.chainLevel}`;
+    if (encounter && encounter.type === 'GOLDEN_SLIME') {
+        // Show current streak
+        if (encounter.chainLevel > 1) {
+            goldenSlimeStreakEl.classList.remove('hidden', 'streak-fade-out');
+            const span = goldenSlimeStreakEl.querySelector('span');
+            if (span) span.textContent = `x${encounter.chainLevel}`;
+        } else {
+            goldenSlimeStreakEl.classList.add('hidden');
+        }
+        
+        // Show records
+        const streakRecords = gameState.goldenSlimeStreak;
+        if (streakRecords && streakRecords.max > 0) {
+            goldenSlimeRecordsEl.classList.remove('hidden');
+            maxStreakStatEl.textContent = streakRecords.max.toString();
+            maxGoldStatEl.textContent = formatNumber(streakRecords.maxGold);
+        } else {
+            goldenSlimeRecordsEl.classList.add('hidden');
+        }
     } else {
-         if (!goldenSlimeStreakEl.classList.contains('hidden') && !goldenSlimeStreakEl.classList.contains('streak-fade-out')) {
+        // Hide both if not a golden slime
+        goldenSlimeRecordsEl.classList.add('hidden');
+        if (!goldenSlimeStreakEl.classList.contains('hidden') && !goldenSlimeStreakEl.classList.contains('streak-fade-out')) {
             goldenSlimeStreakEl.classList.add('streak-fade-out');
             setTimeout(() => {
                 goldenSlimeStreakEl.classList.add('hidden');
@@ -397,7 +416,7 @@ export function updateMonsterUI(elements, gameState, currentMonster) {
 
     if (currentMonster.data.background) {
         monsterAreaEl.style.backgroundImage = `url('${currentMonster.data.background}')`;
-    } else if (currentMonster.data.isSpecial) {
+    } else if (isSpecialMonster) {
         monsterAreaEl.style.backgroundImage = `url('images/backgrounds/bg_golden_slime.png')`;
     } else {
         const subZone = findSubZoneByLevel(gameState.currentFightingLevel);
@@ -410,6 +429,7 @@ export function updateMonsterUI(elements, gameState, currentMonster) {
     
     updateMonsterHealthBar(elements, gameState.monster);
 }
+
 
 /**
  * Updates only the monster health bar and text.
@@ -989,7 +1009,6 @@ export function createItemHTML(item, showLock = true) {
 
 export function createGemHTML(gem) {
     if (!gem) return '';
-    // --- FIX: Add the .gem-quality class for correct styling ---
     return `<div class="gem gem-quality" data-gem-id="${String(gem.id)}">
                 <img src="${gem.icon}" alt="${gem.name}">
             </div>`;
@@ -1560,9 +1579,6 @@ function createWikiItemCardHTML(itemData) {
         statsHtml += `<li>+${stat.min} to ${stat.max} ${statName}</li>`;
     });
     
-    // *** START OF FIX ***
-    // 1. Display sockets right after stats, before special effects.
-    // 2. Remove custom styling to match other stats.
     if (itemBase.canHaveSockets && itemBase.maxSockets > 0) {
         statsHtml += `<li>Sockets: 0 - ${itemBase.maxSockets}</li>`;
     }
@@ -1571,12 +1587,10 @@ function createWikiItemCardHTML(itemData) {
         statsHtml += `<li class="stat-special">Special: +${(itemBase.synergy.value * 100).toFixed(2)}% of total DPS to Click Dmg</li>`;
     }
     
-    // 3. Display unique effect last, with a margin for separation but no glow.
     if (itemBase.uniqueEffect) {
         const effect = UNIQUE_EFFECTS[itemBase.uniqueEffect];
         statsHtml += `<li style="margin-top: 8px;"><b>${effect.name}:</b> ${effect.description}</li>`;
     }
-    // *** END OF FIX ***
 
     statsHtml += '</ul>';
 

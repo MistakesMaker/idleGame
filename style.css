@@ -161,7 +161,7 @@ select option {
     margin-bottom: 5px;
 }
 
-#monster-display { position: relative; width: 200px; height: 200px; margin: 20px auto; }
+#monster-display { position: relative; width: 200px; height: 200px; margin: 10px auto; /* Reduced margin */ }
 #monster-image { width: 100%; height: 100%; cursor: pointer; transition: transform 0.2s ease, filter 0.2s ease; -webkit-user-drag: none; }
 .monster-hit { animation: monster-hit-anim 0.2s ease; }
 @keyframes monster-hit-anim { 0% { transform: scale(1); } 50% { transform: scale(0.9); filter: brightness(1.5); } 100% { transform: scale(1); } }
@@ -566,7 +566,6 @@ h5 .legendary { color: #f39c12; }
     display: flex; 
     justify-content: center; 
     align-items: center; 
-    /* --- FIX: Add position relative for z-index context --- */
     position: relative;
     /* Set by JS: grid-column, grid-row */ 
 }
@@ -574,7 +573,6 @@ h5 .legendary { color: #f39c12; }
     transform: scale(1.1); 
     box-shadow: 0 0 8px #f1c40f; 
 }
-/* --- FIX: Add z-index on hover to prevent visual overlap --- */
 .gem-wrapper:hover {
     z-index: 10;
 }
@@ -1017,6 +1015,24 @@ h5 .legendary { color: #f39c12; }
     to   { opacity: 0; transform: scale(2); }
 }
 
+/* --- GOLDEN SLIME RECORDS --- */
+#golden-slime-records {
+    text-align: center;
+    font-size: 1em;
+    color: #bdc3c7;
+    margin-bottom: 10px;
+    padding: 3px 8px;
+    background-color: rgba(0,0,0,0.2);
+    border-radius: 5px;
+    border: 1px solid #4a637e;
+    pointer-events: none;
+}
+#golden-slime-records span {
+    color: #f1c40f;
+    font-weight: bold;
+}
+
+
 /* --- SCROLL TO BOTTOM BUTTON --- */
 #scroll-to-bottom-btn {
     position: absolute;
@@ -1350,3 +1366,10 @@ h5 .legendary { color: #f39c12; }
 .gem-wrapper:hover {
     z-index: 10; /* This lifts the hovered gem above others */
 }
+
+/* *** START OF FIX *** */
+.permanent-upgrade-card.disabled {
+    filter: grayscale(70%);
+    opacity: 0.6;
+}
+/* *** END OF FIX *** */
