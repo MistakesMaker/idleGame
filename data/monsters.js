@@ -430,7 +430,6 @@ const finalDungeonMonsters = {
         image: 'images/monsters/gargoyle.png',
         dropChance: 30,
         lootTable: [
-            { item: ITEMS.TOWER_SHIELD, weight: 3 },
             { item: ITEMS.STEEL_PLATEMAIL, weight: 5 },
             { item: ITEMS.BONE_LEGPLATES, weight: 2 },
         ]

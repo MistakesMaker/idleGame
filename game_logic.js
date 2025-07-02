@@ -317,7 +317,7 @@ export function monsterDefeated(gameState, playerStats, currentMonster) {
     const difficultyResetFactor = 1;
     const effectiveLevel = level - (tier * difficultyResetFactor);
 
-    let goldGained = 10 + (3 * Math.pow(effectiveLevel, 2.0));
+    let goldGained = 10 + (3 * Math.pow(effectiveLevel, 2.2));
     let xpGained = 20 * Math.pow(level, 1.2);
     
     if (isBigBossLevel(level)) { xpGained *= 3; goldGained *= 3; } 

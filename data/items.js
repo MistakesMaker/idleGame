@@ -785,7 +785,7 @@ const finalDungeonItems = {
         canHaveSockets: true,
         maxSockets: 3,
         possibleStats: [
-            { key: STATS.CLICK_DAMAGE.key, min: 100, max: 300 },
+            { key: STATS.CLICK_DAMAGE.key, min: 1000, max: 3000 },
             { key: STATS.DPS.key, min: 2000, max: 6000 },
         ]
     },
