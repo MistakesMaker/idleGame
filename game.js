@@ -1,3 +1,5 @@
+// --- START OF FILE game.js ---
+
 import { REALMS } from './data/realms.js';
 import { MONSTERS } from './data/monsters.js';
 import { ITEMS } from './data/items.js';
@@ -306,6 +308,10 @@ document.addEventListener('DOMContentLoaded', () => {
     
         const result = logic.monsterDefeated(gameState, playerStats, currentMonster);
     
+        // --- PERFORMANCE FIX ---
+        // Instead of a single massive update, we now call targeted UI updates.
+    
+        // 1. Update logs and popups
         result.logMessages.forEach(msg => {
             logMessage(elements.gameLogEl, msg.message, msg.class, isAutoScrollingLog);
         });
@@ -319,31 +325,42 @@ document.addEventListener('DOMContentLoaded', () => {
     
         ui.showGoldPopup(elements.popupContainerEl, result.goldGained);
     
-        const allDrops = [...(result.droppedItems || []), ...(result.droppedGems || [])];
-        if (allDrops.length > 0) {
-            allDrops.forEach((drop, index) => {
-                ui.showItemDropAnimation(elements.popupContainerEl, drop, index);
+        // 2. Animate and add dropped items/gems to the UI without re-rendering everything
+        if (result.droppedItems && result.droppedItems.length > 0) {
+            result.droppedItems.forEach((item, index) => {
+                ui.showItemDropAnimation(elements.popupContainerEl, item, index);
+                ui.addItemToGrid(elements.inventorySlotsEl, item);
+            });
+        }
+        if (result.droppedGems && result.droppedGems.length > 0) {
+            result.droppedGems.forEach((gem, index) => {
+                ui.showItemDropAnimation(elements.popupContainerEl, gem, index);
+                ui.addItemToGrid(elements.gemSlotsEl, gem, 'gem');
             });
         }
     
+        // 3. Handle XP and level ups, then update only the hero panel
         const levelUpLogs = player.gainXP(gameState, result.xpGained);
         levelUpLogs.forEach(msg => {
             logMessage(elements.gameLogEl, msg, 'legendary', isAutoScrollingLog);
         });
+        ui.updateHeroPanel(elements, gameState);
+        ui.updatePrestigeUI(elements, gameState); // Prestige button might enable
     
-        // --- NEW LOGIC: Check for location change and update map view ---
+        // 4. Update currency displays
+        ui.updateCurrency(elements, gameState);
+    
+        // --- Map progression logic remains the same ---
         if (gameState.isAutoProgressing) {
             const newSubZone = findSubZoneByLevel(gameState.currentFightingLevel);
             if (newSubZone) {
                 const newRealmIndex = REALMS.findIndex(r => Object.values(r.zones).some(z => z === newSubZone.parentZone));
-                // Check if we've entered a new realm or sub-zone
                 if (newRealmIndex !== -1 && (newRealmIndex !== oldRealmIndex || (oldSubZone && newSubZone.name !== oldSubZone.name))) {
                     const newZoneId = Object.keys(REALMS[newRealmIndex].zones).find(id => REALMS[newRealmIndex].zones[id] === newSubZone.parentZone);
                     
-                    // Update the view to follow the player
                     currentViewingRealmIndex = newRealmIndex;
-                    currentViewingZoneId = newZoneId || 'world'; // Fallback to world map
-                    isMapRenderPending = true;
+                    currentViewingZoneId = newZoneId || 'world';
+                    isMapRenderPending = true; // Flag for re-render on next visible frame
                 }
             }
         }
@@ -359,28 +376,21 @@ document.addEventListener('DOMContentLoaded', () => {
         const nextRealmIndex = currentFightingRealmIndex + 1;
         if (REALMS[nextRealmIndex] && gameState.maxLevel >= REALMS[nextRealmIndex].requiredLevel && !gameState.completedLevels.includes(REALMS[nextRealmIndex].requiredLevel - 1)) {
             logMessage(elements.gameLogEl, `A new realm has been unlocked: <b>${REALMS[nextRealmIndex].name}</b>!`, 'legendary', isAutoScrollingLog);
-            isMapRenderPending = true; // Flag map for re-render to show the new realm
+            isMapRenderPending = true;
         }
+    
         autoSave();
+    
+        // 5. Start the next monster after a short delay
         setTimeout(() => {
-            const scrollPositions = {
-                inventory: elements.inventorySlotsEl.parentElement.scrollTop,
-                forge: elements.forgeInventorySlotsEl.parentElement.scrollTop,
-                gems: elements.gemSlotsEl.parentElement.scrollTop,
-                actionsPanel: document.querySelector('.actions-panel')?.scrollTop || 0
-            };
-    
             startNewMonster();
-            updateAll();
-    
-            elements.inventorySlotsEl.parentElement.scrollTop = scrollPositions.inventory;
-            elements.forgeInventorySlotsEl.parentElement.scrollTop = scrollPositions.forge;
-            elements.gemSlotsEl.parentElement.scrollTop = scrollPositions.gems;
-            const actionsPanel = document.querySelector('.actions-panel');
-            if (actionsPanel) {
-                actionsPanel.scrollTop = scrollPositions.actionsPanel;
+            // Update only the UI related to the monster and map
+            ui.updateMonsterUI(elements, gameState, currentMonster);
+            ui.updateLootPanel(elements, currentMonster);
+            if (isMapRenderPending) {
+                renderMapAccordion();
+                isMapRenderPending = false;
             }
-    
         }, 300);
     }
     
@@ -389,25 +399,10 @@ document.addEventListener('DOMContentLoaded', () => {
         currentMonster = newMonster;
         gameState.monster = newMonsterState;
     
-        const monsterImageEl = (/** @type {HTMLImageElement} */ (elements.monsterImageEl));
-        monsterImageEl.src = currentMonster.data.image;
-        monsterImageEl.classList.toggle('boss-image', !!currentMonster.data.isBoss);
-    
-        elements.monsterNameEl.textContent = currentMonster.name;
-    
-        const monsterAreaEl = document.getElementById('monster-area');
-        if (currentMonster.data.background) {
-            monsterAreaEl.style.backgroundImage = `url('${currentMonster.data.background}')`;
-        } else if (currentMonster.data.isSpecial) {
-            monsterAreaEl.style.backgroundImage = `url('images/backgrounds/bg_golden_slime.png')`;
-        } else {
-            const subZone = findSubZoneByLevel(gameState.currentFightingLevel);
-            if (subZone && subZone.parentZone) {
-                monsterAreaEl.style.backgroundImage = `url('${subZone.parentZone.monsterAreaBg}')`;
-            } else {
-                monsterAreaEl.style.backgroundImage = `url('${REALMS[0].zones.green_meadows.monsterAreaBg}')`;
-            }
-        }
+        // --- PERFORMANCE FIX ---
+        // This function no longer re-renders the whole UI.
+        // It now only calls the specific UI functions needed for a new monster.
+        ui.updateMonsterUI(elements, gameState, newMonster);
     }
 
     function attack(baseDamage, isClick = false) {
@@ -452,7 +447,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (gameState.monster.hp <= 0) {
             handleMonsterDefeated();
         }
-        updateMonsterHealthUI();
+        // --- PERFORMANCE FIX ---
+        // Update only the health bar, not the entire UI.
+        ui.updateMonsterHealthBar(elements, gameState.monster);
     }
 
     function gameLoop() {
@@ -461,53 +458,19 @@ document.addEventListener('DOMContentLoaded', () => {
             if (gameState.monster.hp <= 0) {
                 handleMonsterDefeated();
             }
-            updateMonsterHealthUI();
+            // --- PERFORMANCE FIX ---
+            // Update only the health bar, not the entire UI.
+            ui.updateMonsterHealthBar(elements, gameState.monster);
         }
     }
 
-    function updateMonsterHealthUI() {
-        const { monsterHealthTextEl, monsterHealthBarEl } = elements;
-        monsterHealthTextEl.textContent = `${formatNumber(Math.ceil(Math.max(0, gameState.monster.hp)))} / ${formatNumber(gameState.monster.maxHp)}`;
-        const healthPercent = (gameState.monster.hp / gameState.monster.maxHp) * 100;
-        monsterHealthBarEl.style.width = `${healthPercent}%`;
-        if (healthPercent < 30) monsterHealthBarEl.style.background = 'linear-gradient(to right, #e74c3c, #c0392b)';
-        else if (healthPercent < 60) monsterHealthBarEl.style.background = 'linear-gradient(to right, #f39c12, #e67e22)';
-        else monsterHealthBarEl.style.background = 'linear-gradient(to right, #2ecc71, #27ae60)';
-    }
-
-    function updateAll() {
+    // --- PERFORMANCE FIX ---
+    // This function is now only used for full re-draws, like on initialization or major view switches.
+    // It's no longer in the critical path of the game loop.
+    function fullUIRender() {
         ui.updateUI(elements, gameState, playerStats, currentMonster, salvageMode, craftingGems, selectedItemForForge, bulkCombineSelection, bulkCombineDeselectedIds);
-        
-        // --- Conditional Map Rendering ---
-        if (isMapRenderPending) {
-            renderMapAccordion();
-            isMapRenderPending = false;
-        }
-        
+        renderMapAccordion();
         renderPermanentUpgrades();
-        
-        document.querySelectorAll('.gem-wrapper.selected-gem').forEach(el => el.classList.remove('selected-gem'));
-        document.querySelectorAll('.socket-target').forEach(el => el.classList.remove('socket-target'));
-
-        if (selectedGemForSocketing) {
-            const gemEl = document.querySelector(`.gem-wrapper[data-id="${selectedGemForSocketing.id}"]`);
-            if (gemEl) gemEl.classList.add('selected-gem');
-            
-            gameState.inventory.forEach((item) => {
-                if (item.sockets && item.sockets.includes(null)) {
-                    const itemEl = document.querySelector(`#inventory-slots .item-wrapper[data-id="${item.id}"]`);
-                    if (itemEl) itemEl.classList.add('socket-target');
-                }
-            });
-
-            for (const slotName in gameState.equipment) {
-                const item = gameState.equipment[slotName];
-                if (item && item.sockets && item.sockets.includes(null)) {
-                    const slotEl = document.getElementById(`slot-${slotName}`);
-                    if (slotEl) slotEl.classList.add('socket-target');
-                }
-            }
-        }
     }
 
     function autoSave() {
@@ -538,7 +501,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function renderMapAccordion() {
-        // Determine player's current fighting location
         const fightingSubZone = findSubZoneByLevel(gameState.currentFightingLevel);
         const fightingRealmIndex = fightingSubZone ? REALMS.findIndex(r => Object.values(r.zones).some(z => z === fightingSubZone.parentZone)) : -1;
         const fightingZoneId = fightingSubZone && fightingRealmIndex !== -1 ? Object.keys(REALMS[fightingRealmIndex].zones).find(id => REALMS[fightingRealmIndex].zones[id] === fightingSubZone.parentZone) : null;
@@ -560,14 +522,14 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         currentViewingZoneId = 'world';
         isMapRenderPending = true;
-        updateAll();
+        fullUIRender();
     }
     
     function handleZoneNodeClick(realmIndex, zoneId) {
         currentViewingRealmIndex = realmIndex;
         currentViewingZoneId = zoneId;
         isMapRenderPending = true;
-        updateAll();
+        fullUIRender();
     }
     
     function handleSubZoneNodeClick(subZone) {
@@ -578,42 +540,12 @@ document.addEventListener('DOMContentLoaded', () => {
         currentViewingRealmIndex = realmIndex;
         currentViewingZoneId = 'world';
         isMapRenderPending = true;
-        updateAll();
+        fullUIRender();
     }
     
     function renderPermanentUpgrades() {
-        const container = elements.permanentUpgradesContainerEl;
-        container.innerHTML = '';
-
-        for (const key in PERMANENT_UPGRADES) {
-            const upgrade = PERMANENT_UPGRADES[key];
-            const currentLevel = gameState.permanentUpgrades[key] || 0;
-            const cost = Math.floor(upgrade.baseCost * Math.pow(upgrade.costScalar, currentLevel));
-            const isMaxed = currentLevel >= upgrade.maxLevel;
-            
-            const bonus = upgrade.bonusPerLevel * currentLevel;
-            
-            const card = document.createElement('div');
-            card.className = 'permanent-upgrade-card';
-            if (gameState.gold < cost && !isMaxed) card.classList.add('disabled');
-            if (isMaxed) card.classList.add('maxed');
-
-            const description = upgrade.description.replace('{value}', bonus.toFixed(1));
-
-            card.innerHTML = `
-                <div class="upgrade-icon"><i class="${upgrade.icon}"></i></div>
-                <div class="upgrade-details">
-                    <h4>${upgrade.name}</h4>
-                    <p>${description}</p>
-                    <div class="upgrade-level">Level: ${currentLevel} / ${upgrade.maxLevel === Infinity ? '∞' : upgrade.maxLevel}</div>
-                </div>
-                <div class="upgrade-buy-section">
-                    ${isMaxed ? 'MAXED' : `<div class="upgrade-cost">${formatNumber(cost)} Gold</div>`}
-                    <button class="buy-permanent-upgrade-btn" data-upgrade-id="${upgrade.id}" ${gameState.gold < cost || isMaxed ? 'disabled' : ''}>Buy</button>
-                </div>
-            `;
-            container.appendChild(card);
-        }
+        // This is a full render, which is fine for a panel that doesn't change often.
+        ui.renderPermanentUpgrades(elements, gameState);
     }
 
     function populateBulkCombineControls() {
@@ -691,7 +623,6 @@ document.addEventListener('DOMContentLoaded', () => {
             
             gameState.isAutoProgressing = isFarming ? gameState.isAutoProgressing : false;
 
-            // --- NEW LOGIC for manual travel map update ---
             const newSubZone = findSubZoneByLevel(gameState.currentFightingLevel);
             if (newSubZone) {
                 const newRealmIndex = REALMS.findIndex(r => Object.values(r.zones).some(z => z === newSubZone.parentZone));
@@ -702,12 +633,20 @@ document.addEventListener('DOMContentLoaded', () => {
                     isMapRenderPending = true;
                 }
             }
-            // --- END NEW LOGIC ---
 
             logMessage(elements.gameLogEl, `Traveling to level ${level}.`, '', isAutoScrollingLog);
             elements.modalBackdropEl.classList.add('hidden');
             startNewMonster();
-            updateAll(); // This will now re-render the map if the flag is set
+
+            // --- PERFORMANCE FIX ---
+            // Only update what is necessary after travel
+            ui.updateMonsterUI(elements, gameState, currentMonster);
+            ui.updateLootPanel(elements, currentMonster);
+            ui.updateAutoProgressToggle(elements, gameState.isAutoProgressing);
+            if (isMapRenderPending) {
+                renderMapAccordion();
+                isMapRenderPending = false;
+            }
             autoSave();
         };
 
@@ -795,7 +734,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const baseXp = 20;
         const xpPower = 1.2;
-        // --- FIX: Use the correct `level` variable for XP calculation, matching the online formula ---
         let xpPerKill = baseXp * Math.pow(level, xpPower);
         
         if (isBigBossLevel(level)) {
@@ -938,7 +876,6 @@ document.addEventListener('DOMContentLoaded', () => {
                                                 level: subZone.levelRange[0],
                                                 realmIndex: i
                                             });
-                                            // Found it, no need to check other zones in this realm for this monster
                                             break; 
                                         }
                                     }
@@ -957,23 +894,18 @@ document.addEventListener('DOMContentLoaded', () => {
         const maxRealmIndex = highestUnlockedRealm ? REALMS.indexOf(highestUnlockedRealm) : -1;
 
         let filtered = wikiData.filter(itemData => {
-            // Realm Progression Filter
             const isAccessible = itemData.dropSources.length === 0 || itemData.dropSources.some(source => source.realmIndex <= maxRealmIndex);
             if (!isAccessible) return false;
 
-            // Search Text Filter
             if (wikiFilters.searchText && !itemData.base.name.toLowerCase().includes(wikiFilters.searchText)) {
                 return false;
             }
-            // Type Filter
             if (wikiFilters.type && itemData.base.type !== wikiFilters.type) {
                 return false;
             }
-            // Sockets Filter
             if (wikiFilters.sockets !== null && (itemData.base.maxSockets || 0) < wikiFilters.sockets) {
                 return false;
             }
-            // Stats Filter
             for (const [statKey, minValue] of wikiFilters.stats.entries()) {
                 const hasStat = itemData.base.possibleStats?.some(stat => stat.key === statKey && stat.max >= minValue);
                 if (!hasStat) {
@@ -1025,7 +957,6 @@ document.addEventListener('DOMContentLoaded', () => {
             gameState.equipment = gameState.presets[gameState.activePresetIndex].equipment;
         }
         
-        // --- WIKI INITIALIZATION ---
         buildWikiDatabase();
         const allItemTypes = new Set(wikiData.map(d => d.base.type).filter(Boolean));
         const allStatKeys = new Set();
@@ -1034,10 +965,8 @@ document.addEventListener('DOMContentLoaded', () => {
             if (d.base.synergy) allStatKeys.add('synergy');
         });
         ui.populateWikiFilters(elements, allItemTypes, allStatKeys);
-        applyWikiFilters(); // Initial render
-        // --- END WIKI INITIALIZATION ---
+        applyWikiFilters(); 
         
-        // --- Set initial map view state based on current fighting level ---
         const fightingSubZone = findSubZoneByLevel(gameState.currentFightingLevel);
         const fightingRealmIndex = fightingSubZone ? REALMS.findIndex(r => Object.values(r.zones).some(z => z === fightingSubZone.parentZone)) : -1;
         const fightingZoneId = fightingSubZone && fightingRealmIndex !== -1 ? Object.keys(REALMS[fightingRealmIndex].zones).find(id => REALMS[fightingRealmIndex].zones[id] === fightingSubZone.parentZone) : null;
@@ -1046,7 +975,6 @@ document.addEventListener('DOMContentLoaded', () => {
             currentViewingRealmIndex = fightingRealmIndex;
             currentViewingZoneId = fightingZoneId || 'world';
         } else {
-            // Fallback for cases where level is out of defined bounds (e.g., new game)
             currentViewingRealmIndex = 0;
             currentViewingZoneId = 'world';
         }
@@ -1055,7 +983,10 @@ document.addEventListener('DOMContentLoaded', () => {
         recalculateStats();
         startNewMonster();
         logMessage(elements.gameLogEl, savedData ? "Saved game loaded!" : "Welcome! Your progress will be saved automatically.", '', isAutoScrollingLog);
-        updateAll();
+        
+        // --- PERFORMANCE FIX ---
+        // This is the only place we should call the full render function.
+        fullUIRender();
         
         autoSave(); 
         setInterval(autoSave, 30000);
@@ -1097,7 +1028,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (attributeRow instanceof HTMLElement && attributeRow.dataset.attribute) {
                     player.spendAttributePoint(gameState, attributeRow.dataset.attribute);
                     recalculateStats();
-                    updateAll();
+                    // --- PERFORMANCE FIX ---
+                    ui.updateHeroPanel(elements, gameState);
+                    ui.updateStatsPanel(elements, playerStats);
                     autoSave();
                 }
             }
@@ -1109,7 +1042,8 @@ document.addEventListener('DOMContentLoaded', () => {
             if (toggleButton) {
                 gameState.isSlimeSplitEnabled = !gameState.isSlimeSplitEnabled;
                 logMessage(elements.gameLogEl, `Slime Split effect is now <b class="legendary">${gameState.isSlimeSplitEnabled ? 'ON' : 'OFF'}</b>.`, '', isAutoScrollingLog);
-                updateAll();
+                // --- PERFORMANCE FIX ---
+                ui.updatePrestigeUI(elements, gameState);
                 autoSave();
             }
         });
@@ -1142,7 +1076,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
 
                 recalculateStats();
-                updateAll();
+                // --- PERFORMANCE FIX ---
+                ui.updateCurrency(elements, gameState);
+                ui.updateUpgrades(elements, gameState);
+                ui.updateStatsPanel(elements, playerStats);
                 autoSave();
             }
         });
@@ -1154,49 +1091,33 @@ document.addEventListener('DOMContentLoaded', () => {
             logMessage(elements.gameLogEl, result.message, '', isAutoScrollingLog);
             if (result.success && result.item) {
                 logMessage(elements.gameLogEl, `The crate contained: <span class="${result.item.rarity}">${result.item.name}</span>`, '', isAutoScrollingLog);
+                // --- PERFORMANCE FIX ---
+                ui.addItemToGrid(elements.inventorySlotsEl, result.item);
+                ui.updateCurrency(elements, gameState);
+                ui.updateUpgrades(elements, gameState); // For buy button state
             }
-            updateAll();
             autoSave();
         });
 
         addTapListener(document.getElementById('salvage-mode-btn'), () => {
             salvageMode.active = !salvageMode.active;
-            const salvageBtn = document.getElementById('salvage-mode-btn');
-            const confirmBtn = document.getElementById('confirm-salvage-btn');
-            const selectAllBtn = document.getElementById('select-all-salvage-btn');
-            const raritySalvageContainer = document.getElementById('salvage-by-rarity-controls');
-            const autoSalvageBtn = document.getElementById('auto-salvage-filter-btn');
-
-            if (salvageBtn && confirmBtn && selectAllBtn && raritySalvageContainer && autoSalvageBtn) {
-                if (salvageMode.active) {
-                    salvageBtn.textContent = 'Cancel Salvage';
-                    salvageBtn.classList.add('active');
-                    confirmBtn.classList.remove('hidden');
-                    selectAllBtn.classList.remove('hidden');
-                    raritySalvageContainer.classList.remove('hidden');
-                    autoSalvageBtn.classList.add('hidden');
-                } else {
-                    salvageBtn.textContent = 'Select to Salvage';
-                    salvageBtn.classList.remove('active');
-                    confirmBtn.classList.add('hidden');
-                    selectAllBtn.classList.add('hidden');
-                    raritySalvageContainer.classList.add('hidden');
-                    autoSalvageBtn.classList.remove('hidden');
-                    salvageMode.selections = [];
-                }
+            // --- PERFORMANCE FIX ---
+            // Only update the salvage buttons and body class, no full re-render.
+            ui.toggleSalvageMode(elements, salvageMode.active);
+            if (!salvageMode.active) {
+                salvageMode.selections = [];
+                // Redraw inventory to remove selection highlights
+                ui.renderGrid(elements.inventorySlotsEl, gameState.inventory, { calculatePositions: true, salvageSelections: [], showLockIcon: true });
             }
-            document.body.classList.toggle('salvage-mode-active', salvageMode.active);
-            const salvageCountEl = document.getElementById('salvage-count');
-            if (salvageCountEl) salvageCountEl.textContent = '0';
-            updateAll();
         });
 
         addTapListener(document.getElementById('select-all-salvage-btn'), () => {
             const equippedIds = player.getAllEquippedItemIds(gameState);
             salvageMode.selections = player.getAllItems(gameState).filter(item => !item.locked && !equippedIds.has(item.id));
-            const salvageCountEl = document.getElementById('salvage-count');
-            if (salvageCountEl) salvageCountEl.textContent = salvageMode.selections.length.toString();
-            updateAll();
+            ui.updateSalvageCount(elements, salvageMode.selections.length);
+            // --- PERFORMANCE FIX ---
+            // Re-render inventory to show all selections
+            ui.renderGrid(elements.inventorySlotsEl, gameState.inventory, { calculatePositions: true, salvageSelections: salvageMode.selections, showLockIcon: true });
         });
 
         addTapListener(document.getElementById('confirm-salvage-btn'), () => {
@@ -1208,24 +1129,12 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             salvageMode.active = false;
-            const salvageBtn = document.getElementById('salvage-mode-btn');
-            const confirmBtn = document.getElementById('confirm-salvage-btn');
-            const selectAllBtn = document.getElementById('select-all-salvage-btn');
-            const raritySalvageContainer = document.getElementById('salvage-by-rarity-controls');
-            const autoSalvageBtn = document.getElementById('auto-salvage-filter-btn');
-
-            if (salvageBtn) {
-                salvageBtn.textContent = 'Select to Salvage';
-                salvageBtn.classList.remove('active');
-            }
-            if (confirmBtn) confirmBtn.classList.add('hidden');
-            if (selectAllBtn) selectAllBtn.classList.add('hidden');
-            if(raritySalvageContainer) raritySalvageContainer.classList.add('hidden');
-            if(autoSalvageBtn) autoSalvageBtn.classList.remove('hidden');
-            
-            document.body.classList.remove('salvage-mode-active');
             salvageMode.selections = [];
-            updateAll();
+            
+            // --- PERFORMANCE FIX ---
+            ui.toggleSalvageMode(elements, false); // Turn off salvage mode UI
+            ui.updateCurrency(elements, gameState); // Update scrap total
+            ui.renderGrid(elements.inventorySlotsEl, gameState.inventory, { calculatePositions: false }); // Rerender inventory after compaction
             autoSave();
         });
 
@@ -1235,7 +1144,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const result = player.salvageByRarity(gameState, rarity, playerStats);
             if (result.count > 0) {
                 logMessage(elements.gameLogEl, `Salvaged ${result.count} ${rarity} items for ${formatNumber(result.scrapGained)} Scrap.`, 'uncommon', isAutoScrollingLog);
-                updateAll();
+                // --- PERFORMANCE FIX ---
+                ui.renderGrid(elements.inventorySlotsEl, gameState.inventory, { calculatePositions: false }); // Rerender inventory after compaction
+                ui.updateCurrency(elements, gameState);
                 autoSave();
             } else {
                 logMessage(elements.gameLogEl, `No unlocked ${rarity} items to salvage.`, '', isAutoScrollingLog);
@@ -1263,7 +1174,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     } else {
                         bulkCombineDeselectedIds.add(item.id);
                     }
-                    updateAll();
+                    // --- PERFORMANCE FIX ---
+                    ui.updateBulkCombineHighlights(elements, gameState, bulkCombineSelection, bulkCombineDeselectedIds);
                     return;
                 }
 
@@ -1275,6 +1187,9 @@ document.addEventListener('DOMContentLoaded', () => {
                         }
                         craftingGems.push(item);
                         gameState.gems = gameState.gems.filter(g => g.id !== item.id);
+                        // --- PERFORMANCE FIX ---
+                        ui.updateGemCraftingUI(elements, craftingGems, gameState);
+                        ui.removeItemFromGrid(elements.gemSlotsEl, item.id);
                     }
                 } else {
                     if (selectedGemForSocketing && selectedGemForSocketing.id === item.id) {
@@ -1284,9 +1199,9 @@ document.addEventListener('DOMContentLoaded', () => {
                         selectedGemForSocketing = item;
                         logMessage(elements.gameLogEl, `Selected ${item.name}. Click an item with an empty socket to place it.`, 'uncommon', isAutoScrollingLog);
                     }
+                     // --- PERFORMANCE FIX ---
+                    ui.updateSocketingHighlights(elements, selectedGemForSocketing, gameState);
                 }
-                updateAll();
-
             } else {
                 if (selectedGemForSocketing && item.sockets && item.sockets.includes(null)) {
                     const gemToSocket = selectedGemForSocketing;
@@ -1298,7 +1213,12 @@ document.addEventListener('DOMContentLoaded', () => {
                         logMessage(elements.gameLogEl, `Socketed ${gemToSocket.name} into ${item.name}.`, 'epic', isAutoScrollingLog);
                         selectedGemForSocketing = null;
                         recalculateStats();
-                        updateAll();
+                        // --- PERFORMANCE FIX ---
+                        ui.updateSocketingHighlights(elements, null, gameState);
+                        ui.removeItemFromGrid(elements.gemSlotsEl, gemToSocket.id);
+                        ui.renderPaperdoll(elements, gameState);
+                        ui.renderGrid(elements.inventorySlotsEl, gameState.inventory, { calculatePositions: true });
+                        ui.updateStatsPanel(elements, playerStats);
                         autoSave();
                         return;
                     }
@@ -1307,6 +1227,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (event.target.closest('.lock-icon')) {
                     const message = player.toggleItemLock(gameState, item);
                     if (message) logMessage(elements.gameLogEl, message, '', isAutoScrollingLog);
+                     // --- PERFORMANCE FIX ---
+                    ui.updateItemInGrid(elements.inventorySlotsEl, item);
                 } else if (salvageMode.active) {
                     const isEquipped = player.getAllEquippedItemIds(gameState).has(item.id);
 
@@ -1324,7 +1246,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     } else {
                         salvageMode.selections.push(item);
                     }
-                    document.getElementById('salvage-count').textContent = salvageMode.selections.length.toString();
+                    ui.updateSalvageCount(elements, salvageMode.selections.length);
+                    // --- PERFORMANCE FIX ---
+                    ui.updateItemInGrid(elements.inventorySlotsEl, item, salvageMode.selections);
                 } else {
                     const result = player.equipItem(gameState, item);
                     if (result.success) {
@@ -1334,12 +1258,15 @@ document.addEventListener('DOMContentLoaded', () => {
                         } else {
                             logMessage(elements.gameLogEl, result.message, '', isAutoScrollingLog);
                             recalculateStats();
+                             // --- PERFORMANCE FIX ---
+                            ui.renderGrid(elements.inventorySlotsEl, gameState.inventory, { calculatePositions: false });
+                            ui.renderPaperdoll(elements, gameState);
+                            ui.updateStatsPanel(elements, playerStats);
                         }
                     } else {
                         logMessage(elements.gameLogEl, result.message, 'rare', isAutoScrollingLog);
                     }
                 }
-                updateAll();
                 autoSave();
             }
         };
@@ -1365,16 +1292,25 @@ document.addEventListener('DOMContentLoaded', () => {
                         logMessage(elements.gameLogEl, `Socketed ${gemToSocket.name} into ${item.name}.`, 'epic', isAutoScrollingLog);
                         selectedGemForSocketing = null;
                         recalculateStats();
-                        updateAll();
+                        // --- PERFORMANCE FIX ---
+                        ui.updateSocketingHighlights(elements, null, gameState);
+                        ui.removeItemFromGrid(elements.gemSlotsEl, gemToSocket.id);
+                        ui.renderPaperdoll(elements, gameState);
+                        ui.updateStatsPanel(elements, playerStats);
                         autoSave();
                         return; 
                     }
                 }
             }
 
+            const unequippedItem = gameState.equipment[slotName];
+            if (!unequippedItem) return;
             player.unequipItem(gameState, slotName);
             recalculateStats();
-            updateAll();
+            // --- PERFORMANCE FIX ---
+            ui.renderPaperdoll(elements, gameState);
+            ui.addItemToGrid(elements.inventorySlotsEl, unequippedItem);
+            ui.updateStatsPanel(elements, playerStats);
             autoSave();
         });
 
@@ -1393,6 +1329,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 gameState.gems.push(gemInSlot);
                 craftingGems[slotIndex] = undefined; 
                 craftingGems = craftingGems.filter(Boolean);
+                // --- PERFORMANCE FIX ---
+                ui.addItemToGrid(elements.gemSlotsEl, gemInSlot, 'gem');
             } 
             else if (selectedGemForSocketing) {
                 if (craftingGems.length < 2) {
@@ -1403,10 +1341,14 @@ document.addEventListener('DOMContentLoaded', () => {
         
                     craftingGems.push(selectedGemForSocketing);
                     gameState.gems = gameState.gems.filter(g => g.id !== selectedGemForSocketing.id);
+                    // --- PERFORMANCE FIX ---
+                    ui.removeItemFromGrid(elements.gemSlotsEl, selectedGemForSocketing.id);
                     selectedGemForSocketing = null;
                 }
             }
-            updateAll();
+            // --- PERFORMANCE FIX ---
+            ui.updateGemCraftingUI(elements, craftingGems, gameState);
+            ui.updateSocketingHighlights(elements, null, gameState);
         });
 
         addTapListener(elements.gemCraftBtn, () => {
@@ -1417,7 +1359,12 @@ document.addEventListener('DOMContentLoaded', () => {
             craftingGems = [];
             
             recalculateStats();
-            updateAll();
+            // --- PERFORMANCE FIX ---
+            if (result.success && result.newGem) {
+                ui.addItemToGrid(elements.gemSlotsEl, result.newGem, 'gem');
+            }
+            ui.updateGemCraftingUI(elements, craftingGems, gameState);
+            ui.updateStatsPanel(elements, playerStats);
             autoSave();
         });
 
@@ -1432,8 +1379,11 @@ document.addEventListener('DOMContentLoaded', () => {
             bulkCombineDeselectedIds.clear();
             if (result.success) {
                 recalculateStats();
-                populateBulkCombineControls(); 
-                updateAll();
+                populateBulkCombineControls();
+                // --- PERFORMANCE FIX ---
+                ui.renderGrid(elements.gemSlotsEl, gameState.gems, { type: 'gem', calculatePositions: true });
+                ui.updateCurrency(elements, gameState);
+                ui.updateStatsPanel(elements, playerStats);
                 autoSave();
             }
         });
@@ -1453,22 +1403,26 @@ document.addEventListener('DOMContentLoaded', () => {
                     bulkCombineSelection.selectionKey = lastBulkCombineStatKey;
                 }
             }
-            
-            updateAll();
+            // --- PERFORMANCE FIX ---
+            ui.updateBulkCombineHighlights(elements, gameState, bulkCombineSelection, bulkCombineDeselectedIds);
         });
 
         elements.bulkCombineStatSelect.addEventListener('change', () => {
             bulkCombineSelection.selectionKey = (/** @type {HTMLSelectElement} */ (elements.bulkCombineStatSelect)).value || null;
             lastBulkCombineStatKey = bulkCombineSelection.selectionKey;
             bulkCombineDeselectedIds.clear(); 
-            updateAll();
+            // --- PERFORMANCE FIX ---
+            ui.updateBulkCombineHighlights(elements, gameState, bulkCombineSelection, bulkCombineDeselectedIds);
         });
 
         addTapListener(elements.ringSelectionSlot1, () => {
             if (pendingRingEquip) {
                 player.equipRing(gameState, pendingRingEquip, 'ring1');
                 recalculateStats();
-                updateAll();
+                // --- PERFORMANCE FIX ---
+                ui.renderGrid(elements.inventorySlotsEl, gameState.inventory, { calculatePositions: false });
+                ui.renderPaperdoll(elements, gameState);
+                ui.updateStatsPanel(elements, playerStats);
                 autoSave();
                 hideRingSelectionModal();
             }
@@ -1477,7 +1431,10 @@ document.addEventListener('DOMContentLoaded', () => {
             if (pendingRingEquip) {
                 player.equipRing(gameState, pendingRingEquip, 'ring2');
                 recalculateStats();
-                updateAll();
+                // --- PERFORMANCE FIX ---
+                ui.renderGrid(elements.inventorySlotsEl, gameState.inventory, { calculatePositions: false });
+                ui.renderPaperdoll(elements, gameState);
+                ui.updateStatsPanel(elements, playerStats);
                 autoSave();
                 hideRingSelectionModal();
             }
@@ -1517,7 +1474,8 @@ document.addEventListener('DOMContentLoaded', () => {
             gameState.isAutoProgressing = !gameState.isAutoProgressing;
             logMessage(elements.gameLogEl, `Auto-progress ${gameState.isAutoProgressing ? 'enabled' : 'disabled'}.`, '', isAutoScrollingLog);
             autoSave();
-            updateAll();
+            // --- PERFORMANCE FIX ---
+            ui.updateAutoProgressToggle(elements, gameState.isAutoProgressing);
         });
         
         document.querySelectorAll('.preset-btn').forEach((btn, index) => {
@@ -1525,7 +1483,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 player.activatePreset(gameState, index);
                 logMessage(elements.gameLogEl, `Activated preset: <b>${gameState.presets[index].name}</b>`, '', isAutoScrollingLog);
                 recalculateStats();
-                updateAll();
+                // --- PERFORMANCE FIX ---
+                ui.updateActivePresetButton(elements, gameState.activePresetIndex);
+                ui.renderPaperdoll(elements, gameState);
+                ui.updateStatsPanel(elements, playerStats);
                 autoSave();
             });
 
@@ -1537,7 +1498,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (newName && newName.trim() !== "") {
                         gameState.presets[index].name = newName.trim();
                         logMessage(elements.gameLogEl, `Renamed preset to: <b>${newName.trim()}</b>`, '', isAutoScrollingLog);
-                        updateAll();
+                        // --- PERFORMANCE FIX ---
+                        ui.updateActivePresetButton(elements, gameState.activePresetIndex);
                         autoSave();
                     }
                 }, 1000); 
@@ -1554,7 +1516,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (newName && newName.trim() !== "") {
                     gameState.presets[index].name = newName.trim();
                     logMessage(elements.gameLogEl, `Renamed preset to: <b>${newName.trim()}</b>`, '', isAutoScrollingLog);
-                    updateAll();
+                     // --- PERFORMANCE FIX ---
+                    ui.updateActivePresetButton(elements, gameState.activePresetIndex);
                     autoSave();
                 }
             });
@@ -1583,7 +1546,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (viewId === 'map-view') {
                         isMapRenderPending = true; // Ensure map is rendered when switching to tab
                     }
-                    // WIKI: Refresh results when switching to the tab to reflect progression
                     if (viewId === 'wiki-view') {
                         applyWikiFilters();
                     }
@@ -1596,28 +1558,16 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (viewElement) {
                         viewElement.classList.add('active');
                     }
+                    // --- PERFORMANCE FIX ---
+                    // A full render is acceptable when switching main tabs.
+                    fullUIRender();
                 });
             });
         });
 
         addTapListener(document.getElementById('toggle-loot-log-btn'), (e) => {
             if (!(e.currentTarget instanceof HTMLButtonElement)) return;
-
-            const btn = e.currentTarget;
-            const logView = document.getElementById('game-log-container');
-            const lootView = document.getElementById('loot-view');
-
-            if (btn.classList.contains('active')) {
-                btn.classList.remove('active');
-                btn.textContent = 'View Loot';
-                logView.classList.remove('hidden');
-                lootView.classList.add('hidden');
-            } else {
-                btn.classList.add('active');
-                btn.textContent = 'View Log';
-                logView.classList.add('hidden');
-                lootView.classList.remove('hidden');
-            }
+            ui.toggleLootLog(e.currentTarget, document.getElementById('game-log-container'), document.getElementById('loot-view'));
         });
         
         addTapListener(elements.forgeInventorySlotsEl, (e) => {
@@ -1633,7 +1583,8 @@ document.addEventListener('DOMContentLoaded', () => {
             if (item && item.stats) {
                 selectedItemForForge = item; 
                 logMessage(elements.gameLogEl, `Selected <span class="${item.rarity}">${item.name}</span> for rerolling.`, 'uncommon', isAutoScrollingLog);
-                updateAll();
+                // --- PERFORMANCE FIX ---
+                ui.updateForge(elements, selectedItemForForge, gameState.scrap);
             }
         });
 
@@ -1648,7 +1599,13 @@ document.addEventListener('DOMContentLoaded', () => {
             
             if (result.success) {
                 recalculateStats();
-                updateAll();
+                // --- PERFORMANCE FIX ---
+                ui.updateForge(elements, selectedItemForForge, gameState.scrap);
+                ui.updateCurrency(elements, gameState);
+                ui.updateStatsPanel(elements, playerStats);
+                // Also update the item where it lives (inventory or equipment)
+                ui.updateItemInGrid(elements.inventorySlotsEl, selectedItemForForge);
+                ui.renderPaperdoll(elements, gameState);
                 autoSave();
             }
         });
@@ -1678,7 +1635,10 @@ document.addEventListener('DOMContentLoaded', () => {
             if (result.success) {
                 logMessage(elements.gameLogEl, `Purchased Level ${result.newLevel} of ${PERMANENT_UPGRADES[upgradeId].name}!`, 'epic', isAutoScrollingLog);
                 recalculateStats();
-                updateAll();
+                // --- PERFORMANCE FIX ---
+                renderPermanentUpgrades(); // This panel doesn't change often, so a full re-render is fine.
+                ui.updateCurrency(elements, gameState);
+                ui.updateStatsPanel(elements, playerStats);
                 autoSave();
             } else {
                 logMessage(elements.gameLogEl, result.message, 'rare', isAutoScrollingLog);
@@ -2007,7 +1967,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const scrapReward = 500;
             gameState.scrap += scrapReward;
             logMessage(elements.gameLogEl, `You received ${formatNumber(scrapReward)} Scrap for participating!`, 'epic', isAutoScrollingLog);
-            updateAll();
+            ui.updateCurrency(elements, gameState);
             destroyRaidPanel();
         });
     }
@@ -2017,14 +1977,14 @@ document.addEventListener('DOMContentLoaded', () => {
             document.querySelector('.actions-panel').classList.add('hidden');
             document.querySelector('.upgrades-panel').classList.add('hidden');
             ui.switchView(elements, 'prestige-view');
-            updateAll();
+            fullUIRender();
         });
     
         addTapListener(elements.cancelPrestigeButton, () => {
             document.querySelector('.actions-panel').classList.remove('hidden');
             document.querySelector('.upgrades-panel').classList.remove('hidden');
             ui.switchView(elements, 'map-view');
-            updateAll();
+            fullUIRender();
         });
     
         addTapListener(elements.prestigeEquipmentPaperdoll, (event) => {
@@ -2034,7 +1994,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const slotName = slotEl.id.replace('prestige-slot-', '');
             player.unequipItem(gameState, slotName);
             recalculateStats();
-            updateAll();
+            fullUIRender();
             autoSave();
         });
 
@@ -2059,7 +2019,7 @@ document.addEventListener('DOMContentLoaded', () => {
             } else {
                 logMessage(elements.gameLogEl, result.message, 'rare', isAutoScrollingLog);
             }
-            updateAll();
+            fullUIRender();
             autoSave();
         });
     
@@ -2155,7 +2115,7 @@ document.addEventListener('DOMContentLoaded', () => {
             ui.switchView(elements, 'map-view');
             recalculateStats();
             startNewMonster();
-            updateAll();
+            fullUIRender();
             autoSave();
         });
     }
@@ -2203,7 +2163,8 @@ document.addEventListener('DOMContentLoaded', () => {
             closeThisModal();
             ui.hideUnlockSlotModal(elements);
             recalculateStats();
-            updateAll();
+            renderPermanentUpgrades();
+            ui.updateCurrency(elements, gameState);
             autoSave();
         });
 
@@ -2262,7 +2223,9 @@ document.addEventListener('DOMContentLoaded', () => {
         startNewMonster();
         
         recalculateStats();
-        updateAll();
+        ui.updateMonsterUI(elements, gameState, currentMonster);
+        ui.updateAutoProgressToggle(elements, gameState.isAutoProgressing);
+        ui.updateLootPanel(elements, currentMonster);
         autoSave();
     }
 
