@@ -262,7 +262,7 @@ export function monsterDefeated(gameState, playerStats, currentMonster) {
             const nextChainLevel = encounter.chainLevel + 1;
             const nextChance = encounter.nextChance * 0.9;
             const newHp = encounter.baseHp * 0.5;
-            const newGoldReward = encounter.baseGold * Math.pow(5, nextChainLevel);
+            const newGoldReward = encounter.baseGold * Math.pow(3, nextChainLevel);
 
             gameState.specialEncounter = {
                 ...encounter,
