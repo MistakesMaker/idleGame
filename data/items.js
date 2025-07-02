@@ -975,13 +975,10 @@ const finalDungeonItems = {
 };
 
 // ====================================================================================
-// --- The Underdark Zone (Levels 401-700) ---
+// --- The Underdark Zone (Levels 401-800) ---
 // ====================================================================================
 const underdarkItems = {
-    // --- Sub-Zone: Glimmering Path (Levels 401-424) ---
-    // (Currently no new items are introduced here)
-
-    // --- Sub-Zone: Crystal Golem (Boss Lvl 425) ---
+    // --- Crystal Caverns (Levels 401-500) ---
     CROWN_OF_WISDOM: {
         id: 'CROWN_OF_WISDOM',
         name: "Crown of Wisdom",
@@ -996,19 +993,7 @@ const underdarkItems = {
         ]
     },
     
-    // --- Sub-Zone: Resonant Tunnels (Levels 426-449) ---
-    // (Currently no new items are introduced here)
-
-    // --- Sub-Zone: Crystal Guardian's Lair (Boss Lvl 450) ---
-    // (Currently no new items are introduced here)
-
-    // --- Sub-Zone: Deep Caverns (Levels 451-499) ---
-    // (Currently no new items are introduced here)
-
-    // --- Sub-Zone: Crystal Heart (Boss Lvl 500) ---
-    // (Currently no new items are introduced here)
-
-    // --- Sub-Zone: Spore Meadows (Levels 501-524) ---
+    // --- Fungal Forest (Levels 501-600) ---
     ROBE_OF_THE_ARCHMAGE: {
         id: 'ROBE_OF_THE_ARCHMAGE',
         name: "Robe of the Archmage",
@@ -1023,38 +1008,489 @@ const underdarkItems = {
         ]
     },
 
-    // --- Sub-Zone: Fungal Guardian (Boss Lvl 525) ---
-    // (Currently no new items are introduced here)
+    // --- Abyssal Rift (Levels 701-800) ---
+    VOIDFORGED_HELM: {
+        id: 'VOIDFORGED_HELM',
+        name: "Voidforged Helm",
+        type: 'helmet',
+        icon: 'images/icons/voidforged_helm.png',
+        width: 2, height: 2,
+        possibleStats: [ { key: STATS.DPS.key, min: 1e7, max: 3e7 } ]
+    },
+    VOIDFORGED_GREAVES: {
+        id: 'VOIDFORGED_GREAVES',
+        name: "Voidforged Greaves",
+        type: 'platelegs',
+        icon: 'images/icons/voidforged_greaves.png',
+        width: 2, height: 3,
+        possibleStats: [ { key: STATS.DPS.key, min: 1.2e7, max: 3.6e7 } ]
+    },
+    SHADOW_WEAVE_TUNIC: {
+        id: 'SHADOW_WEAVE_TUNIC',
+        name: "Shadow-weave Tunic",
+        type: 'platebody',
+        icon: 'images/icons/shadow-weave_tunic.png',
+        width: 2, height: 3,
+        possibleStats: [ { key: STATS.DPS.key, min: 1.5e7, max: 4.5e7 } ]
+    },
+    SHADOW_WEAVE_SASH: {
+        id: 'SHADOW_WEAVE_SASH',
+        name: "Shadow-weave Sash",
+        type: 'belt',
+        icon: 'images/icons/shadow-weave_sash.png',
+        width: 2, height: 1,
+        possibleStats: [ { key: STATS.GOLD_GAIN.key, min: 80, max: 240 } ]
+    },
+    ABYSSAL_EDGE: {
+        id: 'ABYSSAL_EDGE',
+        name: "Abyssal Edge",
+        type: 'sword',
+        icon: 'images/icons/abyssal_edge.png',
+        width: 2, height: 3,
+        possibleStats: [ { key: STATS.CLICK_DAMAGE.key, min: 5e6, max: 1.5e7 } ]
+    },
+    RIFT_WARD: {
+        id: 'RIFT_WARD',
+        name: "Rift Ward",
+        type: 'shield',
+        icon: 'images/icons/rift_ward.png',
+        width: 2, height: 3,
+        possibleStats: [ { key: STATS.DPS.key, min: 2e7, max: 6e7 } ]
+    },
+    SOULCAGE_AMULET: {
+        id: 'SOULCAGE_AMULET',
+        name: "Soul-cage Amulet",
+        type: 'necklace',
+        icon: 'images/icons/soul-cage_amulet.png',
+        width: 2, height: 2,
+        isUnique: true,
+        possibleStats: [
+            { key: STATS.DPS.key, min: 5e7, max: 1.5e8 },
+            { key: STATS.GOLD_GAIN.key, min: 100, max: 300 }
+        ]
+    },
+    RING_OF_DESPAIR: {
+        id: 'RING_OF_DESPAIR',
+        name: "Ring of Despair",
+        type: 'ring',
+        icon: 'images/icons/ring_of_despair.png',
+        width: 1, height: 1,
+        possibleStats: [ { key: STATS.MAGIC_FIND.key, min: 10, max: 30 } ]
+    },
+    BALORS_WHIP: {
+        id: 'BALORS_WHIP',
+        name: "Balor's Whip",
+        type: 'sword',
+        icon: 'images/icons/balors_whip.png',
+        isUnique: true,
+        width: 2, height: 3,
+        possibleStats: [
+            { key: STATS.CLICK_DAMAGE.key, min: 1e8, max: 3e8 },
+            { key: STATS.DPS.key, min: 1e8, max: 3e8 }
+        ]
+    },
+    CHAOS_CORE: {
+        id: 'CHAOS_CORE',
+        name: "Chaos Core",
+        type: 'belt',
+        icon: 'images/icons/chaos_core.png',
+        width: 2, height: 1,
+        isUnique: true,
+        possibleStats: [
+            { key: STATS.GOLD_GAIN.key, min: 200, max: 600 },
+            { key: STATS.MAGIC_FIND.key, min: 20, max: 60 }
+        ]
+    }
+};
 
-    // --- Sub-Zone: Mycelial Network (Levels 526-549) ---
-    // (This item was moved to Green Meadows)
+// ====================================================================================
+// --- The Sunken World Realm (Levels 801-1200) ---
+// ====================================================================================
+const sunkenWorldItems = {
+    // 801-900
+    TRIDENT_OF_TIDES: {
+        id: 'TRIDENT_OF_TIDES',
+        name: "Trident of Tides",
+        type: 'sword',
+        icon: 'images/icons/trident_of_tides.png',
+        width: 2, height: 4,
+        possibleStats: [ { key: STATS.CLICK_DAMAGE.key, min: 1e9, max: 3e9 } ]
+    },
+    CORAL_PLATEMAIL: {
+        id: 'CORAL_PLATEMAIL',
+        name: "Coral Platemail",
+        type: 'platebody',
+        icon: 'images/icons/coral_platemail.png',
+        width: 2, height: 3,
+        possibleStats: [ { key: STATS.DPS.key, min: 2e9, max: 6e9 } ]
+    },
+    HELMET_OF_THE_TIDES: {
+        id: 'HELMET_OF_THE_TIDES',
+        name: 'Helmet of the Tides',
+        type: 'helmet',
+        icon: 'images/icons/helmet_of_the_tides.png',
+        width: 2, height: 2,
+        possibleStats: [ { key: STATS.GOLD_GAIN.key, min: 250, max: 750 } ]
+    },
+    SIRENSONG_CHARM: {
+        id: 'SIRENSONG_CHARM',
+        name: "Sirensong Charm",
+        type: 'necklace',
+        icon: 'images/icons/sirensong_charm.png',
+        width: 2, height: 2,
+        possibleStats: [ { key: STATS.MAGIC_FIND.key, min: 30, max: 90 } ]
+    },
+    // 901-1000
+    KRAKEN_HIDE_LEGGINGS: {
+        id: 'KRAKEN_HIDE_LEGGINGS',
+        name: "Kraken-hide Leggings",
+        type: 'platelegs',
+        icon: 'images/icons/kraken-hide_leggings.png',
+        width: 2, height: 3,
+        possibleStats: [ { key: STATS.DPS.key, min: 5e10, max: 1.5e11 } ]
+    },
+    PEARL_OF_WISDOM: {
+        id: 'PEARL_OF_WISDOM',
+        name: "Pearl of Wisdom",
+        type: 'necklace',
+        icon: 'images/icons/pearl_of_wisdom.png',
+        width: 2, height: 2,
+        possibleStats: [ { key: STATS.GOLD_GAIN.key, min: 500, max: 1500 } ]
+    },
+    CRUSHING_GRASP_GAUNTLETS: {
+        id: 'CRUSHING_GRASP_GAUNTLETS',
+        name: "Crushing Grasp Gauntlets",
+        type: 'belt',
+        icon: 'images/icons/crushing_grasp_gauntlets.png',
+        width: 2, height: 1,
+        possibleStats: [ { key: STATS.CLICK_DAMAGE.key, min: 2e10, max: 6e10 } ]
+    },
+    RING_OF_THE_DEEP: {
+        id: 'RING_OF_THE_DEEP',
+        name: "Ring of the Deep",
+        type: 'ring',
+        icon: 'images/icons/ring_of_the_deep.png',
+        width: 1, height: 1,
+        possibleStats: [ { key: STATS.DPS.key, min: 3e10, max: 9e10 } ]
+    },
+    // 1001-1100
+    ABYSSAL_LANTERN: {
+        id: 'ABYSSAL_LANTERN',
+        name: "Abyssal Lantern",
+        type: 'shield',
+        icon: 'images/icons/abyssal_lantern.png',
+        width: 2, height: 3,
+        possibleStats: [ { key: STATS.DPS.key, min: 1e12, max: 3e12 } ]
+    },
+    HELM_OF_THE_DEEP: {
+        id: 'HELM_OF_THE_DEEP',
+        name: "Helm of the Deep",
+        type: 'helmet',
+        icon: 'images/icons/helm_of_the_deep.png',
+        width: 2, height: 2,
+        possibleStats: [ { key: STATS.MAGIC_FIND.key, min: 50, max: 150 } ]
+    },
+    PRESSUREPLATE_ARMOR: {
+        id: 'PRESSUREPLATE_ARMOR',
+        name: "Pressureplate Armor",
+        type: 'platebody',
+        icon: 'images/icons/pressureplate_armor.png',
+        width: 2, height: 3,
+        possibleStats: [ { key: STATS.DPS.key, min: 1.2e12, max: 3.6e12 } ]
+    },
+    VOLCANIC_LOOP: {
+        id: 'VOLCANIC_LOOP',
+        name: "Volcanic Loop",
+        type: 'ring',
+        icon: 'images/icons/volcanic_loop.png',
+        width: 1, height: 1,
+        possibleStats: [ { key: STATS.CLICK_DAMAGE.key, min: 5e11, max: 1.5e12 } ]
+    },
+    // 1101-1200
+    LEVIATHANS_BITE: {
+        id: 'LEVIATHANS_BITE',
+        name: "Leviathan's Bite",
+        type: 'sword',
+        icon: 'images/icons/leviathans_bite.png',
+        isUnique: true,
+        width: 2, height: 4,
+        possibleStats: [
+            { key: STATS.CLICK_DAMAGE.key, min: 1e14, max: 3e14 },
+            { key: STATS.DPS.key, min: 1e14, max: 3e14 }
+        ]
+    },
+    EYE_OF_THE_MAELSTROM: {
+        id: 'EYE_OF_THE_MAELSTROM',
+        name: "Eye of the Maelstrom",
+        type: 'ring',
+        icon: 'images/icons/eye_of_the_maelstrom.png',
+        isUnique: true,
+        width: 1, height: 1,
+        possibleStats: [
+            { key: STATS.GOLD_GAIN.key, min: 1000, max: 3000 },
+            { key: STATS.MAGIC_FIND.key, min: 100, max: 300 }
+        ]
+    }
+};
 
-    // --- Sub-Zone: Fungal Behemoth's Cave (Boss Lvl 550) ---
-    // (Currently no new items are introduced here)
+// ====================================================================================
+// --- The Celestial Planes Realm (Levels 1201-1600) ---
+// ====================================================================================
+const celestialPlanesItems = {
+    // 1201-1300
+    BLADE_OF_THE_SERAPH: {
+        id: 'BLADE_OF_THE_SERAPH',
+        name: "Blade of the Seraph",
+        type: 'sword',
+        icon: 'images/icons/blade_of_the_seraph.png',
+        width: 2, height: 3,
+        possibleStats: [ { key: STATS.CLICK_DAMAGE.key, min: 5e15, max: 1.5e16 } ]
+    },
+    ARCHONS_PLATEMAIL: {
+        id: 'ARCHONS_PLATEMAIL',
+        name: "Archon's Platemail",
+        type: 'platebody',
+        icon: 'images/icons/archons_platemail.png',
+        width: 2, height: 3,
+        possibleStats: [ { key: STATS.DPS.key, min: 1e16, max: 3e16 } ]
+    },
+    CLOUDSTRIDER_BOOTS: {
+        id: 'CLOUDSTRIDER_BOOTS',
+        name: "Cloudstrider Boots",
+        type: 'platelegs',
+        icon: 'images/icons/cloudstrider_boots.png',
+        width: 2, height: 3,
+        possibleStats: [ { key: STATS.GOLD_GAIN.key, min: 1500, max: 4500 } ]
+    },
+    GALEFORCE_GUARD: {
+        id: 'GALEFORCE_GUARD',
+        name: "Galeforce Guard",
+        type: 'shield',
+        icon: 'images/icons/galeforce_guard.png',
+        width: 2, height: 3,
+        possibleStats: [ { key: STATS.DPS.key, min: 1.1e16, max: 3.3e16 } ]
+    },
+    // 1301-1400
+    STARFORGED_GREAVES: {
+        id: 'STARFORGED_GREAVES',
+        name: "Starforged Greaves",
+        type: 'platelegs',
+        icon: 'images/icons/starforged_greaves.png',
+        width: 2, height: 3,
+        possibleStats: [ { key: STATS.DPS.key, min: 2e17, max: 6e17 } ]
+    },
+    RING_OF_CONSTELLATIONS: {
+        id: 'RING_OF_CONSTELLATIONS',
+        name: "Ring of Constellations",
+        type: 'ring',
+        icon: 'images/icons/ring_of_constellations.png',
+        width: 1, height: 1,
+        possibleStats: [ { key: STATS.GOLD_GAIN.key, min: 2000, max: 6000 } ]
+    },
+    EINHERJARS_AXE: {
+        id: 'EINHERJARS_AXE',
+        name: "Einherjar's Axe",
+        type: 'sword',
+        icon: 'images/icons/einherjars_axe.png',
+        width: 2, height: 3,
+        possibleStats: [ { key: STATS.CLICK_DAMAGE.key, min: 1e17, max: 3e17 } ]
+    },
+    VALKYRIES_EMBRACE: {
+        id: 'VALKYRIES_EMBRACE',
+        name: "Valkyrie's Embrace",
+        type: 'platebody',
+        icon: 'images/icons/valkyries_embrace.png',
+        width: 2, height: 3,
+        possibleStats: [ { key: STATS.DPS.key, min: 2.2e17, max: 6.6e17 } ]
+    },
+    // 1401-1500
+    AEGIS_OF_DAWN: {
+        id: 'AEGIS_OF_DAWN',
+        name: "Aegis of Dawn",
+        type: 'shield',
+        icon: 'images/icons/aegis_of_dawn.png',
+        width: 2, height: 3,
+        possibleStats: [ { key: STATS.DPS.key, min: 5e18, max: 1.5e19 } ]
+    },
+    HALO_OF_LIGHT: {
+        id: 'HALO_OF_LIGHT',
+        name: "Halo of Light",
+        type: 'helmet',
+        icon: 'images/icons/halo_of_light.png',
+        width: 2, height: 2,
+        possibleStats: [ { key: STATS.MAGIC_FIND.key, min: 200, max: 600 } ]
+    },
+    COMETSTONE_BELT: {
+        id: 'COMETSTONE_BELT',
+        name: "Cometstone Belt",
+        type: 'belt',
+        icon: 'images/icons/cometstone_belt.png',
+        width: 2, height: 1,
+        possibleStats: [ { key: STATS.DPS.key, min: 4e18, max: 1.2e19 } ]
+    },
+    STARWHALE_TALISMAN: {
+        id: 'STARWHALE_TALISMAN',
+        name: "Star-whale Talisman",
+        type: 'necklace',
+        icon: 'images/icons/star-whale_talisman.png',
+        width: 2, height: 2,
+        possibleStats: [ { key: STATS.GOLD_GAIN.key, min: 3500, max: 10500 } ]
+    },
+    // 1501-1600
+    CELESTIAL_DECREE: {
+        id: 'CELESTIAL_DECREE',
+        name: "Celestial Decree",
+        type: 'sword',
+        icon: 'images/icons/celestial_decree.png',
+        isUnique: true,
+        width: 2, height: 4,
+        possibleStats: [
+            { key: STATS.CLICK_DAMAGE.key, min: 1e20, max: 3e20 },
+            { key: STATS.DPS.key, min: 1e20, max: 3e20 }
+        ]
+    },
+    HEART_OF_A_STAR: {
+        id: 'HEART_OF_A_STAR',
+        name: "Heart of a Star",
+        type: 'necklace',
+        icon: 'images/icons/heart_of_a_star.png',
+        isUnique: true,
+        width: 2, height: 2,
+        possibleStats: [
+            { key: STATS.GOLD_GAIN.key, min: 5000, max: 15000 },
+            { key: STATS.MAGIC_FIND.key, min: 400, max: 1200 }
+        ]
+    }
+};
 
-    // --- Sub-Zone: Shrieking Hollows (Levels 551-599) ---
-    // (Currently no new items are introduced here)
-
-    // --- Sub-Zone: The Great Fungus (Boss Lvl 600) ---
-    // (Currently no new items are introduced here)
-
-    // --- Sub-Zone: Outer Spires (Levels 601-624) ---
-    // (Currently no new items are introduced here)
-
-    // --- Sub-Zone: Drow Patrol (Boss Lvl 625) ---
-    // (Currently no new items are introduced here)
-
-    // --- Sub-Zone: Webbed Catacombs (Levels 626-649) ---
-    // (Currently no new items are introduced here)
-
-    // --- Sub-Zone: Drow Barracks (Boss Lvl 650) ---
-    // (Currently no new items are introduced here)
-
-    // --- Sub-Zone: Noble District (Levels 651-699) ---
-    // (Currently no new items are introduced here)
-
-    // --- Sub-Zone: Spider Queen's Lair (Boss Lvl 700) ---
-    // (Currently no new items are introduced here)
+// ====================================================================================
+// --- The Aetherium Forge Realm (Levels 1601-2000) ---
+// ====================================================================================
+const aetheriumForgeItems = {
+    // 1601-1700
+    REALITY_CUTTER: {
+        id: 'REALITY_CUTTER',
+        name: "Reality-Cutter",
+        type: 'sword',
+        icon: 'images/icons/reality_cutter.png',
+        width: 2, height: 3,
+        possibleStats: [ { key: STATS.CLICK_DAMAGE.key, min: 1e21, max: 3e21 } ]
+    },
+    CLOCKWORK_PAULDRONS: {
+        id: 'CLOCKWORK_PAULDRONS',
+        name: "Clockwork Pauldrons",
+        type: 'platebody',
+        icon: 'images/icons/clockwork_pauldrons.png',
+        width: 2, height: 3,
+        possibleStats: [ { key: STATS.DPS.key, min: 2e21, max: 6e21 } ]
+    },
+    MANAWEAVE_LEGGINGS: {
+        id: 'MANAWEAVE_LEGGINGS',
+        name: "Manaweave Leggings",
+        type: 'platelegs',
+        icon: 'images/icons/manaweave_leggings.png',
+        width: 2, height: 3,
+        possibleStats: [ { key: STATS.DPS.key, min: 2.1e21, max: 6.3e21 } ]
+    },
+    AUTOMATONS_EYE: {
+        id: 'AUTOMATONS_EYE',
+        name: "Automaton's Eye",
+        type: 'ring',
+        icon: 'images/icons/automatons_eye.png',
+        width: 1, height: 1,
+        possibleStats: [ { key: STATS.GOLD_GAIN.key, min: 8000, max: 24000 } ]
+    },
+    // 1701-1800
+    RUNEFORGED_LEGGINGS: {
+        id: 'RUNEFORGED_LEGGINGS',
+        name: "Runeforged Leggings",
+        type: 'platelegs',
+        icon: 'images/icons/runeforged_leggings.png',
+        width: 2, height: 3,
+        possibleStats: [ { key: STATS.DPS.key, min: 5e22, max: 1.5e23 } ]
+    },
+    BAND_OF_INFINITE_POTENTIAL: {
+        id: 'BAND_OF_INFINITE_POTENTIAL',
+        name: "Band of Infinite Potential",
+        type: 'ring',
+        icon: 'images/icons/band_of_infinite_potential.png',
+        width: 1, height: 1,
+        possibleStats: [ { key: STATS.GOLD_GAIN.key, min: 10000, max: 30000 } ]
+    },
+    HELM_OF_FORBIDDEN_KNOWLEDGE: {
+        id: 'HELM_OF_FORBIDDEN_KNOWLEDGE',
+        name: "Helm of Forbidden Knowledge",
+        type: 'helmet',
+        icon: 'images/icons/helm_of_forbidden_knowledge.png',
+        width: 2, height: 2,
+        possibleStats: [ { key: STATS.MAGIC_FIND.key, min: 800, max: 2400 } ]
+    },
+    SCROLL_OF_POWER: {
+        id: 'SCROLL_OF_POWER',
+        name: "Scroll of Power",
+        type: 'shield',
+        icon: 'images/icons/scroll_of_power.png',
+        width: 2, height: 3,
+        possibleStats: [ { key: STATS.DPS.key, min: 5.5e22, max: 1.65e23 } ]
+    },
+    // 1801-1900
+    AEGIS_OF_THE_MAKER: {
+        id: 'AEGIS_OF_THE_MAKER',
+        name: "Aegis of the Maker",
+        type: 'shield',
+        icon: 'images/icons/aegis_of_the_maker.png',
+        width: 2, height: 3,
+        possibleStats: [ { key: STATS.DPS.key, min: 1e24, max: 3e24 } ]
+    },
+    CROWN_OF_THE_ARCHITECT: {
+        id: 'CROWN_OF_THE_ARCHITECT',
+        name: "Crown of the Architect",
+        type: 'helmet',
+        icon: 'images/icons/crown_of_the_architect.png',
+        width: 2, height: 2,
+        possibleStats: [ { key: STATS.MAGIC_FIND.key, min: 1000, max: 3000 } ]
+    },
+    AETHERIUM_WEAVE_ROBES: {
+        id: 'AETHERIUM_WEAVE_ROBES',
+        name: "Aetherium-Weave Robes",
+        type: 'platebody',
+        icon: 'images/icons/aetherium-weave_robes.png',
+        width: 2, height: 3,
+        possibleStats: [ { key: STATS.DPS.key, min: 1.1e24, max: 3.3e24 } ]
+    },
+    NEXUS_SHARD_PENDANT: {
+        id: 'NEXUS_SHARD_PENDANT',
+        name: "Nexus Shard Pendant",
+        type: 'necklace',
+        icon: 'images/icons/nexus_shard_pendant.png',
+        width: 2, height: 2,
+        possibleStats: [ { key: STATS.GOLD_GAIN.key, min: 15000, max: 45000 } ]
+    },
+    // 1901-2000
+    THE_UNMAKER: {
+        id: 'THE_UNMAKER',
+        name: "The Unmaker",
+        type: 'sword',
+        icon: 'images/icons/the_unmaker.png',
+        isUnique: true,
+        width: 2, height: 4,
+        possibleStats: [
+            { key: STATS.CLICK_DAMAGE.key, min: 1e26, max: 3e26 },
+            { key: STATS.DPS.key, min: 1e26, max: 3e26 }
+        ]
+    },
+    THE_FIRST_SPARK: {
+        id: 'THE_FIRST_SPARK',
+        name: "The First Spark",
+        type: 'belt',
+        icon: 'images/icons/the_first_spark.png',
+        isUnique: true,
+        width: 2, height: 1,
+        possibleStats: [
+            { key: STATS.GOLD_GAIN.key, min: 25000, max: 75000 },
+            { key: STATS.MAGIC_FIND.key, min: 2000, max: 6000 }
+        ]
+    }
 };
 
 
@@ -1074,4 +1510,7 @@ export const ITEMS = {
     ...undeadDesertItems,
     ...finalDungeonItems,
     ...underdarkItems,
+    ...sunkenWorldItems,
+    ...celestialPlanesItems,
+    ...aetheriumForgeItems
 };
