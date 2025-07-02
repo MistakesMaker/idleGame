@@ -136,6 +136,16 @@ export function initDOMElements() {
         viewSlotsModalBackdrop: document.getElementById('view-slots-modal-backdrop'),
         viewSlotsPaperdoll: document.getElementById('view-slots-paperdoll'),
         viewSlotsCloseBtn: document.getElementById('view-slots-close-btn'),
+
+        // Wiki Elements
+        wikiView: document.getElementById('wiki-view'),
+        wikiControls: document.getElementById('wiki-controls'),
+        wikiSearchInput: document.getElementById('wiki-search-input'),
+        wikiTypeFilter: document.getElementById('wiki-type-filter'),
+        wikiSocketsFilter: document.getElementById('wiki-sockets-filter'),
+        wikiStatsFilterContainer: document.getElementById('wiki-stats-filter-container'),
+        wikiResetFiltersBtn: document.getElementById('wiki-reset-filters-btn'),
+        wikiResultsContainer: document.getElementById('wiki-results-container'),
     };
 }
 
@@ -1408,4 +1418,146 @@ function drawMapPaths(mapContainerEl, realm, viewingZoneId, gameState) {
         
         mapContainerEl.appendChild(svgEl);
     }
+}
+
+/**
+ * Populates the Wiki filter controls with all possible item types and stats.
+ * @param {object} elements - The main DOM elements object.
+ * @param {Set<string>} allItemTypes - A set of all unique item types.
+ * @param {Set<string>} allStatKeys - A set of all unique stat keys.
+ */
+export function populateWikiFilters(elements, allItemTypes, allStatKeys) {
+    const { wikiTypeFilter, wikiStatsFilterContainer } = elements;
+
+    // Populate Type Filter
+    allItemTypes.forEach(type => {
+        const option = document.createElement('option');
+        option.value = type;
+        option.textContent = type.charAt(0).toUpperCase() + type.slice(1);
+        wikiTypeFilter.appendChild(option);
+    });
+
+    // Populate Stats Filter
+    wikiStatsFilterContainer.innerHTML = '';
+    Array.from(allStatKeys).sort().forEach(statKey => {
+        const stat = Object.values(STATS).find(s => s.key === statKey);
+        if (stat) {
+            const wrapper = document.createElement('div');
+            wrapper.className = 'wiki-stat-filter';
+            
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.id = `wiki-filter-stat-${stat.key}`;
+            checkbox.dataset.statKey = stat.key;
+            
+            const label = document.createElement('label');
+            label.htmlFor = checkbox.id;
+            label.textContent = stat.name;
+            
+            const valueInput = document.createElement('input');
+            valueInput.type = 'number';
+            valueInput.id = `wiki-filter-value-${stat.key}`;
+            valueInput.dataset.statKey = stat.key;
+            valueInput.placeholder = "Min Val";
+            valueInput.classList.add('hidden'); // Start hidden
+            valueInput.min = "0";
+
+            checkbox.addEventListener('change', () => {
+                valueInput.classList.toggle('hidden', !checkbox.checked);
+                if (!checkbox.checked) {
+                    valueInput.value = '';
+                }
+            });
+
+            wrapper.appendChild(checkbox);
+            wrapper.appendChild(label);
+            wrapper.appendChild(valueInput);
+            wikiStatsFilterContainer.appendChild(wrapper);
+        }
+    });
+}
+
+/**
+ * Renders the results of a wiki search into the container.
+ * @param {HTMLElement} containerEl - The container element for the results.
+ * @param {Array<object>} filteredWikiData - The array of processed item data to display.
+ */
+export function renderWikiResults(containerEl, filteredWikiData) {
+    containerEl.innerHTML = '';
+
+    if (filteredWikiData.length === 0) {
+        containerEl.innerHTML = '<p style="text-align: center; margin-top: 20px;">No items match your criteria.</p>';
+        return;
+    }
+
+    filteredWikiData.forEach(itemData => {
+        const card = document.createElement('div');
+        card.className = 'wiki-item-card';
+        card.innerHTML = createWikiItemCardHTML(itemData);
+        containerEl.appendChild(card);
+    });
+}
+
+/**
+ * Creates the HTML for a single item card in the wiki.
+ * @param {object} itemData - The processed data for a single item.
+ * @returns {string} The HTML string for the card.
+ */
+function createWikiItemCardHTML(itemData) {
+    const itemBase = ITEMS[itemData.id] || GEMS[itemData.id];
+    const isUnique = itemBase.isUnique ? 'unique-item-name' : '';
+    // A default rarity is needed for gems or items without one.
+    const rarity = itemBase.rarity || (itemBase.tier ? 'gem-quality' : 'common');
+
+    let statsHtml = '<ul>';
+    itemBase.possibleStats?.forEach(stat => {
+        const statName = Object.values(STATS).find(s => s.key === stat.key)?.name || stat.key;
+        statsHtml += `<li>+${stat.min} to ${stat.max} ${statName}</li>`;
+    });
+    if (itemBase.synergy) {
+        statsHtml += `<li class="stat-special">Special: +${(itemBase.synergy.value * 100).toFixed(2)}% of total DPS to Click Dmg</li>`;
+    }
+    if (itemBase.uniqueEffect) {
+        const effect = UNIQUE_EFFECTS[itemBase.uniqueEffect];
+        statsHtml += `<li class="legendary" style="margin-top: 8px;"><b>${effect.name}:</b> ${effect.description}</li>`;
+    }
+    statsHtml += '</ul>';
+
+    let dropsHtml = '<ul>';
+    if (itemData.dropSources.length > 0) {
+        // Sort drop sources by level before rendering
+        const sortedSources = itemData.dropSources.sort((a, b) => a.level - b.level);
+        sortedSources.forEach(source => {
+            dropsHtml += `
+                <li class="wiki-drop-source">
+                    <img src="${source.monster.image}" alt="${source.monster.name}">
+                    <div class="wiki-drop-source-details">
+                         <span class="wiki-monster-name">${source.monster.name}</span>
+                         <span class="wiki-monster-location">${source.location}</span>
+                    </div>
+                    <span class="drop-chance">${source.chance.toFixed(2)}%</span>
+                </li>
+            `;
+        });
+    } else {
+        dropsHtml = '<li>No known drop sources.</li>';
+    }
+    dropsHtml += '</ul>';
+
+    return `
+        <div class="wiki-item-header ${rarity}">
+            <img src="${itemBase.icon}" class="item-icon" alt="${itemBase.name}">
+            <span class="item-name ${isUnique}">${itemBase.name}</span>
+        </div>
+        <div class="wiki-item-details">
+            <div class="wiki-item-stats">
+                <h4>Possible Stats & Effects</h4>
+                ${statsHtml}
+            </div>
+            <div class="wiki-item-drops">
+                <h4>Drop Sources</h4>
+                ${dropsHtml}
+            </div>
+        </div>
+    `;
 }

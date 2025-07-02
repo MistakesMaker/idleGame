@@ -249,10 +249,10 @@ const orcVolcanoMonsters = {
     FIRE_ELEMENTAL: {
         name: 'Fire Elemental',
         image: 'images/monsters/fire_elemental.png',
-        dropChance: 30,
+        dropChance: 15,
         lootTable: [
-            { item: ITEMS.SUNSTONE_BUCKLE, weight: 1 },
-            { item: GEMS.BASE_RUBY, weight: 9 },
+            { item: ITEMS.SUNSTONE_BUCKLE, weight: 3 },
+            { item: GEMS.BASE_RUBY, weight: 0.5 },
         ]
     },
     SALAMANDER: {

@@ -60,6 +60,7 @@
                 <button class="tab-button" data-view="inventory-view">Inventory</button>
                 <button class="tab-button" data-view="gems-view">Gems</button>
                 <button class="tab-button" data-view="forge-view">Forge</button>
+                <button class="tab-button" data-view="wiki-view">Wiki</button>
             </div>
 
             <div id="map-view" class="view active">
@@ -183,6 +184,31 @@
                     <div id="forge-inventory-slots" class="item-grid">
                         <!-- Player's inventory and equipment will appear here -->
                     </div>
+                </div>
+            </div>
+
+            <div id="wiki-view" class="view">
+                <h3>Wiki & Item Index</h3>
+                <p class="small-text-hint">Discover items and where to find them. Data is revealed as you progress through the realms.</p>
+                <div id="wiki-controls">
+                    <div class="wiki-filter-row">
+                        <input type="text" id="wiki-search-input" placeholder="Search by item name...">
+                        <select id="wiki-type-filter">
+                            <option value="">All Types</option>
+                            <!-- Item types will be populated by JS -->
+                        </select>
+                        <button id="wiki-reset-filters-btn">Reset Filters</button>
+                    </div>
+                    <div class="wiki-filter-row">
+                        <label for="wiki-sockets-filter">Min Sockets:</label>
+                        <input type="number" id="wiki-sockets-filter" min="0" max="3" value="" placeholder="Any">
+                    </div>
+                    <div id="wiki-stats-filter-container">
+                        <!-- Stat checkboxes will be populated by JS -->
+                    </div>
+                </div>
+                <div id="wiki-results-container" class="grid-scroll-container">
+                    <!-- Wiki search results will be populated here by JS -->
                 </div>
             </div>
 
@@ -395,6 +421,7 @@
 
 
     <!-- Scripts -->
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <script type="module" src="game.js"></script>
 </body>
 </html>

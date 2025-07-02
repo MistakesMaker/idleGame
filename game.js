@@ -1,6 +1,7 @@
 import { REALMS } from './data/realms.js';
 import { MONSTERS } from './data/monsters.js';
 import { ITEMS } from './data/items.js';
+import { GEMS } from './data/gems.js';
 import { STATS } from './data/stat_pools.js';
 import { PERMANENT_UPGRADES } from './data/upgrades.js';
 import { logMessage, formatNumber, getUpgradeCost, findSubZoneByLevel, findFirstLevelOfZone, isBossLevel, isBigBossLevel, getCombinedItemStats, isMiniBossLevel, findEmptySpot } from './utils.js';
@@ -108,6 +109,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
     /** @type {DOMElements} */
     let elements = {};
+
+    // --- BESTIARY STATE ---
+    let wikiData = [];
+    let wikiFilters = {
+        searchText: '',
+        type: '',
+        sockets: null,
+        stats: new Map(), // Use a Map to store { statKey: minValue }
+    };
 
     let socket = null;
     if (typeof io !== 'undefined') {
@@ -389,7 +399,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (currentMonster.data.background) {
             monsterAreaEl.style.backgroundImage = `url('${currentMonster.data.background}')`;
         } else if (currentMonster.data.isSpecial) {
-            monsterAreaEl.style.backgroundImage = `url('images/backgrounds/bg_treasure_realm.png')`;
+            monsterAreaEl.style.backgroundImage = `url('images/backgrounds/bg_golden_slime.png')`;
         } else {
             const subZone = findSubZoneByLevel(gameState.currentFightingLevel);
             if (subZone && subZone.parentZone) {
@@ -895,6 +905,87 @@ document.addEventListener('DOMContentLoaded', () => {
     /** Generic mouseout handler for item grids. */
     const onGridMouseOut = () => elements.tooltipEl.classList.add('hidden');
     
+    // --- BESTIARY LOGIC ---
+    function buildWikiDatabase() {
+        wikiData = [];
+        const allItemBases = { ...ITEMS, ...GEMS };
+    
+        for (const itemKey in allItemBases) {
+            const itemBase = allItemBases[itemKey];
+            const itemEntry = {
+                id: itemBase.id,
+                base: itemBase,
+                dropSources: []
+            };
+    
+            for (const monsterKey in MONSTERS) {
+                const monster = MONSTERS[monsterKey];
+                if (monster.lootTable && monster.lootTable.length > 0) {
+                    const totalWeight = monster.lootTable.reduce((sum, entry) => sum + entry.weight, 0);
+                    for (const lootEntry of monster.lootTable) {
+                        if (lootEntry.item.id === itemBase.id) {
+                            for (let i = 0; i < REALMS.length; i++) {
+                                const realm = REALMS[i];
+                                for (const zoneKey in realm.zones) {
+                                    const zone = realm.zones[zoneKey];
+                                    for (const subZoneKey in zone.subZones) {
+                                        const subZone = zone.subZones[subZoneKey];
+                                        if (subZone.monsterPool.some(m => m.name === monster.name)) {
+                                            itemEntry.dropSources.push({
+                                                monster: monster,
+                                                chance: (lootEntry.weight / totalWeight) * monster.dropChance,
+                                                location: `${zone.name} - Lvl ${subZone.levelRange[0]}`,
+                                                realmIndex: i
+                                            });
+                                            // Found it, no need to check other zones in this realm for this monster
+                                            break; 
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            wikiData.push(itemEntry);
+        }
+    }
+
+    function applyWikiFilters() {
+        const highestUnlockedRealm = REALMS.slice().reverse().find(realm => gameState.maxLevel >= realm.requiredLevel);
+        const maxRealmIndex = highestUnlockedRealm ? REALMS.indexOf(highestUnlockedRealm) : -1;
+
+        let filtered = wikiData.filter(itemData => {
+            // Realm Progression Filter
+            const isAccessible = itemData.dropSources.length === 0 || itemData.dropSources.some(source => source.realmIndex <= maxRealmIndex);
+            if (!isAccessible) return false;
+
+            // Search Text Filter
+            if (wikiFilters.searchText && !itemData.base.name.toLowerCase().includes(wikiFilters.searchText)) {
+                return false;
+            }
+            // Type Filter
+            if (wikiFilters.type && itemData.base.type !== wikiFilters.type) {
+                return false;
+            }
+            // Sockets Filter
+            if (wikiFilters.sockets !== null && (itemData.base.maxSockets || 0) < wikiFilters.sockets) {
+                return false;
+            }
+            // Stats Filter
+            for (const [statKey, minValue] of wikiFilters.stats.entries()) {
+                const hasStat = itemData.base.possibleStats?.some(stat => stat.key === statKey && stat.max >= minValue);
+                if (!hasStat) {
+                    return false;
+                }
+            }
+            return true;
+        });
+    
+        ui.renderWikiResults(elements.wikiResultsContainer, filtered);
+    }
+    // --- END BESTIARY LOGIC ---
+
     function main() {
         elements = ui.initDOMElements();
         
@@ -932,6 +1023,18 @@ document.addEventListener('DOMContentLoaded', () => {
             gameState = getDefaultGameState();
             gameState.equipment = gameState.presets[gameState.activePresetIndex].equipment;
         }
+        
+        // --- WIKI INITIALIZATION ---
+        buildWikiDatabase();
+        const allItemTypes = new Set(wikiData.map(d => d.base.type).filter(Boolean));
+        const allStatKeys = new Set();
+        wikiData.forEach(d => {
+            d.base.possibleStats?.forEach(stat => allStatKeys.add(stat.key));
+            if (d.base.synergy) allStatKeys.add('synergy');
+        });
+        ui.populateWikiFilters(elements, allItemTypes, allStatKeys);
+        applyWikiFilters(); // Initial render
+        // --- END WIKI INITIALIZATION ---
         
         // --- Set initial map view state based on current fighting level ---
         const fightingSubZone = findSubZoneByLevel(gameState.currentFightingLevel);
@@ -1479,6 +1582,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (viewId === 'map-view') {
                         isMapRenderPending = true; // Ensure map is rendered when switching to tab
                     }
+                    // WIKI: Refresh results when switching to the tab to reflect progression
+                    if (viewId === 'wiki-view') {
+                        applyWikiFilters();
+                    }
                     tabs.forEach(t => t.classList.remove('active'));
                     tab.classList.add('active');
                     if (parentPanel) {
@@ -1587,6 +1694,7 @@ document.addEventListener('DOMContentLoaded', () => {
         setupLegacyKeeperModalListeners();
         setupSalvageFilterListeners();
         setupViewSlotsListeners();
+        setupWikiListeners();
     }
     
     function setupLogScrollListeners() {
@@ -2143,6 +2251,55 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
     
+    function setupWikiListeners() {
+        const {
+            wikiSearchInput,
+            wikiTypeFilter,
+            wikiSocketsFilter,
+            wikiStatsFilterContainer,
+            wikiResetFiltersBtn
+        } = elements;
+
+        const updateAndApplyFilters = () => {
+            wikiFilters.searchText = (/** @type {HTMLInputElement} */ (wikiSearchInput)).value.toLowerCase();
+            wikiFilters.type = (/** @type {HTMLSelectElement} */ (wikiTypeFilter)).value;
+            const socketsValue = parseInt((/** @type {HTMLInputElement} */ (wikiSocketsFilter)).value, 10);
+            wikiFilters.sockets = isNaN(socketsValue) || socketsValue < 0 ? null : socketsValue;
+
+            wikiFilters.stats.clear();
+            wikiStatsFilterContainer.querySelectorAll('.wiki-stat-filter').forEach(filterDiv => {
+                const checkbox = /** @type {HTMLInputElement | null} */ (filterDiv.querySelector('input[type="checkbox"]'));
+                if (checkbox?.checked && checkbox.dataset.statKey) {
+                    const valueInput = /** @type {HTMLInputElement | null} */ (filterDiv.querySelector('input[type="number"]'));
+                    const minValue = valueInput ? parseFloat(valueInput.value) : 0;
+                    wikiFilters.stats.set(checkbox.dataset.statKey, isNaN(minValue) ? 0 : minValue);
+                }
+            });
+            applyWikiFilters();
+        };
+
+        wikiSearchInput.addEventListener('input', updateAndApplyFilters);
+        wikiTypeFilter.addEventListener('change', updateAndApplyFilters);
+        wikiSocketsFilter.addEventListener('input', updateAndApplyFilters);
+        wikiStatsFilterContainer.addEventListener('change', updateAndApplyFilters);
+        
+        addTapListener(wikiResetFiltersBtn, () => {
+            (/** @type {HTMLInputElement} */ (wikiSearchInput)).value = '';
+            (/** @type {HTMLSelectElement} */ (wikiTypeFilter)).value = '';
+            (/** @type {HTMLInputElement} */ (wikiSocketsFilter)).value = '';
+            wikiStatsFilterContainer.querySelectorAll('.wiki-stat-filter').forEach(filterDiv => {
+                const checkbox = /** @type {HTMLInputElement | null} */ (filterDiv.querySelector('input[type="checkbox"]'));
+                const valueInput = /** @type {HTMLInputElement | null} */ (filterDiv.querySelector('input[type="number"]'));
+                if (checkbox) checkbox.checked = false;
+                if (valueInput) {
+                    valueInput.value = '';
+                    valueInput.classList.add('hidden');
+                }
+            });
+            updateAndApplyFilters();
+        });
+    }
+
     function migrateToPresetInventories(loadedState) {
         console.log("Old preset system detected. Migrating to new independent preset inventories...");
         const migratedState = getDefaultGameState();

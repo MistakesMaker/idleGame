@@ -1110,3 +1110,219 @@ h5 .legendary { color: #f39c12; }
     background: linear-gradient(145deg, #c0392b, #e74c3c);
     border-bottom-color: #922b21;
 }
+
+/* --- BESTIARY / WIKI VIEW --- */
+#wiki-view {
+    gap: 15px;
+}
+
+#wiki-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 15px;
+    background-color: rgba(0,0,0,0.2);
+    border: 1px solid #4a637e;
+    border-radius: 8px;
+    flex-shrink: 0;
+}
+
+.wiki-filter-row {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+}
+
+#wiki-search-input, #wiki-type-filter, #wiki-sockets-filter {
+    background-color: #1c2833;
+    color: #ecf0f1;
+    border: 1px solid #4a637e;
+    padding: 8px 12px;
+    border-radius: 5px;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-size: 16px;
+}
+
+#wiki-search-input { flex-grow: 1; }
+#wiki-sockets-filter { width: 100px; }
+#wiki-reset-filters-btn { background: #7f8c8d; border-bottom-color: #6c7a7b; }
+
+#wiki-stats-filter-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 8px 15px;
+    margin-top: 5px;
+}
+
+.wiki-stat-filter {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.wiki-stat-filter input[type="number"] {
+    width: 80px;
+    background-color: #1c2833;
+    color: #ecf0f1;
+    border: 1px solid #4a637e;
+    padding: 4px 8px;
+    border-radius: 5px;
+    font-size: 14px;
+}
+
+#wiki-results-container {
+    flex-grow: 1;
+    overflow-y: auto;
+    background-color: rgba(0,0,0,0.3);
+    padding: 10px;
+    border-radius: 5px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.wiki-item-card {
+    background-color: rgba(44, 62, 80, 0.7);
+    border: 1px solid #4a637e;
+    border-radius: 8px;
+    padding: 15px;
+    display: flex;
+    gap: 20px;
+    cursor: pointer;
+    transition: border-color 0.2s;
+}
+.wiki-item-card:hover {
+    border-color: #f1c40f;
+}
+
+.wiki-item-header {
+    flex: 0 0 120px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    border: none;
+    background: transparent;
+}
+
+.wiki-item-header .item-icon {
+    width: 70px;
+    height: 70px;
+    border: 2px solid #bdc3c7;
+    border-radius: 8px;
+    padding: 5px;
+    background-color: rgba(0,0,0,0.4);
+    margin-bottom: 10px;
+}
+
+.wiki-item-header.common .item-icon { border-color: #bdc3c7; }
+.wiki-item-header.uncommon .item-icon { border-color: #2ecc71; }
+.wiki-item-header.rare .item-icon { border-color: #3498db; }
+.wiki-item-header.epic .item-icon { border-color: #9b59b6; }
+.wiki-item-header.legendary .item-icon { border-color: #f39c12; }
+.wiki-item-header.gem-quality .item-icon { border-color: #e74c3c; }
+
+
+.wiki-item-header .item-name {
+    font-family: 'Cinzel', serif;
+    font-weight: bold;
+}
+
+.wiki-item-details {
+    flex-grow: 1;
+    display: flex;
+    gap: 20px;
+}
+
+.wiki-item-stats, .wiki-item-drops {
+    flex: 1;
+}
+
+.wiki-item-details h4 {
+    margin-top: 0;
+    margin-bottom: 10px;
+    color: #f1c40f;
+    border-bottom: 1px solid #4a637e;
+    padding-bottom: 5px;
+}
+
+.wiki-item-details ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.wiki-drop-source {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.9em;
+    margin-bottom: 5px;
+}
+
+.wiki-drop-source img {
+    width: 24px;
+    height: 24px;
+}
+
+.wiki-drop-source-details {
+    display: flex;
+    flex-direction: column;
+}
+
+.wiki-monster-name {
+    font-weight: bold;
+}
+
+.wiki-monster-location {
+    font-size: 0.9em;
+    color: #95a5a6;
+}
+
+
+.wiki-drop-source .drop-chance {
+    color: #bdc3c7;
+    margin-left: auto;
+    font-size: 0.9em;
+}
+
+/* --- WIKI TRAVEL MODAL --- */
+.wiki-travel-options-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.wiki-travel-option {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    background: rgba(0,0,0,0.2);
+    padding: 10px;
+    border-radius: 5px;
+    border: 1px solid #34495e;
+}
+
+.wiki-travel-monster-icon {
+    width: 40px;
+    height: 40px;
+    flex-shrink: 0;
+}
+
+.wiki-travel-monster-details {
+    flex-grow: 1;
+    text-align: left;
+}
+
+.wiki-travel-btn {
+    padding: 8px 16px;
+    font-size: 1em;
+    flex-shrink: 0;
+    background: linear-gradient(145deg, #27ae60, #2ecc71);
+    border-bottom-color: #229954;
+}
