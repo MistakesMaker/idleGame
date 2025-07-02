@@ -376,7 +376,6 @@ export function salvageByRarity(gameState, rarityToSalvage, playerStats) {
     let scrapGained = 0;
     let itemsSalvagedCount = 0;
     
-    // CORRECTED: Get all equipped item IDs first to prevent them from being salvaged.
     const equippedIds = getAllEquippedItemIds(gameState);
     
     // Filter loose inventory
@@ -453,6 +452,9 @@ export function combineGems(gameState, craftingGems) {
     }
     
     gameState.scrap -= cost;
+    const id1 = gem1.id;
+    const id2 = gem2.id;
+    gameState.gems = gameState.gems.filter(g => g.id !== id1 && g.id !== id2);
 
     if (Math.random() < 0.5) {
         // SUCCESS
@@ -486,22 +488,17 @@ export function combineGems(gameState, craftingGems) {
             synergy: newSynergy
         };
         
-        const id1 = gem1.id;
-        const id2 = gem2.id;
-        gameState.gems = gameState.gems.filter(g => g.id !== id1 && g.id !== id2);
-
         gameState.gems.push(newGem);
 
+        // *** THIS IS THE FIX ***
+        // Return the successfully created gem so the UI can draw it.
         return { success: true, message: `Success! You fused a ${newGem.name}!`, newGem: newGem };
     } else {
         // FAILURE
-        const id1 = gem1.id;
-        const id2 = gem2.id;
-        gameState.gems = gameState.gems.filter(g => g.id !== id1 && g.id !== id2);
-        
         return { success: true, message: "The gems shattered... you lost everything.", newGem: null };
     }
 }
+
 
 /**
  * Automatically combines all matching gems of a given tier and stat.

@@ -357,14 +357,11 @@ document.addEventListener('DOMContentLoaded', () => {
             ui.updateStatsPanel(elements, playerStats);
         }
         
-        // *** START OF FIX ***
-        // Update the upgrade buttons whenever currency changes
         ui.updateHeroPanel(elements, gameState);
         ui.updatePrestigeUI(elements, gameState);
         ui.updateCurrency(elements, gameState);
         ui.updateUpgrades(elements, gameState);
         ui.renderPermanentUpgrades(elements, gameState);
-        // *** END OF FIX ***
     
         if (gameState.isAutoProgressing) {
             const newSubZone = findSubZoneByLevel(gameState.currentFightingLevel);
@@ -924,13 +921,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const baseState = getDefaultGameState();
 
             // Safely merge the loaded state over the default state.
-            // This ensures that any properties missing from the old save (like `gems`)
-            // will exist and be properly initialized from the base state.
             gameState = { 
                 ...baseState, 
                 ...loadedState,
-                // Explicitly ensure crucial properties are of the correct type,
-                // falling back to the base state's value if the loaded one is corrupt or missing.
                 inventory: loadedState.inventory || [],
                 gems: loadedState.gems || [],
                 presets: loadedState.presets || baseState.presets,
@@ -958,7 +951,6 @@ document.addEventListener('DOMContentLoaded', () => {
                         ...((loadedState.salvageFilter || {}).keepStats || {})
                     }
                 },
-                // Ensure goldenSlimeStreak is an object
                 goldenSlimeStreak: loadedState.goldenSlimeStreak && typeof loadedState.goldenSlimeStreak === 'object' ? loadedState.goldenSlimeStreak : baseState.goldenSlimeStreak,
             };
             
@@ -1343,21 +1335,26 @@ document.addEventListener('DOMContentLoaded', () => {
             ui.updateSocketingHighlights(elements, null, gameState);
         });
 
+        // *** START OF FIX ***
         addTapListener(elements.gemCraftBtn, () => {
             if (craftingGems.length !== 2) return;
             
             const result = player.combineGems(gameState, craftingGems);
             logMessage(elements.gameLogEl, result.message, result.success && result.newGem ? 'legendary' : 'rare', isAutoScrollingLog);
-            craftingGems = [];
             
-            recalculateStats();
-            if (result.success && result.newGem) {
-                ui.addItemToGrid(elements.gemSlotsEl, result.newGem, 'gem');
-            }
+            craftingGems = [];
             ui.updateGemCraftingUI(elements, craftingGems, gameState);
-            ui.updateStatsPanel(elements, playerStats);
-            autoSave();
+            
+            // Re-render the entire gem grid to handle both success and failure cases cleanly
+            ui.renderGrid(elements.gemSlotsEl, gameState.gems, { type: 'gem', calculatePositions: true });
+
+            if (result.success) {
+                recalculateStats();
+                ui.updateStatsPanel(elements, playerStats);
+                autoSave();
+            }
         });
+        // *** END OF FIX ***
 
         addTapListener(elements.bulkCombineBtn, () => {
             if (!bulkCombineSelection.tier || !bulkCombineSelection.selectionKey) {
