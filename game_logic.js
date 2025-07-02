@@ -356,7 +356,7 @@ export function monsterDefeated(gameState, playerStats, currentMonster) {
             baseHp: previousMonsterMaxHp,
             baseGold: goldGained, // Store the gold that would have been gained
             hp: previousMonsterMaxHp * 0.5,
-            goldReward: goldGained * 5,
+            goldReward: goldGained * 3,
             nextChance: initialSlimeSplitChance * 0.9,
         };
     } else {
