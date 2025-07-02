@@ -399,7 +399,7 @@ document.addEventListener('DOMContentLoaded', () => {
         setTimeout(() => {
             startNewMonster();
             ui.updateMonsterUI(elements, gameState, currentMonster);
-            ui.updateLootPanel(elements, currentMonster);
+            ui.updateLootPanel(elements, currentMonster, gameState);
             if (isMapRenderPending) {
                 renderMapAccordion();
                 isMapRenderPending = false;
@@ -636,7 +636,7 @@ document.addEventListener('DOMContentLoaded', () => {
             startNewMonster();
 
             ui.updateMonsterUI(elements, gameState, currentMonster);
-            ui.updateLootPanel(elements, currentMonster);
+            ui.updateLootPanel(elements, currentMonster, gameState);
             ui.updateAutoProgressToggle(elements, gameState.isAutoProgressing);
             if (isMapRenderPending) {
                 renderMapAccordion();
@@ -2200,7 +2200,7 @@ document.addEventListener('DOMContentLoaded', () => {
         recalculateStats();
         ui.updateMonsterUI(elements, gameState, currentMonster);
         ui.updateAutoProgressToggle(elements, gameState.isAutoProgressing);
-        ui.updateLootPanel(elements, currentMonster);
+        ui.updateLootPanel(elements, currentMonster, gameState);
         autoSave();
     }
 

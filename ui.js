@@ -430,17 +430,25 @@ export function updateMonsterHealthBar(elements, monsterState) {
  * Updates the loot panel with the current monster's info.
  * @param {DOMElements} elements The object containing all DOM elements.
  * @param {object} currentMonster The current monster object.
+ * @param {object} gameState The current game state.
  */
-export function updateLootPanel(elements, currentMonster) {
+export function updateLootPanel(elements, currentMonster, gameState) {
     const { lootMonsterNameEl, lootTableDisplayEl } = elements;
     const monsterDef = currentMonster.data;
     if (!monsterDef) return;
 
-    // This part requires gameState, but we can fake it for the UI update
-    const tempGameState = { monsterKillCounts: {} }; // A simplified version
+    // *** THIS IS THE FIX ***
+    // The function now uses the real gameState to get the kill count.
     const monsterKey = Object.keys(MONSTERS).find(key => MONSTERS[key] === monsterDef);
-    const killCount = (monsterKey && tempGameState.monsterKillCounts && tempGameState.monsterKillCounts[monsterKey]) ? tempGameState.monsterKillCounts[monsterKey] : 0;
-    const killCountTier = 0; // Simplified
+    const killCount = (monsterKey && gameState.monsterKillCounts && gameState.monsterKillCounts[monsterKey]) ? gameState.monsterKillCounts[monsterKey] : 0;
+    
+    const getNumberTier = (amount) => {
+        if (amount < 1e3) return 0; if (amount < 1e6) return 1; if (amount < 1e9) return 2;
+        if (amount < 1e12) return 3; if (amount < 1e15) return 4; if (amount < 1e18) return 5;
+        return 6;
+    };
+    const killCountTier = getNumberTier(killCount);
+
     lootMonsterNameEl.innerHTML = `${currentMonster.name} <span style="font-size: 0.7em; color: #bdc3c7;">(Kill Count: <span class="currency-tier-${killCountTier}">${formatNumber(killCount)}</span>)</span>`;
     
     lootTableDisplayEl.innerHTML = '';
@@ -458,6 +466,7 @@ export function updateLootPanel(elements, currentMonster) {
         lootTableDisplayEl.innerHTML = '<p>This monster has no special drops.</p>';
     }
 }
+
 
 /**
  * Adds a single item or gem to its respective grid without redrawing the whole thing.
@@ -558,7 +567,7 @@ export function updateUI(elements, gameState, playerStats, currentMonster, salva
     updateStatsPanel(elements, playerStats);
     updateUpgrades(elements, gameState);
     updateMonsterUI(elements, gameState, currentMonster);
-    updateLootPanel(elements, currentMonster);
+    updateLootPanel(elements, currentMonster, gameState); // *** FIX: Pass gameState here ***
     updatePrestigeUI(elements, gameState);
 
     // Grid Renders
