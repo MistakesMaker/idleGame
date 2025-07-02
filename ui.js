@@ -1,7 +1,8 @@
 // --- START OF FILE ui.js ---
 
 import { STATS } from './data/stat_pools.js';
-import { getXpForNextLevel, getUpgradeCost, formatNumber, findSubZoneByLevel, getCombinedItemStats, findEmptySpot, findFirstLevelOfZone } from './utils.js';
+// --- FIX: Import the new findNextAvailableSpot function ---
+import { getXpForNextLevel, getUpgradeCost, formatNumber, findSubZoneByLevel, getCombinedItemStats, findEmptySpot, findFirstLevelOfZone, findNextAvailableSpot } from './utils.js';
 import { ITEMS } from './data/items.js';
 import { GEMS } from './data/gems.js';
 import { MONSTERS } from './data/monsters.js';
@@ -216,15 +217,19 @@ export function renderGrid(containerEl, items, options = {}) {
         
         let pos;
         if (calculatePositions) {
+            // --- FIX: Use the correct placement function to fill from the top down. ---
             pos = findEmptySpot(item.width, item.height, tempPlacement);
             if (pos) {
-                tempPlacement.push({ ...item, ...pos });
+                // Update the item's position in the main state array if it's being calculated
+                item.x = pos.x;
+                item.y = pos.y;
+                tempPlacement.push({ ...item });
             }
         } else {
             pos = { x: item.x, y: item.y };
         }
 
-        if (pos && pos.x !== -1) {
+        if (pos && pos.x !== -1 && pos.x !== undefined) {
             wrapper.style.gridColumn = `${pos.x + 1} / span ${item.width}`;
             wrapper.style.gridRow = `${pos.y + 1} / span ${item.height}`;
             
@@ -366,7 +371,6 @@ export function updateUpgrades(elements, gameState) {
 export function updateMonsterUI(elements, gameState, currentMonster) {
     const { monsterImageEl, monsterNameEl, currentLevelEl, monsterAreaEl, goldenSlimeStreakEl } = elements;
     
-    // --- FIX: Add instanceof type guard for type safety ---
     if (monsterImageEl instanceof HTMLImageElement) {
         monsterImageEl.src = currentMonster.data.image;
     }
@@ -978,7 +982,8 @@ export function createItemHTML(item, showLock = true) {
 
 export function createGemHTML(gem) {
     if (!gem) return '';
-    return `<div class="gem" data-gem-id="${String(gem.id)}">
+    // --- FIX: Add the .gem-quality class for correct styling ---
+    return `<div class="gem gem-quality" data-gem-id="${String(gem.id)}">
                 <img src="${gem.icon}" alt="${gem.name}">
             </div>`;
 }
@@ -1709,7 +1714,6 @@ export function updatePrestigeUI(elements, gameState) {
 }
 
 export function updateAutoProgressToggle(elements, isAutoProgressing) {
-    // --- FIX: Add instanceof type guard for type safety ---
     if (elements.autoProgressToggleEl instanceof HTMLImageElement) {
         elements.autoProgressToggleEl.src = isAutoProgressing ? 'images/game_assets/on_button.png' : 'images/game_assets/off_button.png';
     }

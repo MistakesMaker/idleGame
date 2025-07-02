@@ -561,8 +561,23 @@ h5 .legendary { color: #f39c12; }
 .socket { width: 18px; height: 18px; border-radius: 50%; border: 1px solid #7f8c8d; background-color: rgba(0,0,0,0.5); box-shadow: inset 0 0 3px #000; display: flex; justify-content: center; align-items: center; flex-shrink: 0; }
 .socket img { width: 14px; height: 14px; }
 
-.gem-wrapper { cursor: pointer; display: flex; justify-content: center; align-items: center; /* Set by JS: grid-column, grid-row */ }
-.gem-wrapper:hover .gem { transform: scale(1.1); box-shadow: 0 0 8px #f1c40f; }
+.gem-wrapper { 
+    cursor: pointer; 
+    display: flex; 
+    justify-content: center; 
+    align-items: center; 
+    /* --- FIX: Add position relative for z-index context --- */
+    position: relative;
+    /* Set by JS: grid-column, grid-row */ 
+}
+.gem-wrapper:hover .gem { 
+    transform: scale(1.1); 
+    box-shadow: 0 0 8px #f1c40f; 
+}
+/* --- FIX: Add z-index on hover to prevent visual overlap --- */
+.gem-wrapper:hover {
+    z-index: 10;
+}
 
 .gem { width: 100%; height: 100%; cursor: pointer; transition: transform 0.2s ease, box-shadow 0.2s ease; border-radius: 8px; background-color: rgba(0,0,0,0.4); border: 2px solid #d41b07; padding: 5px; display: flex; justify-content: center; align-items: center; }
 .gem img { width: 100%; height: 100%; object-fit: contain; -webkit-user-drag: none; }
@@ -1325,4 +1340,13 @@ h5 .legendary { color: #f39c12; }
     flex-shrink: 0;
     background: linear-gradient(145deg, #27ae60, #2ecc71);
     border-bottom-color: #229954;
+}
+
+.item-wrapper:hover { 
+    transform: scale(1.05); 
+    z-index: 10; /* This lifts the hovered item above others */
+}
+
+.gem-wrapper:hover {
+    z-index: 10; /* This lifts the hovered gem above others */
 }

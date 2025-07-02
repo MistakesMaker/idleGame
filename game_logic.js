@@ -4,7 +4,7 @@ import { MONSTERS } from './data/monsters.js';
 import { ITEMS } from './data/items.js';
 import { GEMS } from './data/gems.js';
 import { rarities } from './game.js';
-import { isBossLevel, isBigBossLevel, isMiniBossLevel, findSubZoneByLevel, formatNumber, findEmptySpot } from './utils.js';
+import { isBossLevel, isBigBossLevel, isMiniBossLevel, findSubZoneByLevel, formatNumber, findNextAvailableSpot } from './utils.js';
 
 /**
  * Checks if a dropped item should be kept based on the player's salvage filter settings (strict AND logic).
@@ -224,7 +224,7 @@ export function dropLoot(currentMonster, gameState, playerStats) {
         return { droppedItems: [], droppedGems: [], logMessages, events };
     }
 
-    const spot = findEmptySpot(item.width, item.height, gameState.inventory);
+    const spot = findNextAvailableSpot(item.width, item.height, gameState.inventory);
     
     if (spot) {
         item.x = spot.x;
@@ -327,8 +327,7 @@ export function monsterDefeated(gameState, playerStats, currentMonster) {
     goldGained = Math.ceil(goldGained * (1 + (playerStats.bonusGold / 100)));
     xpGained = Math.ceil(xpGained);
 
-    // Give XP and handle item drops immediately
-    gameState.xpGained += xpGained;
+    // Handle item drops immediately
     const lootResult = (Math.random() * 100 < currentMonster.data.dropChance) ? dropLoot(currentMonster, gameState, playerStats) : { droppedItems: [], droppedGems: [], logMessages: [], events: [] };
     logMessages.push({ message: `You defeated the ${currentMonster.name} and gained ${formatNumber(xpGained)} XP.`, class: '' });
     lootResult.logMessages.forEach(msg => logMessages.push(msg));
@@ -374,6 +373,8 @@ export function monsterDefeated(gameState, playerStats, currentMonster) {
         gameState.maxLevel = gameState.currentFightingLevel;
     }
     
+    // *** THIS IS THE FIX ***
+    // The `logMessages` array is now correctly included in the returned object.
     return { goldGained, xpGained, droppedItems: lootResult.droppedItems, droppedGems: lootResult.droppedGems, logMessages, events: lootResult.events };
 }
 

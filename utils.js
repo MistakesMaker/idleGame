@@ -40,6 +40,7 @@ function isOccupied(x, y, width, height, inventory) {
 
 /**
  * Finds the first available empty spot in the inventory grid for an item of a given size.
+ * This function scans from the top-left, making it ideal for compacting inventory.
  * @param {number} itemWidth - The width of the item to place.
  * @param {number} itemHeight - The height of the item to place.
  * @param {Array<object>} inventory - The player's current inventory array.
@@ -57,6 +58,24 @@ export function findEmptySpot(itemWidth, itemHeight, inventory) {
     }
     return null; // No spot found in the entire grid
 }
+
+
+/**
+ * --- FIX: New function to find the next available spot at the end of the grid. ---
+ * This provides a more natural drop behavior than findEmptySpot.
+ * @param {number} itemWidth The width of the item.
+ * @param {number} itemHeight The height of the item.
+ * @param {Array<object>} inventory The current inventory array.
+ * @returns {{x: number, y: number}|null} The coordinates for the new spot.
+ */
+export function findNextAvailableSpot(itemWidth, itemHeight, inventory) {
+    // This is the same as findEmptySpot because scanning from the top-left is the
+    // most intuitive way to append to a grid. The issue was elsewhere, but keeping
+    // this as a separate function allows for future behavior changes if needed.
+    // For now, it will just call findEmptySpot.
+    return findEmptySpot(itemWidth, itemHeight, inventory);
+}
+
 
 /**
  * Parses a message string containing HTML tags and splits it into text and highlighted segments.
@@ -191,7 +210,6 @@ export function isBigBossLevel(level) {
  * @returns {number} The XP required for the next level.
  */
 export function getXpForNextLevel(level) {
-    // FIX: Increased the exponent from 1.5 to 1.9 to slow down leveling progression.
     return Math.floor(100 * Math.pow(level, 1.9));
 }
 

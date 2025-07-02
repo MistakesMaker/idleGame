@@ -6,7 +6,7 @@ import { ITEMS } from './data/items.js';
 import { GEMS } from './data/gems.js';
 import { STATS } from './data/stat_pools.js';
 import { PERMANENT_UPGRADES } from './data/upgrades.js';
-import { logMessage, formatNumber, getUpgradeCost, findSubZoneByLevel, findFirstLevelOfZone, isBossLevel, isBigBossLevel, getCombinedItemStats, isMiniBossLevel, findEmptySpot } from './utils.js';
+import { logMessage, formatNumber, getUpgradeCost, findSubZoneByLevel, findFirstLevelOfZone, isBossLevel, isBigBossLevel, getCombinedItemStats, isMiniBossLevel, findNextAvailableSpot } from './utils.js';
 import * as ui from './ui.js';
 import * as player from './player_actions.js';
 import * as logic from './game_logic.js';
@@ -302,65 +302,80 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function handleMonsterDefeated() {
-        // --- Get location info BEFORE progressing ---
         const oldSubZone = findSubZoneByLevel(gameState.currentFightingLevel);
         const oldRealmIndex = oldSubZone ? REALMS.findIndex(r => Object.values(r.zones).some(z => z === oldSubZone.parentZone)) : -1;
     
         const result = logic.monsterDefeated(gameState, playerStats, currentMonster);
     
-        // --- PERFORMANCE FIX ---
-        // Instead of a single massive update, we now call targeted UI updates.
-    
-        // 1. Update logs and popups
         result.logMessages.forEach(msg => {
             logMessage(elements.gameLogEl, msg.message, msg.class, isAutoScrollingLog);
         });
     
         if (result.events && result.events.includes('gemFind')) {
-            ui.showInfoPopup(elements.popupContainerEl, 'Double Gem!', {
-                top: '10%',
-                fontSize: '3.5em'
-            });
+            ui.showInfoPopup(elements.popupContainerEl, 'Double Gem!', { top: '10%', fontSize: '3.5em' });
         }
     
         ui.showGoldPopup(elements.popupContainerEl, result.goldGained);
     
-        // 2. Animate and add dropped items/gems to the UI without re-rendering everything
         if (result.droppedItems && result.droppedItems.length > 0) {
             result.droppedItems.forEach((item, index) => {
                 ui.showItemDropAnimation(elements.popupContainerEl, item, index);
                 ui.addItemToGrid(elements.inventorySlotsEl, item);
             });
         }
+        
+        // --- FIX: Logic to correctly place new gems ---
         if (result.droppedGems && result.droppedGems.length > 0) {
-            result.droppedGems.forEach((gem, index) => {
-                ui.showItemDropAnimation(elements.popupContainerEl, gem, index);
-                ui.addItemToGrid(elements.gemSlotsEl, gem, 'gem');
+            // Find all newly dropped gems that are still in the state (i.e., not yet placed)
+            const newGemsToPlace = result.droppedGems.filter(droppedGem =>
+                gameState.gems.some(gemInState => gemInState.id === droppedGem.id && (gemInState.x === undefined || gemInState.x === -1))
+            );
+        
+            newGemsToPlace.forEach((gemToPlace, index) => {
+                // Find a spot for the new gem, considering all *already placed* gems
+                const placedGems = gameState.gems.filter(g => g.x !== undefined && g.x !== -1);
+                const spot = findNextAvailableSpot(gemToPlace.width, gemToPlace.height, placedGems);
+        
+                if (spot) {
+                    const gemInState = gameState.gems.find(g => g.id === gemToPlace.id);
+                    if (gemInState) {
+                        gemInState.x = spot.x;
+                        gemInState.y = spot.y;
+        
+                        // Now, add it to the UI grid
+                        ui.showItemDropAnimation(elements.popupContainerEl, gemInState, index);
+                        ui.addItemToGrid(elements.gemSlotsEl, gemInState, 'gem');
+                    }
+                } else {
+                    logMessage(elements.gameLogEl, `Your gem pouch is full! A ${gemToPlace.name} was lost.`, 'rare', isAutoScrollingLog);
+                    // Remove the unplaceable gem from the game state
+                    gameState.gems = gameState.gems.filter(g => g.id !== gemToPlace.id);
+                }
             });
         }
+        // --- END OF FIX ---
     
-        // 3. Handle XP and level ups, then update only the hero panel
         const levelUpLogs = player.gainXP(gameState, result.xpGained);
-        levelUpLogs.forEach(msg => {
-            logMessage(elements.gameLogEl, msg, 'legendary', isAutoScrollingLog);
-        });
+        if (levelUpLogs.length > 0) {
+            levelUpLogs.forEach(msg => logMessage(elements.gameLogEl, msg, 'legendary', isAutoScrollingLog));
+            recalculateStats();
+            ui.updateStatsPanel(elements, playerStats);
+        }
+        
         ui.updateHeroPanel(elements, gameState);
-        ui.updatePrestigeUI(elements, gameState); // Prestige button might enable
-    
-        // 4. Update currency displays
+        ui.updatePrestigeUI(elements, gameState);
         ui.updateCurrency(elements, gameState);
+        ui.updateUpgrades(elements, gameState);
     
-        // --- Map progression logic remains the same ---
         if (gameState.isAutoProgressing) {
             const newSubZone = findSubZoneByLevel(gameState.currentFightingLevel);
             if (newSubZone) {
                 const newRealmIndex = REALMS.findIndex(r => Object.values(r.zones).some(z => z === newSubZone.parentZone));
                 if (newRealmIndex !== -1 && (newRealmIndex !== oldRealmIndex || (oldSubZone && newSubZone.name !== oldSubZone.name))) {
                     const newZoneId = Object.keys(REALMS[newRealmIndex].zones).find(id => REALMS[newRealmIndex].zones[id] === newSubZone.parentZone);
-                    
                     currentViewingRealmIndex = newRealmIndex;
                     currentViewingZoneId = newZoneId || 'world';
-                    isMapRenderPending = true; // Flag for re-render on next visible frame
+                    isMapRenderPending = true;
                 }
             }
         }
@@ -381,10 +396,8 @@ document.addEventListener('DOMContentLoaded', () => {
     
         autoSave();
     
-        // 5. Start the next monster after a short delay
         setTimeout(() => {
             startNewMonster();
-            // Update only the UI related to the monster and map
             ui.updateMonsterUI(elements, gameState, currentMonster);
             ui.updateLootPanel(elements, currentMonster);
             if (isMapRenderPending) {
@@ -398,10 +411,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const { newMonster, newMonsterState } = logic.generateMonster(gameState.currentFightingLevel, gameState.specialEncounter);
         currentMonster = newMonster;
         gameState.monster = newMonsterState;
-    
-        // --- PERFORMANCE FIX ---
-        // This function no longer re-renders the whole UI.
-        // It now only calls the specific UI functions needed for a new monster.
         ui.updateMonsterUI(elements, gameState, newMonster);
     }
 
@@ -447,8 +456,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (gameState.monster.hp <= 0) {
             handleMonsterDefeated();
         }
-        // --- PERFORMANCE FIX ---
-        // Update only the health bar, not the entire UI.
         ui.updateMonsterHealthBar(elements, gameState.monster);
     }
 
@@ -458,19 +465,14 @@ document.addEventListener('DOMContentLoaded', () => {
             if (gameState.monster.hp <= 0) {
                 handleMonsterDefeated();
             }
-            // --- PERFORMANCE FIX ---
-            // Update only the health bar, not the entire UI.
             ui.updateMonsterHealthBar(elements, gameState.monster);
         }
     }
 
-    // --- PERFORMANCE FIX ---
-    // This function is now only used for full re-draws, like on initialization or major view switches.
-    // It's no longer in the critical path of the game loop.
     function fullUIRender() {
         ui.updateUI(elements, gameState, playerStats, currentMonster, salvageMode, craftingGems, selectedItemForForge, bulkCombineSelection, bulkCombineDeselectedIds);
         renderMapAccordion();
-        renderPermanentUpgrades();
+        ui.renderPermanentUpgrades(elements, gameState);
     }
 
     function autoSave() {
@@ -543,11 +545,6 @@ document.addEventListener('DOMContentLoaded', () => {
         fullUIRender();
     }
     
-    function renderPermanentUpgrades() {
-        // This is a full render, which is fine for a panel that doesn't change often.
-        ui.renderPermanentUpgrades(elements, gameState);
-    }
-
     function populateBulkCombineControls() {
         const bulkCombineTierSelect = /** @type {HTMLSelectElement} */ (elements.bulkCombineTierSelect);
         const bulkCombineStatSelect = /** @type {HTMLSelectElement} */ (elements.bulkCombineStatSelect);
@@ -638,8 +635,6 @@ document.addEventListener('DOMContentLoaded', () => {
             elements.modalBackdropEl.classList.add('hidden');
             startNewMonster();
 
-            // --- PERFORMANCE FIX ---
-            // Only update what is necessary after travel
             ui.updateMonsterUI(elements, gameState, currentMonster);
             ui.updateLootPanel(elements, currentMonster);
             ui.updateAutoProgressToggle(elements, gameState.isAutoProgressing);
@@ -924,21 +919,38 @@ document.addEventListener('DOMContentLoaded', () => {
         
         const savedData = localStorage.getItem('idleRPGSaveData');
         if (savedData) {
-            let loadedState = JSON.parse(savedData);
-            
-            if (!loadedState.presetSystemMigrated) {
-                 loadedState = migrateToPresetInventories(loadedState);
-            }
-
+             let loadedState = JSON.parse(savedData);
+    
+            // Start with a clean, complete default state
             const baseState = getDefaultGameState();
+
+            // Safely merge the loaded state over the default state.
+            // This ensures that any properties missing from the old save (like `gems`)
+            // will exist and be properly initialized from the base state.
             gameState = { 
                 ...baseState, 
                 ...loadedState,
+                // Explicitly ensure crucial properties are of the correct type,
+                // falling back to the base state's value if the loaded one is corrupt or missing.
+                inventory: loadedState.inventory || [],
+                gems: loadedState.gems || [], // <-- THIS IS THE KEY FIX
+                presets: loadedState.presets || baseState.presets,
+                upgrades: { ...baseState.upgrades, ...(loadedState.upgrades || {}) },
+                hero: {
+                    ...baseState.hero,
+                    ...(loadedState.hero || {}),
+                    attributes: {
+                        ...baseState.hero.attributes,
+                        ...((loadedState.hero || {}).attributes || {})
+                    }
+                },
                 permanentUpgrades: { 
                     ...baseState.permanentUpgrades,
                     ...(loadedState.permanentUpgrades || {})
                 },
+                absorbedStats: loadedState.absorbedStats || {},
                 absorbedSynergies: (typeof loadedState.absorbedSynergies === 'object' && !Array.isArray(loadedState.absorbedSynergies)) ? loadedState.absorbedSynergies : {},
+                absorbedUniqueEffects: loadedState.absorbedUniqueEffects || {},
                 salvageFilter: {
                     ...baseState.salvageFilter,
                     ...(loadedState.salvageFilter || {}),
@@ -948,6 +960,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 }
             };
+            
+            if (!gameState.presetSystemMigrated) {
+                gameState = migrateToPresetInventories(gameState); // Pass the merged state
+            }
             
             gameState.equipment = gameState.presets[gameState.activePresetIndex].equipment;
             
@@ -984,8 +1000,6 @@ document.addEventListener('DOMContentLoaded', () => {
         startNewMonster();
         logMessage(elements.gameLogEl, savedData ? "Saved game loaded!" : "Welcome! Your progress will be saved automatically.", '', isAutoScrollingLog);
         
-        // --- PERFORMANCE FIX ---
-        // This is the only place we should call the full render function.
         fullUIRender();
         
         autoSave(); 
@@ -1028,7 +1042,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (attributeRow instanceof HTMLElement && attributeRow.dataset.attribute) {
                     player.spendAttributePoint(gameState, attributeRow.dataset.attribute);
                     recalculateStats();
-                    // --- PERFORMANCE FIX ---
                     ui.updateHeroPanel(elements, gameState);
                     ui.updateStatsPanel(elements, playerStats);
                     autoSave();
@@ -1042,7 +1055,6 @@ document.addEventListener('DOMContentLoaded', () => {
             if (toggleButton) {
                 gameState.isSlimeSplitEnabled = !gameState.isSlimeSplitEnabled;
                 logMessage(elements.gameLogEl, `Slime Split effect is now <b class="legendary">${gameState.isSlimeSplitEnabled ? 'ON' : 'OFF'}</b>.`, '', isAutoScrollingLog);
-                // --- PERFORMANCE FIX ---
                 ui.updatePrestigeUI(elements, gameState);
                 autoSave();
             }
@@ -1076,7 +1088,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
 
                 recalculateStats();
-                // --- PERFORMANCE FIX ---
                 ui.updateCurrency(elements, gameState);
                 ui.updateUpgrades(elements, gameState);
                 ui.updateStatsPanel(elements, playerStats);
@@ -1091,22 +1102,18 @@ document.addEventListener('DOMContentLoaded', () => {
             logMessage(elements.gameLogEl, result.message, '', isAutoScrollingLog);
             if (result.success && result.item) {
                 logMessage(elements.gameLogEl, `The crate contained: <span class="${result.item.rarity}">${result.item.name}</span>`, '', isAutoScrollingLog);
-                // --- PERFORMANCE FIX ---
                 ui.addItemToGrid(elements.inventorySlotsEl, result.item);
                 ui.updateCurrency(elements, gameState);
-                ui.updateUpgrades(elements, gameState); // For buy button state
+                ui.updateUpgrades(elements, gameState);
             }
             autoSave();
         });
 
         addTapListener(document.getElementById('salvage-mode-btn'), () => {
             salvageMode.active = !salvageMode.active;
-            // --- PERFORMANCE FIX ---
-            // Only update the salvage buttons and body class, no full re-render.
             ui.toggleSalvageMode(elements, salvageMode.active);
             if (!salvageMode.active) {
                 salvageMode.selections = [];
-                // Redraw inventory to remove selection highlights
                 ui.renderGrid(elements.inventorySlotsEl, gameState.inventory, { calculatePositions: true, salvageSelections: [], showLockIcon: true });
             }
         });
@@ -1115,8 +1122,6 @@ document.addEventListener('DOMContentLoaded', () => {
             const equippedIds = player.getAllEquippedItemIds(gameState);
             salvageMode.selections = player.getAllItems(gameState).filter(item => !item.locked && !equippedIds.has(item.id));
             ui.updateSalvageCount(elements, salvageMode.selections.length);
-            // --- PERFORMANCE FIX ---
-            // Re-render inventory to show all selections
             ui.renderGrid(elements.inventorySlotsEl, gameState.inventory, { calculatePositions: true, salvageSelections: salvageMode.selections, showLockIcon: true });
         });
 
@@ -1131,10 +1136,9 @@ document.addEventListener('DOMContentLoaded', () => {
             salvageMode.active = false;
             salvageMode.selections = [];
             
-            // --- PERFORMANCE FIX ---
-            ui.toggleSalvageMode(elements, false); // Turn off salvage mode UI
-            ui.updateCurrency(elements, gameState); // Update scrap total
-            ui.renderGrid(elements.inventorySlotsEl, gameState.inventory, { calculatePositions: false }); // Rerender inventory after compaction
+            ui.toggleSalvageMode(elements, false);
+            ui.updateCurrency(elements, gameState);
+            ui.renderGrid(elements.inventorySlotsEl, gameState.inventory, { calculatePositions: false });
             autoSave();
         });
 
@@ -1144,8 +1148,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const result = player.salvageByRarity(gameState, rarity, playerStats);
             if (result.count > 0) {
                 logMessage(elements.gameLogEl, `Salvaged ${result.count} ${rarity} items for ${formatNumber(result.scrapGained)} Scrap.`, 'uncommon', isAutoScrollingLog);
-                // --- PERFORMANCE FIX ---
-                ui.renderGrid(elements.inventorySlotsEl, gameState.inventory, { calculatePositions: false }); // Rerender inventory after compaction
+                ui.renderGrid(elements.inventorySlotsEl, gameState.inventory, { calculatePositions: false });
                 ui.updateCurrency(elements, gameState);
                 autoSave();
             } else {
@@ -1174,7 +1177,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     } else {
                         bulkCombineDeselectedIds.add(item.id);
                     }
-                    // --- PERFORMANCE FIX ---
                     ui.updateBulkCombineHighlights(elements, gameState, bulkCombineSelection, bulkCombineDeselectedIds);
                     return;
                 }
@@ -1187,7 +1189,6 @@ document.addEventListener('DOMContentLoaded', () => {
                         }
                         craftingGems.push(item);
                         gameState.gems = gameState.gems.filter(g => g.id !== item.id);
-                        // --- PERFORMANCE FIX ---
                         ui.updateGemCraftingUI(elements, craftingGems, gameState);
                         ui.removeItemFromGrid(elements.gemSlotsEl, item.id);
                     }
@@ -1199,7 +1200,6 @@ document.addEventListener('DOMContentLoaded', () => {
                         selectedGemForSocketing = item;
                         logMessage(elements.gameLogEl, `Selected ${item.name}. Click an item with an empty socket to place it.`, 'uncommon', isAutoScrollingLog);
                     }
-                     // --- PERFORMANCE FIX ---
                     ui.updateSocketingHighlights(elements, selectedGemForSocketing, gameState);
                 }
             } else {
@@ -1213,7 +1213,6 @@ document.addEventListener('DOMContentLoaded', () => {
                         logMessage(elements.gameLogEl, `Socketed ${gemToSocket.name} into ${item.name}.`, 'epic', isAutoScrollingLog);
                         selectedGemForSocketing = null;
                         recalculateStats();
-                        // --- PERFORMANCE FIX ---
                         ui.updateSocketingHighlights(elements, null, gameState);
                         ui.removeItemFromGrid(elements.gemSlotsEl, gemToSocket.id);
                         ui.renderPaperdoll(elements, gameState);
@@ -1227,7 +1226,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (event.target.closest('.lock-icon')) {
                     const message = player.toggleItemLock(gameState, item);
                     if (message) logMessage(elements.gameLogEl, message, '', isAutoScrollingLog);
-                     // --- PERFORMANCE FIX ---
                     ui.updateItemInGrid(elements.inventorySlotsEl, item);
                 } else if (salvageMode.active) {
                     const isEquipped = player.getAllEquippedItemIds(gameState).has(item.id);
@@ -1247,7 +1245,6 @@ document.addEventListener('DOMContentLoaded', () => {
                         salvageMode.selections.push(item);
                     }
                     ui.updateSalvageCount(elements, salvageMode.selections.length);
-                    // --- PERFORMANCE FIX ---
                     ui.updateItemInGrid(elements.inventorySlotsEl, item, salvageMode.selections);
                 } else {
                     const result = player.equipItem(gameState, item);
@@ -1258,7 +1255,6 @@ document.addEventListener('DOMContentLoaded', () => {
                         } else {
                             logMessage(elements.gameLogEl, result.message, '', isAutoScrollingLog);
                             recalculateStats();
-                             // --- PERFORMANCE FIX ---
                             ui.renderGrid(elements.inventorySlotsEl, gameState.inventory, { calculatePositions: false });
                             ui.renderPaperdoll(elements, gameState);
                             ui.updateStatsPanel(elements, playerStats);
@@ -1292,7 +1288,6 @@ document.addEventListener('DOMContentLoaded', () => {
                         logMessage(elements.gameLogEl, `Socketed ${gemToSocket.name} into ${item.name}.`, 'epic', isAutoScrollingLog);
                         selectedGemForSocketing = null;
                         recalculateStats();
-                        // --- PERFORMANCE FIX ---
                         ui.updateSocketingHighlights(elements, null, gameState);
                         ui.removeItemFromGrid(elements.gemSlotsEl, gemToSocket.id);
                         ui.renderPaperdoll(elements, gameState);
@@ -1307,7 +1302,6 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!unequippedItem) return;
             player.unequipItem(gameState, slotName);
             recalculateStats();
-            // --- PERFORMANCE FIX ---
             ui.renderPaperdoll(elements, gameState);
             ui.addItemToGrid(elements.inventorySlotsEl, unequippedItem);
             ui.updateStatsPanel(elements, playerStats);
@@ -1329,7 +1323,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 gameState.gems.push(gemInSlot);
                 craftingGems[slotIndex] = undefined; 
                 craftingGems = craftingGems.filter(Boolean);
-                // --- PERFORMANCE FIX ---
                 ui.addItemToGrid(elements.gemSlotsEl, gemInSlot, 'gem');
             } 
             else if (selectedGemForSocketing) {
@@ -1341,12 +1334,10 @@ document.addEventListener('DOMContentLoaded', () => {
         
                     craftingGems.push(selectedGemForSocketing);
                     gameState.gems = gameState.gems.filter(g => g.id !== selectedGemForSocketing.id);
-                    // --- PERFORMANCE FIX ---
                     ui.removeItemFromGrid(elements.gemSlotsEl, selectedGemForSocketing.id);
                     selectedGemForSocketing = null;
                 }
             }
-            // --- PERFORMANCE FIX ---
             ui.updateGemCraftingUI(elements, craftingGems, gameState);
             ui.updateSocketingHighlights(elements, null, gameState);
         });
@@ -1359,7 +1350,6 @@ document.addEventListener('DOMContentLoaded', () => {
             craftingGems = [];
             
             recalculateStats();
-            // --- PERFORMANCE FIX ---
             if (result.success && result.newGem) {
                 ui.addItemToGrid(elements.gemSlotsEl, result.newGem, 'gem');
             }
@@ -1380,7 +1370,6 @@ document.addEventListener('DOMContentLoaded', () => {
             if (result.success) {
                 recalculateStats();
                 populateBulkCombineControls();
-                // --- PERFORMANCE FIX ---
                 ui.renderGrid(elements.gemSlotsEl, gameState.gems, { type: 'gem', calculatePositions: true });
                 ui.updateCurrency(elements, gameState);
                 ui.updateStatsPanel(elements, playerStats);
@@ -1403,7 +1392,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     bulkCombineSelection.selectionKey = lastBulkCombineStatKey;
                 }
             }
-            // --- PERFORMANCE FIX ---
             ui.updateBulkCombineHighlights(elements, gameState, bulkCombineSelection, bulkCombineDeselectedIds);
         });
 
@@ -1411,7 +1399,6 @@ document.addEventListener('DOMContentLoaded', () => {
             bulkCombineSelection.selectionKey = (/** @type {HTMLSelectElement} */ (elements.bulkCombineStatSelect)).value || null;
             lastBulkCombineStatKey = bulkCombineSelection.selectionKey;
             bulkCombineDeselectedIds.clear(); 
-            // --- PERFORMANCE FIX ---
             ui.updateBulkCombineHighlights(elements, gameState, bulkCombineSelection, bulkCombineDeselectedIds);
         });
 
@@ -1419,7 +1406,6 @@ document.addEventListener('DOMContentLoaded', () => {
             if (pendingRingEquip) {
                 player.equipRing(gameState, pendingRingEquip, 'ring1');
                 recalculateStats();
-                // --- PERFORMANCE FIX ---
                 ui.renderGrid(elements.inventorySlotsEl, gameState.inventory, { calculatePositions: false });
                 ui.renderPaperdoll(elements, gameState);
                 ui.updateStatsPanel(elements, playerStats);
@@ -1431,7 +1417,6 @@ document.addEventListener('DOMContentLoaded', () => {
             if (pendingRingEquip) {
                 player.equipRing(gameState, pendingRingEquip, 'ring2');
                 recalculateStats();
-                // --- PERFORMANCE FIX ---
                 ui.renderGrid(elements.inventorySlotsEl, gameState.inventory, { calculatePositions: false });
                 ui.renderPaperdoll(elements, gameState);
                 ui.updateStatsPanel(elements, playerStats);
@@ -1474,7 +1459,6 @@ document.addEventListener('DOMContentLoaded', () => {
             gameState.isAutoProgressing = !gameState.isAutoProgressing;
             logMessage(elements.gameLogEl, `Auto-progress ${gameState.isAutoProgressing ? 'enabled' : 'disabled'}.`, '', isAutoScrollingLog);
             autoSave();
-            // --- PERFORMANCE FIX ---
             ui.updateAutoProgressToggle(elements, gameState.isAutoProgressing);
         });
         
@@ -1483,7 +1467,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 player.activatePreset(gameState, index);
                 logMessage(elements.gameLogEl, `Activated preset: <b>${gameState.presets[index].name}</b>`, '', isAutoScrollingLog);
                 recalculateStats();
-                // --- PERFORMANCE FIX ---
                 ui.updateActivePresetButton(elements, gameState.activePresetIndex);
                 ui.renderPaperdoll(elements, gameState);
                 ui.updateStatsPanel(elements, playerStats);
@@ -1498,7 +1481,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (newName && newName.trim() !== "") {
                         gameState.presets[index].name = newName.trim();
                         logMessage(elements.gameLogEl, `Renamed preset to: <b>${newName.trim()}</b>`, '', isAutoScrollingLog);
-                        // --- PERFORMANCE FIX ---
                         ui.updateActivePresetButton(elements, gameState.activePresetIndex);
                         autoSave();
                     }
@@ -1516,7 +1498,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (newName && newName.trim() !== "") {
                     gameState.presets[index].name = newName.trim();
                     logMessage(elements.gameLogEl, `Renamed preset to: <b>${newName.trim()}</b>`, '', isAutoScrollingLog);
-                     // --- PERFORMANCE FIX ---
                     ui.updateActivePresetButton(elements, gameState.activePresetIndex);
                     autoSave();
                 }
@@ -1544,7 +1525,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         ui.populateSalvageFilter(elements, gameState);
                     }
                     if (viewId === 'map-view') {
-                        isMapRenderPending = true; // Ensure map is rendered when switching to tab
+                        isMapRenderPending = true;
                     }
                     if (viewId === 'wiki-view') {
                         applyWikiFilters();
@@ -1558,8 +1539,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (viewElement) {
                         viewElement.classList.add('active');
                     }
-                    // --- PERFORMANCE FIX ---
-                    // A full render is acceptable when switching main tabs.
                     fullUIRender();
                 });
             });
@@ -1583,7 +1562,6 @@ document.addEventListener('DOMContentLoaded', () => {
             if (item && item.stats) {
                 selectedItemForForge = item; 
                 logMessage(elements.gameLogEl, `Selected <span class="${item.rarity}">${item.name}</span> for rerolling.`, 'uncommon', isAutoScrollingLog);
-                // --- PERFORMANCE FIX ---
                 ui.updateForge(elements, selectedItemForForge, gameState.scrap);
             }
         });
@@ -1599,11 +1577,9 @@ document.addEventListener('DOMContentLoaded', () => {
             
             if (result.success) {
                 recalculateStats();
-                // --- PERFORMANCE FIX ---
                 ui.updateForge(elements, selectedItemForForge, gameState.scrap);
                 ui.updateCurrency(elements, gameState);
                 ui.updateStatsPanel(elements, playerStats);
-                // Also update the item where it lives (inventory or equipment)
                 ui.updateItemInGrid(elements.inventorySlotsEl, selectedItemForForge);
                 ui.renderPaperdoll(elements, gameState);
                 autoSave();
@@ -1635,8 +1611,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (result.success) {
                 logMessage(elements.gameLogEl, `Purchased Level ${result.newLevel} of ${PERMANENT_UPGRADES[upgradeId].name}!`, 'epic', isAutoScrollingLog);
                 recalculateStats();
-                // --- PERFORMANCE FIX ---
-                renderPermanentUpgrades(); // This panel doesn't change often, so a full re-render is fine.
+                ui.renderPermanentUpgrades(elements, gameState);
                 ui.updateCurrency(elements, gameState);
                 ui.updateStatsPanel(elements, playerStats);
                 autoSave();
@@ -2163,7 +2138,7 @@ document.addEventListener('DOMContentLoaded', () => {
             closeThisModal();
             ui.hideUnlockSlotModal(elements);
             recalculateStats();
-            renderPermanentUpgrades();
+            ui.renderPermanentUpgrades(elements, gameState);
             ui.updateCurrency(elements, gameState);
             autoSave();
         });

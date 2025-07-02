@@ -690,8 +690,7 @@ const undeadDesertItems = {
         canHaveSockets: true,
         maxSockets: 3,
         possibleStats: [
-            { key: STATS.DPS.key, min: 2000, max: 6000 },
-            { key: STATS.CLICK_DAMAGE.key, min: 50, max: 150 },
+            { key: STATS.CLICK_DAMAGE.key, min: 300, max: 2500 },
         ]
     },
     MITHRIL_CHAINMAIL: {
