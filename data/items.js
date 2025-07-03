@@ -1218,7 +1218,7 @@ const underdarkItems = {
         maxSockets: 3,
         possibleStats: [
             { key: STATS.DPS.key, min: 150000, max: 400000 },
-            { key: STATS.GOLD_GAIN.key, min: 50, max: 50 },
+            { key: STATS.GOLD_GAIN.key, min: 300, max: 800 },
         ]
     },
 
@@ -1331,7 +1331,7 @@ const underdarkItems = {
         type: 'belt',
         icon: 'images/icons/shadow-weave_sash.png',
         width: 2, height: 1,
-        possibleStats: [ { key: STATS.GOLD_GAIN.key, min: 80, max: 240 } ]
+        possibleStats: [ { key: STATS.GOLD_GAIN.key, min: 2200, max: 3000 } ]
     },
     ABYSSAL_EDGE: {
         id: 'ABYSSAL_EDGE',

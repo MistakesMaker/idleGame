@@ -256,6 +256,7 @@ export function monsterDefeated(gameState, playerStats, currentMonster) {
     if (currentMonster.data.id === 'GOLDEN_SLIME') {
         const encounter = gameState.specialEncounter;
         const continueCheck = Math.random() * 100 < encounter.nextChance;
+        const result = { goldGained: 0, xpGained: 0, droppedItems: [], droppedGems: [], logMessages, events: [] };
 
         if (continueCheck) {
             // The chain continues!
@@ -273,9 +274,7 @@ export function monsterDefeated(gameState, playerStats, currentMonster) {
             };
             logMessages.push({ message: `The chain continues! The slime grows stronger... (Next chance: ${nextChance.toFixed(1)}%)`, class: 'legendary' });
         } else {
-            // The chain breaks! Award the gold from the slime that was just defeated.
-
-            // --- FIX: Update the max streak counter AND max gold ---
+            // The chain breaks! Update records and award gold.
             if (!gameState.goldenSlimeStreak) {
                 gameState.goldenSlimeStreak = { max: 0, maxGold: 0 };
             }
@@ -288,24 +287,26 @@ export function monsterDefeated(gameState, playerStats, currentMonster) {
                 gameState.goldenSlimeStreak.max = encounter.chainLevel;
                 gameState.goldenSlimeStreak.maxGold = encounter.goldReward;
             }
-            // --- End of Fix ---
-
+            
             const goldGained = encounter.goldReward;
             gameState.gold += goldGained;
             const goldTier = Math.floor(Math.log10(goldGained) / 3);
             const goldText = `<span class="currency-tier-${goldTier}">${formatNumber(goldGained)}</span>`;
             logMessages.push({ message: `The chain breaks! You receive a massive bonus of ${goldText} gold!`, class: 'legendary' });
             
-            // Reset the encounter and progress to the next level.
-            gameState.specialEncounter = null;
+            // ** THE FIX: Signal that the encounter is over **
+            result.encounterEnded = true;
+
+            // Progress to the next level after the chain breaks.
             if (gameState.isAutoProgressing) {
                 const nextLevel = level + 1;
                 const nextSubZone = findSubZoneByLevel(nextLevel);
                 if (nextSubZone) gameState.currentFightingLevel = nextLevel;
             }
         }
-        // No XP or regular loot is given from Golden Slimes.
-        return { goldGained: 0, xpGained: 0, droppedItems: [], droppedGems: [], logMessages, events: [] };
+        
+        result.logMessages = logMessages;
+        return result;
     }
     
     // --- Path 2: Player defeated a normal monster ---
@@ -373,8 +374,6 @@ export function monsterDefeated(gameState, playerStats, currentMonster) {
         gameState.maxLevel = gameState.currentFightingLevel;
     }
     
-    // *** THIS IS THE FIX ***
-    // The `logMessages` array is now correctly included in the returned object.
     return { goldGained, xpGained, droppedItems: lootResult.droppedItems, droppedGems: lootResult.droppedGems, logMessages, events: lootResult.events };
 }
 
