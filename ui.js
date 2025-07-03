@@ -1563,7 +1563,7 @@ export function renderWikiResults(containerEl, filteredWikiData) {
  * @param {object} itemData - The processed data for a single item.
  * @returns {string} The HTML string for the card.
  */
-export function createWikiItemCardHTML(itemData) {
+function createWikiItemCardHTML(itemData) {
     const itemBase = ITEMS[itemData.id] || GEMS[itemData.id];
     const isUnique = itemBase.isUnique ? 'unique-item-name' : '';
     const rarity = itemBase.rarity || 'common'; 
@@ -1788,10 +1788,12 @@ export function updateForge(elements, selectedItem, currentScrap) {
     }
 }
 
-export function updateActivePresetButton(elements, activeIndex) {
-    elements.prestigeView.parentElement.querySelectorAll('.preset-btn').forEach((btn, index) => {
-        btn.textContent = (/**@type {any}*/(window).gameState).presets[index].name;
-        btn.classList.toggle('active', index === activeIndex);
+export function updateActivePresetButton(elements, gameState) {
+    document.querySelectorAll('.preset-btn').forEach((btn, index) => {
+        if(btn instanceof HTMLElement) {
+            btn.textContent = gameState.presets[index].name;
+            btn.classList.toggle('active', index === gameState.activePresetIndex);
+        }
     });
 }
 

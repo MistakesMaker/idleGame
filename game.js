@@ -1207,12 +1207,10 @@ document.addEventListener('DOMContentLoaded', () => {
                         gameState.gems = gameState.gems.filter(g => g.id !== gemToSocket.id);
                         logMessage(elements.gameLogEl, `Socketed ${gemToSocket.name} into ${item.name}.`, 'epic', isAutoScrollingLog);
                         selectedGemForSocketing = null;
+                        
+                        // ** FIX: Force a full UI redraw after socketing **
                         recalculateStats();
-                        ui.updateSocketingHighlights(elements, null, gameState);
-                        ui.removeItemFromGrid(elements.gemSlotsEl, gemToSocket.id);
-                        ui.renderPaperdoll(elements, gameState);
-                        ui.renderGrid(elements.inventorySlotsEl, gameState.inventory, { calculatePositions: true });
-                        ui.updateStatsPanel(elements, playerStats);
+                        fullUIRender(); 
                         autoSave();
                         return;
                     }
@@ -1282,11 +1280,10 @@ document.addEventListener('DOMContentLoaded', () => {
                         gameState.gems = gameState.gems.filter(g => g.id !== gemToSocket.id);
                         logMessage(elements.gameLogEl, `Socketed ${gemToSocket.name} into ${item.name}.`, 'epic', isAutoScrollingLog);
                         selectedGemForSocketing = null;
+
+                        // ** FIX: Force a full UI redraw after socketing **
                         recalculateStats();
-                        ui.updateSocketingHighlights(elements, null, gameState);
-                        ui.removeItemFromGrid(elements.gemSlotsEl, gemToSocket.id);
-                        ui.renderPaperdoll(elements, gameState);
-                        ui.updateStatsPanel(elements, playerStats);
+                        fullUIRender();
                         autoSave();
                         return; 
                     }
@@ -1318,7 +1315,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 gameState.gems.push(gemInSlot);
                 craftingGems[slotIndex] = undefined; 
                 craftingGems = craftingGems.filter(Boolean);
-                ui.addItemToGrid(elements.gemSlotsEl, gemInSlot, 'gem');
+                // ** FIX: Rerender grid to compact it **
+                ui.renderGrid(elements.gemSlotsEl, gameState.gems, { type: 'gem', calculatePositions: true });
             } 
             else if (selectedGemForSocketing) {
                 if (craftingGems.length < 2) {
@@ -1329,7 +1327,8 @@ document.addEventListener('DOMContentLoaded', () => {
         
                     craftingGems.push(selectedGemForSocketing);
                     gameState.gems = gameState.gems.filter(g => g.id !== selectedGemForSocketing.id);
-                    ui.removeItemFromGrid(elements.gemSlotsEl, selectedGemForSocketing.id);
+                    // ** FIX: Rerender grid to compact it **
+                    ui.renderGrid(elements.gemSlotsEl, gameState.gems, { type: 'gem', calculatePositions: true });
                     selectedGemForSocketing = null;
                 }
             }
@@ -1337,7 +1336,6 @@ document.addEventListener('DOMContentLoaded', () => {
             ui.updateSocketingHighlights(elements, null, gameState);
         });
 
-        // *** START OF FIX ***
         addTapListener(elements.gemCraftBtn, () => {
             if (craftingGems.length !== 2) return;
             
@@ -1356,7 +1354,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 autoSave();
             }
         });
-        // *** END OF FIX ***
 
         addTapListener(elements.bulkCombineBtn, () => {
             if (!bulkCombineSelection.tier || !bulkCombineSelection.selectionKey) {
@@ -1467,7 +1464,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 player.activatePreset(gameState, index);
                 logMessage(elements.gameLogEl, `Activated preset: <b>${gameState.presets[index].name}</b>`, '', isAutoScrollingLog);
                 recalculateStats();
-                ui.updateActivePresetButton(elements, gameState.activePresetIndex);
+                // ** FIX: Update all necessary UI components after preset switch **
+                ui.updateActivePresetButton(elements, gameState);
                 ui.renderPaperdoll(elements, gameState);
                 ui.updateStatsPanel(elements, playerStats);
                 autoSave();
@@ -1481,7 +1479,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (newName && newName.trim() !== "") {
                         gameState.presets[index].name = newName.trim();
                         logMessage(elements.gameLogEl, `Renamed preset to: <b>${newName.trim()}</b>`, '', isAutoScrollingLog);
-                        ui.updateActivePresetButton(elements, gameState.activePresetIndex);
+                        // ** FIX: Update button text after rename **
+                        ui.updateActivePresetButton(elements, gameState);
                         autoSave();
                     }
                 }, 1000); 
@@ -1498,7 +1497,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (newName && newName.trim() !== "") {
                     gameState.presets[index].name = newName.trim();
                     logMessage(elements.gameLogEl, `Renamed preset to: <b>${newName.trim()}</b>`, '', isAutoScrollingLog);
-                    ui.updateActivePresetButton(elements, gameState.activePresetIndex);
+                    // ** FIX: Update button text after rename **
+                    ui.updateActivePresetButton(elements, gameState);
                     autoSave();
                 }
             });
@@ -1614,6 +1614,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 ui.renderPermanentUpgrades(elements, gameState);
                 ui.updateCurrency(elements, gameState);
                 ui.updateStatsPanel(elements, playerStats);
+                // ** FIX: Update temporary upgrades panel to check for disabled state **
+                ui.updateUpgrades(elements, gameState);
                 autoSave();
             } else {
                 logMessage(elements.gameLogEl, result.message, 'rare', isAutoScrollingLog);
