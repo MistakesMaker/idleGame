@@ -1295,9 +1295,9 @@ const celestialPlanesItems = {
     },
     CLOUDSTRIDER_BOOTS: {
         id: 'CLOUDSTRIDER_BOOTS',
-        name: "Cloudstrider Boots",
+        name: "Cloudstrider Platelegs",
         type: 'platelegs',
-        icon: 'images/icons/cloudstrider_boots.png',
+        icon: 'images/icons/cloudstrider_platelegs.png',
         width: 2, height: 3,
         possibleStats: [ { key: STATS.GOLD_GAIN.key, min: 1500, max: 4500 } ]
     },
@@ -1371,7 +1371,7 @@ const celestialPlanesItems = {
         id: 'STARWHALE_TALISMAN',
         name: "Star-whale Talisman",
         type: 'necklace',
-        icon: 'images/icons/star-whale_talisman.png',
+        icon: 'images/icons/star_whale_talisman.png',
         width: 2, height: 2,
         possibleStats: [ { key: STATS.GOLD_GAIN.key, min: 3500, max: 10500 } ]
     },
