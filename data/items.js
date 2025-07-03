@@ -618,7 +618,7 @@ const undeadDesertItems = {
         type: 'ring',
         icon: 'images/icons/band_of_might.png',
         width: 1, height: 1,
-        possibleStats: [ { key: STATS.CLICK_DAMAGE.key, min: 1000, max: 1500 } ]
+        possibleStats: [ { key: STATS.CLICK_DAMAGE.key, min: 500, max: 1500 } ]
     },
 
     // --- Sub-Zone: Mummy's Crypt (Boss Lvl 225) ---
