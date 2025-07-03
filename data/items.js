@@ -549,8 +549,8 @@ const orcVolcanoItems = {
         canHaveSockets: true,
         maxSockets: 2,
         possibleStats: [
-            { key: STATS.DPS.key, min: 1000, max: 3000 },
-            { key: STATS.GOLD_GAIN.key, min: 10, max: 30 },
+            { key: STATS.DPS.key, min: 10000, max: 30003 },
+            { key: STATS.GOLD_GAIN.key, min: 50, max: 100 },
         ]
     },
 };
