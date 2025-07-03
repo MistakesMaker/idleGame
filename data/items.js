@@ -335,7 +335,17 @@ const greenMeadowsItems = {
     },
 
     // --- Sub-Zone: Royal Hunting Grounds (Levels 76-99) ---
-    // (Currently no new items are introduced here)
+    HUNTERS_MEDALLION: {
+        id: 'HUNTERS_MEDALLION',
+        name: "Hunter's Medallion",
+        type: 'necklace',
+        icon: 'images/icons/hunters_medallion.png', // ICON PATH CORRECTED
+        width: 2, height: 2,
+        possibleStats: [
+            { key: STATS.CLICK_DAMAGE.key, min: 150, max: 400 },
+            { key: STATS.GOLD_GAIN.key, min: 10, max: 25 },
+        ]
+    },
 
     // --- Sub-Zone: King's Castle (Boss Lvl 100) ---
     ROYAL_CIRCLET: {
@@ -499,7 +509,18 @@ const orcVolcanoItems = {
     },
 
     // --- Sub-Zone: Molten Heart (Boss Lvl 150) ---
-    // (Currently no new items are introduced here)
+    OBSIDIAN_GREATHELM: {
+        id: 'OBSIDIAN_GREATHELM',
+        name: 'Obsidian Greathelm',
+        type: 'helmet',
+        icon: 'images/icons/obsidian_greathelm.png', // ICON PATH CORRECTED
+        width: 2, height: 2,
+        canHaveSockets: true,
+        maxSockets: 2,
+        possibleStats: [
+            { key: STATS.DPS.key, min: 3000, max: 7000 },
+        ]
+    },
 
     // --- Sub-Zone: Charred Forest (Levels 151-174) ---
     SUNSTONE_BUCKLE: {
@@ -511,6 +532,17 @@ const orcVolcanoItems = {
         possibleStats: [
             { key: STATS.DPS.key, min: 3000, max: 9000 },
             { key: STATS.GOLD_GAIN.key, min: 20, max: 60 },
+        ]
+    },
+    VOLCANIC_ROCK_RING: {
+        id: 'VOLCANIC_ROCK_RING',
+        name: "Volcanic Rock Ring",
+        type: 'ring',
+        icon: 'images/icons/volcanic_rock_ring.png', // ICON PATH CORRECTED
+        width: 1, height: 1,
+        possibleStats: [
+            { key: STATS.DPS.key, min: 2500, max: 5000 },
+            { key: STATS.CLICK_DAMAGE.key, min: 800, max: 1600 },
         ]
     },
 
@@ -537,6 +569,18 @@ const orcVolcanoItems = {
         canHaveSockets: true,
         maxSockets: 3,
         possibleStats: [ { key: STATS.CLICK_DAMAGE.key, min: 1250, max: 5500 } ]
+    },
+    MAGMA_FORGED_GREAVES: {
+        id: 'MAGMA_FORGED_GREAVES',
+        name: "Magma-Forged Greaves",
+        type: 'platelegs',
+        icon: 'images/icons/magma-forged_greaves.png', // ICON PATH CORRECTED
+        width: 2, height: 3,
+        canHaveSockets: true,
+        maxSockets: 2,
+        possibleStats: [
+            { key: STATS.DPS.key, min: 5000, max: 12000 },
+        ]
     },
 
     // --- Sub-Zone: Volcano Peak (Boss Lvl 200) ---
@@ -669,7 +713,7 @@ const undeadDesertItems = {
         type: 'ring',
         icon: 'images/icons/gold_ring.png',
         width: 1, height: 1,
-        possibleStats: [ { key: STATS.GOLD_GAIN.key, min: 80, max: 100 } ]
+        possibleStats: [ { key: STATS.GOLD_GAIN.key, min: 100, max: 250 } ]
     },
     EMERALD_CHARM: {
         id: 'EMERALD_CHARM',
@@ -737,10 +781,48 @@ const undeadDesertItems = {
     },
 
     // --- Sub-Zone: Tomb of the Guardian (Boss Lvl 275) ---
-    // (Currently no new items are introduced here)
+    SCARAB_BROOCH: {
+        id: 'SCARAB_BROOCH',
+        name: "Scarab Brooch",
+        type: 'necklace',
+        icon: 'images/icons/scarab_brooch.png', // ICON PATH CORRECTED
+        width: 2, height: 2,
+        canHaveSockets: true,
+        maxSockets: 1,
+        isUnique: true,
+        possibleStats: [
+            { key: STATS.MAGIC_FIND.key, min: 5, max: 15 },
+            { key: STATS.GOLD_GAIN.key, min: 25, max: 75 },
+        ]
+    },
 
     // --- Sub-Zone: Endless Dunes (Levels 276-299) ---
-    // (Currently no new items are introduced here)
+    PHARAOHS_CURSE: {
+        id: 'PHARAOHS_CURSE',
+        name: "Pharaoh's Curse",
+        type: 'shield',
+        icon: 'images/icons/pharaohs_curse.png', // ICON PATH CORRECTED
+        width: 2, height: 3,
+        canHaveSockets: true,
+        maxSockets: 2,
+        possibleStats: [
+            { key: STATS.CLICK_DAMAGE.key, min: 2000, max: 8000 },
+            { key: STATS.GOLD_GAIN.key, min: 20, max: 50 },
+        ]
+    },
+    DUNE_STRIDERS_SASH: {
+        id: 'DUNE_STRIDERS_SASH',
+        name: "Dune Strider's Sash",
+        type: 'belt',
+        icon: 'images/icons/dune_striders_sash.png', // ICON PATH CORRECTED
+        width: 2, height: 1,
+        canHaveSockets: true,
+        maxSockets: 1,
+        possibleStats: [
+            { key: STATS.GOLD_GAIN.key, min: 30, max: 90 },
+            { key: STATS.MAGIC_FIND.key, min: 2, max: 5 },
+        ]
+    },
 
     // --- Sub-Zone: The Sand Pit (Boss Lvl 300) ---
     BLADE_OF_THE_SPECTRE: {
@@ -776,6 +858,17 @@ const undeadDesertItems = {
 // ====================================================================================
 const finalDungeonItems = {
     // --- Sub-Zone: Gatehouse & Halls of Damnation (Levels 301-349) ---
+    IMPISH_HORN: {
+        id: 'IMPISH_HORN',
+        name: "Impish Horn",
+        type: 'helmet',
+        icon: 'images/icons/impish_horn.png', // ICON PATH CORRECTED
+        width: 2, height: 2,
+        possibleStats: [
+            { key: STATS.CLICK_DAMAGE.key, min: 800, max: 2400 },
+            { key: STATS.MAGIC_FIND.key, min: 1, max: 4 },
+        ]
+    },
     BLOODSTONE_PENDANT: {
         id: 'BLOODSTONE_PENDANT',
         name: "Bloodstone Pendant",
@@ -829,6 +922,19 @@ const finalDungeonItems = {
             { key: STATS.MAGIC_FIND.key, min: 1.5, max: 3 },
         ]
     },
+    HELLHOUNDS_COLLAR: {
+        id: 'HELLHOUNDS_COLLAR',
+        name: "Hellhound's Collar",
+        type: 'necklace',
+        icon: 'images/icons/hellhounds_collar.png', // ICON PATH CORRECTED
+        width: 2, height: 2,
+        canHaveSockets: true,
+        maxSockets: 2,
+        possibleStats: [
+            { key: STATS.DPS.key, min: 10000, max: 25000 },
+            { key: STATS.CLICK_DAMAGE.key, min: 500, max: 1500 },
+        ]
+    },
 
     // --- Sub-Zone: Demon Sentry (Boss Lvl 325) ---
     // (Currently no new items are introduced here)
@@ -863,7 +969,20 @@ const finalDungeonItems = {
     },
     
     // --- Sub-Zone: Pit Lord's Arena (Boss Lvl 375) ---
-    // (Currently no new items are introduced here)
+    HELLFIRE_RING: {
+        id: 'HELLFIRE_RING',
+        name: "Hellfire Ring",
+        type: 'ring',
+        icon: 'images/icons/hellfire_ring.png', // ICON PATH CORRECTED
+        width: 1, height: 1,
+        isUnique: true,
+        canHaveSockets: true,
+        maxSockets: 1,
+        possibleStats: [
+            { key: STATS.DPS.key, min: 15000, max: 40000 },
+            { key: STATS.CLICK_DAMAGE.key, min: 1000, max: 3000 },
+        ]
+    },
 
     // --- Sub-Zone: Throne Approach & Archdemon's Lair (Levels 376-400) ---
     DRAGONHIDE_VEST: {
@@ -997,13 +1116,48 @@ const underdarkItems = {
     },
     
     // --- Sub-Zone: Resonant Tunnels (Levels 426-449) ---
-    // (Currently no new items are introduced here)
+    RESONANT_CRYSTAL: {
+        id: 'RESONANT_CRYSTAL',
+        name: "Resonant Crystal",
+        type: 'necklace',
+        icon: 'images/icons/resonant_crystal.png', // ICON PATH CORRECTED
+        width: 2, height: 2,
+        possibleStats: [
+            { key: STATS.DPS.key, min: 20000, max: 50000 },
+            { key: STATS.CLICK_DAMAGE.key, min: 1000, max: 3000 },
+            { key: STATS.GOLD_GAIN.key, min: 20, max: 60 },
+            { key: STATS.MAGIC_FIND.key, min: 2, max: 6 },
+        ]
+    },
 
     // --- Sub-Zone: Crystal Guardian's Lair (Boss Lvl 450) ---
-    // (Currently no new items are introduced here)
+    GEODE_CRUSHER: {
+        id: 'GEODE_CRUSHER',
+        name: "Geode Crusher",
+        type: 'sword',
+        icon: 'images/icons/geode_crusher.png', // ICON PATH CORRECTED
+        width: 2, height: 3,
+        canHaveSockets: true,
+        maxSockets: 3,
+        possibleStats: [
+            { key: STATS.CLICK_DAMAGE.key, min: 5000, max: 25000 },
+            { key: STATS.DPS.key, min: 25000, max: 75000 },
+        ]
+    },
 
     // --- Sub-Zone: Deep Caverns (Levels 451-499) ---
-    // (Currently no new items are introduced here)
+    DEEP_LURKERS_DAGGER: {
+        id: 'DEEP_LURKERS_DAGGER',
+        name: "Deep Lurker's Dagger",
+        type: 'sword',
+        icon: 'images/icons/deep_lurkers_dagger.png', // ICON PATH CORRECTED
+        width: 2, height: 3,
+        canHaveSockets: true,
+        maxSockets: 2,
+        possibleStats: [
+            { key: STATS.CLICK_DAMAGE.key, min: 4000, max: 18000 },
+        ]
+    },
 
     // --- Sub-Zone: Crystal Heart (Boss Lvl 500) ---
     // (Currently no new items are introduced here)
@@ -1024,28 +1178,127 @@ const underdarkItems = {
     },
 
     // --- Sub-Zone: Fungal Guardian (Boss Lvl 525) ---
-    // (Currently no new items are introduced here)
+    MYCONID_KINGS_CROWN: {
+        id: 'MYCONID_KINGS_CROWN',
+        name: "Myconid King's Crown",
+        type: 'helmet',
+        icon: 'images/icons/myconid_kings_crown.png', // ICON PATH CORRECTED
+        width: 2, height: 2,
+        isUnique: true,
+        canHaveSockets: true,
+        maxSockets: 3,
+        possibleStats: [
+            { key: STATS.GOLD_GAIN.key, min: 80, max: 200 },
+            { key: STATS.MAGIC_FIND.key, min: 5, max: 15 },
+        ]
+    },
 
     // --- Sub-Zone: Mycelial Network (Levels 526-549) ---
-    // (This item was moved to Green Meadows)
+    FUNGAL_SPORE_POUCH: {
+        id: 'FUNGAL_SPORE_POUCH',
+        name: "Fungal Spore Pouch",
+        type: 'belt',
+        icon: 'images/icons/fungal_spore_pouch.png', // ICON PATH CORRECTED
+        width: 2, height: 1,
+        possibleStats: [
+            { key: STATS.GOLD_GAIN.key, min: 50, max: 150 },
+            { key: STATS.MAGIC_FIND.key, min: 3, max: 8 },
+        ]
+    },
 
     // --- Sub-Zone: Fungal Behemoth's Cave (Boss Lvl 550) ---
-    // (Currently no new items are introduced here)
+    FUNGAL_SPIRE: {
+        id: 'FUNGAL_SPIRE',
+        name: "Fungal Spire",
+        type: 'sword',
+        icon: 'images/icons/fungal_spire.png', // ICON PATH CORRECTED
+        width: 2, height: 3,
+        isUnique: true,
+        canHaveSockets: true,
+        maxSockets: 3,
+        possibleStats: [
+            { key: STATS.DPS.key, min: 150000, max: 400000 },
+            { key: STATS.GOLD_GAIN.key, min: 50, max: 50 },
+        ]
+    },
 
     // --- Sub-Zone: Shrieking Hollows (Levels 551-599) ---
-    // (Currently no new items are introduced here)
-
+    GLIMMERWEAVE_ROBES: {
+        id: 'GLIMMERWEAVE_ROBES',
+        name: "Glimmerweave Robes",
+        type: 'platebody',
+        icon: 'images/icons/glimmerweave_robes.png', // ICON PATH CORRECTED
+        width: 2, height: 3,
+        canHaveSockets: true,
+        maxSockets: 2,
+        possibleStats: [
+            { key: STATS.MAGIC_FIND.key, min: 8, max: 20 },
+        ]
+    },
+    
     // --- Sub-Zone: The Great Fungus (Boss Lvl 600) ---
     // (Currently no new items are introduced here)
     
     // --- Sub-Zone: Outer Spires (Levels 601-624) ---
-    // (Currently no new items are introduced here)
+    DROW_ASSASSINS_BLADE: {
+        id: 'DROW_ASSASSINS_BLADE',
+        name: "Drow Assassin's Blade",
+        type: 'sword',
+        icon: 'images/icons/drow_assassins_blade.png', // ICON PATH CORRECTED
+        width: 2, height: 3,
+        canHaveSockets: true,
+        maxSockets: 3,
+        possibleStats: [
+            { key: STATS.DPS.key, min: 100000, max: 300000 },
+            { key: STATS.CLICK_DAMAGE.key, min: 20000, max: 60000 },
+        ]
+    },
 
     // --- Sub-Zone: Drow Patrol (Boss Lvl 625) ---
-    // (Currently no new items are introduced here)
+    DROW_MATRONS_SIGNET: {
+        id: 'DROW_MATRONS_SIGNET',
+        name: "Drow Matron's Signet",
+        type: 'ring',
+        icon: 'images/icons/drow_matrons_signet.png', // ICON PATH CORRECTED
+        width: 1, height: 1,
+        isUnique: true,
+        canHaveSockets: true,
+        maxSockets: 2,
+        possibleStats: [
+            { key: STATS.DPS.key, min: 250000, max: 750000 },
+            { key: STATS.CLICK_DAMAGE.key, min: 25000, max: 75000 },
+        ]
+    },
 
     // --- Sub-Zone: Webbed Catacombs (Levels 626-649) ---
-    // (Currently no new items are introduced here)
+    SHADOW_SPUN_LEGGINGS: {
+        id: 'SHADOW_SPUN_LEGGINGS',
+        name: "Shadow-spun Leggings",
+        type: 'platelegs',
+        icon: 'images/icons/shadow-spun_leggings.png', // ICON PATH CORRECTED
+        width: 2, height: 3,
+        canHaveSockets: true,
+        maxSockets: 3,
+        possibleStats: [
+            { key: STATS.DPS.key, min: 400000, max: 1200000 },
+        ]
+    },
+
+    // --- Sub-Zone: Drow Barracks (Boss Lvl 650) ---
+    LOLTHS_EMBRACE: {
+        id: 'LOLTHS_EMBRACE',
+        name: "Lolth's Embrace",
+        type: 'platebody',
+        icon: 'images/icons/lolths_embrace.png', // ICON PATH CORRECTED
+        width: 2, height: 3,
+        isUnique: true,
+        canHaveSockets: true,
+        maxSockets: 3,
+        possibleStats: [
+            { key: STATS.DPS.key, min: 1e6, max: 3e6 },
+            { key: STATS.MAGIC_FIND.key, min: 10, max: 25 },
+        ]
+    },
 
     // --- Abyssal Rift (Levels 701-800) ---
     VOIDFORGED_HELM: {
@@ -1411,7 +1664,7 @@ const aetheriumForgeItems = {
         id: 'REALITY_CUTTER',
         name: "Reality-Cutter",
         type: 'sword',
-        icon: 'images/icons/reality_cutter.png',
+        icon: 'images/icons/reality-cutter.png',
         width: 2, height: 3,
         possibleStats: [ { key: STATS.CLICK_DAMAGE.key, min: 1e21, max: 3e21 } ]
     },

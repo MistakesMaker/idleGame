@@ -148,9 +148,11 @@ const greenMeadowsMonsters = {
         name: 'Griffin Chick',
         image: 'images/monsters/griffin_chick.png',
         dropChance: 25,
+        // MODIFIED!
         lootTable: [
             { item: ITEMS.AMULET_OF_POWER, weight: 1 },
             { item: ITEMS.RING_OF_WEALTH, weight: 1 },
+            { item: ITEMS.HUNTERS_MEDALLION, weight: 2 }, // NEW!
         ]
     },
 
@@ -237,7 +239,9 @@ const orcVolcanoMonsters = {
         image: 'images/monsters/molten_guardian.png', // Re-using image
         isBoss: true,
         dropChance: 100,
+        // MODIFIED!
         lootTable: [
+            { item: ITEMS.OBSIDIAN_GREATHELM, weight: 10 }, // NEW!
             { item: ITEMS.SUNSTONE_BUCKLE, weight: 15 },
             { item: ITEMS.STEEL_FULL_HELM, weight: 15 },
             { item: ITEMS.ORCISH_CLEAVER, weight: 10 },
@@ -259,8 +263,10 @@ const orcVolcanoMonsters = {
         name: 'Salamander',
         image: 'images/monsters/salamander.png',
         dropChance: 25,
+        // MODIFIED!
         lootTable: [
             { item: ITEMS.SERRATED_DAGGER, weight: 5 },
+            { item: ITEMS.VOLCANIC_ROCK_RING, weight: 2 }, // NEW!
             { item: GEMS.BASE_SAPPHIRE, weight: 0.5 },
         ]
     },
@@ -282,9 +288,11 @@ const orcVolcanoMonsters = {
         name: 'Orc Berserker',
         image: 'images/monsters/orc_berserker.png',
         dropChance: 30,
+        // MODIFIED!
         lootTable: [
             { item: ITEMS.ORCISH_CLEAVER, weight: 3 },
             { item: ITEMS.STEEL_PLATEMAIL, weight: 5 },
+            { item: ITEMS.MAGMA_FORGED_GREAVES, weight: 2 }, // NEW!
         ]
     },
 
@@ -379,18 +387,22 @@ const undeadDesertMonsters = {
         name: 'Giant Scorpion',
         image: 'images/monsters/giant_scorpion.png',
         dropChance: 30,
+        // MODIFIED!
         lootTable: [
             { item: ITEMS.SPIKED_BULWARK, weight: 1 },
             { item: ITEMS.MITHRIL_CHAINMAIL, weight: 5 },
             { item: ITEMS.TOPAZ_TALISMAN, weight: 4 },
+            { item: ITEMS.DUNE_STRIDERS_SASH, weight: 2 }, // NEW!
         ]
     },
     SKELETAL_ARCHER: {
         name: 'Skeletal Archer',
         image: 'images/monsters/skeletal_archer.png',
         dropChance: 28,
+        // MODIFIED!
         lootTable: [
             { item: ITEMS.BONE_LEGPLATES, weight: 1 },
+            { item: ITEMS.PHARAOHS_CURSE, weight: 1 }, // NEW!
         ]
     },
 
@@ -400,7 +412,9 @@ const undeadDesertMonsters = {
         image: 'images/monsters/sand_wraith.png',
         isBoss: true,
         dropChance: 32, // Note: Boss subzone, but not 100% drop chance
+        // MODIFIED!
         lootTable: [
+            { item: ITEMS.SCARAB_BROOCH, weight: 1 }, // NEW!
             { item: ITEMS.SANDSTRIDER_LEGGINGS, weight: 1 },
             { item: GEMS.BASE_TOPAZ, weight: 0.8 },
         ]
@@ -438,7 +452,9 @@ const finalDungeonMonsters = {
         name: 'Imp',
         image: 'images/monsters/imp.png',
         dropChance: 25,
+        // MODIFIED!
         lootTable: [
+            { item: ITEMS.IMPISH_HORN, weight: 2 }, // NEW!
             { item: ITEMS.BLOODSTONE_PENDANT, weight: 1 },
             { item: ITEMS.RUBY_AMULET, weight: 5 },
             { item: GEMS.BASE_RUBY, weight: 0.6 },
@@ -461,7 +477,9 @@ const finalDungeonMonsters = {
         name: 'Hellhound',
         image: 'images/monsters/hellhound.png',
         dropChance: 32,
+        // MODIFIED!
         lootTable: [
+            { item: ITEMS.HELLHOUNDS_COLLAR, weight: 1 }, // NEW!
             { item: ITEMS.OBSIDIAN_BAND, weight: 2 },
             { item: ITEMS.GREAVES_OF_HASTE, weight: 1 },
         ]
@@ -514,7 +532,9 @@ const finalDungeonMonsters = {
         image: 'images/monsters/pit_fiend.png',
         isBoss: true,
         dropChance: 38, // Note: Boss subzone, but not 100% drop chance
+        // MODIFIED!
         lootTable: [
+            { item: ITEMS.HELLFIRE_RING, weight: 1 }, // NEW!
             { item: ITEMS.DRAGONHIDE_VEST, weight: 1 },
             { item: ITEMS.DRAGONBONE_GREAVES, weight: 1 },
         ]
@@ -568,7 +588,9 @@ const underdarkMonsters = {
         name: 'Deep Gnome Miner',
         image: 'images/monsters/deep_gnome_miner.png',
         dropChance: 35,
+        // MODIFIED!
         lootTable: [
+            { item: ITEMS.RESONANT_CRYSTAL, weight: 1 }, // NEW!
             { item: ITEMS.MITHRIL_CHAINMAIL, weight: 3 },
             { item: ITEMS.GOLD_RING, weight: 8 },
         ]
@@ -586,7 +608,9 @@ const underdarkMonsters = {
         name: 'Cave Lurker',
         image: 'images/monsters/cave_lurker.png',
         dropChance: 32,
+        // MODIFIED!
         lootTable: [
+            { item: ITEMS.DEEP_LURKERS_DAGGER, weight: 1 }, // NEW!
             { item: ITEMS.SHADOW_COWL, weight: 1 },
             { item: ITEMS.SERRATED_DAGGER, weight: 5 },
         ]
@@ -595,7 +619,9 @@ const underdarkMonsters = {
         name: 'Crystalline Elemental',
         image: 'images/monsters/crystalline_elemental.png',
         dropChance: 40,
+        // MODIFIED!
         lootTable: [
+            { item: ITEMS.GEODE_CRUSHER, weight: 1 }, // NEW!
             { item: GEMS.BASE_RUBY, weight: 1 },
             { item: GEMS.BASE_SAPPHIRE, weight: 1 },
             { item: GEMS.BASE_EMERALD, weight: 1 },
@@ -648,7 +674,9 @@ const underdarkMonsters = {
         name: 'Fungal Crawler',
         image: 'images/monsters/fungal_crawler.png',
         dropChance: 28,
+        // MODIFIED!
         lootTable: [
+            { item: ITEMS.FUNGAL_SPORE_POUCH, weight: 2 }, // NEW!
             { item: ITEMS.SANDSTRIDER_LEGGINGS, weight: 2 },
         ]
     },
@@ -656,7 +684,9 @@ const underdarkMonsters = {
         name: 'Gas Spore',
         image: 'images/monsters/gas_spore.png',
         dropChance: 35,
+        // MODIFIED!
         lootTable: [
+            { item: ITEMS.FUNGAL_SPIRE, weight: 1 }, // NEW!
             { item: ITEMS.GHASTLY_ROBES, weight: 1 },
             { item: GEMS.BASE_EMERALD, weight: 1.5 },
         ]
@@ -665,7 +695,9 @@ const underdarkMonsters = {
         name: 'Shrieker',
         image: 'images/monsters/shrieker.png',
         dropChance: 33,
+        // MODIFIED!
         lootTable: [
+            { item: ITEMS.GLIMMERWEAVE_ROBES, weight: 1 }, // NEW!
             { item: ITEMS.GREAVES_OF_HASTE, weight: 1 },
             { item: ITEMS.BAND_OF_AGILITY, weight: 4 },
         ]
@@ -675,7 +707,9 @@ const underdarkMonsters = {
         image: 'images/monsters/fungal_behemoth.png',
         isBoss: true,
         dropChance: 100,
+        // MODIFIED!
         lootTable: [
+            { item: ITEMS.MYCONID_KINGS_CROWN, weight: 2 }, // NEW!
             { item: ITEMS.BELT_OF_THE_GIANT, weight: 10 },
             { item: ITEMS.CARAPACE_OF_THE_SCARAB, weight: 10 },
             { item: GEMS.BASE_EMERALD, weight: 15 },
@@ -698,7 +732,9 @@ const underdarkMonsters = {
         name: 'Drow Warrior',
         image: 'images/monsters/drow_warrior.png',
         dropChance: 30,
+        // MODIFIED!
         lootTable: [
+            { item: ITEMS.DROW_ASSASSINS_BLADE, weight: 1 }, // NEW!
             { item: ITEMS.MITHRIL_SCIMITAR, weight: 8 },
             { item: ITEMS.MITHRIL_CHAINMAIL, weight: 4 },
         ]
@@ -707,7 +743,9 @@ const underdarkMonsters = {
         name: 'Drow Mage',
         image: 'images/monsters/drow_mage.png',
         dropChance: 35,
+        // MODIFIED!
         lootTable: [
+            { item: ITEMS.SHADOW_SPUN_LEGGINGS, weight: 2 }, // NEW!
             { item: ITEMS.SHADOW_COWL, weight: 2 },
             { item: ITEMS.SASH_OF_THE_SORCERER, weight: 5 },
         ]
@@ -725,7 +763,9 @@ const underdarkMonsters = {
         name: 'Drider',
         image: 'images/monsters/drider.png',
         dropChance: 40,
+        // MODIFIED!
         lootTable: [
+            { item: ITEMS.DROW_MATRONS_SIGNET, weight: 1 }, // NEW!
             { item: ITEMS.BLADE_OF_THE_SPECTRE, weight: 2 },
             { item: ITEMS.GHASTLY_ROBES, weight: 1 },
         ]
@@ -744,7 +784,9 @@ const underdarkMonsters = {
         image: 'images/monsters/drow_priestess.png',
         isBoss: true,
         dropChance: 100,
+        // MODIFIED!
         lootTable: [
+            { item: ITEMS.LOLTHS_EMBRACE, weight: 5 }, // NEW!
             { item: ITEMS.GHASTLY_ROBES, weight: 10 },
         ]
     },
