@@ -649,8 +649,8 @@ const undeadDesertItems = {
         canHaveSockets: true,
         maxSockets: 2,
         possibleStats: [
-            { key: STATS.DPS.key, min: 1000, max: 3000 },
-            { key: STATS.GOLD_GAIN.key, min: 5, max: 15 },
+            { key: STATS.DPS.key, min: 7000, max: 10000 },
+            { key: STATS.GOLD_GAIN.key, min: 15, max: 30 },
         ]
     },
     BAND_OF_AGILITY: {
