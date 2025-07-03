@@ -549,7 +549,7 @@ const orcVolcanoItems = {
         canHaveSockets: true,
         maxSockets: 2,
         possibleStats: [
-            { key: STATS.DPS.key, min: 10000, max: 30003 },
+            { key: STATS.DPS.key, min: 10000, max: 30000 },
             { key: STATS.GOLD_GAIN.key, min: 50, max: 100 },
         ]
     },
@@ -811,9 +811,9 @@ const finalDungeonItems = {
         canHaveSockets: true,
         maxSockets: 3,
         possibleStats: [
-            { key: STATS.DPS.key, min: 2500, max: 7500 },
-            { key: STATS.MAGIC_FIND.key, min: 1.5, max: 4 },
-            { key: STATS.GOLD_GAIN.key, min: 10, max: 80},
+            { key: STATS.DPS.key, min: 12000, max: 20000 },
+            { key: STATS.MAGIC_FIND.key, min: 10, max: 10 },
+            { key: STATS.GOLD_GAIN.key, min: 10, max: 100},
         ]
     },
     SHADOW_COWL: {
