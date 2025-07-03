@@ -1493,7 +1493,7 @@ const aetheriumForgeItems = {
         id: 'AETHERIUM_WEAVE_ROBES',
         name: "Aetherium-Weave Robes",
         type: 'platebody',
-        icon: 'images/icons/aetherium-weave_robes.png',
+        icon: 'images/icons/aetherium_weave_robes.png',
         width: 2, height: 3,
         possibleStats: [ { key: STATS.DPS.key, min: 1.1e24, max: 3.3e24 } ]
     },
