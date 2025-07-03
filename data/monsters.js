@@ -319,8 +319,9 @@ const undeadDesertMonsters = {
     SKELETON: {
         name: 'Skeleton',
         image: 'images/monsters/skeleton.png',
-        dropChance: 25,
+        dropChance: 35,
         lootTable: [
+            { item: ITEMS.SKULL_HELM, weight: 10 },
             { item: ITEMS.MITHRIL_SCIMITAR, weight: 5 },
             { item: ITEMS.STEEL_GREAVES, weight: 18 },
             { item: GEMS.BASE_SAPPHIRE, weight: 0.2 }
@@ -398,9 +399,10 @@ const undeadDesertMonsters = {
     SKELETAL_ARCHER: {
         name: 'Skeletal Archer',
         image: 'images/monsters/skeletal_archer.png',
-        dropChance: 28,
+        dropChance: 30,
         // MODIFIED!
         lootTable: [
+            { item: ITEMS.SKULL_HELM, weight: 1 },
             { item: ITEMS.BONE_LEGPLATES, weight: 1 },
             { item: ITEMS.PHARAOHS_CURSE, weight: 1 }, // NEW!
         ]
