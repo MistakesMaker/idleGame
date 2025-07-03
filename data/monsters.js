@@ -456,7 +456,6 @@ const finalDungeonMonsters = {
         lootTable: [
             { item: ITEMS.IMPISH_HORN, weight: 2 }, // NEW!
             { item: ITEMS.BLOODSTONE_PENDANT, weight: 1 },
-            { item: ITEMS.RUBY_AMULET, weight: 5 },
             { item: GEMS.BASE_RUBY, weight: 0.6 },
         ]
     },

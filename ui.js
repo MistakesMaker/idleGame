@@ -142,6 +142,11 @@ export function initDOMElements() {
         wikiStatsFilterContainer: document.getElementById('wiki-stats-filter-container'),
         wikiResetFiltersBtn: document.getElementById('wiki-reset-filters-btn'),
         wikiResultsContainer: document.getElementById('wiki-results-container'),
+        wikiDevToolBtn: document.getElementById('wiki-dev-tool-btn'),
+        devToolModalBackdrop: document.getElementById('dev-tool-modal-backdrop'),
+        devToolMissingImagesList: document.getElementById('dev-tool-missing-images-list'),
+        devToolOrphanedItemsList: document.getElementById('dev-tool-orphaned-items-list'),
+        devToolCloseBtn: document.getElementById('dev-tool-close-btn'),
     };
 }
 
@@ -1558,7 +1563,7 @@ export function renderWikiResults(containerEl, filteredWikiData) {
  * @param {object} itemData - The processed data for a single item.
  * @returns {string} The HTML string for the card.
  */
-function createWikiItemCardHTML(itemData) {
+export function createWikiItemCardHTML(itemData) {
     const itemBase = ITEMS[itemData.id] || GEMS[itemData.id];
     const isUnique = itemBase.isUnique ? 'unique-item-name' : '';
     const rarity = itemBase.rarity || 'common'; 
@@ -1915,5 +1920,73 @@ export function renderPermanentUpgrades(elements, gameState) {
             </div>
         `;
         container.appendChild(card);
+    }
+}
+
+/**
+ * Shows the Developer Tool modal with lists of problematic items.
+ * @param {DOMElements} elements The main DOM elements object.
+ * @param {object[]} wikiData The compiled wiki data containing all item info.
+ */
+export async function showDevToolModal(elements, wikiData) {
+    const {
+        devToolModalBackdrop,
+        devToolMissingImagesList,
+        devToolOrphanedItemsList,
+    } = elements;
+
+    devToolMissingImagesList.innerHTML = '<li>Checking...</li>';
+    devToolOrphanedItemsList.innerHTML = '<li>Checking...</li>';
+    devToolModalBackdrop.classList.remove('hidden');
+
+    // --- Check for Missing Images ---
+    const imageCheckPromises = [];
+    const missingImageItems = [];
+
+    const allGameItems = { ...ITEMS, ...GEMS };
+
+    for (const key in allGameItems) {
+        const item = allGameItems[key];
+        if (item.icon) {
+            const promise = new Promise((resolve) => {
+                const img = new Image();
+                img.onload = () => resolve({ item, status: 'ok' });
+                img.onerror = () => resolve({ item, status: 'missing' });
+                img.src = item.icon;
+            });
+            imageCheckPromises.push(promise);
+        }
+    }
+
+    const imageResults = await Promise.all(imageCheckPromises);
+    imageResults.forEach(result => {
+        if (result.status === 'missing') {
+            missingImageItems.push(result.item);
+        }
+    });
+
+    devToolMissingImagesList.innerHTML = '';
+    if (missingImageItems.length > 0) {
+        missingImageItems.forEach(item => {
+            const li = document.createElement('li');
+            li.textContent = `${item.id} (${item.icon})`;
+            devToolMissingImagesList.appendChild(li);
+        });
+    } else {
+        devToolMissingImagesList.innerHTML = '<li>All item images loaded successfully.</li>';
+    }
+
+    // --- Check for Orphaned Items ---
+    const orphanedItems = wikiData.filter(itemData => itemData.dropSources.length === 0);
+    
+    devToolOrphanedItemsList.innerHTML = '';
+    if (orphanedItems.length > 0) {
+        orphanedItems.forEach(itemData => {
+            const li = document.createElement('li');
+            li.textContent = `${itemData.id} (${itemData.base.name})`;
+            devToolOrphanedItemsList.appendChild(li);
+        });
+    } else {
+        devToolOrphanedItemsList.innerHTML = '<li>No orphaned items found.</li>';
     }
 }

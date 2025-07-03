@@ -649,7 +649,9 @@ document.addEventListener('DOMContentLoaded', () => {
             elements.modalBodyEl.appendChild(fightBossButton);
 
         } else {
-            const highestCompleted = ui.getHighestCompletedLevelInSubZone(gameState.completedLevels, subZone);
+            // *** THE FIX IS HERE ***
+            // Use the current run's completed levels instead of the all-time list.
+            const highestCompleted = ui.getHighestCompletedLevelInSubZone(gameState.currentRunCompletedLevels, subZone);
             
             const nextLevelToTry = Math.min(highestCompleted + 1, finalLevel);
             const isNewZone = highestCompleted < startLevel;
@@ -2209,7 +2211,10 @@ document.addEventListener('DOMContentLoaded', () => {
             wikiSocketsFilter,
             wikiStatsFilterContainer,
             wikiResetFiltersBtn,
-            wikiResultsContainer
+            wikiResultsContainer,
+            wikiDevToolBtn,
+            devToolModalBackdrop,
+            devToolCloseBtn
         } = elements;
 
         const updateAndApplyFilters = () => {
@@ -2258,6 +2263,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (itemData && itemData.dropSources.length > 0) {
                     ui.showWikiTravelModal(elements, itemData.dropSources, gameState.maxLevel, handleWikiTravel);
                 }
+            }
+        });
+
+        addTapListener(wikiDevToolBtn, () => {
+            ui.showDevToolModal(elements, wikiData);
+        });
+
+        addTapListener(devToolCloseBtn, () => {
+            devToolModalBackdrop.classList.add('hidden');
+        });
+
+        addTapListener(devToolModalBackdrop, (e) => {
+            if (e.target === devToolModalBackdrop) {
+                devToolModalBackdrop.classList.add('hidden');
             }
         });
     }

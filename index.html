@@ -200,6 +200,7 @@
                             <option value="">All Types</option>
                             <!-- Item types will be populated by JS -->
                         </select>
+                        <button id="wiki-dev-tool-btn">Dev Tool</button>
                         <button id="wiki-reset-filters-btn">Reset Filters</button>
                     </div>
                     <div class="wiki-filter-row">
@@ -419,6 +420,24 @@
                 </div>
             </div>
             <button id="view-slots-close-btn">Close</button>
+        </div>
+    </div>
+
+    <!-- NEW DEV TOOL MODAL -->
+    <div id="dev-tool-modal-backdrop" class="hidden">
+        <div id="dev-tool-modal">
+            <h3>Developer Tool</h3>
+            <div id="dev-tool-content">
+                <div class="dev-tool-section">
+                    <h4>Items Missing Images</h4>
+                    <ul id="dev-tool-missing-images-list" class="dev-tool-list"></ul>
+                </div>
+                <div class="dev-tool-section">
+                    <h4>Orphaned Items (No Drop Source)</h4>
+                    <ul id="dev-tool-orphaned-items-list" class="dev-tool-list"></ul>
+                </div>
+            </div>
+            <button id="dev-tool-close-btn">Close</button>
         </div>
     </div>
 
