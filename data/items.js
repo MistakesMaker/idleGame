@@ -541,21 +541,21 @@ const orcVolcanoItems = {
         icon: 'images/icons/volcanic_rock_ring.png', // ICON PATH CORRECTED
         width: 1, height: 1,
         possibleStats: [
-            { key: STATS.DPS.key, min: 2500, max: 5000 },
-            { key: STATS.CLICK_DAMAGE.key, min: 800, max: 1600 },
+            { key: STATS.DPS.key, min: 1000, max: 1500 },
         ]
     },
 
-    // --- Sub-Zone: Chieftain's Camp (Boss Lvl 175) ---
+    // --- Sub-Zone: Chieftain's Camp (Boss Lvl 175) ---.
     OBSIDIAN_BAND: {
         id: 'OBSIDIAN_BAND',
         name: "Obsidian Band",
         type: 'ring',
         icon: 'images/icons/obsidian_band.png',
         width: 1, height: 1,
+        canHaveSockets: true,
+        maxSockets: 1,
         possibleStats: [
-            { key: STATS.CLICK_DAMAGE.key, min: 50, max: 150 },
-            { key: STATS.DPS.key, min: 1000, max: 3000 },
+            { key: STATS.CLICK_DAMAGE.key, min: 500, max: 1500 },
         ]
     },
     
@@ -618,7 +618,7 @@ const undeadDesertItems = {
         type: 'ring',
         icon: 'images/icons/band_of_might.png',
         width: 1, height: 1,
-        possibleStats: [ { key: STATS.CLICK_DAMAGE.key, min: 100, max: 250 } ]
+        possibleStats: [ { key: STATS.CLICK_DAMAGE.key, min: 1000, max: 1500 } ]
     },
 
     // --- Sub-Zone: Mummy's Crypt (Boss Lvl 225) ---
@@ -703,7 +703,7 @@ const undeadDesertItems = {
         type: 'ring',
         icon: 'images/icons/band_of_agility.png',
         width: 1, height: 1,
-        possibleStats: [ { key: STATS.DPS.key, min: 300, max: 900 } ]
+        possibleStats: [ { key: STATS.DPS.key, min: 2000, max: 3000 } ]
     },
 
     // --- Sub-Zone: Cursed Pyramid (Boss Lvl 250) ---
