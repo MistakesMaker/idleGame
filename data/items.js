@@ -979,7 +979,7 @@ const finalDungeonItems = {
         canHaveSockets: true,
         maxSockets: 1,
         possibleStats: [
-            { key: STATS.DPS.key, min: 15000, max: 40000 },
+            { key: STATS.DPS.key, min: 9000, max: 14000 },
             { key: STATS.CLICK_DAMAGE.key, min: 1000, max: 3000 },
         ]
     },
@@ -1071,10 +1071,10 @@ const finalDungeonItems = {
         icon: 'images/icons/dragonfire_loop.png',
         width: 1, height: 1,
         canHaveSockets: true,
-        maxSockets: 1,
+        maxSockets: 2,
         possibleStats: [
-            { key: STATS.CLICK_DAMAGE.key, min: 300, max: 900 },
-            { key: STATS.DPS.key, min: 6000, max: 18000 },
+            { key: STATS.CLICK_DAMAGE.key, min: 2000, max: 6000 },
+            { key: STATS.DPS.key, min: 10000, max: 23000 },
             { key: STATS.GOLD_GAIN.key, min: 25, max: 75 },
         ]
     },
@@ -1366,6 +1366,9 @@ const underdarkItems = {
         name: "Ring of Despair",
         type: 'ring',
         icon: 'images/icons/ring_of_despair.png',
+        isUnique: true,
+        canHaveSockets: true,
+        maxSockets: 4,
         width: 1, height: 1,
         possibleStats: [ { key: STATS.MAGIC_FIND.key, min: 10, max: 30 } ]
     },
