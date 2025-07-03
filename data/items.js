@@ -549,8 +549,8 @@ const orcVolcanoItems = {
         canHaveSockets: true,
         maxSockets: 2,
         possibleStats: [
-            { key: STATS.DPS.key, min: 1000, max: 3000 },
-            { key: STATS.GOLD_GAIN.key, min: 10, max: 30 },
+            { key: STATS.DPS.key, min: 10000, max: 30000 },
+            { key: STATS.GOLD_GAIN.key, min: 50, max: 100 },
         ]
     },
 };
@@ -649,8 +649,8 @@ const undeadDesertItems = {
         canHaveSockets: true,
         maxSockets: 2,
         possibleStats: [
-            { key: STATS.DPS.key, min: 1000, max: 3000 },
-            { key: STATS.GOLD_GAIN.key, min: 5, max: 15 },
+            { key: STATS.DPS.key, min: 7000, max: 10000 },
+            { key: STATS.GOLD_GAIN.key, min: 15, max: 30 },
         ]
     },
     BAND_OF_AGILITY: {
@@ -811,9 +811,9 @@ const finalDungeonItems = {
         canHaveSockets: true,
         maxSockets: 3,
         possibleStats: [
-            { key: STATS.DPS.key, min: 2500, max: 7500 },
-            { key: STATS.MAGIC_FIND.key, min: 1.5, max: 4 },
-            { key: STATS.GOLD_GAIN.key, min: 10, max: 80},
+            { key: STATS.DPS.key, min: 12000, max: 20000 },
+            { key: STATS.MAGIC_FIND.key, min: 10, max: 10 },
+            { key: STATS.GOLD_GAIN.key, min: 10, max: 100},
         ]
     },
     SHADOW_COWL: {
@@ -846,8 +846,8 @@ const finalDungeonItems = {
         canHaveSockets: true,
         maxSockets: 3,
         possibleStats: [
-            { key: STATS.DPS.key, min: 4000, max: 12000 },
-            { key: STATS.GOLD_GAIN.key, min: 20, max: 50 },
+            { key: STATS.DPS.key, min: 12000, max: 20000 },
+            { key: STATS.GOLD_GAIN.key, min: 70, max: 120 },
         ]
     },
     PLAGUE_STITCHED_CINCH: {
