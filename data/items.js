@@ -1184,7 +1184,7 @@ const sunkenWorldItems = {
         id: 'KRAKEN_HIDE_LEGGINGS',
         name: "Kraken-hide Leggings",
         type: 'platelegs',
-        icon: 'images/icons/kraken-hide_leggings.png',
+        icon: 'images/icons/kraken_hide_leggings.png',
         width: 2, height: 3,
         possibleStats: [ { key: STATS.DPS.key, min: 5e10, max: 1.5e11 } ]
     },
