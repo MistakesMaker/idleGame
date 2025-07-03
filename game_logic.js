@@ -279,12 +279,11 @@ export function monsterDefeated(gameState, playerStats, currentMonster) {
                 gameState.goldenSlimeStreak = { max: 0, maxGold: 0 };
             }
             
-            const newStreakIsLonger = encounter.chainLevel > gameState.goldenSlimeStreak.max;
-            const newStreakIsEqual = encounter.chainLevel === gameState.goldenSlimeStreak.max;
-            const newGoldIsHigher = encounter.goldReward > gameState.goldenSlimeStreak.maxGold;
-
-            if (newStreakIsLonger || (newStreakIsEqual && newGoldIsHigher)) {
+            // ** THE FIX: Decouple the streak and gold record checks **
+            if (encounter.chainLevel > gameState.goldenSlimeStreak.max) {
                 gameState.goldenSlimeStreak.max = encounter.chainLevel;
+            }
+            if (encounter.goldReward > gameState.goldenSlimeStreak.maxGold) {
                 gameState.goldenSlimeStreak.maxGold = encounter.goldReward;
             }
             
@@ -330,7 +329,7 @@ export function monsterDefeated(gameState, playerStats, currentMonster) {
     const lootResult = (Math.random() * 100 < currentMonster.data.dropChance) ? dropLoot(currentMonster, gameState, playerStats) : { droppedItems: [], droppedGems: [], logMessages: [], events: [] };
     logMessages.push({ message: `You defeated the ${currentMonster.name} and gained ${formatNumber(xpGained)} XP.`, class: '' });
     
-    // ** THE FIX IS HERE: The gold message is added BEFORE loot/slime messages **
+    // ** THE FIX: The gold message is added BEFORE loot/slime messages **
     logMessages.push({ message: `You gained ${formatNumber(goldGained)} gold.`, class: '' });
 
     lootResult.logMessages.forEach(msg => logMessages.push(msg));

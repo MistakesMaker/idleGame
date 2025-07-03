@@ -404,7 +404,6 @@ const undeadDesertMonsters = {
         lootTable: [
             { item: ITEMS.SKULL_HELM, weight: 1 },
             { item: ITEMS.BONE_LEGPLATES, weight: 1 },
-            { item: ITEMS.PHARAOHS_CURSE, weight: 1 }, // NEW!
         ]
     },
 
@@ -429,9 +428,9 @@ const undeadDesertMonsters = {
         isBoss: true,
         dropChance: 100,
         lootTable: [
-            { item: ITEMS.AEGIS_OF_THE_GUARDIAN, weight: 10 },
-            { item: ITEMS.BLADE_OF_THE_SPECTRE, weight: 10 },
-            { item: ITEMS.SIGNET_OF_THE_LEECH, weight: 15 },
+            { item: ITEMS.BLADE_OF_THE_SPECTRE, weight: 24.5 },
+            { item: ITEMS.SIGNET_OF_THE_LEECH, weight: 24.5 },
+            { item: ITEMS.PHARAOHS_CURSE, weight: 1 }, // NEW!
         ]
     },
 };
