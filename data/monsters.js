@@ -241,9 +241,8 @@ const orcVolcanoMonsters = {
         dropChance: 100,
         // MODIFIED!
         lootTable: [
-            { item: ITEMS.OBSIDIAN_GREATHELM, weight: 10 }, // NEW!
+            { item: ITEMS.OBSIDIAN_GREATHELM, weight: 15 }, // NEW!
             { item: ITEMS.SUNSTONE_BUCKLE, weight: 15 },
-            { item: ITEMS.STEEL_FULL_HELM, weight: 15 },
             { item: ITEMS.ORCISH_CLEAVER, weight: 10 },
             { item: GEMS.BASE_RUBY, weight: 10 },
         ]
