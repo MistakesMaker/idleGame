@@ -306,40 +306,37 @@ document.addEventListener('DOMContentLoaded', () => {
         const oldSubZone = findSubZoneByLevel(gameState.currentFightingLevel);
         const oldRealmIndex = oldSubZone ? REALMS.findIndex(r => Object.values(r.zones).some(z => z === oldSubZone.parentZone)) : -1;
     
+        // --- Step 1: Get the result from the logic module ---
         const result = logic.monsterDefeated(gameState, playerStats, currentMonster);
     
+        // --- Step 2: Log messages and show popups ---
         result.logMessages.forEach(msg => {
             logMessage(elements.gameLogEl, msg.message, msg.class, isAutoScrollingLog);
         });
-    
         if (result.events && result.events.includes('gemFind')) {
             ui.showInfoPopup(elements.popupContainerEl, 'Double Gem!', { top: '10%', fontSize: '3.5em' });
         }
-    
         ui.showGoldPopup(elements.popupContainerEl, result.goldGained);
     
+        // --- Step 3: Handle item/gem drops and animations ---
         if (result.droppedItems && result.droppedItems.length > 0) {
             result.droppedItems.forEach((item, index) => {
                 ui.showItemDropAnimation(elements.popupContainerEl, item, index);
                 ui.addItemToGrid(elements.inventorySlotsEl, item);
             });
         }
-        
         if (result.droppedGems && result.droppedGems.length > 0) {
             const newGemsToPlace = result.droppedGems.filter(droppedGem =>
                 gameState.gems.some(gemInState => gemInState.id === droppedGem.id && (gemInState.x === undefined || gemInState.x === -1))
             );
-        
             newGemsToPlace.forEach((gemToPlace, index) => {
                 const placedGems = gameState.gems.filter(g => g.x !== undefined && g.x !== -1);
                 const spot = findNextAvailableSpot(gemToPlace.width, gemToPlace.height, placedGems);
-        
                 if (spot) {
                     const gemInState = gameState.gems.find(g => g.id === gemToPlace.id);
                     if (gemInState) {
                         gemInState.x = spot.x;
                         gemInState.y = spot.y;
-        
                         ui.showItemDropAnimation(elements.popupContainerEl, gemInState, index);
                         ui.addItemToGrid(elements.gemSlotsEl, gemInState, 'gem');
                     }
@@ -350,19 +347,28 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
     
+        // --- Step 4: Handle XP gain and level ups ---
         const levelUpLogs = player.gainXP(gameState, result.xpGained);
         if (levelUpLogs.length > 0) {
             levelUpLogs.forEach(msg => logMessage(elements.gameLogEl, msg, 'legendary', isAutoScrollingLog));
             recalculateStats();
-            ui.updateStatsPanel(elements, playerStats);
         }
-        
+    
+        // --- Step 5: Critical UI Update (BEFORE clearing encounter state) ---
+        // This ensures the Golden Slime records panel is updated correctly.
+        ui.updateMonsterUI(elements, gameState, currentMonster); 
         ui.updateHeroPanel(elements, gameState);
         ui.updatePrestigeUI(elements, gameState);
         ui.updateCurrency(elements, gameState);
         ui.updateUpgrades(elements, gameState);
         ui.renderPermanentUpgrades(elements, gameState);
     
+        // --- Step 6: Clear the special encounter state *after* the UI update ---
+        if (result.encounterEnded) {
+            gameState.specialEncounter = null;
+        }
+    
+        // --- Step 7: Check for map/realm changes ---
         if (gameState.isAutoProgressing) {
             const newSubZone = findSubZoneByLevel(gameState.currentFightingLevel);
             if (newSubZone) {
@@ -375,7 +381,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
         }
-    
+        
         const currentFightingRealmIndex = REALMS.findIndex(realm =>
             Object.values(realm.zones).some(zone =>
                 Object.values(zone.subZones).some(sz =>
@@ -383,7 +389,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 )
             )
         ) || 0;
-    
         const nextRealmIndex = currentFightingRealmIndex + 1;
         if (REALMS[nextRealmIndex] && gameState.maxLevel >= REALMS[nextRealmIndex].requiredLevel && !gameState.completedLevels.includes(REALMS[nextRealmIndex].requiredLevel - 1)) {
             logMessage(elements.gameLogEl, `A new realm has been unlocked: <b>${REALMS[nextRealmIndex].name}</b>!`, 'legendary', isAutoScrollingLog);
@@ -392,8 +397,10 @@ document.addEventListener('DOMContentLoaded', () => {
     
         autoSave();
     
+        // --- Step 8: Transition to the next monster ---
         setTimeout(() => {
             startNewMonster();
+            // Update only the necessary parts for the new monster
             ui.updateMonsterUI(elements, gameState, currentMonster);
             ui.updateLootPanel(elements, currentMonster, gameState);
             if (isMapRenderPending) {
@@ -1185,7 +1192,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         craftingGems.push(item);
                         gameState.gems = gameState.gems.filter(g => g.id !== item.id);
                         ui.updateGemCraftingUI(elements, craftingGems, gameState);
-                        ui.removeItemFromGrid(elements.gemSlotsEl, item.id);
+                        // ** FIX: Rerender grid to compact it **
+                        ui.renderGrid(elements.gemSlotsEl, gameState.gems, { type: 'gem', calculatePositions: true });
                     }
                 } else {
                     if (selectedGemForSocketing && selectedGemForSocketing.id === item.id) {
