@@ -1331,7 +1331,7 @@ const underdarkItems = {
         type: 'belt',
         icon: 'images/icons/shadow-weave_sash.png',
         width: 2, height: 1,
-        possibleStats: [ { key: STATS.GOLD_GAIN.key, min: 80, max: 240 } ]
+        possibleStats: [ { key: STATS.GOLD_GAIN.key, min: 2200, max: 3000 } ]
     },
     ABYSSAL_EDGE: {
         id: 'ABYSSAL_EDGE',
