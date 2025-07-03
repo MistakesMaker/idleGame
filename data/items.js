@@ -846,8 +846,8 @@ const finalDungeonItems = {
         canHaveSockets: true,
         maxSockets: 3,
         possibleStats: [
-            { key: STATS.DPS.key, min: 4000, max: 12000 },
-            { key: STATS.GOLD_GAIN.key, min: 20, max: 50 },
+            { key: STATS.DPS.key, min: 12000, max: 20000 },
+            { key: STATS.GOLD_GAIN.key, min: 70, max: 120 },
         ]
     },
     PLAGUE_STITCHED_CINCH: {
