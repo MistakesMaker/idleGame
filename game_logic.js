@@ -262,7 +262,7 @@ export function monsterDefeated(gameState, playerStats, currentMonster) {
             // The chain continues!
             const nextChainLevel = encounter.chainLevel + 1;
             const nextChance = encounter.nextChance * 0.9;
-            const newHp = encounter.baseHp * 0.5;
+            const newHp = encounter.hp * 0.75; 
             const newGoldReward = encounter.baseGold * Math.pow(3, nextChainLevel);
 
             gameState.specialEncounter = {
@@ -294,10 +294,8 @@ export function monsterDefeated(gameState, playerStats, currentMonster) {
             const goldText = `<span class="currency-tier-${goldTier}">${formatNumber(goldGained)}</span>`;
             logMessages.push({ message: `The chain breaks! You receive a massive bonus of ${goldText} gold!`, class: 'legendary' });
             
-            // ** THE FIX: Signal that the encounter is over **
             result.encounterEnded = true;
 
-            // Progress to the next level after the chain breaks.
             if (gameState.isAutoProgressing) {
                 const nextLevel = level + 1;
                 const nextSubZone = findSubZoneByLevel(nextLevel);
@@ -331,6 +329,10 @@ export function monsterDefeated(gameState, playerStats, currentMonster) {
     // Handle item drops immediately
     const lootResult = (Math.random() * 100 < currentMonster.data.dropChance) ? dropLoot(currentMonster, gameState, playerStats) : { droppedItems: [], droppedGems: [], logMessages: [], events: [] };
     logMessages.push({ message: `You defeated the ${currentMonster.name} and gained ${formatNumber(xpGained)} XP.`, class: '' });
+    
+    // ** THE FIX IS HERE: The gold message is added BEFORE loot/slime messages **
+    logMessages.push({ message: `You gained ${formatNumber(goldGained)} gold.`, class: '' });
+
     lootResult.logMessages.forEach(msg => logMessages.push(msg));
     if (lootResult.droppedItems.length > 0 || lootResult.droppedGems.length > 0) {
         logMessages.push({ message: `The ${currentMonster.name} dropped something!`, class: '' });
@@ -348,21 +350,32 @@ export function monsterDefeated(gameState, playerStats, currentMonster) {
 
     // Now check if the effect is toggled on and if the roll succeeds
     if (gameState.isSlimeSplitEnabled && initialSlimeSplitChance > 0 && Math.random() * 100 < initialSlimeSplitChance) {
-        // A chain starts! Withhold gold and create the first slime.
+        
+        const slimeSpawnedResult = { 
+            goldGained, 
+            xpGained, 
+            droppedItems: lootResult.droppedItems, 
+            droppedGems: lootResult.droppedGems, 
+            logMessages, 
+            events: lootResult.events,
+            slimeSpawned: true 
+        };
+
         logMessages.push({ message: `The monster's essence coalesces into a <span class="legendary">Golden Slime!</span>`, class: '' });
         gameState.specialEncounter = {
             type: 'GOLDEN_SLIME',
             chainLevel: 1,
-            baseHp: previousMonsterMaxHp,
-            baseGold: goldGained, // Store the gold that would have been gained
+            baseGold: goldGained, 
             hp: previousMonsterMaxHp * 0.5,
             goldReward: goldGained * 3,
             nextChance: initialSlimeSplitChance * 0.9,
         };
+        
+        return slimeSpawnedResult;
+
     } else {
-        // No chain started. Give the normal gold and progress.
+        // No chain started. Add gold and progress normally.
         gameState.gold += goldGained;
-        logMessages.push({ message: `You gained ${formatNumber(goldGained)} gold.`, class: '' });
         if (gameState.isAutoProgressing) {
             const nextLevel = level + 1;
             const nextSubZone = findSubZoneByLevel(nextLevel);

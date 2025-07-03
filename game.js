@@ -302,14 +302,20 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    function handleMonsterDefeated() {
+            function handleMonsterDefeated() {
         const oldSubZone = findSubZoneByLevel(gameState.currentFightingLevel);
         const oldRealmIndex = oldSubZone ? REALMS.findIndex(r => Object.values(r.zones).some(z => z === oldSubZone.parentZone)) : -1;
     
-        // --- Step 1: Get the result from the logic module ---
+        // Step 1: Get the result from the logic module
         const result = logic.monsterDefeated(gameState, playerStats, currentMonster);
     
-        // --- Step 2: Log messages and show popups ---
+        // ** THE FIX: Add the gold to the player's total if a slime spawned **
+        // The log message is already correctly ordered inside result.logMessages
+        if (result.slimeSpawned) {
+            gameState.gold += result.goldGained;
+        }
+    
+        // Step 2: Log all messages and show popups
         result.logMessages.forEach(msg => {
             logMessage(elements.gameLogEl, msg.message, msg.class, isAutoScrollingLog);
         });
@@ -318,7 +324,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         ui.showGoldPopup(elements.popupContainerEl, result.goldGained);
     
-        // --- Step 3: Handle item/gem drops and animations ---
+        // Step 3: Handle item/gem drops and animations
         if (result.droppedItems && result.droppedItems.length > 0) {
             result.droppedItems.forEach((item, index) => {
                 ui.showItemDropAnimation(elements.popupContainerEl, item, index);
@@ -347,15 +353,14 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
     
-        // --- Step 4: Handle XP gain and level ups ---
+        // Step 4: Handle XP gain and level ups
         const levelUpLogs = player.gainXP(gameState, result.xpGained);
         if (levelUpLogs.length > 0) {
             levelUpLogs.forEach(msg => logMessage(elements.gameLogEl, msg, 'legendary', isAutoScrollingLog));
             recalculateStats();
         }
     
-        // --- Step 5: Critical UI Update (BEFORE clearing encounter state) ---
-        // This ensures the Golden Slime records panel is updated correctly.
+        // Step 5: Critical UI Update (BEFORE clearing encounter state)
         ui.updateMonsterUI(elements, gameState, currentMonster); 
         ui.updateHeroPanel(elements, gameState);
         ui.updatePrestigeUI(elements, gameState);
@@ -363,12 +368,12 @@ document.addEventListener('DOMContentLoaded', () => {
         ui.updateUpgrades(elements, gameState);
         ui.renderPermanentUpgrades(elements, gameState);
     
-        // --- Step 6: Clear the special encounter state *after* the UI update ---
+        // Step 6: Clear the special encounter state *after* the UI update
         if (result.encounterEnded) {
             gameState.specialEncounter = null;
         }
     
-        // --- Step 7: Check for map/realm changes ---
+        // Step 7: Check for map/realm changes
         if (gameState.isAutoProgressing) {
             const newSubZone = findSubZoneByLevel(gameState.currentFightingLevel);
             if (newSubZone) {
@@ -397,7 +402,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
         autoSave();
     
-        // --- Step 8: Transition to the next monster ---
+        // Step 8: Transition to the next monster
         setTimeout(() => {
             startNewMonster();
             // Update only the necessary parts for the new monster
