@@ -1211,6 +1211,25 @@ export function showDpsPopup(popupContainerEl, damage, isCrit = false, isMultiSt
 }
 
 /**
+ * NEW: Displays a poison damage popup.
+ * @param {HTMLElement} popupContainerEl - The container to add the popup to.
+ * @param {number} damage - The amount of poison damage.
+ */
+export function showPoisonDamagePopup(popupContainerEl, damage) {
+    const popup = document.createElement('div');
+    popup.textContent = `-${formatNumber(damage)}`;
+    popup.className = 'dps-popup'; // Use the same base class for animation
+    popup.style.color = '#2ecc71'; // Green color for poison
+    popup.style.fontSize = '18px'; // Slightly smaller
+    popup.style.left = `${30 + Math.random() * 40}%`;
+    popup.style.top = `${60 + Math.random() * 20}%`; // Position it slightly lower
+
+    popupContainerEl.appendChild(popup);
+    setTimeout(() => popup.remove(), 800);
+}
+
+
+/**
  * Shows a large informational popup in the monster area (e.g., for special events).
  * @param {HTMLElement} popupContainerEl - The container to add the popup to.
  * @param {string} text - The text to display.

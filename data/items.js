@@ -1300,6 +1300,25 @@ const underdarkItems = {
         ]
     },
 
+    // --- Sub-Zone: Noble District (Levels 651-699) ---
+    // (No new items are introduced here)
+
+    // --- Sub-Zone: Spider Queen's Lair (Boss Lvl 700) ---
+    THE_WEAVERS_ENVY: {
+        id: 'THE_WEAVERS_ENVY',
+        name: "The Weaver's Envy",
+        type: 'sword',
+        icon: 'images/icons/weavers_envy.png',
+        width: 2, height: 3,
+        isUnique: true,
+        uniqueEffect: 'weaversEnvy',
+        canHaveSockets: true,
+        maxSockets: 3,
+        possibleStats: [
+            { key: STATS.DPS.key, min: 70000, max: 100000 }, //muokkasin vaa jotenkin
+        ]
+    },
+
     // --- Abyssal Rift (Levels 701-800) ---
     VOIDFORGED_HELM: {
         id: 'VOIDFORGED_HELM',

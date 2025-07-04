@@ -793,8 +793,9 @@ const underdarkMonsters = {
         name: 'Spider Queen Matron',
         image: 'images/monsters/spider_queen_matron.png',
         isBoss: true,
-        dropChance: 100,
+        dropChance: 50,
         lootTable: [
+            { item: ITEMS.THE_WEAVERS_ENVY, weight: 1 },
             { item: ITEMS.DRAGONFIRE_LOOP, weight: 10 },
             { item: ITEMS.EYE_OF_THE_DRAGON, weight: 10 },
             { item: ITEMS.BLADE_OF_THE_SPECTRE, weight: 15 },
