@@ -410,20 +410,29 @@ export function generateMonster(level, specialEncounter = null) {
             monsterData = MONSTERS.SLIME;
         }
 
-        // Your new tuned values for monster HP calculation
         const baseHealthFactor = 4;
         const healthPower = 2.6;
 
-        // Base HP calculation
         monsterHealth = (baseHealthFactor * Math.pow(level, healthPower));
 
-        // World tier multiplier
+        // World tier multiplier (every 100 levels)
         const worldTier = Math.floor((level - 1) / 100);
         if (worldTier > 0) {
             const spikeMultiplier = 6;
             const worldTierMultiplier = 1 + (worldTier * spikeMultiplier);
             monsterHealth *= worldTierMultiplier;
         }
+
+        // --- START of Realm Multiplier ---
+        // Each 400 levels represents a new realm, which gets progressively harder.
+        const realmMultiplierConstant = 2.37896;
+        const realmIndex = Math.floor((level - 1) / 400);
+
+        if (realmIndex > 0) {
+            const realmMultiplier = Math.pow(realmMultiplierConstant, realmIndex);
+            monsterHealth *= realmMultiplier;
+        }
+        // --- END of Realm Multiplier ---
 
         // Apply boss multipliers sequentially.
         if (isBigBossLevel(level)) {
