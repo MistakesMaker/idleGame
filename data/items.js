@@ -478,7 +478,7 @@ const orcVolcanoItems = {
         type: 'necklace',
         icon: 'images/icons/sapphire_amulet.png',
         width: 2, height: 2,
-        possibleStats: [ { key: STATS.DPS.key, min: 200, max: 600 } ]
+        possibleStats: [ { key: STATS.DPS.key, min: 600, max: 1300 } ]
     },
     SASH_OF_THE_SORCERER: {
         id: 'SASH_OF_THE_SORCERER',
