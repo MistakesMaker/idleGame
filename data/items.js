@@ -1265,8 +1265,8 @@ const underdarkItems = {
         canHaveSockets: true,
         maxSockets: 2,
         possibleStats: [
-            { key: STATS.DPS.key, min: 250000, max: 750000 },
-            { key: STATS.CLICK_DAMAGE.key, min: 25000, max: 75000 },
+            { key: STATS.DPS.key, min: 75000, max: 125000 },
+            { key: STATS.CLICK_DAMAGE.key, min: 1000, max: 40000 },
         ]
     },
 
