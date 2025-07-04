@@ -1044,9 +1044,9 @@ const finalDungeonItems = {
         icon: 'images/icons/dragonbone_headdress.png',
         width: 2, height: 2,
         canHaveSockets: true,
-        maxSockets: 2,
+        maxSockets: 3,
         possibleStats: [
-            { key: STATS.DPS.key, min: 8000, max: 24000 },
+            { key: STATS.DPS.key, min: 12000, max: 29000 },
             { key: STATS.GOLD_GAIN.key, min: 30, max: 90 },
         ]
     },
