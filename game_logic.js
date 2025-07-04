@@ -279,7 +279,6 @@ export function monsterDefeated(gameState, playerStats, currentMonster) {
                 gameState.goldenSlimeStreak = { max: 0, maxGold: 0 };
             }
             
-            // ** THE FIX: Decouple the streak and gold record checks **
             if (encounter.chainLevel > gameState.goldenSlimeStreak.max) {
                 gameState.goldenSlimeStreak.max = encounter.chainLevel;
             }
@@ -325,11 +324,13 @@ export function monsterDefeated(gameState, playerStats, currentMonster) {
     goldGained = Math.ceil(goldGained * (1 + (playerStats.bonusGold / 100)));
     xpGained = Math.ceil(xpGained);
 
+    // GOLD FIX: Add gold to the game state BEFORE checking for slime split
+    gameState.gold += goldGained;
+
     // Handle item drops immediately
     const lootResult = (Math.random() * 100 < currentMonster.data.dropChance) ? dropLoot(currentMonster, gameState, playerStats) : { droppedItems: [], droppedGems: [], logMessages: [], events: [] };
     logMessages.push({ message: `You defeated the ${currentMonster.name} and gained ${formatNumber(xpGained)} XP.`, class: '' });
     
-    // ** THE FIX: The gold message is added BEFORE loot/slime messages **
     logMessages.push({ message: `You gained ${formatNumber(goldGained)} gold.`, class: '' });
 
     lootResult.logMessages.forEach(msg => logMessages.push(msg));
@@ -373,8 +374,7 @@ export function monsterDefeated(gameState, playerStats, currentMonster) {
         return slimeSpawnedResult;
 
     } else {
-        // No chain started. Add gold and progress normally.
-        gameState.gold += goldGained;
+        // No chain started. Progress normally.
         if (gameState.isAutoProgressing) {
             const nextLevel = level + 1;
             const nextSubZone = findSubZoneByLevel(nextLevel);

@@ -1,8 +1,7 @@
 // --- START OF FILE ui.js ---
 
 import { STATS } from './data/stat_pools.js';
-// --- FIX: Import the new findNextAvailableSpot function ---
-import { getXpForNextLevel, getUpgradeCost, formatNumber, findSubZoneByLevel, getCombinedItemStats, findEmptySpot, findFirstLevelOfZone, findNextAvailableSpot } from './utils.js';
+import { getXpForNextLevel, getUpgradeCost, formatNumber, findSubZoneByLevel, getCombinedItemStats, findEmptySpot, findFirstLevelOfZone } from './utils.js';
 import { ITEMS } from './data/items.js';
 import { GEMS } from './data/gems.js';
 import { MONSTERS } from './data/monsters.js';
@@ -210,7 +209,7 @@ export function populateSalvageFilter(elements, gameState) {
  * @param {object} options - Configuration options.
  */
 export function renderGrid(containerEl, items, options = {}) {
-    const { calculatePositions = false, type = 'item', selectedItem = null, salvageSelections = [], showLockIcon = true, bulkCombineSelection = {}, bulkCombineDeselectedIds = new Set() } = options;
+    const { calculatePositions = false, type = 'item', selectedItem = null, salvageSelections = [], showLockIcon = true, bulkCombineSelection = {}, bulkCombineDeselectedIds = new Set(), selectedGemId = null } = options;
     
     containerEl.innerHTML = '';
     const tempPlacement = []; 
@@ -248,6 +247,9 @@ export function renderGrid(containerEl, items, options = {}) {
             wrapper.innerHTML = type === 'gem' ? createGemHTML(item) : createItemHTML(item, showLockIcon);
             
             if (item.locked) wrapper.classList.add('locked-item');
+            if (type === 'gem' && selectedGemId && item.id === selectedGemId) {
+                wrapper.classList.add('selected-gem');
+            }
             if (selectedItem && selectedItem.id === item.id) wrapper.classList.add('selected-for-forge');
             if (salvageSelections.some(sel => sel.id === item.id)) wrapper.classList.add('selected-for-salvage');
 
@@ -532,22 +534,30 @@ export function removeItemFromGrid(containerEl, itemId) {
  * Updates a single item's display in a grid (e.g., toggling lock or salvage selection).
  * @param {HTMLElement} containerEl The grid container element.
  * @param {object} item The item that was updated.
- * @param {object[]} [salvageSelections=[]] The current salvage selections.
+ * @param {object} [options={}]
+ * @param {boolean} [options.forceRedraw=false] - If true, redraws the item's inner HTML.
+ * @param {object[]} [options.salvageSelections=[]] - The current salvage selections.
  */
-export function updateItemInGrid(containerEl, item, salvageSelections = []) {
+export function updateItemInGrid(containerEl, item, options = {}) {
+    const { forceRedraw = false, salvageSelections = [] } = options;
     const itemEl = containerEl.querySelector(`.item-wrapper[data-id="${item.id}"]`);
-    if (itemEl) {
-        // Update lock state
-        const lockIcon = itemEl.querySelector('.lock-icon');
-        if (lockIcon) {
-            lockIcon.className = `fas ${item.locked ? 'fa-lock' : 'fa-lock-open'} lock-icon`;
-        }
-        itemEl.classList.toggle('locked-item', !!item.locked);
+    if (!itemEl) return;
 
-        // Update salvage selection state
-        const isSelected = salvageSelections.some(sel => sel.id === item.id);
-        itemEl.classList.toggle('selected-for-salvage', isSelected);
+    // Redraw the item's content if needed (e.g., after socketing a gem)
+    if (forceRedraw) {
+        itemEl.innerHTML = createItemHTML(item, true);
     }
+    
+    // Update lock state
+    const lockIcon = itemEl.querySelector('.lock-icon');
+    if (lockIcon) {
+        lockIcon.className = `fas ${item.locked ? 'fa-lock' : 'fa-lock-open'} lock-icon`;
+    }
+    itemEl.classList.toggle('locked-item', !!item.locked);
+
+    // Update salvage selection state
+    const isSelected = salvageSelections.some(sel => sel.id === item.id);
+    itemEl.classList.toggle('selected-for-salvage', isSelected);
 }
 
 
@@ -993,7 +1003,7 @@ export function createItemHTML(item, showLock = true) {
         socketsHTML += `<div class="item-sockets">`;
         item.sockets.forEach(gem => {
             if (gem) {
-                socketsHTML += `<div class="socket"><img src="${gem.icon}" alt="${gem.name}"></div>`;
+                socketsHTML += `<div class="socket"><img src="${gem.icon}" alt="${gem.name || ''}"></div>`;
             } else {
                 socketsHTML += '<div class="socket"></div>';
             }

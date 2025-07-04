@@ -71,7 +71,7 @@ export function findEmptySpot(itemWidth, itemHeight, inventory) {
 export function findNextAvailableSpot(itemWidth, itemHeight, inventory) {
     // This is the same as findEmptySpot because scanning from the top-left is the
     // most intuitive way to append to a grid. The issue was elsewhere, but keeping
-    // this as a separate function allows for future behavior changes if needed.
+    // this as a separate function allows for future behavior changes if needed..
     // For now, it will just call findEmptySpot.
     return findEmptySpot(itemWidth, itemHeight, inventory);
 }

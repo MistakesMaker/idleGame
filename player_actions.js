@@ -490,8 +490,6 @@ export function combineGems(gameState, craftingGems) {
         
         gameState.gems.push(newGem);
 
-        // *** THIS IS THE FIX ***
-        // Return the successfully created gem so the UI can draw it.
         return { success: true, message: `Success! You fused a ${newGem.name}!`, newGem: newGem };
     } else {
         // FAILURE

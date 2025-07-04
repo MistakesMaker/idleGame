@@ -302,18 +302,14 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-            function handleMonsterDefeated() {
+    function handleMonsterDefeated() {
         const oldSubZone = findSubZoneByLevel(gameState.currentFightingLevel);
         const oldRealmIndex = oldSubZone ? REALMS.findIndex(r => Object.values(r.zones).some(z => z === oldSubZone.parentZone)) : -1;
     
         // Step 1: Get the result from the logic module
         const result = logic.monsterDefeated(gameState, playerStats, currentMonster);
     
-        // ** THE FIX: Add the gold to the player's total if a slime spawned **
-        // The log message is already correctly ordered inside result.logMessages
-        if (result.slimeSpawned) {
-            gameState.gold += result.goldGained;
-        }
+        // The gold is now correctly added inside the logic function.
     
         // Step 2: Log all messages and show popups
         result.logMessages.forEach(msg => {
@@ -532,14 +528,14 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         currentViewingZoneId = 'world';
         isMapRenderPending = true;
-        fullUIRender();
+        renderMapAccordion();
     }
     
     function handleZoneNodeClick(realmIndex, zoneId) {
         currentViewingRealmIndex = realmIndex;
         currentViewingZoneId = zoneId;
         isMapRenderPending = true;
-        fullUIRender();
+        renderMapAccordion();
     }
     
     function handleSubZoneNodeClick(subZone) {
@@ -550,7 +546,7 @@ document.addEventListener('DOMContentLoaded', () => {
         currentViewingRealmIndex = realmIndex;
         currentViewingZoneId = 'world';
         isMapRenderPending = true;
-        fullUIRender();
+        renderMapAccordion();
     }
     
     function populateBulkCombineControls() {
@@ -661,8 +657,6 @@ document.addEventListener('DOMContentLoaded', () => {
             elements.modalBodyEl.appendChild(fightBossButton);
 
         } else {
-            // *** THE FIX IS HERE ***
-            // Use the current run's completed levels instead of the all-time list.
             const highestCompleted = ui.getHighestCompletedLevelInSubZone(gameState.currentRunCompletedLevels, subZone);
             
             const nextLevelToTry = Math.min(highestCompleted + 1, finalLevel);
@@ -1197,10 +1191,10 @@ document.addEventListener('DOMContentLoaded', () => {
                         craftingGems.push(item);
                         gameState.gems = gameState.gems.filter(g => g.id !== item.id);
                         ui.updateGemCraftingUI(elements, craftingGems, gameState);
-                        // ** FIX: Rerender grid to compact it **
                         ui.renderGrid(elements.gemSlotsEl, gameState.gems, { type: 'gem', calculatePositions: true });
                     }
                 } else {
+                    // This is the NEW, CORRECT block
                     if (selectedGemForSocketing && selectedGemForSocketing.id === item.id) {
                         selectedGemForSocketing = null;
                         logMessage(elements.gameLogEl, "Deselected gem.", '', isAutoScrollingLog);
@@ -1208,24 +1202,33 @@ document.addEventListener('DOMContentLoaded', () => {
                         selectedGemForSocketing = item;
                         logMessage(elements.gameLogEl, `Selected ${item.name}. Click an item with an empty socket to place it.`, 'uncommon', isAutoScrollingLog);
                     }
+                    // THIS LINE IS THE FIX:
                     ui.updateSocketingHighlights(elements, selectedGemForSocketing, gameState);
                 }
             } else {
+                // This is the NEW block
                 if (selectedGemForSocketing && item.sockets && item.sockets.includes(null)) {
                     const gemToSocket = selectedGemForSocketing;
                     const firstEmptySocketIndex = item.sockets.indexOf(null);
-                    
+
                     if (firstEmptySocketIndex > -1) {
+                        // Update the game state
                         item.sockets[firstEmptySocketIndex] = gemToSocket;
                         gameState.gems = gameState.gems.filter(g => g.id !== gemToSocket.id);
-                        logMessage(elements.gameLogEl, `Socketed ${gemToSocket.name} into ${item.name}.`, 'epic', isAutoScrollingLog);
-                        selectedGemForSocketing = null;
-                        
-                        // ** FIX: Force a full UI redraw after socketing **
+                        selectedGemForSocketing = null; // Clear the selection
+
+                        // Recalculate stats with the new gem
                         recalculateStats();
-                        fullUIRender(); 
+
+                        // Update the UI efficiently
+                        logMessage(elements.gameLogEl, `Socketed ${gemToSocket.name} into ${item.name}.`, 'epic', isAutoScrollingLog);
+                        ui.removeItemFromGrid(elements.gemSlotsEl, gemToSocket.id); // Remove the gem from its grid
+                        ui.updateItemInGrid(elements.inventorySlotsEl, item, { forceRedraw: true }); // Redraw the item with the gem
+                        ui.updateSocketingHighlights(elements, null, gameState); // Clear all highlights
+                        ui.updateStatsPanel(elements, playerStats); // Update the stats display
+                        
                         autoSave();
-                        return;
+                        return; // Important: exit the handler
                     }
                 }
     
@@ -1251,7 +1254,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         salvageMode.selections.push(item);
                     }
                     ui.updateSalvageCount(elements, salvageMode.selections.length);
-                    ui.updateItemInGrid(elements.inventorySlotsEl, item, salvageMode.selections);
+                    ui.updateItemInGrid(elements.inventorySlotsEl, item, { salvageSelections: salvageMode.selections });
                 } else {
                     const result = player.equipItem(gameState, item);
                     if (result.success) {
@@ -1282,6 +1285,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!(slotElement instanceof HTMLElement)) return;
             const slotName = slotElement.id.replace('slot-', '');
             
+            // This is the NEW block
             if (selectedGemForSocketing) {
                 const item = gameState.equipment[slotName];
                 if (item && item.sockets && item.sockets.includes(null)) {
@@ -1289,16 +1293,23 @@ document.addEventListener('DOMContentLoaded', () => {
                     const firstEmptySocketIndex = item.sockets.indexOf(null);
 
                     if (firstEmptySocketIndex > -1) {
+                        // Update the game state
                         item.sockets[firstEmptySocketIndex] = gemToSocket;
                         gameState.gems = gameState.gems.filter(g => g.id !== gemToSocket.id);
-                        logMessage(elements.gameLogEl, `Socketed ${gemToSocket.name} into ${item.name}.`, 'epic', isAutoScrollingLog);
-                        selectedGemForSocketing = null;
+                        selectedGemForSocketing = null; // Clear the selection
 
-                        // ** FIX: Force a full UI redraw after socketing **
+                        // Recalculate stats with the new gem
                         recalculateStats();
-                        fullUIRender();
+
+                        // Update the UI efficiently
+                        logMessage(elements.gameLogEl, `Socketed ${gemToSocket.name} into ${item.name}.`, 'epic', isAutoScrollingLog);
+                        ui.removeItemFromGrid(elements.gemSlotsEl, gemToSocket.id); // Remove the gem from its grid
+                        ui.renderPaperdoll(elements, gameState); // Redraw the whole paperdoll (it's small and simple)
+                        ui.updateSocketingHighlights(elements, null, gameState); // Clear all highlights
+                        ui.updateStatsPanel(elements, playerStats); // Update the stats display
+                        
                         autoSave();
-                        return; 
+                        return; // Important: exit the handler
                     }
                 }
             }
@@ -1328,7 +1339,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 gameState.gems.push(gemInSlot);
                 craftingGems[slotIndex] = undefined; 
                 craftingGems = craftingGems.filter(Boolean);
-                // ** FIX: Rerender grid to compact it **
                 ui.renderGrid(elements.gemSlotsEl, gameState.gems, { type: 'gem', calculatePositions: true });
             } 
             else if (selectedGemForSocketing) {
@@ -1340,7 +1350,6 @@ document.addEventListener('DOMContentLoaded', () => {
         
                     craftingGems.push(selectedGemForSocketing);
                     gameState.gems = gameState.gems.filter(g => g.id !== selectedGemForSocketing.id);
-                    // ** FIX: Rerender grid to compact it **
                     ui.renderGrid(elements.gemSlotsEl, gameState.gems, { type: 'gem', calculatePositions: true });
                     selectedGemForSocketing = null;
                 }
@@ -1358,7 +1367,6 @@ document.addEventListener('DOMContentLoaded', () => {
             craftingGems = [];
             ui.updateGemCraftingUI(elements, craftingGems, gameState);
             
-            // Re-render the entire gem grid to handle both success and failure cases cleanly
             ui.renderGrid(elements.gemSlotsEl, gameState.gems, { type: 'gem', calculatePositions: true });
 
             if (result.success) {
@@ -1477,7 +1485,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 player.activatePreset(gameState, index);
                 logMessage(elements.gameLogEl, `Activated preset: <b>${gameState.presets[index].name}</b>`, '', isAutoScrollingLog);
                 recalculateStats();
-                // ** FIX: Update all necessary UI components after preset switch **
                 ui.updateActivePresetButton(elements, gameState);
                 ui.renderPaperdoll(elements, gameState);
                 ui.updateStatsPanel(elements, playerStats);
@@ -1492,7 +1499,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (newName && newName.trim() !== "") {
                         gameState.presets[index].name = newName.trim();
                         logMessage(elements.gameLogEl, `Renamed preset to: <b>${newName.trim()}</b>`, '', isAutoScrollingLog);
-                        // ** FIX: Update button text after rename **
                         ui.updateActivePresetButton(elements, gameState);
                         autoSave();
                     }
@@ -1510,7 +1516,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (newName && newName.trim() !== "") {
                     gameState.presets[index].name = newName.trim();
                     logMessage(elements.gameLogEl, `Renamed preset to: <b>${newName.trim()}</b>`, '', isAutoScrollingLog);
-                    // ** FIX: Update button text after rename **
                     ui.updateActivePresetButton(elements, gameState);
                     autoSave();
                 }
@@ -1531,28 +1536,50 @@ document.addEventListener('DOMContentLoaded', () => {
                         logMessage(elements.gameLogEl, "You must confirm or cancel prestige first.", "rare", isAutoScrollingLog);
                         return;
                     }
-                    if (viewId === 'gems-view') {
-                        populateBulkCombineControls();
+                    
+                    ui.switchView(elements, viewId);
+
+                    // *** PERFORMANCE FIX: ONLY RENDER WHAT'S NEEDED ***
+                    // REPLACE THE OLD switch(viewId) BLOCK WITH THIS NEW ONE
+
+                    switch(viewId) {
+                        case 'map-view':
+                            renderMapAccordion();
+                            break;
+                        case 'hero-view':
+                            ui.updateHeroPanel(elements, gameState);
+                            ui.updateStatsPanel(elements, playerStats);
+                            break;
+                        case 'equipment-view':
+                            ui.renderPaperdoll(elements, gameState);
+                            ui.updateActivePresetButton(elements, gameState);
+                            break;
+                        case 'inventory-view':
+                            ui.populateSalvageFilter(elements, gameState);
+                            ui.renderGrid(elements.inventorySlotsEl, gameState.inventory, { calculatePositions: true, salvageSelections: salvageMode.selections, showLockIcon: true });
+                            // THIS IS THE FIX FOR THE INVENTORY GLOW
+                            ui.updateSocketingHighlights(elements, selectedGemForSocketing, gameState);
+                            break;
+                        case 'gems-view':
+                            populateBulkCombineControls();
+                            // THIS IS THE FIX FOR THE SELECTED GEM HIGHLIGHT
+                            ui.renderGrid(elements.gemSlotsEl, gameState.gems, { 
+                                type: 'gem', 
+                                calculatePositions: true, 
+                                bulkCombineSelection, 
+                                bulkCombineDeselectedIds, 
+                                selectedGemId: selectedGemForSocketing ? selectedGemForSocketing.id : null 
+                            });
+                            ui.updateGemCraftingUI(elements, craftingGems, gameState);
+                            break;
+                        case 'forge-view':
+                            ui.renderGrid(elements.forgeInventorySlotsEl, player.getAllItems(gameState), { calculatePositions: true, selectedItem: selectedItemForForge, showLockIcon: false });
+                            ui.updateForge(elements, selectedItemForForge, gameState.scrap);
+                            break;
+                        case 'wiki-view':
+                            applyWikiFilters();
+                            break;
                     }
-                    if (viewId === 'inventory-view') {
-                        ui.populateSalvageFilter(elements, gameState);
-                    }
-                    if (viewId === 'map-view') {
-                        isMapRenderPending = true;
-                    }
-                    if (viewId === 'wiki-view') {
-                        applyWikiFilters();
-                    }
-                    tabs.forEach(t => t.classList.remove('active'));
-                    tab.classList.add('active');
-                    if (parentPanel) {
-                       parentPanel.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-                    }
-                    const viewElement = document.getElementById(viewId);
-                    if (viewElement) {
-                        viewElement.classList.add('active');
-                    }
-                    fullUIRender();
                 });
             });
         });
@@ -1627,7 +1654,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 ui.renderPermanentUpgrades(elements, gameState);
                 ui.updateCurrency(elements, gameState);
                 ui.updateStatsPanel(elements, playerStats);
-                // ** FIX: Update temporary upgrades panel to check for disabled state **
                 ui.updateUpgrades(elements, gameState);
                 autoSave();
             } else {
