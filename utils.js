@@ -266,7 +266,7 @@ export function findFirstLevelOfZone(zone) {
 }
 
 /**
- * Calculates the total stats of an item, including its gems.
+ * Calculates the total stats of an item, including its gems..
  * @param {object} item The item object.
  * @returns {Object<string, number>} An object containing the combined stats.
  */

@@ -330,23 +330,33 @@ document.addEventListener('DOMContentLoaded', () => {
                 ui.addItemToGrid(elements.inventorySlotsEl, item);
             });
         }
+        // --- FIX: Gem position is now calculated when it drops. ---
         if (result.droppedGems && result.droppedGems.length > 0) {
+            // Filter for gems that were *actually* added to the state (not salvaged)
             const newGemsToPlace = result.droppedGems.filter(droppedGem =>
-                gameState.gems.some(gemInState => gemInState.id === droppedGem.id && (gemInState.x === undefined || gemInState.x === -1))
+                gameState.gems.some(gemInState => gemInState.id === droppedGem.id)
             );
+            
             newGemsToPlace.forEach((gemToPlace, index) => {
+                // Find all gems that already have a position to check against for collisions.
                 const placedGems = gameState.gems.filter(g => g.x !== undefined && g.x !== -1);
+                // Find a spot for the new gem.
                 const spot = findNextAvailableSpot(gemToPlace.width, gemToPlace.height, placedGems);
+                
                 if (spot) {
+                    // Find the gem in the main state array to update its position.
                     const gemInState = gameState.gems.find(g => g.id === gemToPlace.id);
                     if (gemInState) {
                         gemInState.x = spot.x;
                         gemInState.y = spot.y;
+                        // Animate the drop and add it to the DOM.
                         ui.showItemDropAnimation(elements.popupContainerEl, gemInState, index);
                         ui.addItemToGrid(elements.gemSlotsEl, gemInState, 'gem');
                     }
                 } else {
+                    // This case should be rare, but handles a full gem pouch.
                     logMessage(elements.gameLogEl, `Your gem pouch is full! A ${gemToPlace.name} was lost.`, 'rare', isAutoScrollingLog);
+                    // Remove the gem from the state if no spot was found.
                     gameState.gems = gameState.gems.filter(g => g.id !== gemToPlace.id);
                 }
             });
@@ -981,6 +991,33 @@ document.addEventListener('DOMContentLoaded', () => {
             gameState = getDefaultGameState();
             gameState.equipment = gameState.presets[gameState.activePresetIndex].equipment;
         }
+
+        // --- FIX: One-time position calculation for gems from old saves. ---
+        const allGems = gameState.gems;
+        const gemsToPlace = allGems.filter(g => g.x === undefined || g.y === undefined || g.x === -1);
+        if (gemsToPlace.length > 0) {
+            console.log(`Migrating ${gemsToPlace.length} gems to the new positioning system.`);
+            const alreadyPlacedGems = allGems.filter(g => g.x !== undefined && g.y !== undefined && g.x !== -1);
+
+            gemsToPlace.forEach(gem => {
+                // Ensure gem has dimensions, default to 1x1 if missing
+                const gemWidth = gem.width || 1;
+                const gemHeight = gem.height || 1;
+
+                const spot = findNextAvailableSpot(gemWidth, gemHeight, alreadyPlacedGems);
+                if (spot) {
+                    gem.x = spot.x;
+                    gem.y = spot.y;
+                    alreadyPlacedGems.push(gem); // Add it to the list of placed items for the next iteration's collision check
+                } else {
+                    console.error("Migration failed: no space for gem", gem);
+                    // To prevent data loss, we'll just give it a placeholder position.
+                    // It will be invisible but still in the state.
+                    gem.x = -1;
+                    gem.y = -1;
+                }
+            });
+        }
         
         buildWikiDatabase();
         const allItemTypes = new Set(wikiData.map(d => d.base.type).filter(Boolean));
@@ -1547,9 +1584,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     
                     ui.switchView(elements, viewId);
 
-                    // *** PERFORMANCE FIX: ONLY RENDER WHAT'S NEEDED ***
-                    // REPLACE THE OLD switch(viewId) BLOCK WITH THIS NEW ONE
-
+                    // --- FIX: This block now renders only what is necessary, making tab switching faster. ---
                     switch(viewId) {
                         case 'map-view':
                             renderMapAccordion();
@@ -1564,16 +1599,15 @@ document.addEventListener('DOMContentLoaded', () => {
                             break;
                         case 'inventory-view':
                             ui.populateSalvageFilter(elements, gameState);
-                            ui.renderGrid(elements.inventorySlotsEl, gameState.inventory, { calculatePositions: true, salvageSelections: salvageMode.selections, showLockIcon: true });
-                            // THIS IS THE FIX FOR THE INVENTORY GLOW
+                            ui.renderGrid(elements.inventorySlotsEl, gameState.inventory, { calculatePositions: false, salvageSelections: salvageMode.selections, showLockIcon: true });
                             ui.updateSocketingHighlights(elements, selectedGemForSocketing, gameState);
                             break;
                         case 'gems-view':
                             populateBulkCombineControls();
-                            // THIS IS THE FIX FOR THE SELECTED GEM HIGHLIGHT
+                            // --- FIX: The `calculatePositions` flag is now `false` for performance. ---
                             ui.renderGrid(elements.gemSlotsEl, gameState.gems, { 
                                 type: 'gem', 
-                                calculatePositions: true, 
+                                calculatePositions: false, 
                                 bulkCombineSelection, 
                                 bulkCombineDeselectedIds, 
                                 selectedGemId: selectedGemForSocketing ? selectedGemForSocketing.id : null 

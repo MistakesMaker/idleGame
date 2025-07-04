@@ -591,7 +591,7 @@ export function renderPaperdoll(elements, gameState) {
  */
 export function updateUI(elements, gameState, playerStats, currentMonster, salvageMode, craftingGems = [], selectedItemForForge = null, bulkCombineSelection = {}, bulkCombineDeselectedIds = new Set()) {
     const {
-        inventorySlotsEl, gemSlotsEl, forgeInventorySlotsEl, forgeSelectedItemEl, forgeRerollBtn,
+        inventorySlotsEl, gemSlotsEl, forgeInventorySlotsEl,
         prestigeEquipmentPaperdoll, prestigeInventoryDisplay, prestigeSelectionCount, prestigeSelectionMax
     } = elements;
 
@@ -605,8 +605,9 @@ export function updateUI(elements, gameState, playerStats, currentMonster, salva
     updatePrestigeUI(elements, gameState);
 
     // Grid Renders
+    // --- FIX: The `calculatePositions` flag for the gem grid is now `false` to prevent performance issues. ---
     renderGrid(inventorySlotsEl, gameState.inventory, { calculatePositions: true, salvageSelections: salvageMode.selections, showLockIcon: true });
-    renderGrid(gemSlotsEl, gameState.gems, { type: 'gem', calculatePositions: true, bulkCombineSelection, bulkCombineDeselectedIds });
+    renderGrid(gemSlotsEl, gameState.gems, { type: 'gem', calculatePositions: false, bulkCombineSelection, bulkCombineDeselectedIds });
     renderGrid(forgeInventorySlotsEl, player.getAllItems(gameState), { calculatePositions: true, selectedItem: selectedItemForForge, showLockIcon: false });
     
     // Paperdoll
