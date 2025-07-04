@@ -158,7 +158,7 @@ const greenMeadowsItems = {
         width: 2, height: 3,
         possibleStats: [
             { key: STATS.CLICK_DAMAGE.key, min: 40, max: 120 },
-            { key: STATS.DPS.key, min: 800, max: 2400 }
+            { key: STATS.DPS.key, min: 8000, max: 12000 }
         ]
     },
     CHAINMAIL_HAUBERK: {
