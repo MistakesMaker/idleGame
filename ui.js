@@ -141,6 +141,7 @@ export function initDOMElements() {
         wikiStatsFilterContainer: document.getElementById('wiki-stats-filter-container'),
         wikiResetFiltersBtn: document.getElementById('wiki-reset-filters-btn'),
         wikiResultsContainer: document.getElementById('wiki-results-container'),
+        wikiShowFavoritesBtn: document.getElementById('wiki-show-favorites-btn'),
         wikiDevToolBtn: document.getElementById('wiki-dev-tool-btn'),
         devToolModalBackdrop: document.getElementById('dev-tool-modal-backdrop'),
         devToolMissingImagesList: document.getElementById('dev-tool-missing-images-list'),
@@ -1549,34 +1550,47 @@ export function populateWikiFilters(elements, allItemTypes, allStatKeys) {
 /**
  * Renders the results of a wiki search into the container.
  * @param {HTMLElement} containerEl - The container element for the results.
- * @param {Array<object>} filteredWikiData - The array of processed item data to display.
+ * @param {Array<object>} wikiData - The array of processed item data to display.
+ * @param {Array<string>} wikiFavorites - An array of favorited item IDs.
+ * @param {boolean} showOnlyFavorites - Flag to determine if only favorites should be shown.
  */
-export function renderWikiResults(containerEl, filteredWikiData) {
+export function renderWikiResults(containerEl, wikiData, wikiFavorites, showOnlyFavorites) {
     containerEl.innerHTML = '';
 
-    if (filteredWikiData.length === 0) {
-        containerEl.innerHTML = '<p style="text-align: center; margin-top: 20px;">No items match your criteria.</p>';
+    let dataToRender = wikiData;
+    if (showOnlyFavorites) {
+        dataToRender = wikiData.filter(itemData => wikiFavorites.includes(itemData.id));
+    }
+
+    if (dataToRender.length === 0) {
+        const message = showOnlyFavorites ? "You haven't favorited any items yet." : "No items match your criteria.";
+        containerEl.innerHTML = `<p style="text-align: center; margin-top: 20px;">${message}</p>`;
         return;
     }
 
-    filteredWikiData.forEach(itemData => {
+    dataToRender.forEach(itemData => {
+        const isFavorited = wikiFavorites.includes(itemData.id);
         const card = document.createElement('div');
         card.className = 'wiki-item-card';
         card.dataset.itemId = itemData.id;
-        card.innerHTML = createWikiItemCardHTML(itemData);
+        card.innerHTML = createWikiItemCardHTML(itemData, isFavorited);
         containerEl.appendChild(card);
     });
 }
 
+
 /**
  * Creates the HTML for a single item card in the wiki.
  * @param {object} itemData - The processed data for a single item.
+ * @param {boolean} isFavorited - Whether the item is currently favorited.
  * @returns {string} The HTML string for the card.
  */
-function createWikiItemCardHTML(itemData) {
+function createWikiItemCardHTML(itemData, isFavorited) {
     const itemBase = ITEMS[itemData.id] || GEMS[itemData.id];
     const isUnique = itemBase.isUnique ? 'unique-item-name' : '';
     const rarity = itemBase.rarity || 'common'; 
+
+    const starClass = isFavorited ? 'fas fa-star favorited' : 'far fa-star';
 
     let statsHtml = '<ul>';
     if (itemBase.stats) {
@@ -1630,6 +1644,7 @@ function createWikiItemCardHTML(itemData) {
     dropsHtml += '</ul>';
 
     return `
+        <i class="${starClass} wiki-favorite-star" data-item-id="${itemData.id}"></i>
         <div class="wiki-item-header ${rarity}">
             <img src="${itemBase.icon}" class="item-icon" alt="${itemBase.name}">
             <span class="item-name ${isUnique}">${itemBase.name}</span>

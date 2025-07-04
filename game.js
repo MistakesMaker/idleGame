@@ -108,6 +108,8 @@ document.addEventListener('DOMContentLoaded', () => {
     let bulkCombineDeselectedIds = new Set();
     let lastBulkCombineStatKey = null;
     let isAutoScrollingLog = true;
+    let wikiFavorites = [];
+    let wikiShowFavorites = false;
 
     /** @type {DOMElements} */
     let elements = {};
@@ -187,7 +189,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 keepRarity: 'uncommon',
                 keepSockets: 0,
                 keepStats: defaultKeepStats
-            }
+            },
+            wikiFavorites: []
         };
     }
 
@@ -891,11 +894,15 @@ document.addEventListener('DOMContentLoaded', () => {
     function applyWikiFilters() {
         const highestUnlockedRealm = REALMS.slice().reverse().find(realm => gameState.maxLevel >= realm.requiredLevel);
         const maxRealmIndex = highestUnlockedRealm ? REALMS.indexOf(highestUnlockedRealm) : -1;
-
+    
         let filtered = wikiData.filter(itemData => {
+            if (wikiShowFavorites && !gameState.wikiFavorites.includes(itemData.id)) {
+                return false;
+            }
+    
             const isAccessible = itemData.dropSources.length === 0 || itemData.dropSources.some(source => source.realmIndex <= maxRealmIndex);
             if (!isAccessible) return false;
-
+    
             if (wikiFilters.searchText && !itemData.base.name.toLowerCase().includes(wikiFilters.searchText)) {
                 return false;
             }
@@ -914,7 +921,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return true;
         });
     
-        ui.renderWikiResults(elements.wikiResultsContainer, filtered);
+        ui.renderWikiResults(elements.wikiResultsContainer, filtered, gameState.wikiFavorites, wikiShowFavorites);
     }
     // --- END BESTIARY LOGIC ---
 
@@ -959,6 +966,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         ...((loadedState.salvageFilter || {}).keepStats || {})
                     }
                 },
+                wikiFavorites: loadedState.wikiFavorites || [],
                 goldenSlimeStreak: loadedState.goldenSlimeStreak && typeof loadedState.goldenSlimeStreak === 'object' ? loadedState.goldenSlimeStreak : baseState.goldenSlimeStreak,
             };
             
@@ -2108,7 +2116,8 @@ document.addEventListener('DOMContentLoaded', () => {
             gameState = {
                 ...baseState,
                 permanentUpgrades: gameState.permanentUpgrades,
-                salvageFilter: gameState.salvageFilter, 
+                salvageFilter: gameState.salvageFilter,
+                wikiFavorites: gameState.wikiFavorites, 
                 unlockedPrestigeSlots: gameState.unlockedPrestigeSlots,
                 absorbedStats: finalAbsorbedStats,
                 absorbedSynergies: finalAbsorbedSynergies,
@@ -2253,17 +2262,18 @@ document.addEventListener('DOMContentLoaded', () => {
             wikiStatsFilterContainer,
             wikiResetFiltersBtn,
             wikiResultsContainer,
+            wikiShowFavoritesBtn,
             wikiDevToolBtn,
             devToolModalBackdrop,
             devToolCloseBtn
         } = elements;
-
+    
         const updateAndApplyFilters = () => {
             wikiFilters.searchText = (/** @type {HTMLInputElement} */ (wikiSearchInput)).value.toLowerCase();
             wikiFilters.type = (/** @type {HTMLSelectElement} */ (wikiTypeFilter)).value;
             const socketsValue = parseInt((/** @type {HTMLInputElement} */ (wikiSocketsFilter)).value, 10);
             wikiFilters.sockets = isNaN(socketsValue) || socketsValue < 0 ? null : socketsValue;
-
+    
             wikiFilters.stats.clear();
             wikiStatsFilterContainer.querySelectorAll('.wiki-stat-filter').forEach(filterDiv => {
                 const checkbox = /** @type {HTMLInputElement | null} */ (filterDiv.querySelector('input[type="checkbox"]'));
@@ -2275,7 +2285,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             applyWikiFilters();
         };
-
+    
         wikiSearchInput.addEventListener('input', updateAndApplyFilters);
         wikiTypeFilter.addEventListener('change', updateAndApplyFilters);
         wikiSocketsFilter.addEventListener('input', updateAndApplyFilters);
@@ -2296,25 +2306,60 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             updateAndApplyFilters();
         });
-
+    
+        addTapListener(wikiShowFavoritesBtn, () => {
+            wikiShowFavorites = !wikiShowFavorites;
+            wikiShowFavoritesBtn.classList.toggle('active', wikiShowFavorites);
+            applyWikiFilters();
+        });
+    
         addTapListener(wikiResultsContainer, (e) => {
-            const card = (/** @type {HTMLElement} */ (e.target)).closest('.wiki-item-card');
-            if (card instanceof HTMLElement && card.dataset.itemId) {
-                const itemData = wikiData.find(item => item.id === card.dataset.itemId);
-                if (itemData && itemData.dropSources.length > 0) {
-                    ui.showWikiTravelModal(elements, itemData.dropSources, gameState.maxLevel, handleWikiTravel);
+            if (!(e.target instanceof HTMLElement)) return;
+
+            const star = e.target.closest('.wiki-favorite-star');
+            if (star instanceof HTMLElement && star.dataset.itemId) {
+                e.stopPropagation(); // Prevent the travel modal from opening
+                const itemId = star.dataset.itemId;
+                const favIndex = gameState.wikiFavorites.indexOf(itemId);
+
+                if (favIndex > -1) {
+                    gameState.wikiFavorites.splice(favIndex, 1);
+                    star.classList.remove('fas', 'favorited');
+                    star.classList.add('far');
+                } else {
+                    gameState.wikiFavorites.push(itemId);
+                    star.classList.remove('far');
+                    star.classList.add('fas', 'favorited');
+                }
+                
+                if (wikiShowFavorites) {
+                    applyWikiFilters(); // Re-render if we are in favorites view
+                }
+
+                autoSave();
+                return;
+            }
+
+            const card = e.target.closest('.wiki-item-header, .wiki-item-details');
+            if (card) {
+                const parentCard = card.closest('.wiki-item-card');
+                if (parentCard instanceof HTMLElement && parentCard.dataset.itemId) {
+                     const itemData = wikiData.find(item => item.id === parentCard.dataset.itemId);
+                    if (itemData && itemData.dropSources.length > 0) {
+                        ui.showWikiTravelModal(elements, itemData.dropSources, gameState.maxLevel, handleWikiTravel);
+                    }
                 }
             }
         });
-
+    
         addTapListener(wikiDevToolBtn, () => {
             ui.showDevToolModal(elements, wikiData);
         });
-
+    
         addTapListener(devToolCloseBtn, () => {
             devToolModalBackdrop.classList.add('hidden');
         });
-
+    
         addTapListener(devToolModalBackdrop, (e) => {
             if (e.target === devToolModalBackdrop) {
                 devToolModalBackdrop.classList.add('hidden');

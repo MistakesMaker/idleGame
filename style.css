@@ -1177,7 +1177,36 @@ h5 .legendary { color: #f39c12; }
 #wiki-search-input { flex-grow: 1; }
 #wiki-sockets-filter { width: 100px; }
 #wiki-reset-filters-btn { background: #7f8c8d; border-bottom-color: #6c7a7b; }
-#wiki-dev-tool-btn { background: #e74c3c; border-bottom-color: #c0392b; }
+
+/* Dev tool button repositioned to the corner */
+#wiki-controls {
+    position: relative; /* Make this a positioning context for the button */
+    padding-bottom: 40px; /* Add padding to prevent overlap */
+}
+
+#wiki-dev-tool-btn { 
+    position: absolute;
+    bottom: 8px;
+    right: 8px;
+    background: #e74c3c; 
+    border-bottom-color: #c0392b;
+    padding: 5px 10px; /* Make it smaller */
+    font-size: 14px;
+    margin: 0;
+}
+
+/* Change "Show Favorites" to blue */
+#wiki-show-favorites-btn {
+    background: linear-gradient(145deg, #3498db, #2980b9);
+    border-bottom-color: #20638f;
+}
+
+/* Style for when "Show Favorites" is active */
+#wiki-show-favorites-btn.active {
+    background: linear-gradient(145deg, #e67e22, #f1c40f);
+    border-bottom-color: #d35400;
+    color: #1a1a1a;
+}
 
 #wiki-stats-filter-container {
     display: grid;
@@ -1213,6 +1242,18 @@ h5 .legendary { color: #f39c12; }
     gap: 10px;
 }
 
+/* *** START OF FIX *** */
+#wiki-show-favorites-btn {
+    background: #3498db;
+    border-bottom-color: #2980b9;
+}
+
+#wiki-show-favorites-btn.active {
+    background: linear-gradient(145deg, #f1c40f, #e67e22);
+    border-bottom-color: #d35400;
+    color: #1a1a1a;
+}
+
 .wiki-item-card {
     background-color: rgba(44, 62, 80, 0.7);
     border: 1px solid #4a637e;
@@ -1220,9 +1261,32 @@ h5 .legendary { color: #f39c12; }
     padding: 15px;
     display: flex;
     gap: 20px;
-    cursor: pointer;
+    cursor: default; /* Changed from pointer to default */
     transition: border-color 0.2s;
+    position: relative; /* Crucial for positioning the star */
 }
+
+.wiki-favorite-star {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    font-size: 1.5em;
+    cursor: pointer;
+    z-index: 5;
+    color: #bdc3c7;
+    transition: color 0.2s, transform 0.2s;
+}
+
+.wiki-favorite-star:hover {
+    transform: scale(1.2);
+    color: #f1c40f;
+}
+
+.wiki-favorite-star.favorited {
+    color: #f1c40f;
+}
+/* *** END OF FIX *** */
+
 .wiki-item-card:hover {
     border-color: #f1c40f;
 }
@@ -1235,6 +1299,7 @@ h5 .legendary { color: #f39c12; }
     text-align: center;
     border: none;
     background: transparent;
+    cursor: pointer; /* Added cursor pointer to the header for travel */
 }
 
 .wiki-item-header .item-icon {
@@ -1264,6 +1329,7 @@ h5 .legendary { color: #f39c12; }
     flex-grow: 1;
     display: flex;
     gap: 20px;
+    cursor: pointer; /* Added cursor pointer to the details for travel */
 }
 
 .wiki-item-stats, .wiki-item-drops {
