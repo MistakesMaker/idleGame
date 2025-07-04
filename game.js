@@ -110,6 +110,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let isAutoScrollingLog = true;
     let wikiFavorites = [];
     let wikiShowFavorites = false;
+    let gemSortPreference = 'tier_desc'; // NEW: State for gem sorting
 
     /** @type {DOMElements} */
     let elements = {};
@@ -305,6 +306,16 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    /**
+     * Helper function to refresh the gem view if it's currently active.
+     */
+    function refreshGemViewIfActive() {
+        if (elements.gemSlotsEl.closest('.view')?.classList.contains('active')) {
+            ui.populateGemSortOptions(elements, gameState.gems, gemSortPreference);
+            sortAndRenderGems();
+        }
+    }
+
     function handleMonsterDefeated() {
         const oldSubZone = findSubZoneByLevel(gameState.currentFightingLevel);
         const oldRealmIndex = oldSubZone ? REALMS.findIndex(r => Object.values(r.zones).some(z => z === oldSubZone.parentZone)) : -1;
@@ -330,36 +341,30 @@ document.addEventListener('DOMContentLoaded', () => {
                 ui.addItemToGrid(elements.inventorySlotsEl, item);
             });
         }
-        // --- FIX: Gem position is now calculated when it drops. ---
+        
         if (result.droppedGems && result.droppedGems.length > 0) {
-            // Filter for gems that were *actually* added to the state (not salvaged)
             const newGemsToPlace = result.droppedGems.filter(droppedGem =>
                 gameState.gems.some(gemInState => gemInState.id === droppedGem.id)
             );
             
             newGemsToPlace.forEach((gemToPlace, index) => {
-                // Find all gems that already have a position to check against for collisions.
                 const placedGems = gameState.gems.filter(g => g.x !== undefined && g.x !== -1);
-                // Find a spot for the new gem.
                 const spot = findNextAvailableSpot(gemToPlace.width, gemToPlace.height, placedGems);
                 
                 if (spot) {
-                    // Find the gem in the main state array to update its position.
                     const gemInState = gameState.gems.find(g => g.id === gemToPlace.id);
                     if (gemInState) {
                         gemInState.x = spot.x;
                         gemInState.y = spot.y;
-                        // Animate the drop and add it to the DOM.
                         ui.showItemDropAnimation(elements.popupContainerEl, gemInState, index);
-                        ui.addItemToGrid(elements.gemSlotsEl, gemInState, 'gem');
                     }
                 } else {
-                    // This case should be rare, but handles a full gem pouch.
                     logMessage(elements.gameLogEl, `Your gem pouch is full! A ${gemToPlace.name} was lost.`, 'rare', isAutoScrollingLog);
-                    // Remove the gem from the state if no spot was found.
                     gameState.gems = gameState.gems.filter(g => g.id !== gemToPlace.id);
                 }
             });
+            // NEW: After any gem drop, refresh the gem view if it's active.
+            refreshGemViewIfActive();
         }
     
         // Step 4: Handle XP gain and level ups
@@ -935,6 +940,57 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     // --- END BESTIARY LOGIC ---
 
+    // --- START OF NEW GEM SORTING LOGIC ---
+    /**
+     * Sorts the gem array based on the current preference and re-renders the grid.
+     */
+    function sortAndRenderGems() {
+        const sortKey = gemSortPreference;
+        const sortedGems = [...gameState.gems]; // Create a mutable copy
+
+        sortedGems.sort((a, b) => {
+            if (sortKey === 'tier_desc') {
+                return (b.tier || 0) - (a.tier || 0);
+            }
+            if (sortKey === 'tier_asc') {
+                return (a.tier || 0) - (b.tier || 0);
+            }
+            if (sortKey === 'synergy') {
+                const valA = a.synergy?.value || 0;
+                const valB = b.synergy?.value || 0;
+                return valB - valA;
+            }
+            // It's a stat key
+            const valA = a.stats?.[sortKey] || 0;
+            const valB = b.stats?.[sortKey] || 0;
+            return valB - valA;
+        });
+
+        // Re-calculate positions based on the new sorted order
+        const placedGems = [];
+        sortedGems.forEach(gem => {
+            const spot = findNextAvailableSpot(gem.width, gem.height, placedGems);
+            if (spot) {
+                gem.x = spot.x;
+                gem.y = spot.y;
+                placedGems.push(gem);
+            } else {
+                gem.x = -1; // Should not happen, but a failsafe
+                gem.y = -1;
+            }
+        });
+        
+        ui.renderGrid(elements.gemSlotsEl, sortedGems, {
+            type: 'gem',
+            calculatePositions: false, // Positions are already calculated
+            bulkCombineSelection,
+            bulkCombineDeselectedIds,
+            selectedGemId: selectedGemForSocketing ? selectedGemForSocketing.id : null
+        });
+    }
+    // --- END OF NEW GEM SORTING LOGIC ---
+
+
     function main() {
         elements = ui.initDOMElements();
         
@@ -1236,7 +1292,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         craftingGems.push(item);
                         gameState.gems = gameState.gems.filter(g => g.id !== item.id);
                         ui.updateGemCraftingUI(elements, craftingGems, gameState);
-                        ui.renderGrid(elements.gemSlotsEl, gameState.gems, { type: 'gem', calculatePositions: true });
+                        refreshGemViewIfActive();
                     }
                 } else {
                     // This is the NEW, CORRECT block
@@ -1267,7 +1323,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                         // Update the UI efficiently
                         logMessage(elements.gameLogEl, `Socketed ${gemToSocket.name} into ${item.name}.`, 'epic', isAutoScrollingLog);
-                        ui.removeItemFromGrid(elements.gemSlotsEl, gemToSocket.id); // Remove the gem from its grid
+                        refreshGemViewIfActive();
                         ui.updateItemInGrid(elements.inventorySlotsEl, item, { forceRedraw: true }); // Redraw the item with the gem
                         ui.updateSocketingHighlights(elements, null, gameState); // Clear all highlights
                         ui.updateStatsPanel(elements, playerStats); // Update the stats display
@@ -1348,7 +1404,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                         // Update the UI efficiently
                         logMessage(elements.gameLogEl, `Socketed ${gemToSocket.name} into ${item.name}.`, 'epic', isAutoScrollingLog);
-                        ui.removeItemFromGrid(elements.gemSlotsEl, gemToSocket.id); // Remove the gem from its grid
+                        refreshGemViewIfActive();
                         ui.renderPaperdoll(elements, gameState); // Redraw the whole paperdoll (it's small and simple)
                         ui.updateSocketingHighlights(elements, null, gameState); // Clear all highlights
                         ui.updateStatsPanel(elements, playerStats); // Update the stats display
@@ -1384,7 +1440,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 gameState.gems.push(gemInSlot);
                 craftingGems[slotIndex] = undefined; 
                 craftingGems = craftingGems.filter(Boolean);
-                ui.renderGrid(elements.gemSlotsEl, gameState.gems, { type: 'gem', calculatePositions: true });
+                refreshGemViewIfActive();
             } 
             else if (selectedGemForSocketing) {
                 if (craftingGems.length < 2) {
@@ -1395,7 +1451,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
                     craftingGems.push(selectedGemForSocketing);
                     gameState.gems = gameState.gems.filter(g => g.id !== selectedGemForSocketing.id);
-                    ui.renderGrid(elements.gemSlotsEl, gameState.gems, { type: 'gem', calculatePositions: true });
+                    refreshGemViewIfActive();
                     selectedGemForSocketing = null;
                 }
             }
@@ -1411,8 +1467,7 @@ document.addEventListener('DOMContentLoaded', () => {
             
             craftingGems = [];
             ui.updateGemCraftingUI(elements, craftingGems, gameState);
-            
-            ui.renderGrid(elements.gemSlotsEl, gameState.gems, { type: 'gem', calculatePositions: true });
+            refreshGemViewIfActive();
 
             if (result.success) {
                 recalculateStats();
@@ -1433,7 +1488,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (result.success) {
                 recalculateStats();
                 populateBulkCombineControls();
-                ui.renderGrid(elements.gemSlotsEl, gameState.gems, { type: 'gem', calculatePositions: true });
+                refreshGemViewIfActive();
                 ui.updateCurrency(elements, gameState);
                 ui.updateStatsPanel(elements, playerStats);
                 autoSave();
@@ -1584,7 +1639,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     
                     ui.switchView(elements, viewId);
 
-                    // --- FIX: This block now renders only what is necessary, making tab switching faster. ---
                     switch(viewId) {
                         case 'map-view':
                             renderMapAccordion();
@@ -1603,15 +1657,10 @@ document.addEventListener('DOMContentLoaded', () => {
                             ui.updateSocketingHighlights(elements, selectedGemForSocketing, gameState);
                             break;
                         case 'gems-view':
+                            // START of new logic for gems tab
+                            refreshGemViewIfActive(); // This populates and renders
+                            // END of new logic for gems tab
                             populateBulkCombineControls();
-                            // --- FIX: The `calculatePositions` flag is now `false` for performance. ---
-                            ui.renderGrid(elements.gemSlotsEl, gameState.gems, { 
-                                type: 'gem', 
-                                calculatePositions: false, 
-                                bulkCombineSelection, 
-                                bulkCombineDeselectedIds, 
-                                selectedGemId: selectedGemForSocketing ? selectedGemForSocketing.id : null 
-                            });
                             ui.updateGemCraftingUI(elements, craftingGems, gameState);
                             break;
                         case 'forge-view':
@@ -1625,6 +1674,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
             });
         });
+
+        // NEW: Add event listener for the gem sort dropdown
+        if (elements.gemSortSelect) {
+            elements.gemSortSelect.addEventListener('change', (e) => {
+                if (e.target instanceof HTMLSelectElement) {
+                    gemSortPreference = e.target.value;
+                    sortAndRenderGems();
+                }
+            });
+        }
+
 
         addTapListener(document.getElementById('toggle-loot-log-btn'), (e) => {
             if (!(e.currentTarget instanceof HTMLButtonElement)) return;

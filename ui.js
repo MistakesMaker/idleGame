@@ -95,6 +95,7 @@ export function initDOMElements() {
         modalBodyEl: document.getElementById('modal-body'),
         modalCloseBtnEl: document.getElementById('modal-close-btn'),
         gemSlotsEl: document.getElementById('gem-slots'),
+        gemSortSelect: document.getElementById('gem-sort-select'),
         gemCraftingSlotsContainer: document.getElementById('gem-crafting-slots'),
         gemCraftBtn: document.getElementById('gem-craft-btn'),
         forgeInventorySlotsEl: document.getElementById('forge-inventory-slots'),
@@ -200,6 +201,67 @@ export function populateSalvageFilter(elements, gameState) {
             filterKeepStatsContainer.appendChild(wrapper);
         }
     });
+}
+
+/**
+ * Populates the gem sorting dropdown with relevant options.
+ * @param {DOMElements} elements
+ * @param {object[]} gems The array of gems from the game state.
+ * @param {string} currentSort The currently active sort key.
+ */
+export function populateGemSortOptions(elements, gems, currentSort) {
+    const selectEl = /** @type {HTMLSelectElement} */ (elements.gemSortSelect);
+    if (!selectEl) return;
+
+    // Keep track of what was selected
+    const previousValue = selectEl.value || currentSort;
+    selectEl.innerHTML = ''; // Clear existing options
+
+    // --- Static options ---
+    const defaultOptions = {
+        'tier_desc': 'Tier (High -> Low)',
+        'tier_asc': 'Tier (Low -> High)',
+    };
+    for (const [value, text] of Object.entries(defaultOptions)) {
+        const option = document.createElement('option');
+        option.value = value;
+        option.textContent = text;
+        selectEl.appendChild(option);
+    }
+    
+    // --- Dynamic options based on stats ---
+    const availableStats = new Set();
+    const hasSynergy = gems.some(gem => gem.synergy);
+
+    gems.forEach(gem => {
+        if (gem.stats) {
+            Object.keys(gem.stats).forEach(statKey => availableStats.add(statKey));
+        }
+    });
+
+    Array.from(availableStats).sort().forEach(statKey => {
+        const statInfo = STATS[Object.keys(STATS).find(k => STATS[k].key === statKey)];
+        if (statInfo) {
+            const option = document.createElement('option');
+            option.value = statKey;
+            option.textContent = `Stat: ${statInfo.name}`;
+            selectEl.appendChild(option);
+        }
+    });
+
+    if (hasSynergy) {
+        const option = document.createElement('option');
+        option.value = 'synergy';
+        option.textContent = 'Stat: Synergy';
+        selectEl.appendChild(option);
+    }
+
+    // Restore previous selection if it still exists
+    selectEl.value = previousValue;
+    if (selectEl.selectedIndex === -1) {
+        // If the old selection is gone (e.g., last gem with that stat was crafted), default to tier sort
+        selectEl.value = 'tier_desc';
+    }
 }
 
 

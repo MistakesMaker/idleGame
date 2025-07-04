@@ -605,6 +605,35 @@ h5 .legendary { color: #f39c12; }
     animation: pulse-blue 1.5s infinite;
 }
 
+/* START of modification */
+/* START of modification */
+.gem-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+.gem-controls label {
+    font-family: 'Cinzel', serif;
+    font-size: 1em;
+}
+.gem-controls select {
+    flex: 0 1 auto; /* Allows shrinking but not growing */
+    max-width: 300px;
+    margin: 0;
+}
+/* END of modification */
+.gem-controls label {
+    font-family: 'Cinzel', serif;
+    font-size: 1em;
+}
+.gem-controls select {
+    flex: 1 1 auto;
+    max-width: 300px; /* Prevents it from becoming too large */
+    margin: 0;
+}
+/* END of modification */
+
 @keyframes pulse-blue {
     0% { box-shadow: 0 0 5px rgba(52, 152, 219, 0.6); }
     50% { box-shadow: 0 0 15px rgba(52, 152, 219, 1); }
@@ -749,8 +778,8 @@ h5 .legendary { color: #f39c12; }
 }
 
 .permanent-upgrade-card.disabled {
-    filter: grayscale(40%);
-    opacity: 0.8;
+    filter: grayscale(70%);
+    opacity: 0.6;
 }
 
 .permanent-upgrade-card.maxed {
