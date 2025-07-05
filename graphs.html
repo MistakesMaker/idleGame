@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Item Stat Progression Graphs</title>
+    <!-- Include the Chart.js library from a CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #1a1a1a;
+            color: #ecf0f1;
+            margin: 0;
+            padding: 20px;
+        }
+        h1 {
+            text-align: center;
+            color: #f1c40f;
+            font-family: 'Cinzel', serif;
+        }
+        #chart-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+            gap: 40px;
+            max-width: 1800px;
+            margin: 0 auto;
+        }
+        .chart-wrapper {
+            background-color: rgba(30, 40, 50, 0.7);
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid #4a637e;
+        }
+    </style>
+</head>
+<body>
+    <h1>Item Stat Progression Graphs</h1>
+    <div id="chart-container">
+        <!-- The graph_generator.js script will dynamically create and insert charts here -->
+    </div>
+
+    <!-- Our custom script to process data and generate the graphs -->
+    <script type="module" src="graph_generator.js"></script>
+</body>
+</html>
