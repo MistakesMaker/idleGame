@@ -19,6 +19,39 @@
             color: #f1c40f;
             font-family: 'Cinzel', serif;
         }
+        #filter-container {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+        .filter-btn {
+            font-family: 'Cinzel', serif;
+            background: #34495e;
+            color: white;
+            border: 1px solid #4a637e;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.2s ease;
+        }
+        .filter-btn:hover {
+            background-color: #4a637e;
+            border-color: #f1c40f;
+        }
+        .filter-btn.active {
+            background-color: #f1c40f;
+            color: #1a1a1a;
+            border-color: #f1c40f;
+            box-shadow: 0 0 10px rgba(241, 196, 15, 0.5);
+            transform: translateY(-2px);
+        }
+        #combine-graphs-btn {
+            background-color: #8e44ad; /* Purple to stand out */
+            border-color: #c0392b;
+        }
         #chart-container {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
@@ -26,16 +59,35 @@
             max-width: 1800px;
             margin: 0 auto;
         }
-        .chart-wrapper {
+        .chart-wrapper, #combined-chart-wrapper {
             background-color: rgba(30, 40, 50, 0.7);
             padding: 20px;
             border-radius: 12px;
             border: 1px solid #4a637e;
+            transition: display 0.3s;
+        }
+        .hidden {
+            display: none;
         }
     </style>
 </head>
 <body>
     <h1>Item Stat Progression Graphs</h1>
+    
+    <div id="filter-container">
+        <button class="filter-btn active" data-stat-filter="all">Show All</button>
+        <button class="filter-btn" data-stat-filter="clickDamage">Click Damage</button>
+        <button class="filter-btn" data-stat-filter="dps">DPS</button>
+        <button class="filter-btn" data-stat-filter="goldGain">% Gold Gain</button>
+        <button class="filter-btn" data-stat-filter="magicFind">% Magic Find</button>
+        <button id="combine-graphs-btn" class="filter-btn hidden">Combine Visible Graphs</button>
+    </div>
+
+    <!-- Container for the single combined chart -->
+    <div id="combined-chart-wrapper" class="hidden">
+        <canvas id="combined-chart-canvas"></canvas>
+    </div>
+
     <div id="chart-container">
         <!-- The graph_generator.js script will dynamically create and insert charts here -->
     </div>
