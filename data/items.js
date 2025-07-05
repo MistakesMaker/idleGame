@@ -556,7 +556,7 @@ const orcVolcanoItems = {
         canHaveSockets: true,
         maxSockets: 1,
         possibleStats: [
-            { key: STATS.CLICK_DAMAGE.key, min: 500, max: 1500 },
+            { key: STATS.CLICK_DAMAGE.key, min: 500, max: 2500 },
         ]
     },
     
