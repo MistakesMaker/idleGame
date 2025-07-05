@@ -12,6 +12,15 @@ import { PERMANENT_UPGRADES } from './data/upgrades.js';
 
 /** @typedef {Object<string, HTMLElement|HTMLButtonElement|HTMLInputElement|HTMLImageElement|HTMLSelectElement>} DOMElements */
 
+// --- START OF FIX: Define the canonical display order for stats ---
+const STAT_DISPLAY_ORDER = [
+    STATS.CLICK_DAMAGE.key,
+    STATS.DPS.key,
+    STATS.GOLD_GAIN.key,
+    STATS.MAGIC_FIND.key,
+];
+// --- END OF FIX ---
+
 /**
  * Checks if a dropped item should be considered a "boss unique".
  * This is now based on the `isUnique` flag in the item's definition and if it drops from only one boss.
@@ -667,7 +676,6 @@ export function updateUI(elements, gameState, playerStats, currentMonster, salva
     updatePrestigeUI(elements, gameState);
 
     // Grid Renders
-    // --- FIX: The `calculatePositions` flag for the gem grid is now `false` to prevent performance issues. ---
     renderGrid(inventorySlotsEl, gameState.inventory, { calculatePositions: true, salvageSelections: salvageMode.selections, showLockIcon: true });
     renderGrid(gemSlotsEl, gameState.gems, { type: 'gem', calculatePositions: false, bulkCombineSelection, bulkCombineDeselectedIds });
     renderGrid(forgeInventorySlotsEl, player.getAllItems(gameState), { calculatePositions: true, selectedItem: selectedItemForForge, showLockIcon: false });
@@ -735,10 +743,14 @@ function createDetailedItemStatBlockHTML(item) {
 
     const itemBase = ITEMS[item.baseId];
     
-    // Base item stats
     let statsHTML = '<ul>';
     if (item.stats) {
-        for (const statKey in item.stats) {
+        // --- START OF FIX: Sort the stats before displaying ---
+        const statKeys = Object.keys(item.stats);
+        statKeys.sort((a, b) => STAT_DISPLAY_ORDER.indexOf(a) - STAT_DISPLAY_ORDER.indexOf(b));
+        // --- END OF FIX ---
+
+        for (const statKey of statKeys) {
             const statInfo = Object.values(STATS).find(s => s.key === statKey) || { name: statKey, type: 'flat' };
             const statName = statInfo.name;
             const value = item.stats[statKey];
@@ -748,7 +760,6 @@ function createDetailedItemStatBlockHTML(item) {
     }
     statsHTML += '</ul>';
 
-    // Gem stats blueprint
     let gemsHTML = '';
     if (item.sockets && item.sockets.some(g => g !== null)) {
         gemsHTML += '<div class="tooltip-gem-stats">';
@@ -758,7 +769,11 @@ function createDetailedItemStatBlockHTML(item) {
                 gemsHTML += `<div class="tooltip-gem-stats-header"><img src="${gem.icon}" alt="${gemName}">${gemName}</div>`;
                 gemsHTML += '<ul>';
                 if (gem.stats) {
-                    for (const statKey in gem.stats) {
+                    // --- START OF FIX: Sort gem stats too ---
+                    const gemStatKeys = Object.keys(gem.stats);
+                    gemStatKeys.sort((a, b) => STAT_DISPLAY_ORDER.indexOf(a) - STAT_DISPLAY_ORDER.indexOf(b));
+                    // --- END OF FIX ---
+                    for (const statKey of gemStatKeys) {
                          const statInfo = Object.values(STATS).find(s => s.key === statKey) || { name: statKey, type: 'flat' };
                          const statName = statInfo.name;
                          const value = gem.stats[statKey];
@@ -776,7 +791,6 @@ function createDetailedItemStatBlockHTML(item) {
         gemsHTML += '</div>';
     }
 
-    // Unique effect
     let uniqueEffectHTML = '';
     if (itemBase && itemBase.uniqueEffect) {
         const effectData = UNIQUE_EFFECTS[itemBase.uniqueEffect];
@@ -849,7 +863,12 @@ export function createItemComparisonTooltipHTML(hoveredItem, equippedItem, equip
         const allStatKeys = new Set([...Object.keys(hoveredStats), ...Object.keys(comparisonTargetStats)]);
         
         let statListHtml = '<ul>';
-        allStatKeys.forEach(statKey => {
+
+        // --- START OF FIX: Use the defined order for comparison ---
+        const sortedStatKeys = Array.from(allStatKeys).sort((a, b) => STAT_DISPLAY_ORDER.indexOf(a) - STAT_DISPLAY_ORDER.indexOf(b));
+        // --- END OF FIX ---
+
+        for (const statKey of sortedStatKeys) {
             const hoveredValue = hoveredStats[statKey] || 0;
             const equippedValue = comparisonTargetStats[statKey] || 0;
             const diff = hoveredValue - equippedValue;
@@ -866,7 +885,7 @@ export function createItemComparisonTooltipHTML(hoveredItem, equippedItem, equip
                 diffSpan = ` <span class="${diffClass}">(${sign}${diffStr})</span>`;
             }
             statListHtml += `<li>+${valueStr} ${statInfo.name}${diffSpan}</li>`;
-        });
+        };
         statListHtml += '</ul>';
         statsHTML = statListHtml;
     }
@@ -900,28 +919,31 @@ function createDualRingComparison(hoveredStats, equippedRing1, equippedRing2) {
         const equippedStats = equippedRing ? getCombinedItemStats(equippedRing) : {};
         const allStatKeys = new Set([...Object.keys(hoveredStats), ...Object.keys(equippedStats)]);
         
+        // --- START OF FIX: Use the defined order for comparison ---
+        const sortedStatKeys = Array.from(allStatKeys).sort((a, b) => STAT_DISPLAY_ORDER.indexOf(a) - STAT_DISPLAY_ORDER.indexOf(b));
+        // --- END OF FIX ---
+        
         let statListHtml = '<ul>';
-        if (allStatKeys.size === 0 && !equippedRing) {
+        if (sortedStatKeys.length === 0 && !equippedRing) {
              statListHtml += '<li>(Empty Slot)</li>';
-        } else if (allStatKeys.size === 0 && equippedRing) {
+        } else if (sortedStatKeys.length === 0 && equippedRing) {
              statListHtml += '<li>(No stats)</li>';
         }else {
-            allStatKeys.forEach(statKey => {
+            for (const statKey of sortedStatKeys) {
                 const hoveredValue = hoveredStats[statKey] || 0;
                 const equippedValue = equippedStats[statKey] || 0;
                 const diff = hoveredValue - equippedValue;
                 const statInfo = Object.values(STATS).find(s => s.key === statKey) || { name: statKey, type: 'flat' };
-                const isPercent = statInfo.type === 'percent';
                 
                 let diffSpan = '';
                 if (Math.abs(diff) > 0.001) {
                     const diffClass = diff > 0 ? 'stat-better' : 'stat-worse';
                     const sign = diff > 0 ? '+' : '';
-                    const diffStr = isPercent ? `${diff.toFixed(1)}%` : formatNumber(diff);
+                    const diffStr = statInfo.type === 'percent' ? `${diff.toFixed(1)}%` : formatNumber(diff);
                     diffSpan = ` <span class="${diffClass}">(${sign}${diffStr})</span>`;
                 }
                 statListHtml += `<li>${statInfo.name}${diffSpan}</li>`;
-            });
+            };
         }
         statListHtml += '</ul>';
         sideHtml += statListHtml + '</div>';
@@ -943,7 +965,12 @@ export function createGemTooltipHTML(gem) {
     let statsHTML = '<ul>';
 
     if (gem.stats) {
-        for (const statKey in gem.stats) {
+        // --- START OF FIX: Sort gem stats ---
+        const statKeys = Object.keys(gem.stats);
+        statKeys.sort((a, b) => STAT_DISPLAY_ORDER.indexOf(a) - STAT_DISPLAY_ORDER.indexOf(b));
+        // --- END OF FIX ---
+
+        for (const statKey of statKeys) {
             const statInfo = Object.values(STATS).find(s => s.key === statKey);
             const statName = statInfo ? statInfo.name : statKey;
             const value = gem.stats[statKey];
@@ -966,7 +993,12 @@ export function createGemTooltipHTML(gem) {
 
 export function createLootTableTooltipHTML(itemBase) {
     let statsHTML = '<ul>';
-    itemBase.possibleStats.forEach(statInfo => {
+
+    // --- START OF FIX: Sort potential stats ---
+    const sortedPossibleStats = [...itemBase.possibleStats].sort((a, b) => STAT_DISPLAY_ORDER.indexOf(a.key) - STAT_DISPLAY_ORDER.indexOf(b.key));
+    // --- END OF FIX ---
+
+    sortedPossibleStats.forEach(statInfo => {
         const statName = Object.values(STATS).find(s => s.key === statInfo.key)?.name || statInfo.key;
         statsHTML += `<li>+ ${statInfo.min} - ${statInfo.max} ${statName}</li>`;
     });
@@ -1009,7 +1041,12 @@ export function createLootComparisonTooltipHTML(potentialItem, equippedItem, equ
     const headerHTML = `<div class="item-header"><span class="${potentialIsUnique}">${potentialItem.name}</span></div>`;
 
     let potentialStatsHTML = '<ul>';
-    potentialItem.possibleStats.forEach(statInfo => {
+
+    // --- START OF FIX: Sort potential stats in comparison view ---
+    const sortedPossibleStats = [...potentialItem.possibleStats].sort((a, b) => STAT_DISPLAY_ORDER.indexOf(a.key) - STAT_DISPLAY_ORDER.indexOf(b.key));
+    // --- END OF FIX ---
+
+    sortedPossibleStats.forEach(statInfo => {
         const statName = Object.values(STATS).find(s => s.key === statInfo.key)?.name || statInfo.key;
         potentialStatsHTML += `<li>+ ${statInfo.min} - ${statInfo.max} ${statName}</li>`;
     });
@@ -1209,25 +1246,6 @@ export function showDpsPopup(popupContainerEl, damage, isCrit = false, isMultiSt
     popupContainerEl.appendChild(popup);
     setTimeout(() => popup.remove(), 800);
 }
-
-/**
- * NEW: Displays a poison damage popup.
- * @param {HTMLElement} popupContainerEl - The container to add the popup to.
- * @param {number} damage - The amount of poison damage.
- */
-export function showPoisonDamagePopup(popupContainerEl, damage) {
-    const popup = document.createElement('div');
-    popup.textContent = `-${formatNumber(damage)}`;
-    popup.className = 'dps-popup'; // Use the same base class for animation
-    popup.style.color = '#2ecc71'; // Green color for poison
-    popup.style.fontSize = '18px'; // Slightly smaller
-    popup.style.left = `${30 + Math.random() * 40}%`;
-    popup.style.top = `${60 + Math.random() * 20}%`; // Position it slightly lower
-
-    popupContainerEl.appendChild(popup);
-    setTimeout(() => popup.remove(), 800);
-}
-
 
 /**
  * Shows a large informational popup in the monster area (e.g., for special events).
