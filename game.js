@@ -93,7 +93,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let isMapRenderPending = true; // Flag to control map re-rendering
 
     let currentMonster = { name: "Slime", data: MONSTERS.SLIME };
-    let playerStats = { baseClickDamage: 1, baseDps: 0, totalClickDamage: 1, totalDps: 0, bonusGold: 0, magicFind: 0, poisonStacks: 0 };
+    let playerStats = { baseClickDamage: 1, baseDps: 0, totalClickDamage: 1, totalDps: 0, bonusGold: 0, magicFind: 0 };
     let salvageMode = { active: false, selections: [] };
     let saveTimeout;
     let isShiftPressed = false;
@@ -284,16 +284,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (totalSynergyValue > 0) {
             finalClickDamage += finalDps * totalSynergyValue;
         }
-        
-        // --- NEW: Calculate Weaver's Envy poison stacks ---
-        let poisonStacks = 0;
-        const equippedSword = gameState.equipment.sword;
-        if (equippedSword && equippedSword.baseId === 'THE_WEAVERS_ENVY') {
-            poisonStacks += 3;
-        }
-        if (gameState.absorbedUniqueEffects && gameState.absorbedUniqueEffects['weaversEnvy']) {
-            poisonStacks += gameState.absorbedUniqueEffects['weaversEnvy'];
-        }
 
         playerStats = {
             baseClickDamage: newCalculatedStats.baseClickDamage,
@@ -309,7 +299,6 @@ document.addEventListener('DOMContentLoaded', () => {
             scrapBonus: 1 + (permanentUpgradeBonuses.scrap / 100),
             gemFindChance: permanentUpgradeBonuses.gemFind,
             legacyKeeperBonus: permanentUpgradeBonuses.legacyKeeper,
-            poisonStacks: poisonStacks, // Add the new stat here
         };
 
         if (socket && socket.connected) {
@@ -332,12 +321,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const oldSubZone = findSubZoneByLevel(gameState.currentFightingLevel);
         const oldRealmIndex = oldSubZone ? REALMS.findIndex(r => Object.values(r.zones).some(z => z === oldSubZone.parentZone)) : -1;
     
-        // Step 1: Get the result from the logic module
         const result = logic.monsterDefeated(gameState, playerStats, currentMonster);
     
-        // The gold is now correctly added inside the logic function.
-    
-        // Step 2: Log all messages and show popups
         result.logMessages.forEach(msg => {
             logMessage(elements.gameLogEl, msg.message, msg.class, isAutoScrollingLog);
         });
@@ -346,7 +331,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         ui.showGoldPopup(elements.popupContainerEl, result.goldGained);
     
-        // Step 3: Handle item/gem drops and animations
         if (result.droppedItems && result.droppedItems.length > 0) {
             result.droppedItems.forEach((item, index) => {
                 ui.showItemDropAnimation(elements.popupContainerEl, item, index);
@@ -361,27 +345,25 @@ document.addEventListener('DOMContentLoaded', () => {
             refreshGemViewIfActive();
         }
     
-        // Step 4: Handle XP gain and level ups
         const levelUpLogs = player.gainXP(gameState, result.xpGained);
         if (levelUpLogs.length > 0) {
             levelUpLogs.forEach(msg => logMessage(elements.gameLogEl, msg, 'legendary', isAutoScrollingLog));
             recalculateStats();
         }
     
-        // Step 5: Critical UI Update (BEFORE clearing encounter state)
-        ui.updateMonsterUI(elements, gameState, currentMonster); 
+        // --- START OF FIX: Remove the redundant UI update call ---
+        // The monster UI will be updated in the setTimeout when the new monster appears.
         ui.updateHeroPanel(elements, gameState);
         ui.updatePrestigeUI(elements, gameState);
         ui.updateCurrency(elements, gameState);
         ui.updateUpgrades(elements, gameState);
         ui.renderPermanentUpgrades(elements, gameState);
+        // --- END OF FIX ---
     
-        // Step 6: Clear the special encounter state *after* the UI update
         if (result.encounterEnded) {
             gameState.specialEncounter = null;
         }
     
-        // Step 7: Check for map/realm changes
         if (gameState.isAutoProgressing) {
             const newSubZone = findSubZoneByLevel(gameState.currentFightingLevel);
             if (newSubZone) {
@@ -410,10 +392,8 @@ document.addEventListener('DOMContentLoaded', () => {
     
         autoSave();
     
-        // Step 8: Transition to the next monster
         setTimeout(() => {
             startNewMonster();
-            // Update only the necessary parts for the new monster
             ui.updateMonsterUI(elements, gameState, currentMonster);
             ui.updateLootPanel(elements, currentMonster, gameState);
             if (isMapRenderPending) {
@@ -475,44 +455,9 @@ document.addEventListener('DOMContentLoaded', () => {
         ui.updateMonsterHealthBar(elements, gameState.monster);
     }
 
-    /**
-     * NEW: Helper function to apply poison damage ticks.
-     * @param {number} stacks - The number of poison hits to apply.
-     */
-    async function applyPoisonHits(stacks) {
-        const poisonDamagePerTick = playerStats.totalDps * (1 / 3);
-        // This ensures all hits land within the 1-second game loop, speeding up with more stacks
-        // with a minimum delay to prevent them from being visually indistinguishable.
-        const delay = Math.max(50, 800 / stacks); 
-
-        for (let i = 0; i < stacks; i++) {
-            if (gameState.monster.hp <= 0) break; // Stop if monster is already dead
-
-            gameState.monster.hp -= poisonDamagePerTick;
-            ui.showPoisonDamagePopup(elements.popupContainerEl, poisonDamagePerTick);
-            ui.updateMonsterHealthBar(elements, gameState.monster);
-
-            if (gameState.monster.hp <= 0) break; // Stop after this hit if monster died
-
-            await new Promise(resolve => setTimeout(resolve, delay));
-        }
-
-        // Final check after all poison has been applied
-        if (gameState.monster.hp <= 0) {
-            handleMonsterDefeated();
-        }
-    }
-
     function gameLoop() {
         if (playerStats.totalDps > 0 && gameState.monster.hp > 0) {
-            attack(playerStats.totalDps, false); // The main DPS hit
-            
-            // --- NEW: Weaver's Envy Poison Logic ---
-            if (playerStats.poisonStacks > 0 && gameState.monster.hp > 0) {
-                applyPoisonHits(playerStats.poisonStacks);
-            }
-            // --- END of New Logic ---
-
+            attack(playerStats.totalDps, false);
             if (gameState.monster.hp <= 0) {
                 handleMonsterDefeated();
             }
@@ -996,30 +941,38 @@ document.addEventListener('DOMContentLoaded', () => {
             return valB - valA;
         });
 
-        // Re-calculate positions based on the new sorted order
+        // Re-calculate positions for the *entire sorted list* to ensure compaction.
         const placedGems = [];
+        // This is a crucial difference: we rebuild the positions for the *entire sorted array*,
+        // not just one gem. This guarantees the grid is always perfectly compacted and sorted.
         sortedGems.forEach(gem => {
             const spot = findNextAvailableSpot(gem.width, gem.height, placedGems);
             if (spot) {
                 gem.x = spot.x;
                 gem.y = spot.y;
-                placedGems.push(gem);
+                placedGems.push(gem); // Add to the temporary placement list for this operation
             } else {
-                gem.x = -1; // Should not happen, but a failsafe
+                gem.x = -1; 
                 gem.y = -1;
             }
         });
+
+        // Now, we need to update the main gameState.gems array to reflect this new sorted order
+        // and their new positions.
+        gameState.gems = sortedGems;
         
-        ui.renderGrid(elements.gemSlotsEl, sortedGems, {
+        ui.renderGrid(elements.gemSlotsEl, gameState.gems, {
             type: 'gem',
-            calculatePositions: false, // Positions are already calculated
+            calculatePositions: false, // Positions are now pre-calculated
             bulkCombineSelection,
             bulkCombineDeselectedIds,
             selectedGemId: selectedGemForSocketing ? selectedGemForSocketing.id : null
         });
     }
     // --- END OF NEW GEM SORTING LOGIC ---
-        function main() {
+
+
+    function main() {
         elements = ui.initDOMElements();
         
         const savedData = localStorage.getItem('idleRPGSaveData');
@@ -1076,7 +1029,7 @@ document.addEventListener('DOMContentLoaded', () => {
             gameState.equipment = gameState.presets[gameState.activePresetIndex].equipment;
         }
 
-        // --- FIX: One-time position calculation for gems from old saves. ---
+        // One-time position calculation for gems from old saves.
         const allGems = gameState.gems;
         const gemsToPlace = allGems.filter(g => g.x === undefined || g.y === undefined || g.x === -1);
         if (gemsToPlace.length > 0) {
@@ -1084,7 +1037,6 @@ document.addEventListener('DOMContentLoaded', () => {
             const alreadyPlacedGems = allGems.filter(g => g.x !== undefined && g.y !== undefined && g.x !== -1);
 
             gemsToPlace.forEach(gem => {
-                // Ensure gem has dimensions, default to 1x1 if missing
                 const gemWidth = gem.width || 1;
                 const gemHeight = gem.height || 1;
 
@@ -1092,11 +1044,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (spot) {
                     gem.x = spot.x;
                     gem.y = spot.y;
-                    alreadyPlacedGems.push(gem); // Add it to the list of placed items for the next iteration's collision check
+                    alreadyPlacedGems.push(gem); 
                 } else {
                     console.error("Migration failed: no space for gem", gem);
-                    // To prevent data loss, we'll just give it a placeholder position.
-                    // It will be invisible but still in the state.
                     gem.x = -1;
                     gem.y = -1;
                 }
@@ -1338,15 +1288,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     const firstEmptySocketIndex = item.sockets.indexOf(null);
 
                     if (firstEmptySocketIndex > -1) {
-                        // Update the game state
                         item.sockets[firstEmptySocketIndex] = gemToSocket;
                         gameState.gems = gameState.gems.filter(g => g.id !== gemToSocket.id);
-                        selectedGemForSocketing = null; // Clear the selection
-                        
-                        // Recalculate stats with the new gem
+                        selectedGemForSocketing = null;
+
                         recalculateStats();
 
-                        // Update the UI efficiently
                         logMessage(elements.gameLogEl, `Socketed ${gemToSocket.name} into ${item.name}.`, 'epic', isAutoScrollingLog);
                         refreshGemViewIfActive();
                         ui.updateItemInGrid(elements.inventorySlotsEl, item, { forceRedraw: true });
