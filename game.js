@@ -936,7 +936,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function applyWikiFilters() {
-        const highestUnlockedRealm = REALMS.slice().reverse().find(realm => gameState.maxLevel >= realm.requiredLevel);
+        const highestLevelEverReached = gameState.completedLevels.length > 0 ? Math.max(...gameState.completedLevels) : 0;
+        const highestUnlockedRealm = REALMS.slice().reverse().find(realm => highestLevelEverReached >= realm.requiredLevel);
         const maxRealmIndex = highestUnlockedRealm ? REALMS.indexOf(highestUnlockedRealm) : -1;
     
         let filtered = wikiData.filter(itemData => {
