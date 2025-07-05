@@ -308,6 +308,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     /**
      * Helper function to refresh the gem view if it's currently active.
+     * This now correctly re-sorts and re-compacts the grid.
      */
     function refreshGemViewIfActive() {
         if (elements.gemSlotsEl.closest('.view')?.classList.contains('active')) {
@@ -343,27 +344,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         
         if (result.droppedGems && result.droppedGems.length > 0) {
-            const newGemsToPlace = result.droppedGems.filter(droppedGem =>
-                gameState.gems.some(gemInState => gemInState.id === droppedGem.id)
-            );
-            
-            newGemsToPlace.forEach((gemToPlace, index) => {
-                const placedGems = gameState.gems.filter(g => g.x !== undefined && g.x !== -1);
-                const spot = findNextAvailableSpot(gemToPlace.width, gemToPlace.height, placedGems);
-                
-                if (spot) {
-                    const gemInState = gameState.gems.find(g => g.id === gemToPlace.id);
-                    if (gemInState) {
-                        gemInState.x = spot.x;
-                        gemInState.y = spot.y;
-                        ui.showItemDropAnimation(elements.popupContainerEl, gemInState, index);
-                    }
-                } else {
-                    logMessage(elements.gameLogEl, `Your gem pouch is full! A ${gemToPlace.name} was lost.`, 'rare', isAutoScrollingLog);
-                    gameState.gems = gameState.gems.filter(g => g.id !== gemToPlace.id);
-                }
+            result.droppedGems.forEach((gemToPlace, index) => {
+                ui.showItemDropAnimation(elements.popupContainerEl, gemToPlace, index);
             });
-            // NEW: After any gem drop, refresh the gem view if it's active.
             refreshGemViewIfActive();
         }
     
@@ -1295,7 +1278,6 @@ document.addEventListener('DOMContentLoaded', () => {
                         refreshGemViewIfActive();
                     }
                 } else {
-                    // This is the NEW, CORRECT block
                     if (selectedGemForSocketing && selectedGemForSocketing.id === item.id) {
                         selectedGemForSocketing = null;
                         logMessage(elements.gameLogEl, "Deselected gem.", '', isAutoScrollingLog);
@@ -1303,11 +1285,9 @@ document.addEventListener('DOMContentLoaded', () => {
                         selectedGemForSocketing = item;
                         logMessage(elements.gameLogEl, `Selected ${item.name}. Click an item with an empty socket to place it.`, 'uncommon', isAutoScrollingLog);
                     }
-                    // THIS LINE IS THE FIX:
                     ui.updateSocketingHighlights(elements, selectedGemForSocketing, gameState);
                 }
             } else {
-                // This is the NEW block
                 if (selectedGemForSocketing && item.sockets && item.sockets.includes(null)) {
                     const gemToSocket = selectedGemForSocketing;
                     const firstEmptySocketIndex = item.sockets.indexOf(null);
@@ -1317,19 +1297,19 @@ document.addEventListener('DOMContentLoaded', () => {
                         item.sockets[firstEmptySocketIndex] = gemToSocket;
                         gameState.gems = gameState.gems.filter(g => g.id !== gemToSocket.id);
                         selectedGemForSocketing = null; // Clear the selection
-
+                        
                         // Recalculate stats with the new gem
                         recalculateStats();
 
                         // Update the UI efficiently
                         logMessage(elements.gameLogEl, `Socketed ${gemToSocket.name} into ${item.name}.`, 'epic', isAutoScrollingLog);
                         refreshGemViewIfActive();
-                        ui.updateItemInGrid(elements.inventorySlotsEl, item, { forceRedraw: true }); // Redraw the item with the gem
-                        ui.updateSocketingHighlights(elements, null, gameState); // Clear all highlights
-                        ui.updateStatsPanel(elements, playerStats); // Update the stats display
+                        ui.updateItemInGrid(elements.inventorySlotsEl, item, { forceRedraw: true });
+                        ui.updateSocketingHighlights(elements, null, gameState);
+                        ui.updateStatsPanel(elements, playerStats);
                         
                         autoSave();
-                        return; // Important: exit the handler
+                        return;
                     }
                 }
     
@@ -1386,7 +1366,6 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!(slotElement instanceof HTMLElement)) return;
             const slotName = slotElement.id.replace('slot-', '');
             
-            // This is the NEW block
             if (selectedGemForSocketing) {
                 const item = gameState.equipment[slotName];
                 if (item && item.sockets && item.sockets.includes(null)) {
@@ -1394,23 +1373,20 @@ document.addEventListener('DOMContentLoaded', () => {
                     const firstEmptySocketIndex = item.sockets.indexOf(null);
 
                     if (firstEmptySocketIndex > -1) {
-                        // Update the game state
                         item.sockets[firstEmptySocketIndex] = gemToSocket;
                         gameState.gems = gameState.gems.filter(g => g.id !== gemToSocket.id);
-                        selectedGemForSocketing = null; // Clear the selection
+                        selectedGemForSocketing = null;
 
-                        // Recalculate stats with the new gem
                         recalculateStats();
 
-                        // Update the UI efficiently
                         logMessage(elements.gameLogEl, `Socketed ${gemToSocket.name} into ${item.name}.`, 'epic', isAutoScrollingLog);
                         refreshGemViewIfActive();
-                        ui.renderPaperdoll(elements, gameState); // Redraw the whole paperdoll (it's small and simple)
-                        ui.updateSocketingHighlights(elements, null, gameState); // Clear all highlights
-                        ui.updateStatsPanel(elements, playerStats); // Update the stats display
+                        ui.renderPaperdoll(elements, gameState);
+                        ui.updateSocketingHighlights(elements, null, gameState);
+                        ui.updateStatsPanel(elements, playerStats);
                         
                         autoSave();
-                        return; // Important: exit the handler
+                        return;
                     }
                 }
             }
@@ -1657,9 +1633,17 @@ document.addEventListener('DOMContentLoaded', () => {
                             ui.updateSocketingHighlights(elements, selectedGemForSocketing, gameState);
                             break;
                         case 'gems-view':
-                            // START of new logic for gems tab
-                            refreshGemViewIfActive(); // This populates and renders
-                            // END of new logic for gems tab
+                            // --- START OF THE FINAL FIX ---
+                            // Populate dropdown and render the grid without recalculating positions.
+                            ui.populateGemSortOptions(elements, gameState.gems, gemSortPreference);
+                            ui.renderGrid(elements.gemSlotsEl, gameState.gems, {
+                                type: 'gem',
+                                calculatePositions: false, // This is the key change for performance.
+                                bulkCombineSelection,
+                                bulkCombineDeselectedIds,
+                                selectedGemId: selectedGemForSocketing ? selectedGemForSocketing.id : null
+                            });
+                            // --- END OF THE FINAL FIX ---
                             populateBulkCombineControls();
                             ui.updateGemCraftingUI(elements, craftingGems, gameState);
                             break;

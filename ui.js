@@ -1625,6 +1625,26 @@ export function renderWikiResults(containerEl, wikiData, wikiFavorites, showOnly
         dataToRender = wikiData.filter(itemData => wikiFavorites.includes(itemData.id));
     }
 
+    // --- START OF SORTING FIX ---
+    dataToRender.sort((a, b) => {
+        // Helper function to find the minimum level an item can be obtained at.
+        const getMinLevel = (itemData) => {
+            if (!itemData.dropSources || itemData.dropSources.length === 0) {
+                // If an item has no drop source, push it to the end of the list.
+                return Infinity;
+            }
+            // Find the minimum level among all possible drop sources.
+            return Math.min(...itemData.dropSources.map(source => source.level));
+        };
+
+        const minLevelA = getMinLevel(a);
+        const minLevelB = getMinLevel(b);
+
+        // Sort by the minimum level in ascending order.
+        return minLevelA - minLevelB;
+    });
+    // --- END OF SORTING FIX ---
+
     if (dataToRender.length === 0) {
         const message = showOnlyFavorites ? "You haven't favorited any items yet." : "No items match your criteria.";
         containerEl.innerHTML = `<p style="text-align: center; margin-top: 20px;">${message}</p>`;

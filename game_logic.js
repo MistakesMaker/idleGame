@@ -168,7 +168,9 @@ export function dropLoot(currentMonster, gameState, playerStats) {
         const gem = {
             ...itemBaseToDrop,
             id: Date.now() + Math.random(),
-            baseId: itemBaseToDrop.id
+            baseId: itemBaseToDrop.id,
+            width: itemBaseToDrop.width || 1, // Default to 1x1 if not defined
+            height: itemBaseToDrop.height || 1
         };
 
         if (gameState.salvageFilter.autoSalvageGems) {
@@ -179,23 +181,37 @@ export function dropLoot(currentMonster, gameState, playerStats) {
         }
 
         if (!gameState.gems) gameState.gems = [];
-        
-        // Add the primary gem
-        gameState.gems.push(gem);
-        droppedGems.push(gem);
+        const gemsToPlace = [gem];
         
         // Check for the Gem Find (duplication) bonus
         if (playerStats.gemFindChance > 0 && Math.random() * 100 < playerStats.gemFindChance) {
             const duplicateGem = {
                 ...itemBaseToDrop,
                 id: Date.now() + Math.random() + 1,
-                baseId: itemBaseToDrop.id
+                baseId: itemBaseToDrop.id,
+                width: itemBaseToDrop.width || 1,
+                height: itemBaseToDrop.height || 1
             };
-            gameState.gems.push(duplicateGem);
-            droppedGems.push(duplicateGem); // Add the duplicate to the dropped list for UI feedback
+            gemsToPlace.push(duplicateGem);
             logMessages.push({ message: `Gem Find! You found a duplicate <span class="epic">${duplicateGem.name}</span>!`, class: '' });
             events.push('gemFind');
         }
+        
+        // --- START OF FIX: Assign position to new gems immediately ---
+        const placedGems = gameState.gems.filter(g => g.x !== undefined && g.x !== -1);
+        gemsToPlace.forEach(newGem => {
+            const spot = findNextAvailableSpot(newGem.width, newGem.height, placedGems);
+            if (spot) {
+                newGem.x = spot.x;
+                newGem.y = spot.y;
+                gameState.gems.push(newGem); // Add to state
+                droppedGems.push(newGem); // Add to result for animation
+                placedGems.push(newGem); // Add to temp list for this loop's collision check
+            } else {
+                 logMessages.push({ message: `Your gem pouch is full! A ${newGem.name} was lost.`, class: 'rare' });
+            }
+        });
+        // --- END OF FIX ---
         
         return { droppedItems, droppedGems, logMessages, events };
     }

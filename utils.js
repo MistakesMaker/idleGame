@@ -8,71 +8,79 @@ export const INVENTORY_GRID = {
 };
 
 /**
- * Checks if a proposed area in the grid is occupied by any existing items.
- * This is a helper function for findEmptySpot and is not exported.
- * @param {number} x - The starting column (0-indexed).
- * @param {number} y - The starting row (0-indexed).
- * @param {number} width - The width of the area to check.
- * @param {number} height - The height of the area to check.
- * @param {Array<object>} inventory - The player's inventory array.
- * @returns {boolean} True if any part of the area is occupied, false otherwise.
- */
-function isOccupied(x, y, width, height, inventory) {
-    // Check if the item goes out of the grid's right boundary
-    if (x + width > INVENTORY_GRID.WIDTH) {
-        return true;
-    }
-
-    // Check for collision with every other item in the inventory
-    for (const item of inventory) {
-        if (
-            item.x < x + width &&
-            item.x + item.width > x &&
-            item.y < y + height &&
-            item.y + item.height > y
-        ) {
-            return true; // Collision detected
-        }
-    }
-
-    return false; // No collision
-}
-
-/**
  * Finds the first available empty spot in the inventory grid for an item of a given size.
- * This function scans from the top-left, making it ideal for compacting inventory.
+ * This is the new, performant version of the function.
  * @param {number} itemWidth - The width of the item to place.
  * @param {number} itemHeight - The height of the item to place.
  * @param {Array<object>} inventory - The player's current inventory array.
  * @returns {{x: number, y: number}|null} The coordinates of the top-left corner of the empty spot, or null if no spot is found.
  */
 export function findEmptySpot(itemWidth, itemHeight, inventory) {
-    // Iterate through each cell of the grid as a potential top-left corner
-    for (let y = 0; y < INVENTORY_GRID.HEIGHT; y++) {
-        for (let x = 0; x <= INVENTORY_GRID.WIDTH - itemWidth; x++) {
-            // Check if this spot is free
-            if (!isOccupied(x, y, itemWidth, itemHeight, inventory)) {
-                return { x, y }; // Found a spot
+    if (inventory.length === 0) {
+        return { x: 0, y: 0 };
+    }
+
+    // Determine the max search height needed. No need to scan all 1000 rows.
+    let max_y = 0;
+    for (const item of inventory) {
+        max_y = Math.max(max_y, item.y + item.height);
+    }
+    const searchHeight = max_y + itemHeight;
+
+    // Create a 2D boolean map of the grid to mark occupied cells.
+    const gridMap = Array.from({ length: searchHeight }, () => Array(INVENTORY_GRID.WIDTH).fill(false));
+
+    // Mark all cells that are already occupied by existing items.
+    for (const item of inventory) {
+        // Ensure the item has valid coordinates before trying to map it.
+        if (typeof item.x === 'number' && typeof item.y === 'number' && item.x >= 0 && item.y >= 0) {
+            for (let i = item.y; i < item.y + item.height; i++) {
+                for (let j = item.x; j < item.x + item.width; j++) {
+                    if (i < searchHeight && j < INVENTORY_GRID.WIDTH) {
+                        gridMap[i][j] = true;
+                    }
+                }
             }
         }
     }
-    return null; // No spot found in the entire grid
+
+    // Now, iterate through the grid map to find an empty rectangle of the required size.
+    for (let y = 0; y < searchHeight; y++) {
+        for (let x = 0; x <= INVENTORY_GRID.WIDTH - itemWidth; x++) {
+            let isFound = true;
+            // Check if the area for the new item is free.
+            for (let i = y; i < y + itemHeight; i++) {
+                for (let j = x; j < x + itemWidth; j++) {
+                    // If we're out of bounds or the cell is taken, this spot is invalid.
+                    if (i >= searchHeight || j >= INVENTORY_GRID.WIDTH || gridMap[i][j]) {
+                        isFound = false;
+                        break;
+                    }
+                }
+                if (!isFound) break;
+            }
+
+            if (isFound) {
+                return { x, y }; // Found a spot.
+            }
+        }
+    }
+
+    return null; // No spot found.
 }
 
 
 /**
- * --- FIX: New function to find the next available spot at the end of the grid. ---
- * This provides a more natural drop behavior than findEmptySpot.
+ * --- FIX: This function now correctly calls the performant findEmptySpot. ---
+ * This provides a more natural drop behavior than the old, slow method.
  * @param {number} itemWidth The width of the item.
  * @param {number} itemHeight The height of the item.
  * @param {Array<object>} inventory The current inventory array.
  * @returns {{x: number, y: number}|null} The coordinates for the new spot.
  */
 export function findNextAvailableSpot(itemWidth, itemHeight, inventory) {
-    // This is the same as findEmptySpot because scanning from the top-left is the
-    // most intuitive way to append to a grid. The issue was elsewhere, but keeping
-    // this as a separate function allows for future behavior changes if needed..
-    // For now, it will just call findEmptySpot.
+    // We now just call the new, performant version of findEmptySpot.
+    // This is ideal for appending items to the grid efficiently.
     return findEmptySpot(itemWidth, itemHeight, inventory);
 }
 
