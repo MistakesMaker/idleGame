@@ -670,7 +670,9 @@ const undeadDesertItems = {
         type: 'platebody',
         icon: 'images/icons/apprentice_robe.png',
         width: 2, height: 3,
-        possibleStats: [ { key: STATS.GOLD_GAIN.key, min: 5, max: 25 } ]
+         canHaveSockets: true,
+        maxSockets: 2,
+        possibleStats: [ { key: STATS.GOLD_GAIN.key, min: 200, max: 500 } ]
     },
     MAGE_PANTS: {
         id: 'MAGE_PANTS',
