@@ -295,7 +295,8 @@ const greenMeadowsItems = {
         width: 2, height: 3,
         canHaveSockets: true,
         maxSockets: 1,
-        possibleStats: [ { key: STATS.DPS.key, min: 250, max: 1200 } ]
+        possibleStats: [ 
+        { key: STATS.CLICK_DAMAGE.key, min: 50, max: 150 }, ]
     },
 
     // --- Sub-Zone: Royal Vanguard (Boss Lvl 75) ---
@@ -1297,6 +1298,25 @@ const underdarkItems = {
         possibleStats: [
             { key: STATS.DPS.key, min: 1e6, max: 3e6 },
             { key: STATS.MAGIC_FIND.key, min: 10, max: 25 },
+        ]
+    },
+
+    // --- Sub-Zone: Noble District (Levels 651-699) ---
+    // (No new items are introduced here)
+
+    // --- Sub-Zone: Spider Queen's Lair (Boss Lvl 700) ---
+    THE_WEAVERS_ENVY: {
+        id: 'THE_WEAVERS_ENVY',
+        name: "The Weaver's Envy",
+        type: 'sword',
+        icon: 'images/icons/weavers_envy.png',
+        width: 2, height: 3,
+        isUnique: true,
+        uniqueEffect: 'weaversEnvy',
+        canHaveSockets: true,
+        maxSockets: 3,
+        possibleStats: [
+            { key: STATS.DPS.key, min: 70000, max: 100000 }, //muokkasin vaa jotenkin
         ]
     },
 

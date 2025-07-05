@@ -13,11 +13,10 @@
 export const UNIQUE_EFFECTS = {
     slimeSplit: {
         name: "Slime Split",
-        description: "On kill, has a 10% chance to spawn a Golden Slime which drops 3x gold."
+        description: "On kill, has a 10% chance to spawn a Golden Slime which drops 3x gold. Absorbing this item via Prestige permanently grants 10% chance to spawn a Golden Slime."
     },
-    // Future unique effects can be added here
-    // exampleEffect: {
-    //     name: "Example Effect Name",
-    //     description: "Does something amazing and unique."
-    // }
+    weaversEnvy: {
+        name: "Weaver's Envy",
+        description: "Your DPS hits inflict a stacking poison, dealing 33.33% of your total DPS per stack. This weapon grants 3 stacks. Absorbing this item via Prestige permanently grants +1 stack."
+    }
 };

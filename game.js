@@ -93,7 +93,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let isMapRenderPending = true; // Flag to control map re-rendering
 
     let currentMonster = { name: "Slime", data: MONSTERS.SLIME };
-    let playerStats = { baseClickDamage: 1, baseDps: 0, totalClickDamage: 1, totalDps: 0, bonusGold: 0, magicFind: 0 };
+    let playerStats = { baseClickDamage: 1, baseDps: 0, totalClickDamage: 1, totalDps: 0, bonusGold: 0, magicFind: 0, poisonStacks: 0 };
     let salvageMode = { active: false, selections: [] };
     let saveTimeout;
     let isShiftPressed = false;
@@ -284,6 +284,16 @@ document.addEventListener('DOMContentLoaded', () => {
         if (totalSynergyValue > 0) {
             finalClickDamage += finalDps * totalSynergyValue;
         }
+        
+        // --- NEW: Calculate Weaver's Envy poison stacks ---
+        let poisonStacks = 0;
+        const equippedSword = gameState.equipment.sword;
+        if (equippedSword && equippedSword.baseId === 'THE_WEAVERS_ENVY') {
+            poisonStacks += 3;
+        }
+        if (gameState.absorbedUniqueEffects && gameState.absorbedUniqueEffects['weaversEnvy']) {
+            poisonStacks += gameState.absorbedUniqueEffects['weaversEnvy'];
+        }
 
         playerStats = {
             baseClickDamage: newCalculatedStats.baseClickDamage,
@@ -299,6 +309,7 @@ document.addEventListener('DOMContentLoaded', () => {
             scrapBonus: 1 + (permanentUpgradeBonuses.scrap / 100),
             gemFindChance: permanentUpgradeBonuses.gemFind,
             legacyKeeperBonus: permanentUpgradeBonuses.legacyKeeper,
+            poisonStacks: poisonStacks, // Add the new stat here
         };
 
         if (socket && socket.connected) {
@@ -464,9 +475,44 @@ document.addEventListener('DOMContentLoaded', () => {
         ui.updateMonsterHealthBar(elements, gameState.monster);
     }
 
+    /**
+     * NEW: Helper function to apply poison damage ticks.
+     * @param {number} stacks - The number of poison hits to apply.
+     */
+    async function applyPoisonHits(stacks) {
+        const poisonDamagePerTick = playerStats.totalDps * (1 / 3);
+        // This ensures all hits land within the 1-second game loop, speeding up with more stacks
+        // with a minimum delay to prevent them from being visually indistinguishable.
+        const delay = Math.max(50, 800 / stacks); 
+
+        for (let i = 0; i < stacks; i++) {
+            if (gameState.monster.hp <= 0) break; // Stop if monster is already dead
+
+            gameState.monster.hp -= poisonDamagePerTick;
+            ui.showPoisonDamagePopup(elements.popupContainerEl, poisonDamagePerTick);
+            ui.updateMonsterHealthBar(elements, gameState.monster);
+
+            if (gameState.monster.hp <= 0) break; // Stop after this hit if monster died
+
+            await new Promise(resolve => setTimeout(resolve, delay));
+        }
+
+        // Final check after all poison has been applied
+        if (gameState.monster.hp <= 0) {
+            handleMonsterDefeated();
+        }
+    }
+
     function gameLoop() {
         if (playerStats.totalDps > 0 && gameState.monster.hp > 0) {
-            attack(playerStats.totalDps, false);
+            attack(playerStats.totalDps, false); // The main DPS hit
+            
+            // --- NEW: Weaver's Envy Poison Logic ---
+            if (playerStats.poisonStacks > 0 && gameState.monster.hp > 0) {
+                applyPoisonHits(playerStats.poisonStacks);
+            }
+            // --- END of New Logic ---
+
             if (gameState.monster.hp <= 0) {
                 handleMonsterDefeated();
             }
@@ -972,9 +1018,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
     // --- END OF NEW GEM SORTING LOGIC ---
-
-
-    function main() {
+        function main() {
         elements = ui.initDOMElements();
         
         const savedData = localStorage.getItem('idleRPGSaveData');
