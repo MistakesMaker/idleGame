@@ -147,9 +147,10 @@ const greenMeadowsMonsters = {
     GRIFFIN_CHICK: {
         name: 'Griffin Chick',
         image: 'images/monsters/griffin_chick.png',
-        dropChance: 25,
+        dropChance: 40,
         // MODIFIED!
         lootTable: [
+            { item: ITEMS.KNIGHTS_PLATELEGS, weight: 1}, //added clcik dmg pants
             { item: ITEMS.AMULET_OF_POWER, weight: 1 },
             { item: ITEMS.RING_OF_WEALTH, weight: 1 },
             { item: ITEMS.HUNTERS_MEDALLION, weight: 2 }, // NEW!

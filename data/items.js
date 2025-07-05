@@ -295,7 +295,8 @@ const greenMeadowsItems = {
         width: 2, height: 3,
         canHaveSockets: true,
         maxSockets: 1,
-        possibleStats: [ { key: STATS.DPS.key, min: 250, max: 1200 } ]
+        possibleStats: [ 
+        { key: STATS.CLICK_DAMAGE.key, min: 50, max: 150 }, ]
     },
 
     // --- Sub-Zone: Royal Vanguard (Boss Lvl 75) ---
