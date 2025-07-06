@@ -117,7 +117,7 @@ export const REALMS = [
         zones: {
              "crystal_caves": {
                 name: "Crystal Caverns",
-                mapImage: "images/map_caves_zoomed.png",
+                mapImage: "images/backgrounds/sub_zone/map_caves_zoomed.png",
                 monsterAreaBg: "images/backgrounds/bg_caves.png",
                 coords: { top: '70%', left: '25%' },
                 icon: 'images/icons/ring.png',
@@ -138,7 +138,7 @@ export const REALMS = [
             },
             "fungal_forest": {
                 name: "Fungal Forest",
-                mapImage: "images/map_fungal_zoomed.png",
+                mapImage: "images/backgrounds/sub_zone/map_fungal_zoomed.png",
                 monsterAreaBg: "images/backgrounds/bg_fungal.png",
                 coords: { top: '40%', left: '50%' },
                 icon: 'images/icons/necklace.png',
@@ -159,7 +159,7 @@ export const REALMS = [
             },
             "drow_city": {
                 name: "Drow City",
-                mapImage: "images/map_drow_zoomed.png",
+                mapImage: "images/backgrounds/sub_zone/map_drow_zoomed.png",
                 monsterAreaBg: "images/backgrounds/bg_drow.png",
                 coords: { top: '25%', left: '75%' },
                 icon: 'images/icons/belt.png',
