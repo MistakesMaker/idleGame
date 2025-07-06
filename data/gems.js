@@ -4,23 +4,24 @@
 * GEM DEFINITION GUIDE
 *
 * These are the "base" gems that drop from monsters.
-* They are all Tier 1 and only have a single stat.
-* Fusing them creates new, multi-stat gems.
+* Tier 1 gems are common, while Tier 2 gems start dropping in later-game zones.
+* Fusing gems creates new, more powerful multi-stat gems.
 *
 * id: A unique key for this gem base.
 * name: The display name of the base gem.
-* type: The general category, used for the name (e.g., a "Ruby" is a T1 Gem).
-* tier: All base gems are Tier 1.
+* type: The general category (e.g., a "Ruby" is a T1 Gem).
+* tier: The power level of the gem.
 * icon: The path to the gem's image.
-* width: The item's width in grid cells.
-* height: The item's height in grid cells.
-* stat & value: The single stat this base gem provides.
+* width/height: The item's size in grid cells.
+* stats/synergy: The bonus the gem provides.
 */
 
 import { STATS } from './stat_pools.js';
 
 export const GEMS = {
-    // These are now considered "ingredient" gems of T1
+    // ===================================
+    // --- TIER 1 GEMS (Levels 1-400) ---
+    // ===================================
     BASE_RUBY: {
         id: 'BASE_RUBY',
         name: 'T1 Gem (Ruby)',
@@ -69,6 +70,62 @@ export const GEMS = {
             source: 'dps',
             target: 'clickDamage',
             value: 0.01
+        }
+    },
+
+    // ================================================
+    // --- TIER 2 GEMS (Drops starting in Levels 401+) ---
+    // These are single-stat T2 gems that can drop directly,
+    // giving players a head start on crafting.
+    // ================================================
+    BASE_RUBY_T2: {
+        id: 'BASE_RUBY_T2',
+        name: 'T2 Fused Gem',
+        type: 'ruby',
+        tier: 2,
+        icon: 'images/gems/fused_t2.png',
+        width: 1, height: 1,
+        stats: { [STATS.CLICK_DAMAGE.key]: 500 } // 2x T1
+    },
+    BASE_SAPPHIRE_T2: {
+        id: 'BASE_SAPPHIRE_T2',
+        name: 'T2 Fused Gem',
+        type: 'sapphire',
+        tier: 2,
+        icon: 'images/gems/fused_t2.png',
+        width: 1, height: 1,
+        stats: { [STATS.DPS.key]: 2000 } // 2x T1
+    },
+    BASE_EMERALD_T2: {
+        id: 'BASE_EMERALD_T2',
+        name: 'T2 Fused Gem',
+        type: 'emerald',
+        tier: 2,
+        icon: 'images/gems/fused_t2.png',
+        width: 1, height: 1,
+        stats: { [STATS.GOLD_GAIN.key]: 10 } // 2x T1
+    },
+    BASE_TOPAZ_T2: {
+        id: 'BASE_TOPAZ_T2',
+        name: 'T2 Fused Gem',
+        type: 'topaz',
+        tier: 2,
+        icon: 'images/gems/fused_t2.png',
+        width: 1, height: 1,
+        stats: { [STATS.MAGIC_FIND.key]: 1.0 } // 2x T1
+    },
+    BASE_AMETHYST_T2: {
+        id: 'BASE_AMETHYST_T2',
+        name: 'T2 Fused Gem',
+        type: 'amethyst',
+        tier: 2,
+        isUnique: true,
+        icon: 'images/gems/fused_t2.png',
+        width: 1, height: 1,
+        synergy: {
+            source: 'dps',
+            target: 'clickDamage',
+            value: 0.02 // 2x T1
         }
     },
 };

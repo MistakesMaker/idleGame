@@ -122,18 +122,14 @@ export const REALMS = [
                 coords: { top: '70%', left: '25%' },
                 icon: 'images/icons/crystal_caves.png',
                 subZones: {
-                    // --- Sub-Zone: Glimmering Path (Levels 401-424) ---
-                    "glimmering_path": { name: "Glimmering Path", levelRange: [401, 424], monsterPool: [MONSTERS.CRYSTAL_SPIDER, MONSTERS.SHARD_SLIME], coords: {top: '80%', left: '20%'}, icon: 'images/icons/glimmering_path.png' },
-                    // --- Sub-Zone: Crystal Golem (Boss Lvl 425) ---
+                    "glimmering_path": { name: "Glimmering Path", levelRange: [401, 424], monsterPool: [MONSTERS.CRYSTAL_SPIDER, MONSTERS.SHARD_SLIME, MONSTERS.CRYSTAL_SCUTTLER], coords: {top: '80%', left: '20%'}, icon: 'images/icons/glimmering_path.png' },
                     "crystal_golem": { name: "Crystal Golem", levelRange: [425, 425], monsterPool: [MONSTERS.CRYSTAL_GOLEM], coords: {top: '80%', left: '50%'}, isBoss: true, icon: 'images/icons/crystal_golem.png' },
-                    // --- Sub-Zone: Resonant Tunnels (Levels 426-449) ---
-                    "resonant_tunnels": { name: "Resonant Tunnels", levelRange: [426, 449], monsterPool: [MONSTERS.DEEP_GNOME_MINER, MONSTERS.CAVE_LURKER], coords: {top: '80%', left: '80%'}, icon: 'images/icons/resonant_tunnels.png' },
-                    // --- Sub-Zone: Crystal Guardian's Lair (Boss Lvl 450) ---
+                    "resonant_tunnels": { name: "Resonant Tunnels", levelRange: [426, 449], monsterPool: [MONSTERS.DEEP_GNOME_MINER, MONSTERS.CAVE_LURKER, MONSTERS.ECHO_WISP], coords: {top: '80%', left: '80%'}, icon: 'images/icons/resonant_tunnels.png' },
                     "crystal_guardian_lair": { name: "Crystal Guardian's Lair", levelRange: [450, 450], monsterPool: [MONSTERS.CRYSTALLINE_ELEMENTAL], coords: {top: '50%', left: '75%'}, isBoss: true, icon: 'images/icons/crystal_guardian_lair.png' },
-                    // --- Sub-Zone: Deep Caverns (Levels 451-499) ---
-                    "deep_caverns": { name: "Deep Caverns", levelRange: [451, 499], monsterPool: [MONSTERS.CAVE_LURKER, MONSTERS.DEEP_GNOME_MINER, MONSTERS.CRYSTAL_SPIDER], coords: {top: '50%', left: '45%'}, icon: 'images/icons/deep_caverns.png' },
-                    // --- Sub-Zone: Crystal Heart (Boss Lvl 500) ---
-                    "crystal_heart": { name: "Crystal Heart", levelRange: [500, 500], monsterPool: [MONSTERS.CRYSTAL_KING], coords: {top: '15%', left: '70%'}, isBoss: true, icon: 'images/icons/crystal_heart.png' }
+                    "deep_caverns": { name: "Deep Caverns", levelRange: [451, 474], monsterPool: [MONSTERS.DEEP_GNOME_MINER, MONSTERS.ROCKWORM, MONSTERS.CAVERN_PROWLER], coords: {top: '50%', left: '45%'}, icon: 'images/icons/deep_caverns.png' },
+                    "gemstone_hoard": { name: "Gemstone Hoard", levelRange: [475, 475], monsterPool: [MONSTERS.GEMSTONE_HYDRA], coords: { top: '50%', left: '15%' }, isBoss: true, icon: 'images/icons/gemstone_hoard.png' },
+                    "crystalline_heart": { name: "Crystalline Heart", levelRange: [476, 499], monsterPool: [MONSTERS.ROCKWORM, MONSTERS.QUARTZ_BEAST, MONSTERS.LIVING_CRYSTAL], coords: { top: '20%', left: '30%' }, icon: 'images/icons/crystalline_heart.png' },
+                    "crystal_king_throne": { name: "Crystal King's Throne", levelRange: [500, 500], monsterPool: [MONSTERS.CRYSTAL_KING], coords: {top: '15%', left: '70%'}, isBoss: true, icon: 'images/icons/crystal_king.png' }
                 }
             },
             "fungal_forest": {
@@ -143,17 +139,13 @@ export const REALMS = [
                 coords: { top: '40%', left: '50%' },
                 icon: 'images/icons/fungal_forest.png',
                 subZones: {
-                    // --- Sub-Zone: Spore Meadows (Levels 501-524) ---
-                    "spore_meadows": { name: "Spore Meadows", levelRange: [501, 524], monsterPool: [MONSTERS.MYCONID_SPOREKEEPER, MONSTERS.SPORE_BAT], coords: {top: '80%', left: '20%'}, icon: 'images/icons/spore_meadows.png' },
-                    // --- Sub-Zone: Fungal Guardian (Boss Lvl 525) ---
+                    "spore_meadows": { name: "Spore Meadows", levelRange: [501, 524], monsterPool: [MONSTERS.MYCONID_SPOREKEEPER, MONSTERS.SPORE_BAT, MONSTERS.FUNGAL_HULK], coords: {top: '80%', left: '20%'}, icon: 'images/icons/spore_meadows.png' },
                     "fungal_guardian": { name: "Fungal Guardian", levelRange: [525, 525], monsterPool: [MONSTERS.FUNGAL_BEHEMOTH], coords: {top: '80%', left: '50%'}, isBoss: true, icon: 'images/icons/fungal_guardian.png' },
-                    // --- Sub-Zone: Mycelial Network (Levels 526-549) ---
-                    "mycelial_network": { name: "Mycelial Network", levelRange: [526, 549], monsterPool: [MONSTERS.FUNGAL_CRAWLER, MONSTERS.SHRIEKER], coords: {top: '80%', left: '80%'}, icon: 'images/icons/mycelial_network.png' },
-                    // --- Sub-Zone: Fungal Behemoth's Cave (Boss Lvl 550) ---
-                    "fungal_behemoth_cave": { name: "Fungal Behemoth's Cave", levelRange: [550, 550], monsterPool: [MONSTERS.GAS_SPORE], coords: {top: '50%', left: '75%'}, isBoss: true, icon: 'images/icons/fungal_behemoth_cave.png' },
-                    // --- Sub-Zone: Shrieking Hollows (Levels 551-599) ---
-                    "shrieking_hollows": { name: "Shrieking Hollows", levelRange: [551, 599], monsterPool: [MONSTERS.SHRIEKER, MONSTERS.MYCONID_SPOREKEEPER, MONSTERS.FUNGAL_CRAWLER], coords: {top: '50%', left: '45%'}, icon: 'images/icons/shrieking_hollows.png' },
-                    // --- Sub-Zone: The Great Fungus (Boss Lvl 600) ---
+                    "mycelial_network": { name: "Mycelial Network", levelRange: [526, 549], monsterPool: [MONSTERS.FUNGAL_CRAWLER, MONSTERS.SHRIEKER, MONSTERS.MYCELIAL_WEBBER], coords: {top: '80%', left: '80%'}, icon: 'images/icons/mycelial_network.png' },
+                    "gas_spore_grotto": { name: "Gas Spore Grotto", levelRange: [550, 550], monsterPool: [MONSTERS.GAS_SPORE], coords: {top: '50%', left: '75%'}, isBoss: true, icon: 'images/icons/fungal_behemoth_cave.png' },
+                    "shrieking_hollows": { name: "Shrieking Hollows", levelRange: [551, 574], monsterPool: [MONSTERS.SHRIEKER, MONSTERS.MIND_FLAYER_SPORE, MONSTERS.CORRUPTED_DRYAD], coords: {top: '50%', left: '45%'}, icon: 'images/icons/shrieking_hollows.png' },
+                    "mycelial_core": { name: "Mycelial Core", levelRange: [575, 575], monsterPool: [MONSTERS.FUNGAL_TITAN], coords: { top: '50%', left: '15%' }, isBoss: true, icon: 'images/icons/mycelial_core.png' },
+                    "heart_of_the_forest": { name: "Heart of the Forest", levelRange: [576, 599], monsterPool: [MONSTERS.FUNGAL_HULK, MONSTERS.SPORE_WOLF, MONSTERS.MANDRAGORA], coords: { top: '20%', left: '30%' }, icon: 'images/icons/heart_of_the_forest.png' },
                     "the_great_fungus": { name: "The Great Fungus", levelRange: [600, 600], monsterPool: [MONSTERS.THE_GREAT_MYCELIUM], coords: {top: '15%', left: '70%'}, isBoss: true, icon: 'images/icons/the_great_fungus.png' }
                 }
             },
@@ -164,17 +156,13 @@ export const REALMS = [
                 coords: { top: '25%', left: '75%' },
                 icon: 'images/icons/drow_city.png',
                 subZones: {
-                    // --- Sub-Zone: Outer Spires (Levels 601-624) ---
-                    "outer_spires": { name: "Outer Spires", levelRange: [601, 624], monsterPool: [MONSTERS.DROW_WARRIOR, MONSTERS.GIANT_CAVE_SPIDER], coords: {top: '80%', left: '20%'}, icon: 'images/icons/outer_spires.png' },
-                    // --- Sub-Zone: Drow Patrol (Boss Lvl 625) ---
+                    "outer_spires": { name: "Outer Spires", levelRange: [601, 624], monsterPool: [MONSTERS.DROW_WARRIOR, MONSTERS.GIANT_CAVE_SPIDER, MONSTERS.DROW_SCOUT], coords: {top: '80%', left: '20%'}, icon: 'images/icons/outer_spires.png' },
                     "drow_patrol": { name: "Drow Patrol", levelRange: [625, 625], monsterPool: [MONSTERS.DRIDER], coords: {top: '80%', left: '50%'}, isBoss: true, icon: 'images/icons/drow_patrol.png' },
-                    // --- Sub-Zone: Webbed Catacombs (Levels 626-649) ---
-                    "webbed_catacombs": { name: "Webbed Catacombs", levelRange: [626, 649], monsterPool: [MONSTERS.DROW_MAGE, MONSTERS.SHADOW_STALKER], coords: {top: '80%', left: '80%'}, icon: 'images/icons/webbed_catacombs.png' },
-                    // --- Sub-Zone: Drow Barracks (Boss Lvl 650) ---
+                    "webbed_catacombs": { name: "Webbed Catacombs", levelRange: [626, 649], monsterPool: [MONSTERS.DROW_MAGE, MONSTERS.SHADOW_STALKER, MONSTERS.PHASE_SPIDER], coords: {top: '80%', left: '80%'}, icon: 'images/icons/webbed_catacombs.png' },
                     "drow_barracks": { name: "Drow Barracks", levelRange: [650, 650], monsterPool: [MONSTERS.DROW_PRIESTESS], coords: {top: '50%', left: '75%'}, isBoss: true, icon: 'images/icons/drow_barracks.png' },
-                    // --- Sub-Zone: Noble District (Levels 651-699) ---
-                    "noble_district": { name: "Noble District", levelRange: [651, 699], monsterPool: [MONSTERS.DROW_WARRIOR, MONSTERS.DROW_MAGE, MONSTERS.SHADOW_STALKER], coords: {top: '50%', left: '45%'}, icon: 'images/icons/noble_district.png' },
-                    // --- Sub-Zone: Spider Queen's Lair (Boss Lvl 700) ---
+                    "noble_district": { name: "Noble District", levelRange: [651, 674], monsterPool: [MONSTERS.DROW_WARRIOR, MONSTERS.DROW_ELITE_GUARD, MONSTERS.DROW_SPELLWEAVER], coords: {top: '50%', left: '45%'}, icon: 'images/icons/noble_district.png' },
+                    "house_of_shadows": { name: "House of Shadows", levelRange: [675, 675], monsterPool: [MONSTERS.YOCHLOL], coords: { top: '50%', left: '15%' }, isBoss: true, icon: 'images/icons/house_of_shadows.png' },
+                    "matrons_court": { name: "Matron's Court", levelRange: [676, 699], monsterPool: [MONSTERS.DROW_ELITE_GUARD, MONSTERS.DROW_HIGH_PRIESTESS, MONSTERS.SPIDER_SWARM], coords: { top: '20%', left: '30%' }, icon: 'images/icons/matrons_court.png' },
                     "spider_queen_lair": { name: "Spider Queen's Lair", levelRange: [700, 700], monsterPool: [MONSTERS.SPIDER_QUEEN_MATRON], coords: {top: '15%', left: '70%'}, isBoss: true, icon: 'images/icons/spider_queen_lair.png' }
                 }
             },
@@ -185,11 +173,13 @@ export const REALMS = [
                 coords: { top: '15%', left: '85%' },
                 icon: 'images/icons/abyssal_rift.png',
                 subZones: {
-                    "chasm_descent": { name: "Chasm Descent", levelRange: [701, 724], monsterPool: [MONSTERS.SHADOW_FIEND, MONSTERS.ABYSSAL_LEECH], coords: {top: '80%', left: '20%'}, icon: 'images/icons/chasm_descent.png' },
+                    "chasm_descent": { name: "Chasm Descent", levelRange: [701, 724], monsterPool: [MONSTERS.SHADOW_FIEND, MONSTERS.ABYSSAL_LEECH, MONSTERS.WARPED_SOUL], coords: {top: '80%', left: '20%'}, icon: 'images/icons/chasm_descent.png' },
                     "demonic_gate": { name: "Demonic Gate", levelRange: [725, 725], monsterPool: [MONSTERS.DEMONIC_OVERSEER], coords: {top: '80%', left: '50%'}, isBoss: true, icon: 'images/icons/demonic_gate.png' },
-                    "fields_of_madness": { name: "Fields of Madness", levelRange: [726, 749], monsterPool: [MONSTERS.VOID_WRAITH, MONSTERS.SHADOW_FIEND], coords: {top: '80%', left: '80%'}, icon: 'images/icons/fields_of_madness.png' },
+                    "fields_of_madness": { name: "Fields of Madness", levelRange: [726, 749], monsterPool: [MONSTERS.VOID_WRAITH, MONSTERS.SOUL_EATER, MONSTERS.MIND_SHARD], coords: {top: '80%', left: '80%'}, icon: 'images/icons/fields_of_madness.png' },
                     "balors_roost": { name: "Balor's Roost", levelRange: [750, 750], monsterPool: [MONSTERS.BALOR], coords: {top: '50%', left: '75%'}, isBoss: true, icon: 'images/icons/balors_roost.png' },
-                    "heart_of_chaos": { name: "Heart of Chaos", levelRange: [751, 799], monsterPool: [MONSTERS.VOID_WRAITH, MONSTERS.ABYSSAL_LEECH], coords: {top: '50%', left: '45%'}, icon: 'images/icons/heart_of_chaos.png' },
+                    "heart_of_chaos": { name: "Heart of Chaos", levelRange: [751, 774], monsterPool: [MONSTERS.ABYSSAL_LEECH, MONSTERS.CHAOS_HOUND, MONSTERS.FLESH_GOLEM], coords: {top: '50%', left: '45%'}, icon: 'images/icons/heart_of_chaos.png' },
+                    "the_soul_well": { name: "The Soul Well", levelRange: [775, 775], monsterPool: [MONSTERS.ABYSSAL_TYRANT], coords: { top: '50%', left: '15%' }, isBoss: true, icon: 'images/icons/the_soul_well.png' },
+                    "the_brink": { name: "The Brink", levelRange: [776, 799], monsterPool: [MONSTERS.SOUL_EATER, MONSTERS.RIFT_STALKER, MONSTERS.CHAOS_BEAST], coords: { top: '20%', left: '30%' }, icon: 'images/icons/the_brink.png' },
                     "the_final_abyss": { name: "The Final Abyss", levelRange: [800, 800], monsterPool: [MONSTERS.MAW_OF_THE_ABYSS], coords: {top: '15%', left: '70%'}, isBoss: true, icon: 'images/icons/the_final_abyss.png' }
                 }
             }
