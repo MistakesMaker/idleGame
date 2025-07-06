@@ -1000,7 +1000,7 @@ export function createLootTableTooltipHTML(itemBase) {
 
     sortedPossibleStats.forEach(statInfo => {
         const statName = Object.values(STATS).find(s => s.key === statInfo.key)?.name || statInfo.key;
-        statsHTML += `<li>+ ${statInfo.min} - ${statInfo.max} ${statName}</li>`;
+        statsHTML += `<li>+ ${formatNumber(statInfo.min)} - ${formatNumber(statInfo.max)} ${statName}</li>`;
     });
     statsHTML += '</ul>';
 
@@ -1048,7 +1048,7 @@ export function createLootComparisonTooltipHTML(potentialItem, equippedItem, equ
 
     sortedPossibleStats.forEach(statInfo => {
         const statName = Object.values(STATS).find(s => s.key === statInfo.key)?.name || statInfo.key;
-        potentialStatsHTML += `<li>+ ${statInfo.min} - ${statInfo.max} ${statName}</li>`;
+        potentialStatsHTML += `<li>+ ${formatNumber(statInfo.min)} - ${formatNumber(statInfo.max)} ${statName}</li>`;
     });
     potentialStatsHTML += '</ul>';
     
@@ -1730,10 +1730,12 @@ function createWikiItemCardHTML(itemData, isFavorited) {
         }
     }
 
+    // --- START OF WIKI FIX ---
     itemBase.possibleStats?.forEach(stat => {
         const statName = Object.values(STATS).find(s => s.key === stat.key)?.name || stat.key;
-        statsHtml += `<li>+${stat.min} to ${stat.max} ${statName}</li>`;
+        statsHtml += `<li>+${formatNumber(stat.min)} to ${formatNumber(stat.max)} ${statName}</li>`;
     });
+    // --- END OF WIKI FIX ---
     
     if (itemBase.canHaveSockets && itemBase.maxSockets > 0) {
         statsHtml += `<li>Sockets: 0 - ${itemBase.maxSockets}</li>`;

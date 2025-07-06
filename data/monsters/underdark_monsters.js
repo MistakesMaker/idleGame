@@ -161,7 +161,7 @@ export const underdarkMonsters = {
         lootTable: [
             { item: ITEMS.MYCONID_KINGS_CROWN, weight: 10 },
             { item: ITEMS.GLOWCAP_RING, weight: 8 },
-            { item: GEMS.BASE_RUBY_T2, weight: 5 },
+            { item: GEMS.BASE_RUBY_T2, weight: 82 },
         ]
     },
 
@@ -192,8 +192,8 @@ export const underdarkMonsters = {
         isBoss: true,
         dropChance: 100,
         lootTable: [
-            { item: ITEMS.FUNGAL_SPIRE, weight: 10 },
-            { item: GEMS.BASE_SAPPHIRE_T2, weight: 5 },
+            { item: ITEMS.FUNGAL_SPIRE, weight: 3 },
+            { item: GEMS.BASE_SAPPHIRE_T2, weight: 97 },
         ]
     },
 
@@ -201,13 +201,13 @@ export const underdarkMonsters = {
     MIND_FLAYER_SPORE: {
         name: 'Mind Flayer Spore',
         image: 'images/monsters/mind_flayer_spore.png',
-        dropChance: 30,
+        dropChance: 20,
         lootTable: [ { item: ITEMS.MIND_FLAYER_CIRCLET, weight: 1 } ]
     },
     CORRUPTED_DRYAD: {
         name: 'Corrupted Dryad',
         image: 'images/monsters/corrupted_dryad.png',
-        dropChance: 32,
+        dropChance: 20,
         lootTable: [ { item: ITEMS.GLIMMERWEAVE_ROBES, weight: 1 } ]
     },
     // Shrieker also appears here.
@@ -219,8 +219,8 @@ export const underdarkMonsters = {
         isBoss: true,
         dropChance: 100,
         lootTable: [
-            { item: ITEMS.TITANS_FUNGAL_HEART, weight: 10 },
-            { item: GEMS.BASE_EMERALD_T2, weight: 5 },
+            { item: ITEMS.TITANS_FUNGAL_HEART, weight: 2 },
+            { item: GEMS.BASE_EMERALD_T2, weight: 50 },
         ]
     },
 
@@ -247,7 +247,7 @@ export const underdarkMonsters = {
         dropChance: 100,
         lootTable: [
             { item: ITEMS.GREAT_FUNGUS_HEART, weight: 10 },
-            { item: GEMS.BASE_AMETHYST_T2, weight: 3 },
+            { item: GEMS.BASE_AMETHYST_T2, weight: 90 },
         ]
     },
 
