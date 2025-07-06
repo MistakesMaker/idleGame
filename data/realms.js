@@ -16,32 +16,32 @@ export const REALMS = [
                 icon: 'images/icons/green_meadows.png',
                 subZones: {
                     // --- Sub-Zone: Verdant Fields (Levels 1-24) ---
-                    "verdant_fields": { name: "Verdant Fields", levelRange: [1, 24], monsterPool: [MONSTERS.SLIME, MONSTERS.GOBLIN, MONSTERS.WILD_BOAR], coords: {top: '80%', left: '15%'}, icon: 'images/icons/verdant_fields.png' },
+                    "verdant_fields": { name: "Verdant Fields", levelRange: [1, 24], monsterPool: [MONSTERS.SLIME, MONSTERS.GOBLIN, MONSTERS.WILD_BOAR], coords: {top: '85%', left: '10%'}, icon: 'images/icons/verdant_fields.png' },
                     // --- Sub-Zone: General's Outpost (Boss Lvl 25) ---
                     "general_outpost": { name: "General's Outpost", levelRange: [25, 25], monsterPool: [MONSTERS.SLIME_GENERAL], coords: {top: '60%', left: '25%'}, isBoss: true, icon: 'images/icons/general_outpost.png' },
                     // --- Sub-Zone: Whispering Woods (Levels 26-49) ---
-                    "whispering_woods": { name: "Whispering Woods", levelRange: [26, 49], monsterPool: [MONSTERS.WOLF, MONSTERS.BAT, MONSTERS.GIANT_SPIDER], coords: {top: '75%', left: '45%'}, icon: 'images/icons/whispering_woods.png' },
+                    "whispering_woods": { name: "Whispering Woods", levelRange: [26, 49], monsterPool: [MONSTERS.WOLF, MONSTERS.BAT, MONSTERS.GIANT_SPIDER], coords: {top: '83%', left: '58%'}, icon: 'images/icons/whispering_woods.png' },
                     // --- Sub-Zone: Guardian's Knoll (Boss Lvl 50) ---
-                    "guardian_knoll": { name: "Guardian's Knoll", levelRange: [50, 50], monsterPool: [MONSTERS.DUNGEON_GUARDIAN], coords: {top: '55%', left: '60%'}, isBoss: true, icon: 'images/icons/guardian_knoll.png' },
+                    "guardian_knoll": { name: "Guardian's Knoll", levelRange: [50, 50], monsterPool: [MONSTERS.DUNGEON_GUARDIAN], coords: {top: '48%', left: '50%'}, isBoss: true, icon: 'images/icons/guardian_knoll.png' },
                     // --- Sub-Zone: Sun-dappled Hills (Levels 51-74) ---
-                    "sun_dappled_hills": { name: "Sun-dappled Hills", levelRange: [51, 74], monsterPool: [MONSTERS.TREANT_SPROUT, MONSTERS.HOBGOBLIN, MONSTERS.FOREST_SPRITE], coords: {top: '35%', left: '40%'}, icon: 'images/icons/sun_dappled_hills.png' },
+                    "sun_dappled_hills": { name: "Sun-dappled Hills", levelRange: [51, 74], monsterPool: [MONSTERS.TREANT_SPROUT, MONSTERS.HOBGOBLIN, MONSTERS.FOREST_SPRITE], coords: {top: '15%', left: '50%'}, icon: 'images/icons/sun_dappled_hills.png' },
                     // --- Sub-Zone: Royal Vanguard (Boss Lvl 75) ---
-                    "royal_vanguard": { name: "Royal Vanguard", levelRange: [75, 75], monsterPool: [MONSTERS.ROYAL_GRIFFIN], coords: {top: '20%', left: '60%'}, isBoss: true, icon: 'images/icons/royal_vanguard.png' },
+                    "royal_vanguard": { name: "Royal Vanguard", levelRange: [75, 75], monsterPool: [MONSTERS.ROYAL_GRIFFIN], coords: {top: '35%', left: '68%'}, isBoss: true, icon: 'images/icons/royal_vanguard.png' },
                     // --- Sub-Zone: Royal Hunting Grounds (Levels 76-99) ---
-                    "royal_hunting_grounds": { name: "Royal Hunting Grounds", levelRange: [76, 99], monsterPool: [MONSTERS.GRIFFIN_CHICK, MONSTERS.HOBGOBLIN, MONSTERS.FOREST_SPRITE], coords: {top: '30%', left: '85%'}, icon: 'images/icons/royal_hunting_grounds.png' },
+                    "royal_hunting_grounds": { name: "Royal Hunting Grounds", levelRange: [76, 99], monsterPool: [MONSTERS.GRIFFIN_CHICK, MONSTERS.HOBGOBLIN, MONSTERS.FOREST_SPRITE], coords: {top: '60%', left: '88%'}, icon: 'images/icons/royal_hunting_grounds.png' },
                     // --- Sub-Zone: King's Castle (Boss Lvl 100) ---
-                    "kings_castle": { name: "King's Castle", levelRange: [100, 100], monsterPool: [MONSTERS.KING_OF_SLIMES], coords: {top: '10%', left: '75%'}, isBoss: true, icon: 'images/icons/kings_castle.png' }
+                    "kings_castle": { name: "King's Castle", levelRange: [100, 100], monsterPool: [MONSTERS.KING_OF_SLIMES], coords: {top: '20%', left: '85%'}, isBoss: true, icon: 'images/icons/kings_castle.png' }
                 }
             },
             "orc_volcano": {
                 name: "Orc Volcano",
                 mapImage: "images/backgrounds/sub_zone/map_volcano_zoomed.png",
                 monsterAreaBg: "images/backgrounds/bg_orc_volcano.png",
-                coords: { top: '30%', left: '38%' },
+                coords: { top: '41%', left: '42%' },
                 icon: 'images/icons/orc_volcano.png',
                 subZones: {
                     // --- Sub-Zone: Ashfall Plains (Levels 101-124) ---
-                    "ashfall_plains": { name: "Ashfall Plains", levelRange: [101, 124], monsterPool: [MONSTERS.ORC, MONSTERS.MAGMA_SLIME], coords: {top: '80%', left: '20%'}, icon: 'images/icons/ashfall_plains.png' },
+                    "ashfall_plains": { name: "Ashfall Plains", levelRange: [101, 124], monsterPool: [MONSTERS.ORC, MONSTERS.MAGMA_SLIME], coords: {top: '85%', left: '10%'}, icon: 'images/icons/ashfall_plains.png' },
                     // --- Sub-Zone: Orc Watchtower (Boss Lvl 125) ---
                     "orc_watchtower": { name: "Orc Watchtower", levelRange: [125, 125], monsterPool: [MONSTERS.GIANT_ORC], coords: {top: '80%', left: '50%'}, isBoss: true, icon: 'images/icons/orc_watchtower.png' },
                     // --- Sub-Zone: Scorched Path (Levels 126-149) ---
@@ -87,7 +87,7 @@ export const REALMS = [
                 name: "Final Dungeon",
                 mapImage: "images/backgrounds/sub_zone/map_dungeon_zoomed.png",
                 monsterAreaBg: "images/backgrounds/bg_final_dungeon.png",
-                coords: { top: '22%', left: '78%' },
+                coords: { top: '38%', left: '78%' },
                 icon: 'images/icons/final_dungeon.png',
                 subZones: {
                     // --- Sub-Zone: The Gatehouse (Levels 301-324) ---
@@ -119,7 +119,7 @@ export const REALMS = [
                 name: "Crystal Caverns",
                 mapImage: "images/backgrounds/sub_zone/map_caves_zoomed.png",
                 monsterAreaBg: "images/backgrounds/bg_caves.png",
-                coords: { top: '70%', left: '25%' },
+                coords: { top: '30%', left: '25%' },
                 icon: 'images/icons/crystal_caves.png',
                 subZones: {
                     "glimmering_path": { name: "Glimmering Path", levelRange: [401, 424], monsterPool: [MONSTERS.CRYSTAL_SPIDER, MONSTERS.SHARD_SLIME, MONSTERS.CRYSTAL_SCUTTLER], coords: {top: '80%', left: '20%'}, icon: 'images/icons/glimmering_path.png' },
@@ -136,7 +136,7 @@ export const REALMS = [
                 name: "Fungal Forest",
                 mapImage: "images/backgrounds/sub_zone/map_fungal_zoomed.png",
                 monsterAreaBg: "images/backgrounds/bg_fungal.png",
-                coords: { top: '40%', left: '50%' },
+                coords: { top: '30%', left: '60%' },
                 icon: 'images/icons/fungal_forest.png',
                 subZones: {
                     "spore_meadows": { name: "Spore Meadows", levelRange: [501, 524], monsterPool: [MONSTERS.MYCONID_SPOREKEEPER, MONSTERS.SPORE_BAT, MONSTERS.FUNGAL_HULK], coords: {top: '80%', left: '20%'}, icon: 'images/icons/spore_meadows.png' },
@@ -153,7 +153,7 @@ export const REALMS = [
                 name: "Drow City",
                 mapImage: "images/backgrounds/sub_zone/map_drow_zoomed.png",
                 monsterAreaBg: "images/backgrounds/bg_drow.png",
-                coords: { top: '25%', left: '75%' },
+                coords: { top: '85%', left: '65%' },
                 icon: 'images/icons/drow_city.png',
                 subZones: {
                     "outer_spires": { name: "Outer Spires", levelRange: [601, 624], monsterPool: [MONSTERS.DROW_WARRIOR, MONSTERS.GIANT_CAVE_SPIDER, MONSTERS.DROW_SCOUT], coords: {top: '80%', left: '20%'}, icon: 'images/icons/outer_spires.png' },
@@ -170,7 +170,7 @@ export const REALMS = [
                 name: "Abyssal Rift",
                 mapImage: "images/backgrounds/sub_zone/map_abyss_zoomed.png",
                 monsterAreaBg: "images/backgrounds/bg_abyss.png",
-                coords: { top: '15%', left: '85%' },
+                coords: { top: '55%', left: '53%' },
                 icon: 'images/icons/abyssal_rift.png',
                 subZones: {
                     "chasm_descent": { name: "Chasm Descent", levelRange: [701, 724], monsterPool: [MONSTERS.SHADOW_FIEND, MONSTERS.ABYSSAL_LEECH, MONSTERS.WARPED_SOUL], coords: {top: '80%', left: '20%'}, icon: 'images/icons/chasm_descent.png' },
