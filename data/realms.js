@@ -26,7 +26,7 @@ export const REALMS = [
                     // --- Sub-Zone: Sun-dappled Hills (Levels 51-74) ---
                     "sun_dappled_hills": { name: "Sun-dappled Hills", levelRange: [51, 74], monsterPool: [MONSTERS.TREANT_SPROUT, MONSTERS.HOBGOBLIN, MONSTERS.FOREST_SPRITE], coords: {top: '35%', left: '40%'} },
                     // --- Sub-Zone: Royal Vanguard (Boss Lvl 75) ---
-                    "royal_vanguard": { name: "Royal Vanguard", levelRange: [75, 75], monsterPool: [MONSTERS.ROYAL_GRIFFIN], coords: {top: '20%', left: '60%'}, isBoss: true }, 
+                    "royal_vanguard": { name: "Royal Vanguard", levelRange: [75, 75], monsterPool: [MONSTERS.ROYAL_GRIFFIN], coords: {top: '20%', left: '60%'}, isBoss: true },
                     // --- Sub-Zone: Royal Hunting Grounds (Levels 76-99) ---
                     "royal_hunting_grounds": { name: "Royal Hunting Grounds", levelRange: [76, 99], monsterPool: [MONSTERS.GRIFFIN_CHICK, MONSTERS.HOBGOBLIN, MONSTERS.FOREST_SPRITE], coords: {top: '30%', left: '85%'} },
                     // --- Sub-Zone: King's Castle (Boss Lvl 100) ---
@@ -110,9 +110,9 @@ export const REALMS = [
             }
         }
     },
-        {
+    {
         name: "The Underdark",
-        mapImage: "images/underground_world_map.png", 
+        mapImage: "images/underdark_world_map.png",
         requiredLevel: 401,
         zones: {
              "crystal_caves": {
@@ -197,13 +197,13 @@ export const REALMS = [
     },
     {
         name: "The Sunken World",
-        mapImage: "images/world_map.png", // Placeholder
+        mapImage: "images/sunken_world_map.png",
         requiredLevel: 801,
         zones: {
             "tide_wracked_coast": {
                 name: "Tide-Wracked Coast",
-                mapImage: "images/backgrounds/sub_zone/map_caves_zoomed.png", // Placeholder
-                monsterAreaBg: "images/backgrounds/bg_caves.png", // Placeholder
+                mapImage: "images/backgrounds/sub_zone/map_tide_wracked_coast_zoomed.png",
+                monsterAreaBg: "images/backgrounds/bg_tide_wracked_coast.png",
                 coords: { top: '78%', left: '20%' }, // Placeholder
                 icon: 'images/icons/green_meadows.png', // Placeholder
                 subZones: {
@@ -217,8 +217,8 @@ export const REALMS = [
             },
             "sunken_city": {
                 name: "Sunken City",
-                mapImage: "images/backgrounds/sub_zone/map_volcano_zoomed.png", // Placeholder
-                monsterAreaBg: "images/backgrounds/bg_orc_volcano.png", // Placeholder
+                mapImage: "images/backgrounds/sub_zone/map_sunken_city_zoomed.png",
+                monsterAreaBg: "images/backgrounds/bg_sunken_city.png",
                 coords: { top: '30%', left: '38%' }, // Placeholder
                 icon: 'images/icons/orc_volcano.png', // Placeholder
                 subZones: {
@@ -232,8 +232,8 @@ export const REALMS = [
             },
             "bioluminescent_trench": {
                 name: "Bioluminescent Trench",
-                mapImage: "images/backgrounds/sub_zone/map_desert_zoomed.png", // Placeholder
-                monsterAreaBg: "images/backgrounds/bg_undead_desert.png", // Placeholder
+                mapImage: "images/backgrounds/sub_zone/map_bioluminescent_trench_zoomed.png",
+                monsterAreaBg: "images/backgrounds/bg_bioluminescent_trench.png",
                 coords: { top: '70%', left: '75%' }, // Placeholder
                 icon: 'images/icons/undead_desert.png', // Placeholder
                 subZones: {
@@ -247,8 +247,8 @@ export const REALMS = [
             },
             "void_maw": {
                 name: "Void Maw",
-                mapImage: "images/backgrounds/sub_zone/map_dungeon_zoomed.png", // Placeholder
-                monsterAreaBg: "images/backgrounds/bg_final_dungeon.png", // Placeholder
+                mapImage: "images/backgrounds/sub_zone/map_void_maw_zoomed.png",
+                monsterAreaBg: "images/backgrounds/bg_void_maw.png",
                 coords: { top: '22%', left: '78%' }, // Placeholder
                 icon: 'images/icons/final_dungeon.png', // Placeholder
                 subZones: {
@@ -264,13 +264,13 @@ export const REALMS = [
     },
     {
         name: "The Celestial Planes",
-        mapImage: "images/world_map.png", // Placeholder
+        mapImage: "images/celestial_planes_map.png",
         requiredLevel: 1201,
         zones: {
             "azure_pathway": {
                 name: "Azure Pathway",
-                mapImage: "images/backgrounds/sub_zone/map_caves_zoomed.png", // Placeholder
-                monsterAreaBg: "images/backgrounds/bg_caves.png", // Placeholder
+                mapImage: "images/backgrounds/sub_zone/map_azure_pathway_zoomed.png",
+                monsterAreaBg: "images/backgrounds/bg_azure_pathway.png",
                 coords: { top: '78%', left: '20%' }, // Placeholder
                 icon: 'images/icons/green_meadows.png', // Placeholder
                 subZones: {
@@ -284,8 +284,8 @@ export const REALMS = [
             },
             "halls_of_valor": {
                 name: "Halls of Valor",
-                mapImage: "images/backgrounds/sub_zone/map_volcano_zoomed.png", // Placeholder
-                monsterAreaBg: "images/backgrounds/bg_orc_volcano.png", // Placeholder
+                mapImage: "images/backgrounds/sub_zone/map_halls_of_valor_zoomed.png",
+                monsterAreaBg: "images/backgrounds/bg_halls_of_valor.png",
                 coords: { top: '30%', left: '38%' }, // Placeholder
                 icon: 'images/icons/orc_volcano.png', // Placeholder
                 subZones: {
@@ -299,8 +299,8 @@ export const REALMS = [
             },
             "astral_sea": {
                 name: "Astral Sea",
-                mapImage: "images/backgrounds/sub_zone/map_desert_zoomed.png", // Placeholder
-                monsterAreaBg: "images/backgrounds/bg_undead_desert.png", // Placeholder
+                mapImage: "images/backgrounds/sub_zone/map_astral_sea_zoomed.png",
+                monsterAreaBg: "images/backgrounds/bg_astral_sea.png",
                 coords: { top: '70%', left: '75%' }, // Placeholder
                 icon: 'images/icons/undead_desert.png', // Placeholder
                 subZones: {
@@ -314,8 +314,8 @@ export const REALMS = [
             },
             "empyrean_throne": {
                 name: "Empyrean Throne",
-                mapImage: "images/backgrounds/sub_zone/map_dungeon_zoomed.png", // Placeholder
-                monsterAreaBg: "images/backgrounds/bg_final_dungeon.png", // Placeholder
+                mapImage: "images/backgrounds/sub_zone/map_empyrean_throne_zoomed.png",
+                monsterAreaBg: "images/backgrounds/bg_empyrean_throne.png",
                 coords: { top: '22%', left: '78%' }, // Placeholder
                 icon: 'images/icons/final_dungeon.png', // Placeholder
                 subZones: {
@@ -331,13 +331,13 @@ export const REALMS = [
     },
     {
         name: "The Aetherium Forge",
-        mapImage: "images/world_map.png", // Placeholder
+        mapImage: "images/aetherium_forge_map.png",
         requiredLevel: 1601,
         zones: {
             "mana_wastes": {
                 name: "Mana Wastes",
-                mapImage: "images/backgrounds/sub_zone/map_caves_zoomed.png", // Placeholder
-                monsterAreaBg: "images/backgrounds/bg_caves.png", // Placeholder
+                mapImage: "images/backgrounds/sub_zone/map_mana_wastes_zoomed.png",
+                monsterAreaBg: "images/backgrounds/bg_mana_wastes.png",
                 coords: { top: '78%', left: '20%' }, // Placeholder
                 icon: 'images/icons/green_meadows.png', // Placeholder
                 subZones: {
@@ -351,8 +351,8 @@ export const REALMS = [
             },
             "clockwork_city": {
                 name: "Clockwork City",
-                mapImage: "images/backgrounds/sub_zone/map_volcano_zoomed.png", // Placeholder
-                monsterAreaBg: "images/backgrounds/bg_orc_volcano.png", // Placeholder
+                mapImage: "images/backgrounds/sub_zone/map_clockwork_city_zoomed.png",
+                monsterAreaBg: "images/backgrounds/bg_clockwork_city.png",
                 coords: { top: '30%', left: '38%' }, // Placeholder
                 icon: 'images/icons/orc_volcano.png', // Placeholder
                 subZones: {
@@ -366,8 +366,8 @@ export const REALMS = [
             },
             "rune_scriptorium": {
                 name: "Rune Scriptorium",
-                mapImage: "images/backgrounds/sub_zone/map_desert_zoomed.png", // Placeholder
-                monsterAreaBg: "images/backgrounds/bg_undead_desert.png", // Placeholder
+                mapImage: "images/backgrounds/sub_zone/map_rune_scriptorium_zoomed.png",
+                monsterAreaBg: "images/backgrounds/bg_rune_scriptorium.png",
                 coords: { top: '70%', left: '75%' }, // Placeholder
                 icon: 'images/icons/undead_desert.png', // Placeholder
                 subZones: {
@@ -381,8 +381,8 @@ export const REALMS = [
             },
             "nexus_of_creation": {
                 name: "Nexus of Creation",
-                mapImage: "images/backgrounds/sub_zone/map_dungeon_zoomed.png", // Placeholder
-                monsterAreaBg: "images/backgrounds/bg_final_dungeon.png", // Placeholder
+                mapImage: "images/backgrounds/sub_zone/map_nexus_of_creation_zoomed.png",
+                monsterAreaBg: "images/backgrounds/bg_nexus_of_creation.png",
                 coords: { top: '22%', left: '78%' }, // Placeholder
                 icon: 'images/icons/final_dungeon.png', // Placeholder
                 subZones: {
