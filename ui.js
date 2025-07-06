@@ -1303,9 +1303,9 @@ export function createMapNode(name, iconSrc, coords, isUnlocked, isCompleted, cu
         }
     }
     
-    const finalIconSrc = isBoss ? 'images/icons/boss.png' : iconSrc;
+    const displayName = isFightingZone ? `<b>${name}</b>` : name;
 
-    let iconHtml = `<img src="${finalIconSrc}" class="map-node-icon ${isUnlocked ? '' : 'locked'} ${isCompleted ? 'completed' : ''}">`;
+    let iconHtml = `<img src="${iconSrc}" class="map-node-icon ${isUnlocked ? '' : 'locked'} ${isCompleted ? 'completed' : ''}" alt="${name} icon">`;
     if (isCompleted) {
         iconHtml += `<i class="fas fa-check-circle map-node-completed-icon"></i>`;
     }
@@ -1313,8 +1313,6 @@ export function createMapNode(name, iconSrc, coords, isUnlocked, isCompleted, cu
         iconHtml += `<i class="fas fa-lock map-node-lock-icon"></i>`;
     }
     
-    const displayName = isFightingZone ? `<b>${name}</b>` : name;
-
     node.innerHTML = `
         ${iconHtml}
         <span class="map-node-label">${displayName}${levelText}</span>
@@ -1505,8 +1503,17 @@ function renderMap(contentEl, realm, viewingZoneId, gameState, fightingZoneId, {
         for (const subZone of subZonesArray) {
             const isUnlocked = gameState.maxLevel >= subZone.levelRange[0];
             const isCompleted = gameState.completedLevels.includes(subZone.levelRange[1]);
-            const icon = 'images/icons/sword.png';
-            const node = createMapNode(subZone.name, icon, subZone.coords, isUnlocked, isCompleted, gameState.currentFightingLevel, subZone.levelRange, subZone.isBoss, false);
+            
+            // --- START OF MODIFICATION: Determine the correct icon source ---
+            let iconSrc;
+            if (subZone.isBoss && subZone.monsterPool && subZone.monsterPool.length === 1) {
+                iconSrc = subZone.monsterPool[0].image;
+            } else {
+                iconSrc = subZone.icon;
+            }
+            // --- END OF MODIFICATION ---
+            
+            const node = createMapNode(subZone.name, iconSrc, subZone.coords, isUnlocked, isCompleted, gameState.currentFightingLevel, subZone.levelRange, subZone.isBoss, false);
             if (isUnlocked) {
                 node.addEventListener('click', () => onSubZoneNodeClick(subZone));
             }
