@@ -21,7 +21,10 @@ const greenMeadowsItems = {
         type: 'helmet',
         icon: 'images/icons/leather_cap.png',
         width: 2, height: 2,
-        possibleStats: [ { key: STATS.GOLD_GAIN.key, min: 1, max: 8 } ]
+        possibleStats: [ 
+            { key: STATS.GOLD_GAIN.key, min: 1, max: 8 },
+            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 3 }
+         ]
     },
     LEATHER_TUNIC: {
         id: 'LEATHER_TUNIC',
@@ -53,7 +56,10 @@ const greenMeadowsItems = {
         type: 'belt',
         icon: 'images/icons/leather_belt.png',
         width: 2, height: 1,
-        possibleStats: [ { key: STATS.DPS.key, min: 30, max: 90 } ]
+        possibleStats: [ 
+            { key: STATS.DPS.key, min: 30, max: 90 },
+            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 1 }
+         ]
     },
     LEATHER_TROUSERS: {
         id: 'LEATHER_TROUSERS',
@@ -61,7 +67,10 @@ const greenMeadowsItems = {
         type: 'platelegs',
         icon: 'images/icons/leather_trousers.png',
         width: 2, height: 3,
-        possibleStats: [ { key: STATS.DPS.key, min: 30, max: 100 } ]
+        possibleStats: [ 
+            { key: STATS.DPS.key, min: 30, max: 100 },
+            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 1 }
+         ]
     },
     SIMPLE_SASH: {
         id: 'SIMPLE_SASH',
@@ -87,7 +96,10 @@ const greenMeadowsItems = {
         type: 'shield',
         icon: 'images/icons/iron_kiteshield.png',
         width: 2, height: 3,
-        possibleStats: [ { key: STATS.DPS.key, min: 500, max: 1000 } ]
+        possibleStats: [ 
+            { key: STATS.DPS.key, min: 500, max: 1000 },
+            { key: STATS.CLICK_DAMAGE.key, min: 5, max: 15 }        
+         ]
     },
     GLADIATORS_LONGSWORD: {
         id: 'GLADIATORS_LONGSWORD',
@@ -160,7 +172,10 @@ const greenMeadowsItems = {
         type: 'platelegs',
         icon: 'images/icons/chainmail_leggings.png',
         width: 2, height: 3,
-        possibleStats: [ { key: STATS.DPS.key, min: 100, max: 300 } ]
+        possibleStats: [ 
+            { key: STATS.DPS.key, min: 100, max: 300 },
+            { key: STATS.CLICK_DAMAGE.key, min: 5, max: 20 }
+         ]
     },
     BRONZE_BUCKLER: {
         id: 'BRONZE_BUCKLER',
@@ -188,7 +203,10 @@ const greenMeadowsItems = {
         width: 2, height: 3,
         canHaveSockets: true,
         maxSockets: 1,
-        possibleStats: [ { key: STATS.DPS.key, min: 500, max: 1500 } ]
+        possibleStats: [ 
+            { key: STATS.DPS.key, min: 500, max: 1500 },
+            { key: STATS.CLICK_DAMAGE.key, min: 25, max: 30 },
+         ]
     },
     AEGIS_OF_THE_GUARDIAN: {
         id: 'AEGIS_OF_THE_GUARDIAN',
@@ -246,7 +264,10 @@ const greenMeadowsItems = {
         type: 'helmet',
         icon: 'images/icons/iron_helm.png',
         width: 2, height: 2,
-        possibleStats: [ { key: STATS.GOLD_GAIN.key, min: 5, max: 15 } ]
+        possibleStats: [ 
+            { key: STATS.GOLD_GAIN.key, min: 5, max: 15 },
+            { key: STATS.CLICK_DAMAGE.key, min: 10, max: 15 }
+         ]
     },
     IRON_PLATELEGS: {
         id: 'IRON_PLATELEGS',
@@ -419,7 +440,7 @@ const orcVolcanoItems = {
         isUnique: true,
         possibleStats: [
             { key: STATS.DPS.key, min: 2000, max: 6000 },
-            { key: STATS.CLICK_DAMAGE.key, min: 50, max: 150 },
+            { key: STATS.CLICK_DAMAGE.key, min: 50, max: 550 },
         ]
     },
     ORCISH_CLEAVER: {
@@ -483,7 +504,10 @@ const orcVolcanoItems = {
         type: 'shield',
         icon: 'images/icons/steel_heater.png',
         width: 2, height: 3,
-        possibleStats: [ { key: STATS.DPS.key, min: 2200, max: 5000 } ]
+        possibleStats: [ 
+            { key: STATS.DPS.key, min: 2200, max: 5000 },
+            { key: STATS.CLICK_DAMAGE.key, min: 50, max: 400 }
+         ]
     },
     STEEL_FULL_HELM: {
         id: 'STEEL_FULL_HELM',
@@ -491,7 +515,10 @@ const orcVolcanoItems = {
         type: 'helmet',
         icon: 'images/icons/steel_full_helm.png',
         width: 2, height: 2,
-        possibleStats: [ { key: STATS.GOLD_GAIN.key, min: 12, max: 36 } ]
+        possibleStats: [ 
+            { key: STATS.GOLD_GAIN.key, min: 12, max: 36 },
+            { key: STATS.CLICK_DAMAGE.key, min: 20, max: 60 }
+         ]
     },
 
     // --- Sub-Zone: Molten Heart (Boss Lvl 150) ---
@@ -505,6 +532,7 @@ const orcVolcanoItems = {
         maxSockets: 2,
         possibleStats: [
             { key: STATS.DPS.key, min: 3000, max: 7000 },
+            { key: STATS.CLICK_DAMAGE.key, min: 500, max: 800 },
         ]
     },
 
@@ -566,6 +594,7 @@ const orcVolcanoItems = {
         maxSockets: 2,
         possibleStats: [
             { key: STATS.DPS.key, min: 5000, max: 12000 },
+            { key: STATS.CLICK_DAMAGE.key, min: 30, max: 100 },
         ]
     },
 
@@ -596,7 +625,9 @@ const undeadDesertItems = {
         type: 'platelegs',
         icon: 'images/icons/steel_greaves.png',
         width: 2, height: 3,
-        possibleStats: [ { key: STATS.DPS.key, min: 700, max: 2100 } ]
+        possibleStats: [ { key: STATS.DPS.key, min: 700, max: 2100 },
+            { key: STATS.CLICK_DAMAGE.key, min: 20, max: 220 }
+         ]
     },
     BAND_OF_MIGHT: {
         id: 'BAND_OF_MIGHT',
@@ -809,6 +840,7 @@ const undeadDesertItems = {
         possibleStats: [
             { key: STATS.GOLD_GAIN.key, min: 30, max: 90 },
             { key: STATS.MAGIC_FIND.key, min: 2, max: 5 },
+            { key: STATS.CLICK_DAMAGE.key, min: 750, max: 1250 },
         ]
     },
 
@@ -880,7 +912,7 @@ const finalDungeonItems = {
         maxSockets: 3,
         possibleStats: [
             { key: STATS.DPS.key, min: 3000, max: 9000 },
-            { key: STATS.CLICK_DAMAGE.key, min: 50, max: 150 },
+            { key: STATS.CLICK_DAMAGE.key, min: 50, max: 2400 },
         ]
     },
     GHASTLY_ROBES: {
@@ -1076,7 +1108,7 @@ const finalDungeonItems = {
         maxSockets: 1,
         possibleStats: [
             { key: STATS.DPS.key, min: 8000, max: 24000 },
-            { key: STATS.CLICK_DAMAGE.key, min: 200, max: 600 },
+            { key: STATS.CLICK_DAMAGE.key, min: 200, max: 1500 },
         ]
     },
 };
