@@ -96,8 +96,12 @@ export const underdarkItems = {
         icon: 'images/icons/resonant_amulet.png',
         width: 2, height: 2,
         canHaveSockets: true,
-        maxSockets: 1,
-        possibleStats: [ { key: STATS.DPS.key, min: 30000, max: 50000 } ]
+        maxSockets: 3,
+        possibleStats: [ 
+            { key: STATS.DPS.key, min: 30000, max: 50000 },
+            { key: STATS.GOLD_GAIN.key, min: 200, max: 500 },
+
+         ]
     },
 
     // --- Sub-Zone: Crystal Guardian's Lair (Boss Lvl 450) ---
@@ -272,8 +276,11 @@ export const underdarkItems = {
         icon: 'images/icons/shrieker_amulet.png',
         width: 2, height: 2,
         canHaveSockets: true,
-        maxSockets: 1,
-        possibleStats: [ { key: STATS.CLICK_DAMAGE.key, min: 10000, max: 40000 } ]
+        maxSockets: 2,
+        possibleStats: [ 
+            { key: STATS.CLICK_DAMAGE.key, min: 10000, max: 40000 },
+            { key: STATS.GOLD_GAIN.key, min: 1, max: 800 }
+         ]
     },
     FUNGAL_BARRIER: {
         id: 'FUNGAL_BARRIER',
@@ -388,8 +395,11 @@ export const underdarkItems = {
         isUnique: true,
         width: 2, height: 2,
         canHaveSockets: true,
-        maxSockets: 1,
-        possibleStats: [ { key: STATS.DPS.key, min: 400000, max: 600000 } ]
+        maxSockets: 3,
+        possibleStats: [ 
+            { key: STATS.DPS.key, min: 1000, max: 600000 },
+            { key: STATS.GOLD_GAIN.key, min: 1000, max: 1000 }
+         ]
     },
 
     // ====================================================================================
@@ -463,7 +473,10 @@ export const underdarkItems = {
         width: 2, height: 2,
         canHaveSockets: true,
         maxSockets: 1,
-        possibleStats: [ { key: STATS.CLICK_DAMAGE.key, min: 1000000, max: 3000000 } ]
+        possibleStats: [ 
+            { key: STATS.CLICK_DAMAGE.key, min: 1000000, max: 3000000 },
+            { key: STATS.GOLD_GAIN.key, min: 300, max: 900 }
+         ]
     },
     DROW_MAGE_HOOD: {
         id: 'DROW_MAGE_HOOD',
@@ -654,7 +667,7 @@ export const underdarkItems = {
         width: 2, height: 2,
         canHaveSockets: true,
         maxSockets: 1,
-        possibleStats: [ { key: STATS.GOLD_GAIN.key, min: 30000, max: 90000 } ]
+        possibleStats: [ { key: STATS.GOLD_GAIN.key, min: 1000, max: 2000 } ]
     },
     FLESH_GOLEM_HEART: {
         id: 'FLESH_GOLEM_HEART',
@@ -692,7 +705,7 @@ export const underdarkItems = {
         maxSockets: 1,
         possibleStats: [
             { key: STATS.DPS.key, min: 1300000, max: 1800000 },
-            { key: STATS.GOLD_GAIN.key, min: 1, max: 8000 }
+            { key: STATS.GOLD_GAIN.key, min: 1, max: 3000 }
         ]
     },
     RING_OF_DESPAIR: {
