@@ -23,7 +23,7 @@ const greenMeadowsItems = {
         width: 2, height: 2,
         possibleStats: [ 
             { key: STATS.GOLD_GAIN.key, min: 1, max: 8 },
-            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 3 }
+            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 1 }
          ]
     },
     LEATHER_TUNIC: {
@@ -32,7 +32,10 @@ const greenMeadowsItems = {
         type: 'platebody',
         icon: 'images/icons/leather_tunic.png',
         width: 2, height: 3,
-        possibleStats: [ { key: STATS.DPS.key, min: 50, max: 150 } ]
+        possibleStats: [ 
+            { key: STATS.DPS.key, min: 50, max: 150 },
+            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 1 }
+         ]
     },
     IRON_SHORTSWORD: {
         id: 'IRON_SHORTSWORD',
@@ -411,7 +414,10 @@ const orcVolcanoItems = {
         type: 'platebody',
         icon: 'images/icons/iron_platebody.png',
         width: 2, height: 3,
-        possibleStats: [ { key: STATS.DPS.key, min: 300, max: 900 } ]
+        possibleStats: [ 
+            { key: STATS.DPS.key, min: 300, max: 900 },
+            { key: STATS.CLICK_DAMAGE.key, min: 10, max: 30 }
+         ]
     },
     RUBY_AMULET: {
         id: 'RUBY_AMULET',
@@ -662,6 +668,7 @@ const undeadDesertItems = {
         maxSockets: 3,
         possibleStats: [
             { key: STATS.DPS.key, min: 4000, max: 12000 },
+            { key: STATS.CLICK_DAMAGE.key, min: 100, max: 120 },
             { key: STATS.GOLD_GAIN.key, min: 20, max: 60 },
         ]
     },
@@ -1015,7 +1022,7 @@ const finalDungeonItems = {
         maxSockets: 3,
         possibleStats: [
             { key: STATS.DPS.key, min: 10000, max: 30000 },
-            { key: STATS.CLICK_DAMAGE.key, min: 250, max: 750 },
+            { key: STATS.CLICK_DAMAGE.key, min: 250, max: 1500 },
         ]
     },
     DRAGONBONE_GREAVES: {

@@ -128,7 +128,10 @@ document.addEventListener('DOMContentLoaded', () => {
             let colorIndex = 0;
             for (const realmName in realmsForStat) {
                 const dataPoints = realmsForStat[realmName];
-                if (dataPoints.length < 2) continue;
+                // --- START OF FIX ---
+                // Allow datasets with only one point to be rendered.
+                if (dataPoints.length === 0) continue;
+                // --- END OF FIX ---
                 dataPoints.sort((a, b) => a.x - b.x);
 
                 datasets.push({
