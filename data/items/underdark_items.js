@@ -174,7 +174,7 @@ export const underdarkItems = {
         width: 1, height: 1,
         canHaveSockets: true,
         maxSockets: 2,
-        possibleStats: [ { key: STATS.GOLD_GAIN.key, min: 100, max: 1200 } ]
+        possibleStats: [ { key: STATS.GOLD_GAIN.key, min: 100, max: 600 } ]
     },
     LIVING_CRYSTAL_LEGGINGS: {
         id: 'LIVING_CRYSTAL_LEGGINGS',
@@ -332,7 +332,10 @@ export const underdarkItems = {
         width: 1, height: 1,
         canHaveSockets: true,
         maxSockets: 2,
-        possibleStats: [ { key: STATS.DPS.key, min: 100000, max: 750000 } ]
+        possibleStats: [
+            { key: STATS.DPS.key, min: 100000, max: 750000 },
+            { key: STATS.GOLD_GAIN.key, min: 10, max: 800 }
+            ]
     },
     MIND_FLAYER_CIRCLET: {
         id: 'MIND_FLAYER_CIRCLET',
@@ -511,7 +514,7 @@ export const underdarkItems = {
         width: 1, height: 1,
         canHaveSockets: true,
         maxSockets: 2,
-        possibleStats: [ { key: STATS.GOLD_GAIN.key, min: 10000, max: 25000 } ]
+        possibleStats: [ { key: STATS.GOLD_GAIN.key, min: 1000, max: 1400 } ]
     },
     OBSIDIAN_PLATEBODY: {
         id: 'OBSIDIAN_PLATEBODY',
@@ -657,7 +660,10 @@ export const underdarkItems = {
         width: 1, height: 1,
         canHaveSockets: true,
         maxSockets: 2,
-        possibleStats: [ { key: STATS.CLICK_DAMAGE.key, min: 8e7, max: 2.4e8 } ]
+        possibleStats: [ 
+            { key: STATS.CLICK_DAMAGE.key, min: 8e7, max: 2.4e8 },
+            { key: STATS.GOLD_GAIN.key, min: 1000, max: 1700 }
+         ]
     },
     CHAOS_HOUND_COLLAR: {
         id: 'CHAOS_HOUND_COLLAR',
@@ -717,7 +723,7 @@ export const underdarkItems = {
         canHaveSockets: true,
         maxSockets: 2,
         width: 1, height: 1,
-        possibleStats: [ { key: STATS.GOLD_GAIN.key, min: 50000, max: 150000 } ]
+        possibleStats: [ { key: STATS.GOLD_GAIN.key, min: 1, max: 5000 } ]
     },
     BALORS_WHIP: {
         id: 'BALORS_WHIP',
