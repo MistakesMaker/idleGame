@@ -4,96 +4,110 @@ import { REALMS } from './data/realms.js';
 import { STATS } from './data/stat_pools.js';
 
 document.addEventListener('DOMContentLoaded', () => {
-    
-    // --- STEP 1: Find the minimum drop level for every item ---
-    const itemDropLevels = new Map();
 
-    for (const monsterKey in MONSTERS) {
-        const monster = MONSTERS[monsterKey];
-        if (!monster.lootTable) continue;
+    // --- STEP 1: Determine the minimum drop level and realm for every item ---
+    const itemDropInfo = new Map();
 
-        const monsterLocations = [];
-        for (const realm of REALMS) {
-            for (const zoneId in realm.zones) {
-                const zone = realm.zones[zoneId];
-                for (const subZoneId in zone.subZones) {
-                    const subZone = zone.subZones[subZoneId];
-                    if (subZone.monsterPool.includes(monster)) {
-                        monsterLocations.push(subZone);
+    for (const realm of REALMS) {
+        for (const zoneId in realm.zones) {
+            const zone = realm.zones[zoneId];
+            for (const subZoneId in zone.subZones) {
+                const subZone = zone.subZones[subZoneId];
+                if (!subZone.monsterPool) continue;
+
+                for (const monster of subZone.monsterPool) {
+                    if (!monster.lootTable) continue;
+
+                    const firstMonsterLevel = subZone.levelRange[0];
+
+                    for (const loot of monster.lootTable) {
+                        const itemId = loot.item.id;
+                        const currentInfo = itemDropInfo.get(itemId);
+
+                        if (!currentInfo || firstMonsterLevel < currentInfo.minLevel) {
+                            itemDropInfo.set(itemId, {
+                                minLevel: firstMonsterLevel,
+                                realmName: realm.name
+                            });
+                        }
                     }
                 }
             }
         }
-        if (monsterLocations.length === 0) continue;
-
-        const firstMonsterLevel = Math.min(...monsterLocations.map(sz => sz.levelRange[0]));
-
-        for (const loot of monster.lootTable) {
-            const itemId = loot.item.id;
-            const currentMinLevel = itemDropLevels.get(itemId) || Infinity;
-            if (firstMonsterLevel < currentMinLevel) {
-                itemDropLevels.set(itemId, firstMonsterLevel);
-            }
-        }
     }
 
-    // --- STEP 2: Group all item data by slot and then by stat ---
-    const groupedData = {};
-    const chartInstances = []; // Store chart instances to access their data later
+    // --- STEP 2: Group data by Slot -> Stat -> Realm ---
+    const groupedData = {}; // { slotType: { statKey: { realmName: [dataPoints] } } }
 
     for (const itemId in ITEMS) {
         const item = ITEMS[itemId];
-        const dropLevel = itemDropLevels.get(item.id);
+        const dropInfo = itemDropInfo.get(item.id);
 
-        if (dropLevel === undefined) {
+        if (!dropInfo) {
             console.warn(`Orphaned item: ${item.name} (ID: ${item.id}) has no drop source and will be excluded from graphs.`);
             continue;
         }
 
+        const realmName = dropInfo.realmName;
         const slotType = item.type;
-        if (!groupedData[slotType]) {
-            groupedData[slotType] = {};
-        }
+        const dropLevel = dropInfo.minLevel;
+
+        if (!groupedData[slotType]) groupedData[slotType] = {};
 
         for (const stat of item.possibleStats) {
             const statKey = stat.key;
             if (!groupedData[slotType][statKey]) {
-                groupedData[slotType][statKey] = [];
+                groupedData[slotType][statKey] = {};
+            }
+            if (!groupedData[slotType][statKey][realmName]) {
+                groupedData[slotType][statKey][realmName] = [];
             }
             
-            const averageStatValue = (stat.min + stat.max) / 2;
+            // --- START OF FIX: Use the maximum stat value ---
+            const maxStatValue = stat.max;
 
-            groupedData[slotType][statKey].push({
+            groupedData[slotType][statKey][realmName].push({
                 x: dropLevel,
-                y: averageStatValue,
-                label: item.name,
+                y: maxStatValue,
+                label: item.name, // Keep item name for detailed tooltips
             });
+            // --- END OF FIX ---
         }
     }
 
-    // --- STEP 3: Create a chart for each group ---
-    const chartContainer = document.getElementById('chart-container');
-    const chartColors = ['#e74c3c', '#3498db', '#2ecc71', '#9b59b6', '#f1c40f', '#1abc9c', '#e67e22', '#34495e'];
-    let colorIndex = 0;
-
-    const capitalize = (s) => s.charAt(0).toUpperCase() + s.slice(1);
+    // --- STEP 3: Populate Realm Filter Checkboxes ---
+    const realmFilterContainer = document.getElementById('realm-filter-container');
     
+    const selectAllDiv = document.createElement('div');
+    selectAllDiv.className = 'realm-filter';
+    selectAllDiv.innerHTML = `<input type="checkbox" id="realm-filter-all" checked><label for="realm-filter-all"><b>Select All</b></label>`;
+    realmFilterContainer.appendChild(selectAllDiv);
+
+    REALMS.forEach(realm => {
+        const realmDiv = document.createElement('div');
+        realmDiv.className = 'realm-filter';
+        realmDiv.innerHTML = `<input type="checkbox" id="realm-filter-${realm.name.replace(/\s+/g, '-')}" data-realm-name="${realm.name}" checked><label for="realm-filter-${realm.name.replace(/\s+/g, '-')}">${realm.name}</label>`;
+        realmFilterContainer.appendChild(realmDiv);
+    });
+
+    // --- STEP 4: Create a chart for each (Slot, Stat) combination ---
+    const chartContainer = document.getElementById('chart-container');
+    const chartInstances = [];
+    const chartColors = ['#e74c3c', '#3498db', '#2ecc71', '#9b59b6', '#f1c40f', '#1abc9c', '#e67e22', '#34495e'];
+    
+    const capitalize = (s) => s.charAt(0).toUpperCase() + s.slice(1);
     const numberAbbreviations = ['K', 'M', 'B', 'T', 'Qa', 'Qi', 'Sx', 'Sp', 'Oc', 'No', 'Dc'];
+    
     const formatGameNumber = (num) => {
-        if (num < 1000) {
-            return Math.floor(num).toString();
-        }
+        if (num < 1000) return Math.floor(num).toString();
         const tier = Math.floor(Math.log10(Math.abs(num)) / 3);
-        if (tier === 0 || tier > numberAbbreviations.length) {
-            return num.toExponential(2);
-        }
+        if (tier === 0 || tier > numberAbbreviations.length) return num.toExponential(2);
         const suffix = numberAbbreviations[tier - 1];
         const scale = Math.pow(10, tier * 3);
         const scaled = num / scale;
         return scaled.toFixed(2) + suffix;
     };
     
-    // A slightly less precise version for crowded axis labels
     const formatAxisNumber = (num) => {
         if (num < 1000) return num.toString();
         const tier = Math.floor(Math.log10(Math.abs(num)) / 3);
@@ -106,56 +120,53 @@ document.addEventListener('DOMContentLoaded', () => {
 
     for (const slotType in groupedData) {
         for (const statKey in groupedData[slotType]) {
-            const dataPoints = groupedData[slotType][statKey];
-            if (dataPoints.length < 2) continue;
-
-            dataPoints.sort((a, b) => a.x - b.x);
-
+            const realmsForStat = groupedData[slotType][statKey];
             const statInfo = Object.values(STATS).find(s => s.key === statKey) || { name: 'Unknown Stat' };
             const chartTitle = `${capitalize(slotType)} - ${statInfo.name} Progression`;
 
+            const datasets = [];
+            let colorIndex = 0;
+            for (const realmName in realmsForStat) {
+                const dataPoints = realmsForStat[realmName];
+                if (dataPoints.length < 2) continue;
+                dataPoints.sort((a, b) => a.x - b.x);
+
+                datasets.push({
+                    label: realmName,
+                    data: dataPoints,
+                    borderColor: chartColors[colorIndex % chartColors.length],
+                    backgroundColor: chartColors[colorIndex % chartColors.length] + '33',
+                    tension: 0.1,
+                    fill: false, // Set to false to see lines clearly
+                });
+                colorIndex++;
+            }
+
+            if (datasets.length === 0) continue;
+
             const wrapper = document.createElement('div');
             wrapper.className = 'chart-wrapper';
-            wrapper.dataset.statKey = statKey;
-            wrapper.dataset.slotType = slotType;
+            wrapper.dataset.stat = statKey; // Only need stat for filtering charts
+
             const canvas = document.createElement('canvas');
             wrapper.appendChild(canvas);
             chartContainer.appendChild(wrapper);
 
-            const color = chartColors[colorIndex % chartColors.length];
-            colorIndex++;
-            
-            const chart = new (/** @type {any} */ (window)).Chart(canvas, {
+            const chart = new (/** @type {any} */(window)).Chart(canvas, {
                 type: 'line',
-                data: {
-                    datasets: [{
-                        label: `${capitalize(slotType)}`,
-                        data: dataPoints,
-                        borderColor: color,
-                        backgroundColor: color + '33',
-                        tension: 0.1,
-                        fill: true,
-                    }]
-                },
+                data: { datasets },
                 options: {
                     responsive: true,
                     maintainAspectRatio: true,
                     scales: {
                         x: { type: 'linear', title: { display: true, text: 'Item First Drop Level', color: '#ecf0f1', font: { size: 14 } }, ticks: { color: '#bdc3c7' } },
-                        y: { type: 'logarithmic', title: { display: true, text: `${statInfo.name} (Avg Value)`, color: '#ecf0f1', font: { size: 14 } }, 
-                            ticks: { color: '#bdc3c7', callback: (val) => formatAxisNumber(val) } 
-                        }
+                        // --- START OF FIX: Update Y-axis label ---
+                        y: { type: 'logarithmic', title: { display: true, text: `${statInfo.name} (Max Value)`, color: '#ecf0f1', font: { size: 14 } }, ticks: { color: '#bdc3c7', callback: (val) => formatAxisNumber(val) } }
+                        // --- END OF FIX ---
                     },
                     plugins: {
                         title: { display: true, text: chartTitle, color: '#f1c40f', font: { size: 18 } },
-                        // --- START OF FIX: Custom tooltip label formatting ---
-                        tooltip: { 
-                            callbacks: { 
-                                title: (ctx) => ctx[0].raw.label, 
-                                label: (ctx) => `${ctx.dataset.label}: ${formatGameNumber(ctx.raw.y)}`
-                            } 
-                        }
-                        // --- END OF FIX ---
+                        tooltip: { callbacks: { title: (ctx) => ctx[0].raw.label, label: (ctx) => `${ctx.dataset.label}: ${formatGameNumber(ctx.raw.y)}` } }
                     }
                 }
             });
@@ -163,104 +174,54 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // --- STEP 4: Add filtering logic ---
-    const filterContainer = document.getElementById('filter-container');
-    const chartWrappers = document.querySelectorAll('.chart-wrapper');
-    const combineBtn = document.getElementById('combine-graphs-btn');
-    const combinedChartWrapper = document.getElementById('combined-chart-wrapper');
-    let combinedChartInstance = null;
+    // --- STEP 5: Add filtering logic ---
+    const allFiltersContainer = document.getElementById('all-filters-container');
 
-    function createCombinedChart(statKey, statName) {
-        if (combinedChartInstance) {
-            combinedChartInstance.destroy();
-        }
+    function applyFilters() {
+        const realmCheckboxes = document.querySelectorAll('#realm-filter-container input[data-realm-name]');
+        const selectedRealms = Array.from(realmCheckboxes)
+            .filter(cb => (/** @type {HTMLInputElement} */(cb)).checked)
+            .map(cb => (/** @type {HTMLElement} */(cb)).dataset.realmName);
 
-        const visibleCharts = chartInstances.filter(chart => {
-            const wrapper = chart.canvas.parentElement;
-            return wrapper instanceof HTMLElement && wrapper.dataset.statKey === statKey && !wrapper.classList.contains('hidden');
-        });
-        
-        const datasets = visibleCharts.map((chart, index) => {
-            const originalDataset = chart.data.datasets[0];
-            const slotType = (/** @type {HTMLElement} */ (chart.canvas.parentElement)).dataset.slotType;
-            return {
-                label: capitalize(slotType),
-                data: originalDataset.data,
-                borderColor: chartColors[index % chartColors.length],
-                backgroundColor: 'transparent',
-                tension: 0.1,
-            };
+        const activeStatFilter = /** @type {HTMLElement} */(document.querySelector('#stat-filter-container .filter-btn.active')).dataset.statFilter;
+
+        // Hide/show entire charts based on the stat filter
+        chartInstances.forEach(chart => {
+            const wrapper = /** @type {HTMLElement} */ (chart.canvas.parentElement);
+            const statMatch = activeStatFilter === 'all' || wrapper.dataset.stat === activeStatFilter;
+            wrapper.classList.toggle('hidden', !statMatch);
         });
 
-        const canvas = document.getElementById('combined-chart-canvas');
-        combinedChartInstance = new (/** @type {any} */ (window)).Chart(canvas, {
-            type: 'line',
-            data: { datasets },
-            options: {
-                responsive: true,
-                maintainAspectRatio: true,
-                scales: {
-                    x: { type: 'linear', title: { display: true, text: 'Item First Drop Level', color: '#ecf0f1', font: { size: 14 } }, ticks: { color: '#bdc3c7' } },
-                    y: { type: 'logarithmic', title: { display: true, text: `${statName} (Avg Value)`, color: '#ecf0f1', font: { size: 14 } }, 
-                        ticks: { color: '#bdc3c7', callback: (val) => formatAxisNumber(val) } 
-                    }
-                },
-                plugins: {
-                    title: { display: true, text: `Combined Progression for ${statName}`, color: '#f1c40f', font: { size: 18 } },
-                    // --- START OF FIX: Custom tooltip label formatting for combined chart ---
-                    tooltip: { 
-                        mode: 'index', 
-                        intersect: false, 
-                        callbacks: { 
-                            title: (ctx) => `Level ${ctx[0].label}`, 
-                            label: (ctx) => `${ctx.dataset.label}: ${formatGameNumber(ctx.raw.y)}`
-                        } 
-                    }
-                    // --- END OF FIX ---
-                }
-            }
+        // For all visible charts, hide/show the individual realm datasets
+        chartInstances.forEach(chart => {
+            chart.data.datasets.forEach(dataset => {
+                dataset.hidden = !selectedRealms.includes(dataset.label);
+            });
+            chart.update();
         });
-
-        chartWrappers.forEach(wrapper => wrapper.classList.add('hidden'));
-        combinedChartWrapper.classList.remove('hidden');
     }
 
-    filterContainer.addEventListener('click', (e) => {
-        if (!(e.target instanceof HTMLElement) || e.target.tagName !== 'BUTTON') return;
-        
-        const target = /** @type {HTMLButtonElement} */ (e.target);
-
-        if (target.id === 'combine-graphs-btn') {
-            const activeFilterBtn = filterContainer.querySelector('.filter-btn.active');
-            if (activeFilterBtn instanceof HTMLElement) {
-                const statKey = activeFilterBtn.dataset.statFilter;
-                const statName = activeFilterBtn.textContent;
-                createCombinedChart(statKey, statName);
-            }
-            return;
+    allFiltersContainer.addEventListener('click', (e) => {
+        if (e.target instanceof HTMLElement && e.target.matches('.filter-btn')) {
+            document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+            e.target.classList.add('active');
+            applyFilters();
         }
-
-        if (combinedChartInstance) {
-            combinedChartInstance.destroy();
-            combinedChartInstance = null;
-        }
-        combinedChartWrapper.classList.add('hidden');
-
-
-        const filterKey = target.dataset.statFilter;
-
-        filterContainer.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
-        target.classList.add('active');
-
-        chartWrappers.forEach(wrapper => {
-            const chartWrapper = /** @type {HTMLElement} */ (wrapper);
-            if (filterKey === 'all' || chartWrapper.dataset.statKey === filterKey) {
-                chartWrapper.classList.remove('hidden');
-            } else {
-                chartWrapper.classList.add('hidden');
-            }
-        });
-        
-        combineBtn.classList.toggle('hidden', filterKey === 'all');
     });
+
+    allFiltersContainer.addEventListener('change', (e) => {
+        if (e.target instanceof HTMLInputElement && e.target.type === 'checkbox') {
+            const selectAllCheckbox = /** @type {HTMLInputElement} */ (document.getElementById('realm-filter-all'));
+            const realmCheckboxes = document.querySelectorAll('#realm-filter-container input[data-realm-name]');
+
+            if (e.target.id === 'realm-filter-all') {
+                realmCheckboxes.forEach(cb => { (/** @type {HTMLInputElement} */ (cb)).checked = selectAllCheckbox.checked; });
+            } else {
+                selectAllCheckbox.checked = Array.from(realmCheckboxes).every(cb => (/** @type {HTMLInputElement} */ (cb)).checked);
+            }
+            applyFilters();
+        }
+    });
+
+    applyFilters();
 });

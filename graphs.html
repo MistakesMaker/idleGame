@@ -19,11 +19,43 @@
             color: #f1c40f;
             font-family: 'Cinzel', serif;
         }
-        #filter-container {
+        #all-filters-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        #realm-filter-container {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+            align-items: center;
+            background: rgba(30, 40, 50, 0.7);
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #4a637e;
+            width: fit-content;
+        }
+        .realm-filter {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 16px;
+        }
+        .realm-filter input {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+        .realm-filter label {
+            cursor: pointer;
+        }
+        #stat-filter-container {
             display: flex;
             justify-content: center;
             gap: 10px;
-            margin-bottom: 30px;
             flex-wrap: wrap;
         }
         .filter-btn {
@@ -48,10 +80,6 @@
             box-shadow: 0 0 10px rgba(241, 196, 15, 0.5);
             transform: translateY(-2px);
         }
-        #combine-graphs-btn {
-            background-color: #8e44ad; /* Purple to stand out */
-            border-color: #c0392b;
-        }
         #chart-container {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
@@ -59,7 +87,7 @@
             max-width: 1800px;
             margin: 0 auto;
         }
-        .chart-wrapper, #combined-chart-wrapper {
+        .chart-wrapper {
             background-color: rgba(30, 40, 50, 0.7);
             padding: 20px;
             border-radius: 12px;
@@ -74,18 +102,17 @@
 <body>
     <h1>Item Stat Progression Graphs</h1>
     
-    <div id="filter-container">
-        <button class="filter-btn active" data-stat-filter="all">Show All</button>
-        <button class="filter-btn" data-stat-filter="clickDamage">Click Damage</button>
-        <button class="filter-btn" data-stat-filter="dps">DPS</button>
-        <button class="filter-btn" data-stat-filter="goldGain">% Gold Gain</button>
-        <button class="filter-btn" data-stat-filter="magicFind">% Magic Find</button>
-        <button id="combine-graphs-btn" class="filter-btn hidden">Combine Visible Graphs</button>
-    </div>
-
-    <!-- Container for the single combined chart -->
-    <div id="combined-chart-wrapper" class="hidden">
-        <canvas id="combined-chart-canvas"></canvas>
+    <div id="all-filters-container">
+        <div id="realm-filter-container">
+            <!-- Realm checkboxes will be dynamically inserted here by JS -->
+        </div>
+        <div id="stat-filter-container">
+            <button class="filter-btn active" data-stat-filter="all">Show All Stats</button>
+            <button class="filter-btn" data-stat-filter="clickDamage">Click Damage</button>
+            <button class="filter-btn" data-stat-filter="dps">DPS</button>
+            <button class="filter-btn" data-stat-filter="goldGain">% Gold Gain</button>
+            <button class="filter-btn" data-stat-filter="magicFind">% Magic Find</button>
+        </div>
     </div>
 
     <div id="chart-container">

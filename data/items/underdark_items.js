@@ -405,7 +405,7 @@ export const underdarkItems = {
         width: 2, height: 3,
         canHaveSockets: true,
         maxSockets: 3,
-        possibleStats: [ { key: STATS.CLICK_DAMAGE.key, min: 500000, max: 1500000 } ]
+        possibleStats: [ { key: STATS.CLICK_DAMAGE.key, min: 50000, max: 150000 } ]
     },
     SPIDERSILK_SASH: {
         id: 'SPIDERSILK_SASH',
@@ -415,7 +415,7 @@ export const underdarkItems = {
         width: 2, height: 1,
         canHaveSockets: true,
         maxSockets: 1,
-        possibleStats: [ { key: STATS.GOLD_GAIN.key, min: 4000, max: 10000 } ]
+        possibleStats: [ { key: STATS.GOLD_GAIN.key, min: 1000, max: 2800 } ]
     },
     DROW_CHAINMAIL: {
         id: 'DROW_CHAINMAIL',
@@ -518,7 +518,7 @@ export const underdarkItems = {
         width: 2, height: 3,
         canHaveSockets: true,
         maxSockets: 3,
-        possibleStats: [ { key: STATS.CLICK_DAMAGE.key, min: 2.5e6, max: 7.5e6 } ]
+        possibleStats: [ { key: STATS.CLICK_DAMAGE.key, min: 1, max: 200000 } ]
     },
 
     // --- Sub-Zone: House of Shadows (Boss Lvl 675) ---
@@ -624,7 +624,7 @@ export const underdarkItems = {
         width: 2, height: 3,
         canHaveSockets: true,
         maxSockets: 3,
-        possibleStats: [ { key: STATS.CLICK_DAMAGE.key, min: 5e7, max: 1.5e8 } ]
+        possibleStats: [ { key: STATS.CLICK_DAMAGE.key, min: 150000, max: 300000 } ]
     },
     RIFT_WARD: {
         id: 'RIFT_WARD',
@@ -716,7 +716,7 @@ export const underdarkItems = {
         canHaveSockets: true,
         maxSockets: 3,
         possibleStats: [
-            { key: STATS.CLICK_DAMAGE.key, min: 2000000, max: 3500000 },
+            { key: STATS.CLICK_DAMAGE.key, min: 200000, max: 350000 },
             { key: STATS.DPS.key, min: 2000000, max: 3500000 }
         ]
     },
