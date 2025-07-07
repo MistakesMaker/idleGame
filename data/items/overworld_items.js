@@ -197,7 +197,7 @@ const greenMeadowsItems = {
         icon: 'images/icons/aegis_of_the_guardian.png',
         width: 2, height: 3,
         canHaveSockets: true,
-        maxSockets: 3,
+        maxSockets: 2,
         possibleStats: [
             { key: STATS.DPS.key, min: 1000, max: 2500 },
             { key: STATS.MAGIC_FIND.key, min: 1, max: 2.5 },
@@ -792,7 +792,7 @@ const undeadDesertItems = {
         icon: 'images/icons/pharaohs_curse.png', // ICON PATH CORRECTED
         width: 2, height: 3,
         canHaveSockets: true,
-        maxSockets: 2,
+        maxSockets: 3,
         possibleStats: [
             { key: STATS.CLICK_DAMAGE.key, min: 2000, max: 8000 },
             { key: STATS.GOLD_GAIN.key, min: 20, max: 50 },
