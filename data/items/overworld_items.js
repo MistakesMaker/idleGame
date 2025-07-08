@@ -747,7 +747,7 @@ const undeadDesertItems = {
         type: 'necklace',
         icon: 'images/icons/emerald_charm.png',
         width: 2, height: 2,
-        possibleStats: [ { key: STATS.MAGIC_FIND.key, min: 5, max: 10 } ]
+        possibleStats: [ { key: STATS.MAGIC_FIND.key, min: 10, max: 10 } ]
     },
 
     // --- Sub-Zone: Scorpion Nest (Levels 251-274) ---
@@ -777,7 +777,7 @@ const undeadDesertItems = {
         type: 'necklace',
         icon: 'images/icons/topaz_talisman.png',
         width: 2, height: 2,
-        possibleStats: [ { key: STATS.MAGIC_FIND.key, min: 7, max: 10 } ]
+        possibleStats: [ { key: STATS.MAGIC_FIND.key, min: 5, max: 10 } ]
     },
     BONE_LEGPLATES: {
         id: 'BONE_LEGPLATES',
