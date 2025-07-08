@@ -404,22 +404,62 @@ export function monsterDefeated(gameState, playerStats, currentMonster) {
 }
 
 
+// --- START OF MODIFICATION ---
+
+/**
+ * Calculates the raw, unmodified, exponential HP of a monster at a specific level.
+ * This function no longer considers monster type (Boss, Mini-Boss, etc.).
+ * @param {number} level - The level to calculate HP for.
+ * @returns {number} The calculated raw HP.
+ */
+function calculateRawMonsterHp(level) {
+    const baseHealthFactor = 4;
+    const healthPower = 2.6;
+
+    // 1. Base HP Calculation
+    let monsterHealth = (baseHealthFactor * Math.pow(level, healthPower));
+
+    // 2. World Tier Multiplier
+    const worldTier = Math.floor((level - 1) / 100);
+    if (worldTier > 0) {
+        const worldTierMultiplier = 1 + (worldTier * 6);
+        monsterHealth *= worldTierMultiplier;
+    }
+
+    // 3. Compounding Realm Multiplier
+    const realmIndex = Math.floor((level - 1) / 400);
+    if (realmIndex > 0) {
+        const realmJumpFactor = 8;
+        const realmMultiplier = Math.pow(realmJumpFactor, realmIndex);
+        monsterHealth *= realmMultiplier;
+    }
+
+    // NOTE: All boss-specific multipliers have been moved to generateMonster.
+    return monsterHealth;
+}
+
+// --- Centralized Multiplier Constants for Easy Tuning ---
+/** Multiplier for Big Boss HP relative to the previous monster. */
+const BIG_BOSS_HP_MULTIPLIER = 7.4; 
+/** Multiplier for regular Bosses (levels 10, 20, etc.) applied to their raw HP. */
+const BOSS_HP_MULTIPLIER = 5.287;
+/** Multiplier for Mini-Bosses (levels 5, 15, etc.) applied to their raw HP. */
+const MINI_BOSS_HP_MULTIPLIER = 3.1123;
+
+
 /**
  * Generates a new monster based on the current fighting level.
+ * This function is now the single source of truth for applying all HP multipliers.
  */
 export function generateMonster(level, specialEncounter = null) {
     let monsterData;
     let monsterHealth;
-
-    const baseHealthFactor = 4;
-    const healthPower = 2.6;
 
     if (specialEncounter && specialEncounter.type === 'GOLDEN_SLIME') {
         monsterData = MONSTERS.GOLDEN_SLIME;
         monsterHealth = specialEncounter.hp;
     } else {
         const subZone = findSubZoneByLevel(level);
-
         if (subZone && subZone.monsterPool && subZone.monsterPool.length > 0) {
             monsterData = subZone.monsterPool[Math.floor(Math.random() * subZone.monsterPool.length)];
         } else {
@@ -427,61 +467,46 @@ export function generateMonster(level, specialEncounter = null) {
             monsterData = MONSTERS.SLIME;
         }
 
-        // --- START OF FINAL HP SCALING LOGIC ---
+        // --- REFACTORED AND CENTRALIZED HP CALCULATION LOGIC ---
 
-        // 1. Base HP Calculation
-        monsterHealth = (baseHealthFactor * Math.pow(level, healthPower));
+        if (isBigBossLevel(level) && level > 1) {
+            // Case 1: Big Boss (e.g., 100, 200). Uses the "chained" logic based on the previous level.
+            const prevMonsterResult = generateMonster(level - 1);
+            const prevMonsterHp = prevMonsterResult.newMonsterState.maxHp;
+            monsterHealth = prevMonsterHp * BIG_BOSS_HP_MULTIPLIER;
 
-        // 2. World Tier Multiplier (applies to all)
-        const worldTier = Math.floor((level - 1) / 100);
-        if (worldTier > 0) {
-            const worldTierMultiplier = 1 + (worldTier * 6);
-            monsterHealth *= worldTierMultiplier;
-        }
-
-        // 3. Compounding Realm Multiplier (applies to all monsters in higher realms)
-        const realmIndex = Math.floor((level - 1) / 400);
-        if (realmIndex > 0) {
-            const realmJumpFactor = 8; // This is our main tuning knob for realm difficulty
-            const realmMultiplier = Math.pow(realmJumpFactor, realmIndex);
-            monsterHealth *= realmMultiplier;
-        }
-
-        // 4. Final Boss & Mini-Boss Multipliers
-        if (isBigBossLevel(level)) {
-            monsterHealth *= 15.546;
-        } else if (isBossLevel(level)) {
-            monsterHealth *= 6.287;
-        } else if (isMiniBossLevel(level)) {
-            monsterHealth *= 3.1123;
-        }
-
-        // 5. SPECIAL OVERRIDE for the first level of a new realm
-        const isFirstLevelOfNewRealm = level > 1 && level % 400 === 1;
-        if (isFirstLevelOfNewRealm) {
-            const prevBossLevel = level - 1;
+        } else {
+            // Case 2: Handles all other monsters (Regular, Mini-Boss, and Boss).
             
-            // We must fully calculate the previous boss's HP using the exact same logic
-            let prevBossHp = (baseHealthFactor * Math.pow(prevBossLevel, healthPower));
-            
-            const prevWorldTier = Math.floor((prevBossLevel - 1) / 100);
-            if (prevWorldTier > 0) {
-                prevBossHp *= (1 + (prevWorldTier * 6));
+            // Step A: Determine the base HP, accounting for the "zone reset" logic.
+            let baseHpForLevel;
+            const zoneIndex = Math.floor((level - 1) / 100);
+
+            if (zoneIndex === 0) {
+                // For the first zone (1-99), the base is simply the raw HP.
+                baseHpForLevel = calculateRawMonsterHp(level);
+            } else {
+                // For zones 2+, we apply the "reset and scale" logic.
+                const targetPercentage = 0.45;
+                const prevBossLevel = zoneIndex * 100;
+                const prevBossHp = generateMonster(prevBossLevel).newMonsterState.maxHp;
+                const zoneStartLevel = prevBossLevel + 1;
+                const targetStartHp = prevBossHp * targetPercentage;
+                const normalStartHp = calculateRawMonsterHp(zoneStartLevel);
+                const zoneMultiplier = targetStartHp / normalStartHp;
+                baseHpForLevel = calculateRawMonsterHp(level) * zoneMultiplier;
             }
-            
-            const prevRealmIndex = Math.floor((prevBossLevel - 1) / 400);
-            if (prevRealmIndex > 0) {
-                const realmJumpFactor = 8;
-                prevBossHp *= Math.pow(realmJumpFactor, prevRealmIndex);
+
+            // Step B: Apply final multipliers for non-Big-Boss types.
+            if (isBossLevel(level)) {
+                monsterHealth = baseHpForLevel * BOSS_HP_MULTIPLIER;
+            } else if (isMiniBossLevel(level)) {
+                monsterHealth = baseHpForLevel * MINI_BOSS_HP_MULTIPLIER;
+            } else {
+                // For a regular monster, the base HP is the final HP.
+                monsterHealth = baseHpForLevel;
             }
-            
-            prevBossHp *= 15.546; // Big Boss multiplier
-
-            const targetPercentage = 0.73737373;
-            monsterHealth = prevBossHp * targetPercentage;
         }
-
-        // --- END OF FINAL HP SCALING LOGIC ---
     }
     
     monsterHealth = Math.ceil(monsterHealth);
@@ -491,3 +516,4 @@ export function generateMonster(level, specialEncounter = null) {
     
     return { newMonster, newMonsterState };
 }
+// --- END OF MODIFICATION ---
