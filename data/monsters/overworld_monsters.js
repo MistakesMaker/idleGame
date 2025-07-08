@@ -398,7 +398,7 @@ const undeadDesertMonsters = {
         dropChance: 32, // Note: Boss subzone, but not 100% drop chance
         // MODIFIED!
         lootTable: [
-            { item: ITEMS.SCARAB_BROOCH, weight: 1 }, // NEW!
+            { item: ITEMS.SCARAB_BROOCH, weight: 0.2 }, // NEW!
             { item: ITEMS.SANDSTRIDER_LEGGINGS, weight: 1 },
             { item: GEMS.BASE_TOPAZ, weight: 0.8 },
         ]
