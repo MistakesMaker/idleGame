@@ -631,8 +631,6 @@ h5 .legendary { color: #f39c12; }
     animation: pulse-blue 1.5s infinite;
 }
 
-/* START of modification */
-/* START of modification */
 .gem-controls {
     display: flex;
     align-items: center;
@@ -644,21 +642,10 @@ h5 .legendary { color: #f39c12; }
     font-size: 1em;
 }
 .gem-controls select {
-    flex: 0 1 auto; /* Allows shrinking but not growing */
+    flex: 0 1 auto;
     max-width: 300px;
     margin: 0;
 }
-/* END of modification */
-.gem-controls label {
-    font-family: 'Cinzel', serif;
-    font-size: 1em;
-}
-.gem-controls select {
-    flex: 1 1 auto;
-    max-width: 300px; /* Prevents it from becoming too large */
-    margin: 0;
-}
-/* END of modification */
 
 @keyframes pulse-blue {
     0% { box-shadow: 0 0 5px rgba(52, 152, 219, 0.6); }
@@ -1211,12 +1198,15 @@ h5 .legendary { color: #f39c12; }
     border: 1px solid #4a637e;
     border-radius: 8px;
     flex-shrink: 0;
+    position: relative; /* Make this a positioning context for the button */
+    padding-bottom: 40px; /* Add padding to prevent overlap */
 }
 
 .wiki-filter-row {
     display: flex;
     gap: 15px;
     align-items: center;
+    flex-wrap: wrap;
 }
 
 #wiki-search-input, #wiki-type-filter, #wiki-sockets-filter {
@@ -1227,18 +1217,19 @@ h5 .legendary { color: #f39c12; }
     border-radius: 5px;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     font-size: 16px;
+    margin: 0;
 }
 
-#wiki-search-input { flex-grow: 1; }
-#wiki-sockets-filter { width: 100px; }
+#wiki-search-input { flex-grow: 1; min-width: 200px; }
+#wiki-sockets-filter { width: 120px; }
+.wiki-actions-row {
+    justify-content: flex-start;
+    border-top: 1px solid #4a637e;
+    padding-top: 10px;
+    margin-top: 5px;
+}
+
 #wiki-reset-filters-btn { background: #7f8c8d; border-bottom-color: #6c7a7b; }
-
-/* Dev tool button repositioned to the corner */
-#wiki-controls {
-    position: relative; /* Make this a positioning context for the button */
-    padding-bottom: 40px; /* Add padding to prevent overlap */
-}
-
 #wiki-dev-tool-btn { 
     position: absolute;
     bottom: 8px;
@@ -1250,24 +1241,31 @@ h5 .legendary { color: #f39c12; }
     margin: 0;
 }
 
-/* Change "Show Favorites" to blue */
 #wiki-show-favorites-btn {
-    background: linear-gradient(145deg, #3498db, #2980b9);
-    border-bottom-color: #20638f;
+    background: #3498db;
+    border-bottom-color: #2980b9;
 }
-
-/* Style for when "Show Favorites" is active */
 #wiki-show-favorites-btn.active {
     background: linear-gradient(145deg, #e67e22, #f1c40f);
     border-bottom-color: #d35400;
     color: #1a1a1a;
 }
 
+#wiki-show-upgrades-btn {
+    background: #1abc9c;
+    border-bottom-color: #16a085;
+}
+#wiki-show-upgrades-btn.active {
+    background: linear-gradient(145deg, #27ae60, #2ecc71);
+    border-bottom-color: #229954;
+    color: white;
+}
+
 #wiki-stats-filter-container {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
     gap: 8px 15px;
-    margin-top: 5px;
+    width: 100%;
 }
 
 .wiki-stat-filter {
@@ -1295,18 +1293,6 @@ h5 .legendary { color: #f39c12; }
     display: flex;
     flex-direction: column;
     gap: 10px;
-}
-
-/* *** START OF FIX *** */
-#wiki-show-favorites-btn {
-    background: #3498db;
-    border-bottom-color: #2980b9;
-}
-
-#wiki-show-favorites-btn.active {
-    background: linear-gradient(145deg, #f1c40f, #e67e22);
-    border-bottom-color: #d35400;
-    color: #1a1a1a;
 }
 
 .wiki-item-card {
@@ -1340,7 +1326,6 @@ h5 .legendary { color: #f39c12; }
 .wiki-favorite-star.favorited {
     color: #f1c40f;
 }
-/* *** END OF FIX *** */
 
 .wiki-item-card:hover {
     border-color: #f1c40f;
@@ -1489,7 +1474,6 @@ h5 .legendary { color: #f39c12; }
     z-index: 10; /* This lifts the hovered gem above others */
 }
 
-/* *** START OF FIX *** */
 .permanent-upgrade-card.disabled {
     filter: grayscale(70%);
     opacity: 0.6;
@@ -1554,4 +1538,3 @@ h5 .legendary { color: #f39c12; }
     border-bottom-color: #922b21;
     align-self: center;
 }
-/* *** END OF FIX *** */

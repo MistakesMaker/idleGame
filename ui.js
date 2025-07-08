@@ -1658,25 +1658,22 @@ export function populateWikiFilters(elements, allItemTypes, allStatKeys) {
 /**
  * Renders the results of a wiki search into the container.
  * @param {HTMLElement} containerEl - The container element for the results.
- * @param {Array<object>} wikiData - The array of processed item data to display.
+ * @param {Array<object>} filteredData - The array of pre-filtered item data to display.
  * @param {Array<string>} wikiFavorites - An array of favorited item IDs.
  * @param {boolean} showOnlyFavorites - Flag to determine if only favorites should be shown.
  * @param {boolean} showUpgradesOnly - Flag to determine if only upgrades should be shown.
  */
-export function renderWikiResults(containerEl, wikiData, wikiFavorites, showOnlyFavorites, showUpgradesOnly) {
+export function renderWikiResults(containerEl, filteredData, wikiFavorites, showOnlyFavorites, showUpgradesOnly) {
     containerEl.innerHTML = '';
 
-    let dataToRender = wikiData;
-    
-    // The filter logic is now in game.js, this function just renders the result.
-    // The active state of the buttons is also handled in game.js
+    const dataToRender = [...filteredData];
 
     if (dataToRender.length === 0) {
         let message = "No items match your criteria.";
         if (showOnlyFavorites) {
             message = "You haven't favorited any items that match the other filters.";
         } else if (showUpgradesOnly) {
-            message = "No potential upgrades found matching your filters.";
+            message = "No potential upgrades found matching your criteria.";
         }
         containerEl.innerHTML = `<p style="text-align: center; margin-top: 20px;">${message}</p>`;
         return;

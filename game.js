@@ -1,3 +1,5 @@
+// --- START OF FILE game.js ---
+
 import { REALMS } from './data/realms.js';
 import { MONSTERS } from './data/monsters.js';
 import { ITEMS } from './data/items.js';
@@ -115,12 +117,14 @@ document.addEventListener('DOMContentLoaded', () => {
     let elements = {};
 
     // --- BESTIARY STATE ---
-    let wikiData = [];
-    let wikiFilters = {
-        searchText: '',
-        type: '',
-        sockets: null,
-        stats: new Map(), // Use a Map to store { statKey: minValue }
+    let wikiState = {
+        data: [],
+        filters: {
+            searchText: '',
+            type: '',
+            sockets: null,
+            stats: new Map(),
+        }
     };
 
     let socket = null;
@@ -691,8 +695,7 @@ document.addEventListener('DOMContentLoaded', () => {
         elements.ringSelectionModalBackdrop.classList.add('hidden');
         pendingRingEquip = null;
     }
-
-    function calculateOfflineProgress() {
+        function calculateOfflineProgress() {
         if (!gameState.lastSaveTimestamp) return;
 
         const offlineDurationSeconds = (Date.now() - gameState.lastSaveTimestamp) / 1000;
@@ -834,7 +837,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // --- BESTIARY LOGIC ---
     function buildWikiDatabase() {
-        wikiData = [];
+        wikiState.data = [];
         const allItemBases = { ...ITEMS, ...GEMS };
     
         for (const itemKey in allItemBases) {
@@ -874,7 +877,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 }
             }
-            wikiData.push(itemEntry);
+            wikiState.data.push(itemEntry);
         }
     }
 
@@ -883,33 +886,65 @@ document.addEventListener('DOMContentLoaded', () => {
         const highestUnlockedRealm = REALMS.slice().reverse().find(realm => highestLevelEverReached >= realm.requiredLevel);
         const maxRealmIndex = highestUnlockedRealm ? REALMS.indexOf(highestUnlockedRealm) : -1;
     
-        let filtered = wikiData.filter(itemData => {
-            if (wikiShowFavorites && !gameState.wikiFavorites.includes(itemData.id)) {
+        // 1. Initial filter pass based on standard criteria
+        let filtered = wikiState.data.filter(itemData => {
+            const isAccessible = itemData.dropSources.length === 0 || itemData.dropSources.some(source => source.realmIndex <= maxRealmIndex);
+            if (!isAccessible) return false;
+    
+            if (wikiState.filters.searchText && !itemData.base.name.toLowerCase().includes(wikiState.filters.searchText)) {
                 return false;
             }
-    
-            if (wikiShowUpgradesOnly) {
-                if (GEMS[itemData.id]) return false;
+            if (wikiState.filters.type && itemData.base.type !== wikiState.filters.type) {
+                return false;
+            }
+            if (wikiState.filters.sockets !== null && (itemData.base.maxSockets || 0) < wikiState.filters.sockets) {
+                return false;
+            }
+            for (const [statKey, minValue] of wikiState.filters.stats.entries()) {
+                const hasStat = itemData.base.possibleStats?.some(stat => stat.key === statKey && stat.max >= minValue);
+                if (!hasStat) {
+                    return false;
+                }
+            }
+            return true;
+        });
+
+        // 2. Apply special, mutually exclusive filters
+        if (wikiShowFavorites) {
+            filtered = filtered.filter(itemData => gameState.wikiFavorites.includes(itemData.id));
+        } else if (wikiShowUpgradesOnly) {
+            filtered = filtered.filter(itemData => {
+                if (GEMS[itemData.id]) return false; // Exclude gems from upgrade check
 
                 const potentialItemBase = itemData.base;
                 const itemType = potentialItemBase.type;
                 
                 const isUpgradeOver = (equippedItem) => {
-                    if (!equippedItem) return true; 
+                    if (!equippedItem) return true; // Any item is an upgrade over an empty slot
 
                     const equippedStats = getCombinedItemStats(equippedItem);
-                    const potentialMaxSockets = potentialItemBase.maxSockets || 0;
-                    const equippedSockets = equippedItem.sockets ? equippedItem.sockets.length : 0;
-
-                    if (potentialMaxSockets > equippedSockets) return true;
-
+                    
+                    let isStrictStatUpgrade = false;
                     for (const potentialStat of potentialItemBase.possibleStats) {
-                        const equippedValue = equippedStats[potentialStat.key] || 0;
-                        if (potentialStat.max > equippedValue) {
+                        // Only compare stats that the equipped item already has
+                        if (equippedStats.hasOwnProperty(potentialStat.key)) {
+                            if (potentialStat.max > equippedStats[potentialStat.key]) {
+                                isStrictStatUpgrade = true;
+                                break;
+                            }
+                        }
+                    }
+                    if (isStrictStatUpgrade) return true;
+
+                    // Only check sockets if the socket filter is active (value > 0)
+                    if (wikiState.filters.sockets !== null && wikiState.filters.sockets > 0) {
+                        const potentialMaxSockets = potentialItemBase.maxSockets || 0;
+                        const equippedSockets = equippedItem.sockets ? equippedItem.sockets.length : 0;
+                        if (potentialMaxSockets > equippedSockets) {
                             return true;
                         }
                     }
-                    
+
                     return false;
                 };
 
@@ -918,28 +953,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 } else {
                     return isUpgradeOver(gameState.equipment[itemType]);
                 }
-            }
-
-            const isAccessible = itemData.dropSources.length === 0 || itemData.dropSources.some(source => source.realmIndex <= maxRealmIndex);
-            if (!isAccessible) return false;
-    
-            if (wikiFilters.searchText && !itemData.base.name.toLowerCase().includes(wikiFilters.searchText)) {
-                return false;
-            }
-            if (wikiFilters.type && itemData.base.type !== wikiFilters.type) {
-                return false;
-            }
-            if (wikiFilters.sockets !== null && (itemData.base.maxSockets || 0) < wikiFilters.sockets) {
-                return false;
-            }
-            for (const [statKey, minValue] of wikiFilters.stats.entries()) {
-                const hasStat = itemData.base.possibleStats?.some(stat => stat.key === statKey && stat.max >= minValue);
-                if (!hasStat) {
-                    return false;
-                }
-            }
-            return true;
-        });
+            });
+        }
     
         ui.renderWikiResults(elements.wikiResultsContainer, filtered, gameState.wikiFavorites, wikiShowFavorites, wikiShowUpgradesOnly);
     }
@@ -1085,9 +1100,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         
         buildWikiDatabase();
-        const allItemTypes = new Set(wikiData.map(d => d.base.type).filter(Boolean));
+        const allItemTypes = new Set(wikiState.data.map(d => d.base.type).filter(Boolean));
         const allStatKeys = new Set();
-        wikiData.forEach(d => {
+        wikiState.data.forEach(d => {
             d.base.possibleStats?.forEach(stat => allStatKeys.add(stat.key));
             if (d.base.synergy) allStatKeys.add('synergy');
         });
@@ -2367,18 +2382,18 @@ document.addEventListener('DOMContentLoaded', () => {
         } = elements;
     
         const updateAndApplyFilters = () => {
-            wikiFilters.searchText = (/** @type {HTMLInputElement} */ (wikiSearchInput)).value.toLowerCase();
-            wikiFilters.type = (/** @type {HTMLSelectElement} */ (wikiTypeFilter)).value;
+            wikiState.filters.searchText = (/** @type {HTMLInputElement} */ (wikiSearchInput)).value.toLowerCase();
+            wikiState.filters.type = (/** @type {HTMLSelectElement} */ (wikiTypeFilter)).value;
             const socketsValue = parseInt((/** @type {HTMLInputElement} */ (wikiSocketsFilter)).value, 10);
-            wikiFilters.sockets = isNaN(socketsValue) || socketsValue < 0 ? null : socketsValue;
+            wikiState.filters.sockets = isNaN(socketsValue) || socketsValue < 0 ? null : socketsValue;
     
-            wikiFilters.stats.clear();
+            wikiState.filters.stats.clear();
             wikiStatsFilterContainer.querySelectorAll('.wiki-stat-filter').forEach(filterDiv => {
                 const checkbox = /** @type {HTMLInputElement | null} */ (filterDiv.querySelector('input[type="checkbox"]'));
                 if (checkbox?.checked && checkbox.dataset.statKey) {
                     const valueInput = /** @type {HTMLInputElement | null} */ (filterDiv.querySelector('input[type="number"]'));
                     const minValue = valueInput ? parseFloat(valueInput.value) : 0;
-                    wikiFilters.stats.set(checkbox.dataset.statKey, isNaN(minValue) ? 0 : minValue);
+                    wikiState.filters.stats.set(checkbox.dataset.statKey, isNaN(minValue) ? 0 : minValue);
                 }
             });
             applyWikiFilters();
@@ -2456,7 +2471,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (card) {
                 const parentCard = card.closest('.wiki-item-card');
                 if (parentCard instanceof HTMLElement && parentCard.dataset.itemId) {
-                     const itemData = wikiData.find(item => item.id === parentCard.dataset.itemId);
+                     const itemData = wikiState.data.find(item => item.id === parentCard.dataset.itemId);
                     if (itemData && itemData.dropSources.length > 0) {
                         ui.showWikiTravelModal(elements, itemData.dropSources, gameState.maxLevel, handleWikiTravel);
                     }
@@ -2465,7 +2480,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     
         addTapListener(wikiDevToolBtn, () => {
-            ui.showDevToolModal(elements, wikiData);
+            ui.showDevToolModal(elements, wikiState.data);
         });
     
         addTapListener(devToolCloseBtn, () => {
