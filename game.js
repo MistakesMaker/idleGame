@@ -1,5 +1,3 @@
-// --- START OF FILE game.js ---
-
 import { REALMS } from './data/realms.js';
 import { MONSTERS } from './data/monsters.js';
 import { ITEMS } from './data/items.js';
@@ -110,6 +108,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let isAutoScrollingLog = true;
     let wikiFavorites = [];
     let wikiShowFavorites = false;
+    let wikiShowUpgradesOnly = false;
     let gemSortPreference = 'tier_desc'; // NEW: State for gem sorting
 
     /** @type {DOMElements} */
@@ -889,6 +888,38 @@ document.addEventListener('DOMContentLoaded', () => {
                 return false;
             }
     
+            if (wikiShowUpgradesOnly) {
+                if (GEMS[itemData.id]) return false;
+
+                const potentialItemBase = itemData.base;
+                const itemType = potentialItemBase.type;
+                
+                const isUpgradeOver = (equippedItem) => {
+                    if (!equippedItem) return true; 
+
+                    const equippedStats = getCombinedItemStats(equippedItem);
+                    const potentialMaxSockets = potentialItemBase.maxSockets || 0;
+                    const equippedSockets = equippedItem.sockets ? equippedItem.sockets.length : 0;
+
+                    if (potentialMaxSockets > equippedSockets) return true;
+
+                    for (const potentialStat of potentialItemBase.possibleStats) {
+                        const equippedValue = equippedStats[potentialStat.key] || 0;
+                        if (potentialStat.max > equippedValue) {
+                            return true;
+                        }
+                    }
+                    
+                    return false;
+                };
+
+                if (itemType === 'ring') {
+                    return isUpgradeOver(gameState.equipment.ring1) || isUpgradeOver(gameState.equipment.ring2);
+                } else {
+                    return isUpgradeOver(gameState.equipment[itemType]);
+                }
+            }
+
             const isAccessible = itemData.dropSources.length === 0 || itemData.dropSources.some(source => source.realmIndex <= maxRealmIndex);
             if (!isAccessible) return false;
     
@@ -910,8 +941,9 @@ document.addEventListener('DOMContentLoaded', () => {
             return true;
         });
     
-        ui.renderWikiResults(elements.wikiResultsContainer, filtered, gameState.wikiFavorites, wikiShowFavorites);
+        ui.renderWikiResults(elements.wikiResultsContainer, filtered, gameState.wikiFavorites, wikiShowFavorites, wikiShowUpgradesOnly);
     }
+    
     // --- END BESTIARY LOGIC ---
 
     // --- START OF NEW GEM SORTING LOGIC ---
@@ -2328,6 +2360,7 @@ document.addEventListener('DOMContentLoaded', () => {
             wikiResetFiltersBtn,
             wikiResultsContainer,
             wikiShowFavoritesBtn,
+            wikiShowUpgradesBtn,
             wikiDevToolBtn,
             devToolModalBackdrop,
             devToolCloseBtn
@@ -2374,7 +2407,21 @@ document.addEventListener('DOMContentLoaded', () => {
     
         addTapListener(wikiShowFavoritesBtn, () => {
             wikiShowFavorites = !wikiShowFavorites;
+            if (wikiShowFavorites) {
+                wikiShowUpgradesOnly = false;
+                wikiShowUpgradesBtn.classList.remove('active');
+            }
             wikiShowFavoritesBtn.classList.toggle('active', wikiShowFavorites);
+            applyWikiFilters();
+        });
+
+        addTapListener(wikiShowUpgradesBtn, () => {
+            wikiShowUpgradesOnly = !wikiShowUpgradesOnly;
+            if (wikiShowUpgradesOnly) {
+                wikiShowFavorites = false;
+                wikiShowFavoritesBtn.classList.remove('active');
+            }
+            wikiShowUpgradesBtn.classList.toggle('active', wikiShowUpgradesOnly);
             applyWikiFilters();
         });
     

@@ -152,6 +152,7 @@ export function initDOMElements() {
         wikiResetFiltersBtn: document.getElementById('wiki-reset-filters-btn'),
         wikiResultsContainer: document.getElementById('wiki-results-container'),
         wikiShowFavoritesBtn: document.getElementById('wiki-show-favorites-btn'),
+        wikiShowUpgradesBtn: document.getElementById('wiki-show-upgrades-btn'),
         wikiDevToolBtn: document.getElementById('wiki-dev-tool-btn'),
         devToolModalBackdrop: document.getElementById('dev-tool-modal-backdrop'),
         devToolMissingImagesList: document.getElementById('dev-tool-missing-images-list'),
@@ -1660,40 +1661,40 @@ export function populateWikiFilters(elements, allItemTypes, allStatKeys) {
  * @param {Array<object>} wikiData - The array of processed item data to display.
  * @param {Array<string>} wikiFavorites - An array of favorited item IDs.
  * @param {boolean} showOnlyFavorites - Flag to determine if only favorites should be shown.
+ * @param {boolean} showUpgradesOnly - Flag to determine if only upgrades should be shown.
  */
-export function renderWikiResults(containerEl, wikiData, wikiFavorites, showOnlyFavorites) {
+export function renderWikiResults(containerEl, wikiData, wikiFavorites, showOnlyFavorites, showUpgradesOnly) {
     containerEl.innerHTML = '';
 
     let dataToRender = wikiData;
-    if (showOnlyFavorites) {
-        dataToRender = wikiData.filter(itemData => wikiFavorites.includes(itemData.id));
+    
+    // The filter logic is now in game.js, this function just renders the result.
+    // The active state of the buttons is also handled in game.js
+
+    if (dataToRender.length === 0) {
+        let message = "No items match your criteria.";
+        if (showOnlyFavorites) {
+            message = "You haven't favorited any items that match the other filters.";
+        } else if (showUpgradesOnly) {
+            message = "No potential upgrades found matching your filters.";
+        }
+        containerEl.innerHTML = `<p style="text-align: center; margin-top: 20px;">${message}</p>`;
+        return;
     }
 
-    // --- START OF SORTING FIX ---
     dataToRender.sort((a, b) => {
-        // Helper function to find the minimum level an item can be obtained at.
         const getMinLevel = (itemData) => {
             if (!itemData.dropSources || itemData.dropSources.length === 0) {
-                // If an item has no drop source, push it to the end of the list.
                 return Infinity;
             }
-            // Find the minimum level among all possible drop sources.
             return Math.min(...itemData.dropSources.map(source => source.level));
         };
 
         const minLevelA = getMinLevel(a);
         const minLevelB = getMinLevel(b);
 
-        // Sort by the minimum level in ascending order.
         return minLevelA - minLevelB;
     });
-    // --- END OF SORTING FIX ---
-
-    if (dataToRender.length === 0) {
-        const message = showOnlyFavorites ? "You haven't favorited any items yet." : "No items match your criteria.";
-        containerEl.innerHTML = `<p style="text-align: center; margin-top: 20px;">${message}</p>`;
-        return;
-    }
 
     dataToRender.forEach(itemData => {
         const isFavorited = wikiFavorites.includes(itemData.id);
@@ -1704,6 +1705,7 @@ export function renderWikiResults(containerEl, wikiData, wikiFavorites, showOnly
         containerEl.appendChild(card);
     });
 }
+
 
 
 /**
