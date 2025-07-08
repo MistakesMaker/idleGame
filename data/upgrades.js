@@ -22,7 +22,7 @@ export const PERMANENT_UPGRADES = {
     GOLD_MASTERY: {
         id: 'GOLD_MASTERY',
         name: "Gold Mastery",
-        description: "Permanently increase all Gold earned by <span>{value}%</span>.",
+        description: "Increases the base Gold dropped by monsters by <span>{value}%</span>.",
         icon: 'fas fa-coins',
         baseCost: 1000,
         costScalar: 1.25,

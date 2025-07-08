@@ -201,9 +201,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const permUpgrades = gameState.permanentUpgrades || {};
         const permUpgradeDefs = PERMANENT_UPGRADES;
 
-        // Calculate bonuses from permanent upgrades first
+        // --- START OF MODIFICATION ---
+        // Calculate bonuses from permanent upgrades first, EXCLUDING GOLD_MASTERY from this section.
         const permanentUpgradeBonuses = {
-            gold: (permUpgrades.GOLD_MASTERY || 0) * permUpgradeDefs.GOLD_MASTERY.bonusPerLevel,
+            // GOLD_MASTERY is now handled separately in the gold calculation logic.
             magicFind: (permUpgrades.LOOT_HOARDER || 0) * (permUpgradeDefs.LOOT_HOARDER?.bonusPerLevel || 0),
             critChance: (permUpgrades.CRITICAL_POWER || 0) * permUpgradeDefs.CRITICAL_POWER.bonusPerLevel,
             critDamage: (permUpgrades.CRITICAL_DAMAGE || 0) * permUpgradeDefs.CRITICAL_DAMAGE.bonusPerLevel,
@@ -214,13 +215,14 @@ document.addEventListener('DOMContentLoaded', () => {
             multiStrike: (permUpgrades.SWIFT_STRIKES || 0) * permUpgradeDefs.SWIFT_STRIKES.bonusPerLevel,
             legacyKeeper: (permUpgrades.LEGACY_KEEPER || 0) * permUpgradeDefs.LEGACY_KEEPER.bonusPerLevel,
         };
+        // --- END OF MODIFICATION ---
         
         const prestigeMultiplier = 1 + ((permanentUpgradeBonuses.prestigePower * (gameState.prestigeCount || 0)) / 100);
 
         const newCalculatedStats = {
             baseClickDamage: 1,
             baseDps: 0,
-            bonusGold: permanentUpgradeBonuses.gold,
+            bonusGold: 0, // Base bonus gold is now 0, only affected by gear/attributes
             magicFind: permanentUpgradeBonuses.magicFind,
         };
 
@@ -351,14 +353,11 @@ document.addEventListener('DOMContentLoaded', () => {
             recalculateStats();
         }
     
-        // --- START OF FIX: Remove the redundant UI update call ---
-        // The monster UI will be updated in the setTimeout when the new monster appears.
         ui.updateHeroPanel(elements, gameState);
         ui.updatePrestigeUI(elements, gameState);
         ui.updateCurrency(elements, gameState);
         ui.updateUpgrades(elements, gameState);
         ui.renderPermanentUpgrades(elements, gameState);
-        // --- END OF FIX ---
     
         if (result.encounterEnded) {
             gameState.specialEncounter = null;
@@ -1625,17 +1624,14 @@ document.addEventListener('DOMContentLoaded', () => {
                             ui.updateSocketingHighlights(elements, selectedGemForSocketing, gameState);
                             break;
                         case 'gems-view':
-                            // --- START OF THE FINAL FIX ---
-                            // Populate dropdown and render the grid without recalculating positions.
                             ui.populateGemSortOptions(elements, gameState.gems, gemSortPreference);
                             ui.renderGrid(elements.gemSlotsEl, gameState.gems, {
                                 type: 'gem',
-                                calculatePositions: false, // This is the key change for performance.
+                                calculatePositions: false,
                                 bulkCombineSelection,
                                 bulkCombineDeselectedIds,
                                 selectedGemId: selectedGemForSocketing ? selectedGemForSocketing.id : null
                             });
-                            // --- END OF THE FINAL FIX ---
                             populateBulkCombineControls();
                             ui.updateGemCraftingUI(elements, craftingGems, gameState);
                             break;
@@ -1651,7 +1647,6 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
 
-        // NEW: Add event listener for the gem sort dropdown
         if (elements.gemSortSelect) {
             elements.gemSortSelect.addEventListener('change', (e) => {
                 if (e.target instanceof HTMLSelectElement) {

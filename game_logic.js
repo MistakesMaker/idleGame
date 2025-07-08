@@ -5,6 +5,7 @@ import { ITEMS } from './data/items.js';
 import { GEMS } from './data/gems.js';
 import { rarities } from './game.js';
 import { isBossLevel, isBigBossLevel, isMiniBossLevel, findSubZoneByLevel, formatNumber, findNextAvailableSpot } from './utils.js';
+import { PERMANENT_UPGRADES } from './data/upgrades.js';
 
 /**
  * Checks if a dropped item should be kept based on the player's salvage filter settings (strict AND logic).
@@ -197,7 +198,6 @@ export function dropLoot(currentMonster, gameState, playerStats) {
             events.push('gemFind');
         }
         
-        // --- START OF FIX: Assign position to new gems immediately ---
         const placedGems = gameState.gems.filter(g => g.x !== undefined && g.x !== -1);
         gemsToPlace.forEach(newGem => {
             const spot = findNextAvailableSpot(newGem.width, newGem.height, placedGems);
@@ -211,7 +211,6 @@ export function dropLoot(currentMonster, gameState, playerStats) {
                  logMessages.push({ message: `Your gem pouch is full! A ${newGem.name} was lost.`, class: 'rare' });
             }
         });
-        // --- END OF FIX ---
         
         return { droppedItems, droppedGems, logMessages, events };
     }
@@ -325,29 +324,30 @@ export function monsterDefeated(gameState, playerStats, currentMonster) {
     if (!gameState.completedLevels.includes(level)) gameState.completedLevels.push(level);
     if (!gameState.currentRunCompletedLevels.includes(level)) gameState.currentRunCompletedLevels.push(level);
 
-    // Calculate base rewards
     const tier = Math.floor((level - 1) / 10);
     const difficultyResetFactor = 1;
     const effectiveLevel = level - (tier * difficultyResetFactor);
 
-    let goldGained = 10 + (3 * Math.pow(effectiveLevel, 2.1));
+    let baseGoldDrop = 10 + (3 * Math.pow(effectiveLevel, 2.1));
     let xpGained = 20 * Math.pow(level, 1.2);
     
-    if (isBigBossLevel(level)) { xpGained *= 3; goldGained *= 3; } 
-    else if (isBossLevel(level)) { xpGained *= 2; goldGained *= 2; } 
-    else if (isMiniBossLevel(level)) { xpGained *= 1.5; goldGained *= 1.5; }
+    if (isBigBossLevel(level)) { xpGained *= 3; baseGoldDrop *= 3; } 
+    else if (isBossLevel(level)) { xpGained *= 2; baseGoldDrop *= 2; } 
+    else if (isMiniBossLevel(level)) { xpGained *= 1.5; baseGoldDrop *= 1.5; }
     
-    goldGained = Math.ceil(goldGained * (1 + (playerStats.bonusGold / 100)));
+    const goldMasteryLevel = gameState.permanentUpgrades.GOLD_MASTERY || 0;
+    const goldMasteryBonus = PERMANENT_UPGRADES.GOLD_MASTERY.bonusPerLevel * goldMasteryLevel;
+    let goldAfterMastery = baseGoldDrop * (1 + (goldMasteryBonus / 100));
+
+    let finalGoldGained = Math.ceil(goldAfterMastery * (1 + (playerStats.bonusGold / 100)));
     xpGained = Math.ceil(xpGained);
 
-    // GOLD FIX: Add gold to the game state BEFORE checking for slime split
-    gameState.gold += goldGained;
+    gameState.gold += finalGoldGained;
 
-    // Handle item drops immediately
     const lootResult = (Math.random() * 100 < currentMonster.data.dropChance) ? dropLoot(currentMonster, gameState, playerStats) : { droppedItems: [], droppedGems: [], logMessages: [], events: [] };
     logMessages.push({ message: `You defeated the ${currentMonster.name} and gained ${formatNumber(xpGained)} XP.`, class: '' });
     
-    logMessages.push({ message: `You gained ${formatNumber(goldGained)} gold.`, class: '' });
+    logMessages.push({ message: `You gained ${formatNumber(finalGoldGained)} gold.`, class: '' });
 
     lootResult.logMessages.forEach(msg => logMessages.push(msg));
     if (lootResult.droppedItems.length > 0 || lootResult.droppedGems.length > 0) {
@@ -364,11 +364,10 @@ export function monsterDefeated(gameState, playerStats, currentMonster) {
     if (swordBase && swordBase.uniqueEffect === 'slimeSplit') initialSlimeSplitChance += 10;
     if (gameState.absorbedUniqueEffects && gameState.absorbedUniqueEffects['slimeSplit']) initialSlimeSplitChance += gameState.absorbedUniqueEffects['slimeSplit'] * 10;
 
-    // Now check if the effect is toggled on and if the roll succeeds
     if (gameState.isSlimeSplitEnabled && initialSlimeSplitChance > 0 && Math.random() * 100 < initialSlimeSplitChance) {
         
         const slimeSpawnedResult = { 
-            goldGained, 
+            goldGained: finalGoldGained, 
             xpGained, 
             droppedItems: lootResult.droppedItems, 
             droppedGems: lootResult.droppedGems, 
@@ -381,16 +380,15 @@ export function monsterDefeated(gameState, playerStats, currentMonster) {
         gameState.specialEncounter = {
             type: 'GOLDEN_SLIME',
             chainLevel: 1,
-            baseGold: goldGained, 
+            baseGold: finalGoldGained, 
             hp: previousMonsterMaxHp * 0.5,
-            goldReward: goldGained * 3,
+            goldReward: finalGoldGained * 3,
             nextChance: initialSlimeSplitChance * 0.9,
         };
         
         return slimeSpawnedResult;
 
     } else {
-        // No chain started. Progress normally.
         if (gameState.isAutoProgressing) {
             const nextLevel = level + 1;
             const nextSubZone = findSubZoneByLevel(nextLevel);
@@ -402,7 +400,7 @@ export function monsterDefeated(gameState, playerStats, currentMonster) {
         gameState.maxLevel = gameState.currentFightingLevel;
     }
     
-    return { goldGained, xpGained, droppedItems: lootResult.droppedItems, droppedGems: lootResult.droppedGems, logMessages, events: lootResult.events };
+    return { goldGained: finalGoldGained, xpGained, droppedItems: lootResult.droppedItems, droppedGems: lootResult.droppedGems, logMessages, events: lootResult.events };
 }
 
 
@@ -412,6 +410,9 @@ export function monsterDefeated(gameState, playerStats, currentMonster) {
 export function generateMonster(level, specialEncounter = null) {
     let monsterData;
     let monsterHealth;
+
+    const baseHealthFactor = 4;
+    const healthPower = 2.6;
 
     if (specialEncounter && specialEncounter.type === 'GOLDEN_SLIME') {
         monsterData = MONSTERS.GOLDEN_SLIME;
@@ -426,31 +427,27 @@ export function generateMonster(level, specialEncounter = null) {
             monsterData = MONSTERS.SLIME;
         }
 
-        const baseHealthFactor = 4;
-        const healthPower = 2.6;
+        // --- START OF FINAL HP SCALING LOGIC ---
 
+        // 1. Base HP Calculation
         monsterHealth = (baseHealthFactor * Math.pow(level, healthPower));
 
-        // World tier multiplier (every 100 levels)
+        // 2. World Tier Multiplier (applies to all)
         const worldTier = Math.floor((level - 1) / 100);
         if (worldTier > 0) {
-            const spikeMultiplier = 6;
-            const worldTierMultiplier = 1 + (worldTier * spikeMultiplier);
+            const worldTierMultiplier = 1 + (worldTier * 6);
             monsterHealth *= worldTierMultiplier;
         }
 
-        // --- START of Realm Multiplier ---
-        // Each 400 levels represents a new realm, which gets progressively harder.
-        const realmMultiplierConstant = 2.37896;
+        // 3. Compounding Realm Multiplier (applies to all monsters in higher realms)
         const realmIndex = Math.floor((level - 1) / 400);
-
         if (realmIndex > 0) {
-            const realmMultiplier = Math.pow(realmMultiplierConstant, realmIndex * 2);
+            const realmJumpFactor = 8; // This is our main tuning knob for realm difficulty
+            const realmMultiplier = Math.pow(realmJumpFactor, realmIndex);
             monsterHealth *= realmMultiplier;
         }
-        // --- END of Realm Multiplier ---
 
-        // Apply boss multipliers sequentially.
+        // 4. Final Boss & Mini-Boss Multipliers
         if (isBigBossLevel(level)) {
             monsterHealth *= 15.546;
         } else if (isBossLevel(level)) {
@@ -458,6 +455,33 @@ export function generateMonster(level, specialEncounter = null) {
         } else if (isMiniBossLevel(level)) {
             monsterHealth *= 3.1123;
         }
+
+        // 5. SPECIAL OVERRIDE for the first level of a new realm
+        const isFirstLevelOfNewRealm = level > 1 && level % 400 === 1;
+        if (isFirstLevelOfNewRealm) {
+            const prevBossLevel = level - 1;
+            
+            // We must fully calculate the previous boss's HP using the exact same logic
+            let prevBossHp = (baseHealthFactor * Math.pow(prevBossLevel, healthPower));
+            
+            const prevWorldTier = Math.floor((prevBossLevel - 1) / 100);
+            if (prevWorldTier > 0) {
+                prevBossHp *= (1 + (prevWorldTier * 6));
+            }
+            
+            const prevRealmIndex = Math.floor((prevBossLevel - 1) / 400);
+            if (prevRealmIndex > 0) {
+                const realmJumpFactor = 8;
+                prevBossHp *= Math.pow(realmJumpFactor, prevRealmIndex);
+            }
+            
+            prevBossHp *= 15.546; // Big Boss multiplier
+
+            const targetPercentage = 0.73737373;
+            monsterHealth = prevBossHp * targetPercentage;
+        }
+
+        // --- END OF FINAL HP SCALING LOGIC ---
     }
     
     monsterHealth = Math.ceil(monsterHealth);
