@@ -63,15 +63,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 groupedData[slotType][statKey][realmName] = [];
             }
             
-            // --- START OF FIX: Use the maximum stat value ---
             const maxStatValue = stat.max;
 
             groupedData[slotType][statKey][realmName].push({
                 x: dropLevel,
                 y: maxStatValue,
-                label: item.name, // Keep item name for detailed tooltips
+                label: item.name,
             });
-            // --- END OF FIX ---
         }
     }
 
@@ -90,9 +88,75 @@ document.addEventListener('DOMContentLoaded', () => {
         realmFilterContainer.appendChild(realmDiv);
     });
 
+    // --- Functions to save and load filter state, now including scale type ---
+    function saveFilters() {
+        const activeStatFilter = /** @type {HTMLElement} */(document.querySelector('#stat-filter-container .filter-btn.active')).dataset.statFilter;
+        
+        const scaleToggleButton = /** @type {HTMLButtonElement} */(document.getElementById('scale-toggle-btn'));
+        const currentScale = scaleToggleButton.dataset.scale || 'logarithmic';
+
+        const realmCheckboxes = document.querySelectorAll('#realm-filter-container input[data-realm-name]');
+        const realmStates = {};
+        realmCheckboxes.forEach(cb => {
+            const input = /** @type {HTMLInputElement} */(cb);
+            if (input.dataset.realmName) {
+                realmStates[input.dataset.realmName] = input.checked;
+            }
+        });
+    
+        const filterState = {
+            activeStat: activeStatFilter,
+            realmStates: realmStates,
+            scaleType: currentScale,
+        };
+    
+        localStorage.setItem('graphFilterState', JSON.stringify(filterState));
+    }
+
+    function loadFilters() {
+        const savedFilters = localStorage.getItem('graphFilterState');
+        if (!savedFilters) return 'logarithmic'; 
+    
+        try {
+            const { activeStat, realmStates, scaleType } = JSON.parse(savedFilters);
+    
+            if (activeStat) {
+                document.querySelectorAll('.filter-btn').forEach(btn => {
+                    btn.classList.toggle('active', (/** @type {HTMLElement} */(btn)).dataset.statFilter === activeStat);
+                });
+            }
+    
+            if (realmStates) {
+                let allChecked = true;
+                const realmCheckboxes = document.querySelectorAll('#realm-filter-container input[data-realm-name]');
+                realmCheckboxes.forEach(cb => {
+                    const input = /** @type {HTMLInputElement} */(cb);
+                    const realmName = input.dataset.realmName;
+                    if (realmStates.hasOwnProperty(realmName)) {
+                        input.checked = realmStates[realmName];
+                        if (!input.checked) allChecked = false;
+                    } else {
+                        allChecked = false;
+                    }
+                });
+                
+                const selectAllCheckbox = /** @type {HTMLInputElement} */(document.getElementById('realm-filter-all'));
+                if (selectAllCheckbox) selectAllCheckbox.checked = allChecked;
+            }
+            
+            return scaleType || 'logarithmic';
+
+        } catch (e) {
+            console.error("Failed to load or parse filter state from localStorage:", e);
+            localStorage.removeItem('graphFilterState');
+            return 'logarithmic';
+        }
+    }
+    
     // --- STEP 4: Create a chart for each (Slot, Stat) combination ---
     const chartContainer = document.getElementById('chart-container');
     const chartInstances = [];
+    let currentScaleType = loadFilters();
     const chartColors = ['#e74c3c', '#3498db', '#2ecc71', '#9b59b6', '#f1c40f', '#1abc9c', '#e67e22', '#34495e'];
     
     const capitalize = (s) => s.charAt(0).toUpperCase() + s.slice(1);
@@ -128,10 +192,7 @@ document.addEventListener('DOMContentLoaded', () => {
             let colorIndex = 0;
             for (const realmName in realmsForStat) {
                 const dataPoints = realmsForStat[realmName];
-                // --- START OF FIX ---
-                // Allow datasets with only one point to be rendered.
                 if (dataPoints.length === 0) continue;
-                // --- END OF FIX ---
                 dataPoints.sort((a, b) => a.x - b.x);
 
                 datasets.push({
@@ -140,7 +201,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     borderColor: chartColors[colorIndex % chartColors.length],
                     backgroundColor: chartColors[colorIndex % chartColors.length] + '33',
                     tension: 0.1,
-                    fill: false, // Set to false to see lines clearly
+                    fill: false,
                 });
                 colorIndex++;
             }
@@ -149,7 +210,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const wrapper = document.createElement('div');
             wrapper.className = 'chart-wrapper';
-            wrapper.dataset.stat = statKey; // Only need stat for filtering charts
+            wrapper.dataset.stat = statKey;
 
             const canvas = document.createElement('canvas');
             wrapper.appendChild(canvas);
@@ -163,9 +224,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     maintainAspectRatio: true,
                     scales: {
                         x: { type: 'linear', title: { display: true, text: 'Item First Drop Level', color: '#ecf0f1', font: { size: 14 } }, ticks: { color: '#bdc3c7' } },
-                        // --- START OF FIX: Update Y-axis label ---
-                        y: { type: 'logarithmic', title: { display: true, text: `${statInfo.name} (Max Value)`, color: '#ecf0f1', font: { size: 14 } }, ticks: { color: '#bdc3c7', callback: (val) => formatAxisNumber(val) } }
-                        // --- END OF FIX ---
+                        y: { type: currentScaleType, title: { display: true, text: `${statInfo.name} (Max Value)`, color: '#ecf0f1', font: { size: 14 } }, ticks: { color: '#bdc3c7', callback: (val) => formatAxisNumber(val) } }
                     },
                     plugins: {
                         title: { display: true, text: chartTitle, color: '#f1c40f', font: { size: 18 } },
@@ -177,8 +236,14 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // --- STEP 5: Add filtering logic ---
+    // --- STEP 5: Add filtering and interaction logic ---
     const allFiltersContainer = document.getElementById('all-filters-container');
+    const scaleToggleButton = /** @type {HTMLButtonElement} */(document.getElementById('scale-toggle-btn'));
+
+    function updateScaleToggleButton() {
+        scaleToggleButton.dataset.scale = currentScaleType;
+        scaleToggleButton.textContent = currentScaleType === 'logarithmic' ? 'Switch to Linear Scale' : 'Switch to Logarithmic Scale';
+    }
 
     function applyFilters() {
         const realmCheckboxes = document.querySelectorAll('#realm-filter-container input[data-realm-name]');
@@ -188,28 +253,63 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const activeStatFilter = /** @type {HTMLElement} */(document.querySelector('#stat-filter-container .filter-btn.active')).dataset.statFilter;
 
-        // Hide/show entire charts based on the stat filter
         chartInstances.forEach(chart => {
             const wrapper = /** @type {HTMLElement} */ (chart.canvas.parentElement);
             const statMatch = activeStatFilter === 'all' || wrapper.dataset.stat === activeStatFilter;
             wrapper.classList.toggle('hidden', !statMatch);
-        });
+            
+            // --- START OF NEW AXIS LOGIC ---
+            let maxVisibleY = -Infinity;
 
-        // For all visible charts, hide/show the individual realm datasets
-        chartInstances.forEach(chart => {
             chart.data.datasets.forEach(dataset => {
-                dataset.hidden = !selectedRealms.includes(dataset.label);
+                const isVisible = selectedRealms.includes(dataset.label);
+                dataset.hidden = !isVisible;
+
+                if (isVisible) {
+                    dataset.data.forEach(point => {
+                        if (point.y > maxVisibleY) {
+                            maxVisibleY = point.y;
+                        }
+                    });
+                }
             });
+            
+            if (isFinite(maxVisibleY) && maxVisibleY > -Infinity) {
+                // Set the max with a 10% buffer to avoid the point being on the edge
+                chart.options.scales.y.max = maxVisibleY * 1.1;
+            } else {
+                // If no data is visible, let Chart.js autoscale by removing the max
+                chart.options.scales.y.max = undefined;
+            }
+            // --- END OF NEW AXIS LOGIC ---
+
             chart.update();
         });
     }
 
     allFiltersContainer.addEventListener('click', (e) => {
-        if (e.target instanceof HTMLElement && e.target.matches('.filter-btn')) {
-            document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
-            e.target.classList.add('active');
-            applyFilters();
+        if (e.target instanceof HTMLElement) {
+            if (e.target.matches('.filter-btn') && e.target.id !== 'scale-toggle-btn') {
+                document.querySelectorAll('.filter-btn').forEach(btn => {
+                    if (btn.id !== 'scale-toggle-btn') btn.classList.remove('active');
+                });
+                e.target.classList.add('active');
+                applyFilters();
+                saveFilters();
+            }
         }
+    });
+
+    scaleToggleButton.addEventListener('click', () => {
+        currentScaleType = currentScaleType === 'logarithmic' ? 'linear' : 'logarithmic';
+        updateScaleToggleButton();
+        
+        chartInstances.forEach(chart => {
+            chart.options.scales.y.type = currentScaleType;
+        });
+
+        applyFilters(); // Re-apply filters to recalculate axis maxima
+        saveFilters();
     });
 
     allFiltersContainer.addEventListener('change', (e) => {
@@ -223,8 +323,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 selectAllCheckbox.checked = Array.from(realmCheckboxes).every(cb => (/** @type {HTMLInputElement} */ (cb)).checked);
             }
             applyFilters();
+            saveFilters();
         }
     });
 
+    updateScaleToggleButton();
     applyFilters();
 });
