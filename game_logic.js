@@ -445,7 +445,7 @@ export function generateMonster(level, specialEncounter = null) {
         const realmIndex = Math.floor((level - 1) / 400);
 
         if (realmIndex > 0) {
-            const realmMultiplier = Math.pow(realmMultiplierConstant, realmIndex);
+            const realmMultiplier = Math.pow(realmMultiplierConstant, realmIndex * 2);
             monsterHealth *= realmMultiplier;
         }
         // --- END of Realm Multiplier ---
