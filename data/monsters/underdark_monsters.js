@@ -12,20 +12,30 @@ export const underdarkMonsters = {
     CRYSTAL_SPIDER: {
         name: 'Crystal Spider',
         image: 'images/monsters/crystal_spider.png',
-        dropChance: 30,
-        lootTable: [ { item: ITEMS.SHIMMERING_LEGGINGS, weight: 1 } ]
+        dropChance: 15,
+        lootTable: [
+            { item: ITEMS.SHIMMERING_LEGGINGS, weight: 1 },
+            { item: GEMS.BASE_RUBY, weight: 0.2 },
+            { item: ITEMS.FOCAL_GEM_RING, weight: 0.1 }, // Rare cross-drop
+        ]
     },
     SHARD_SLIME: {
         name: 'Shard Slime',
         image: 'images/monsters/shard_slime.png',
-        dropChance: 28,
-        lootTable: [ { item: ITEMS.FOCAL_GEM_RING, weight: 1 } ]
+        dropChance: 15,
+        lootTable: [
+            { item: ITEMS.FOCAL_GEM_RING, weight: 1 },
+            { item: ITEMS.CRYSTAL_TIPPED_SPEAR, weight: 0.1 },
+        ]
     },
     CRYSTAL_SCUTTLER: {
         name: 'Crystal Scuttler',
         image: 'images/monsters/crystal_scuttler.png',
-        dropChance: 25,
-        lootTable: [ { item: ITEMS.CRYSTALVEIN_GAUNTLETS, weight: 1 } ]
+        dropChance: 15,
+        lootTable: [
+            { item: ITEMS.CRYSTALVEIN_GAUNTLETS, weight: 1 },
+            { item: GEMS.BASE_SAPPHIRE, weight: 0.2 },
+        ]
     },
 
     // --- Sub-Zone: Crystal Golem (Boss Lvl 425) ---
@@ -33,11 +43,11 @@ export const underdarkMonsters = {
         name: 'Crystal Golem',
         image: 'images/monsters/crystal_golem.png',
         isBoss: true,
-        dropChance: 100,
+        dropChance: 50,
         lootTable: [
-            { item: ITEMS.CROWN_OF_WISDOM, weight: 10 },
-            { item: ITEMS.CRYSTAL_TIPPED_SPEAR, weight: 8 },
-            { item: GEMS.BASE_RUBY_T2, weight: 5 },
+            { item: ITEMS.CROWN_OF_WISDOM, weight: 2 },
+            { item: ITEMS.CRYSTAL_TIPPED_SPEAR, weight: 3 },
+            { item: GEMS.BASE_RUBY_T2, weight: 10 },
         ]
     },
 
@@ -45,20 +55,30 @@ export const underdarkMonsters = {
     DEEP_GNOME_MINER: {
         name: 'Deep Gnome Miner',
         image: 'images/monsters/deep_gnome_miner.png',
-        dropChance: 35,
-        lootTable: [ { item: ITEMS.GNOMISH_MINING_HELM, weight: 1 } ]
+        dropChance: 15,
+        lootTable: [
+            { item: ITEMS.GNOMISH_MINING_HELM, weight: 1 },
+            { item: GEMS.BASE_EMERALD, weight: 0.2 },
+            { item: ITEMS.DEEP_GNOME_PICKAXE, weight: 0.1 }, // Rare cross-drop
+        ]
     },
     CAVE_LURKER: {
         name: 'Cave Lurker',
         image: 'images/monsters/cave_lurker.png',
-        dropChance: 32,
-        lootTable: [ { item: ITEMS.LURKERS_HIDE_SHIELD, weight: 1 } ]
+        dropChance: 15,
+        lootTable: [
+            { item: ITEMS.LURKERS_HIDE_SHIELD, weight: 1 },
+            { item: ITEMS.ACOLYTES_ROBE, weight: 0.1 },
+        ]
     },
     ECHO_WISP: {
         name: 'Echo Wisp',
         image: 'images/monsters/echo_wisp.png',
-        dropChance: 22,
-        lootTable: [ { item: ITEMS.RESONANT_AMULET, weight: 1 } ]
+        dropChance: 15,
+        lootTable: [
+            { item: ITEMS.RESONANT_AMULET, weight: 1 },
+            { item: GEMS.BASE_TOPAZ, weight: 0.2 },
+        ]
     },
 
     // --- Sub-Zone: Crystal Guardian's Lair (Boss Lvl 450) ---
@@ -66,11 +86,11 @@ export const underdarkMonsters = {
         name: 'Crystalline Elemental',
         image: 'images/monsters/crystalline_elemental.png',
         isBoss: true,
-        dropChance: 100,
+        dropChance: 50,
         lootTable: [
-            { item: ITEMS.GEODE_CRUSHER, weight: 10 },
-            { item: ITEMS.ACOLYTES_ROBE, weight: 8 },
-            { item: GEMS.BASE_SAPPHIRE_T2, weight: 5 },
+            { item: ITEMS.GEODE_CRUSHER, weight: 5 },
+            { item: ITEMS.ACOLYTES_ROBE, weight: 9 },
+            { item: GEMS.BASE_SAPPHIRE_T2, weight: 10 },
         ]
     },
 
@@ -78,26 +98,31 @@ export const underdarkMonsters = {
     ROCKWORM: {
         name: 'Rockworm',
         image: 'images/monsters/rockworm.png',
-        dropChance: 30,
-        lootTable: [ { item: ITEMS.DEEP_GNOME_PICKAXE, weight: 1 } ]
+        dropChance: 15,
+        lootTable: [
+            { item: ITEMS.DEEP_GNOME_PICKAXE, weight: 1 },
+            { item: GEMS.BASE_RUBY, weight: 0.25 },
+        ]
     },
     CAVERN_PROWLER: {
         name: 'Cavern Prowler',
         image: 'images/monsters/cavern_prowler.png',
-        dropChance: 28,
-        lootTable: [ { item: ITEMS.CAVE_STALKER_TUNIC, weight: 1 } ]
+        dropChance: 15,
+        lootTable: [
+            { item: ITEMS.CAVE_STALKER_TUNIC, weight: 1 },
+            { item: ITEMS.LURKERS_HIDE_SHIELD, weight: 0.2 },
+        ]
     },
-    // Deep Gnome Miner also appears here.
     
     // --- Sub-Zone: Gemstone Hoard (Boss Lvl 475) ---
     GEMSTONE_HYDRA: {
         name: 'Gemstone Hydra',
         image: 'images/monsters/gemstone_hydra.png',
         isBoss: true,
-        dropChance: 100,
+        dropChance: 50,
         lootTable: [
-            { item: ITEMS.HYDRA_SCALE_SHIELD, weight: 10 },
-            { item: GEMS.BASE_EMERALD_T2, weight: 5 },
+            { item: ITEMS.HYDRA_SCALE_SHIELD, weight: 1 },
+            { item: GEMS.BASE_EMERALD_T2, weight: 24 },
         ]
     },
 
@@ -105,26 +130,32 @@ export const underdarkMonsters = {
     QUARTZ_BEAST: {
         name: 'Quartz Beast',
         image: 'images/monsters/quartz_beast.png',
-        dropChance: 35,
-        lootTable: [ { item: ITEMS.QUARTZ_RING, weight: 1 } ]
+        dropChance: 15,
+        lootTable: [
+            { item: ITEMS.QUARTZ_RING, weight: 1 },
+            { item: GEMS.BASE_TOPAZ, weight: 0.25 },
+        ]
     },
     LIVING_CRYSTAL: {
         name: 'Living Crystal',
         image: 'images/monsters/living_crystal.png',
-        dropChance: 30,
-        lootTable: [ { item: ITEMS.LIVING_CRYSTAL_LEGGINGS, weight: 1 } ]
+        dropChance: 15,
+        lootTable: [
+            { item: ITEMS.LIVING_CRYSTAL_LEGGINGS, weight: 1 },
+            { item: GEMS.BASE_SAPPHIRE, weight: 0.25 },
+            { item: ITEMS.CAVE_STALKER_TUNIC, weight: 0.15 }, // Rare cross-drop
+        ]
     },
-    // Rockworm also appears here.
 
     // --- Sub-Zone: Crystal King's Throne (Boss Lvl 500) ---
     CRYSTAL_KING: {
         name: 'The Crystal King',
         image: 'images/monsters/crystal_king.png',
         isBoss: true,
-        dropChance: 100,
+        dropChance: 50,
         lootTable: [
-            { item: ITEMS.HEARTSTONE_AMULET, weight: 10 },
-            { item: GEMS.BASE_TOPAZ_T2, weight: 5 },
+            { item: ITEMS.HEARTSTONE_AMULET, weight: 1 },
+            { item: GEMS.BASE_TOPAZ_T2, weight: 24 },
         ]
     },
 
@@ -136,20 +167,28 @@ export const underdarkMonsters = {
     MYCONID_SPOREKEEPER: {
         name: 'Myconid Sporekeeper',
         image: 'images/monsters/myconid_sporekeeper.png',
-        dropChance: 30,
-        lootTable: [ { item: ITEMS.MYCONID_LEATHER_BELT, weight: 1 } ]
+        dropChance: 15,
+        lootTable: [
+            { item: ITEMS.MYCONID_LEATHER_BELT, weight: 1 },
+            { item: GEMS.BASE_EMERALD, weight: 0.3 },
+        ]
     },
     SPORE_BAT: {
         name: 'Spore Bat',
         image: 'images/monsters/spore_bat.png',
-        dropChance: 25,
-        lootTable: [ { item: ITEMS.SPOREWEAVE_PANTS, weight: 1 } ]
+        dropChance: 15,
+        lootTable: [
+            { item: ITEMS.SPOREWEAVE_PANTS, weight: 1 },
+            { item: ITEMS.FUNGAL_CRAWLER_RING, weight: 0.1 }, // Rare cross-drop
+        ]
     },
     FUNGAL_HULK: {
         name: 'Fungal Hulk',
         image: 'images/monsters/fungal_hulk.png',
-        dropChance: 22,
-        lootTable: [ { item: ITEMS.FUNGAL_TIPPED_ARROW, weight: 1 } ]
+        dropChance: 15,
+        lootTable: [
+            { item: ITEMS.FUNGAL_TIPPED_ARROW, weight: 1 },
+        ]
     },
 
     // --- Sub-Zone: Fungal Guardian (Boss Lvl 525) ---
@@ -157,11 +196,11 @@ export const underdarkMonsters = {
         name: 'Fungal Behemoth',
         image: 'images/monsters/fungal_behemoth.png',
         isBoss: true,
-        dropChance: 100,
+        dropChance: 66,
         lootTable: [
             { item: ITEMS.MYCONID_KINGS_CROWN, weight: 10 },
             { item: ITEMS.GLOWCAP_RING, weight: 8 },
-            { item: GEMS.BASE_RUBY_T2, weight: 82 },
+            { item: GEMS.BASE_RUBY_T2, weight: 10 },
         ]
     },
 
@@ -169,19 +208,22 @@ export const underdarkMonsters = {
     FUNGAL_CRAWLER: {
         name: 'Fungal Crawler',
         image: 'images/monsters/fungal_crawler.png',
-        dropChance: 28,
+        dropChance: 15,
         lootTable: [ { item: ITEMS.FUNGAL_CRAWLER_RING, weight: 1 } ]
     },
     SHRIEKER: {
         name: 'Shrieker',
         image: 'images/monsters/shrieker.png',
-        dropChance: 33,
-        lootTable: [ { item: ITEMS.SHRIEKER_AMULET, weight: 1 } ]
+        dropChance: 15,
+        lootTable: [
+            { item: ITEMS.SHRIEKER_AMULET, weight: 1 },
+            { item: GEMS.BASE_SAPPHIRE, weight: 0.3 },
+        ]
     },
     MYCELIAL_WEBBER: {
         name: 'Mycelial Webber',
         image: 'images/monsters/mycelial_webber.png',
-        dropChance: 25,
+        dropChance: 15,
         lootTable: [ { item: ITEMS.FUNGAL_BARRIER, weight: 1 } ]
     },
 
@@ -190,10 +232,10 @@ export const underdarkMonsters = {
         name: 'Gas Spore',
         image: 'images/monsters/gas_spore.png',
         isBoss: true,
-        dropChance: 100,
+        dropChance: 41,
         lootTable: [
-            { item: ITEMS.FUNGAL_SPIRE, weight: 3 },
-            { item: GEMS.BASE_SAPPHIRE_T2, weight: 97 },
+            { item: ITEMS.FUNGAL_SPIRE, weight: 0.5 },
+            { item: GEMS.BASE_SAPPHIRE_T2, weight: 5 },
         ]
     },
 
@@ -201,26 +243,29 @@ export const underdarkMonsters = {
     MIND_FLAYER_SPORE: {
         name: 'Mind Flayer Spore',
         image: 'images/monsters/mind_flayer_spore.png',
-        dropChance: 20,
+        dropChance: 15,
         lootTable: [ { item: ITEMS.MIND_FLAYER_CIRCLET, weight: 1 } ]
     },
     CORRUPTED_DRYAD: {
         name: 'Corrupted Dryad',
         image: 'images/monsters/corrupted_dryad.png',
-        dropChance: 20,
-        lootTable: [ { item: ITEMS.GLIMMERWEAVE_ROBES, weight: 1 } ]
+        dropChance: 15,
+        lootTable: [
+            { item: ITEMS.GLIMMERWEAVE_ROBES, weight: 1 },
+            { item: GEMS.BASE_EMERALD, weight: 0.35 },
+            { item: ITEMS.SHRIEKER_AMULET, weight: 0.15 }, // Rare cross-drop
+        ]
     },
-    // Shrieker also appears here.
 
     // --- Sub-Zone: Mycelial Core (Boss Lvl 575) ---
     FUNGAL_TITAN: {
         name: 'Fungal Titan',
         image: 'images/monsters/fungal_titan.png',
         isBoss: true,
-        dropChance: 100,
+        dropChance: 66,
         lootTable: [
-            { item: ITEMS.TITANS_FUNGAL_HEART, weight: 2 },
-            { item: GEMS.BASE_EMERALD_T2, weight: 50 },
+            { item: ITEMS.TITANS_FUNGAL_HEART, weight: 1 },
+            { item: GEMS.BASE_EMERALD_T2, weight: 6 },
         ]
     },
 
@@ -228,26 +273,28 @@ export const underdarkMonsters = {
     SPORE_WOLF: {
         name: 'Spore Wolf',
         image: 'images/monsters/spore_wolf.png',
-        dropChance: 35,
+        dropChance: 15,
         lootTable: [ { item: ITEMS.SPORE_WOLF_PELT, weight: 1 } ]
     },
     MANDRAGORA: {
         name: 'Mandragora',
         image: 'images/monsters/mandragora.png',
         dropChance: 28,
-        lootTable: [ { item: ITEMS.MANDRAGORA_ROOT, weight: 1 } ]
+        lootTable: [
+            { item: ITEMS.MANDRAGORA_ROOT, weight: 1 },
+            { item: GEMS.BASE_TOPAZ, weight: 0.35 },
+        ]
     },
-    // Fungal Hulk also appears here.
     
     // --- Sub-Zone: The Great Fungus (Boss Lvl 600) ---
     THE_GREAT_MYCELIUM: {
         name: 'The Great Mycelium',
         image: 'images/monsters/the_great_mycelium.png',
         isBoss: true,
-        dropChance: 100,
+        dropChance: 47,
         lootTable: [
-            { item: ITEMS.GREAT_FUNGUS_HEART, weight: 10 },
-            { item: GEMS.BASE_AMETHYST_T2, weight: 90 },
+            { item: ITEMS.GREAT_FUNGUS_HEART, weight: 1 },
+            { item: GEMS.BASE_TOPAZ_T2, weight: 6 },
         ]
     },
 
@@ -259,19 +306,22 @@ export const underdarkMonsters = {
     DROW_WARRIOR: {
         name: 'Drow Warrior',
         image: 'images/monsters/drow_warrior.png',
-        dropChance: 30,
+        dropChance: 15,
         lootTable: [ { item: ITEMS.DROW_CHAINMAIL, weight: 1 } ]
     },
     GIANT_CAVE_SPIDER: {
         name: 'Giant Cave Spider',
         image: 'images/monsters/giant_cave_spider.png',
-        dropChance: 28,
-        lootTable: [ { item: ITEMS.SPIDERSILK_SASH, weight: 1 } ]
+        dropChance: 15,
+        lootTable: [
+            { item: ITEMS.SPIDERSILK_SASH, weight: 1 },
+            { item: GEMS.BASE_RUBY, weight: 0.4 },
+        ]
     },
     DROW_SCOUT: {
         name: 'Drow Scout',
         image: 'images/monsters/drow_scout.png',
-        dropChance: 25,
+        dropChance: 15,
         lootTable: [ { item: ITEMS.DROW_ASSASSINS_BLADE, weight: 1 } ]
     },
 
@@ -280,10 +330,10 @@ export const underdarkMonsters = {
         name: 'Drider',
         image: 'images/monsters/drider.png',
         isBoss: true,
-        dropChance: 100,
+        dropChance: 66,
         lootTable: [
-            { item: ITEMS.DROW_MATRONS_SIGNET, weight: 10 },
-            { item: GEMS.BASE_RUBY_T2, weight: 5 },
+            { item: ITEMS.DROW_MATRONS_SIGNET, weight: 1 },
+            { item: GEMS.BASE_RUBY_T2, weight: 10 },
         ]
     },
 
@@ -291,20 +341,26 @@ export const underdarkMonsters = {
     DROW_MAGE: {
         name: 'Drow Mage',
         image: 'images/monsters/drow_mage.png',
-        dropChance: 35,
+        dropChance: 15,
         lootTable: [ { item: ITEMS.DROW_MAGE_HOOD, weight: 1 } ]
     },
     SHADOW_STALKER: {
         name: 'Shadow Stalker',
         image: 'images/monsters/shadow_stalker.png',
-        dropChance: 38,
-        lootTable: [ { item: ITEMS.SHADOW_SPUN_LEGGINGS, weight: 1 } ]
+        dropChance: 15,
+        lootTable: [
+            { item: ITEMS.SHADOW_SPUN_LEGGINGS, weight: 1 },
+            { item: ITEMS.DROW_ASSASSINS_BLADE, weight: 0.2 }, // Rare cross-drop
+        ]
     },
     PHASE_SPIDER: {
         name: 'Phase Spider',
         image: 'images/monsters/phase_spider.png',
-        dropChance: 20,
-        lootTable: [ { item: ITEMS.SPIDERFANG_PENDANT, weight: 1 } ]
+        dropChance: 15,
+        lootTable: [
+            { item: ITEMS.SPIDERFANG_PENDANT, weight: 1 },
+            { item: GEMS.BASE_SAPPHIRE, weight: 0.4 },
+        ]
     },
 
     // --- Sub-Zone: Drow Barracks (Boss Lvl 650) ---
@@ -312,10 +368,10 @@ export const underdarkMonsters = {
         name: 'Drow Priestess',
         image: 'images/monsters/drow_priestess.png',
         isBoss: true,
-        dropChance: 100,
+        dropChance: 80,
         lootTable: [
-            { item: ITEMS.LOLTHS_EMBRACE, weight: 10 },
-            { item: GEMS.BASE_SAPPHIRE_T2, weight: 5 },
+            { item: ITEMS.LOLTHS_EMBRACE, weight: 1 },
+            { item: GEMS.BASE_SAPPHIRE_T2, weight: 10 },
         ]
     },
 
@@ -323,27 +379,32 @@ export const underdarkMonsters = {
     DROW_ELITE_GUARD: {
         name: 'Drow Elite Guard',
         image: 'images/monsters/drow_elite_guard.png',
-        dropChance: 30,
-        lootTable: [ { item: ITEMS.OBSIDIAN_PLATEBODY, weight: 1 } ]
+        dropChance: 15,
+        lootTable: [
+            { item: ITEMS.OBSIDIAN_PLATEBODY, weight: 1 },
+            { item: ITEMS.DROW_CHAINMAIL, weight: 0.2 },
+        ]
     },
     DROW_SPELLWEAVER: {
         name: 'Drow Spellweaver',
         image: 'images/monsters/drow_spellweaver.png',
-        dropChance: 33,
-        lootTable: [ { item: ITEMS.DROW_SPELLWEAVER_BLADE, weight: 1 } ]
+        dropChance: 15,
+        lootTable: [
+            { item: ITEMS.DROW_SPELLWEAVER_BLADE, weight: 1 },
+            { item: GEMS.BASE_EMERALD, weight: 0.4 },
+        ]
     },
-    // Drow Warrior also appears here.
 
     // --- Sub-Zone: House of Shadows (Boss Lvl 675) ---
     YOCHLOL: {
         name: 'Yochlol',
         image: 'images/monsters/yochlol.png',
         isBoss: true,
-        dropChance: 100,
+        dropChance: 50,
         lootTable: [
-            { item: ITEMS.DEMONWEAVE_CLOAK, weight: 10 },
-            { item: ITEMS.DROW_NOBLE_SIGNET, weight: 8 },
-            { item: GEMS.BASE_EMERALD_T2, weight: 5 },
+            { item: ITEMS.DEMONWEAVE_CLOAK, weight: 2 },
+            { item: ITEMS.DROW_NOBLE_SIGNET, weight: 2 },
+            { item: GEMS.BASE_EMERALD_T2, weight: 10 },
         ]
     },
     
@@ -351,26 +412,28 @@ export const underdarkMonsters = {
     SPIDER_SWARM: {
         name: 'Spider Swarm',
         image: 'images/monsters/spider_swarm.png',
-        dropChance: 40,
+        dropChance: 15,
         lootTable: [ { item: ITEMS.SPIDER_CARAPACE_SHIELD, weight: 1 } ]
     },
     DROW_HIGH_PRIESTESS: {
         name: 'Drow High Priestess',
         image: 'images/monsters/drow_high_priestess.png',
-        dropChance: 25,
-        lootTable: [ { item: ITEMS.HIGH_PRIESTESS_ROBES, weight: 1 } ]
+        dropChance: 15,
+        lootTable: [
+            { item: ITEMS.HIGH_PRIESTESS_ROBES, weight: 1 },
+            { item: GEMS.BASE_TOPAZ, weight: 0.4 },
+        ]
     },
-    // Drow Elite Guard also appears here.
 
     // --- Sub-Zone: Spider Queen's Lair (Boss Lvl 700) ---
     SPIDER_QUEEN_MATRON: {
         name: 'Spider Queen Matron',
         image: 'images/monsters/spider_queen_matron.png',
         isBoss: true,
-        dropChance: 100,
+        dropChance: 10,
         lootTable: [
-            { item: ITEMS.THE_WEAVERS_ENVY, weight: 10 },
-            { item: GEMS.BASE_AMETHYST_T2, weight: 3 },
+            { item: ITEMS.THE_WEAVERS_ENVY, weight: 1 },
+            { item: GEMS.BASE_RUBY_T2, weight: 9 },
         ]
     },
 
@@ -381,20 +444,23 @@ export const underdarkMonsters = {
     // --- Sub-Zone: Chasm Descent (Levels 701-724) ---
     SHADOW_FIEND: {
         name: 'Shadow Fiend',
-        image: 'images/monsters/shadow_stalker.png', // Re-using image
-        dropChance: 30,
-        lootTable: [ { item: ITEMS.VOIDFORGED_HELM, weight: 1 } ]
+        image: 'images/monsters/shadow_stalker.png',
+        dropChance: 15,
+        lootTable: [
+            { item: ITEMS.VOIDFORGED_HELM, weight: 1 },
+            { item: GEMS.BASE_RUBY, weight: 0.5 },
+        ]
     },
     ABYSSAL_LEECH: {
         name: 'Abyssal Leech',
         image: 'images/monsters/abyssal_leech.png',
-        dropChance: 28,
+        dropChance: 15,
         lootTable: [ { item: ITEMS.SHADOW_WEAVE_SASH, weight: 1 } ]
     },
     WARPED_SOUL: {
         name: 'Warped Soul',
         image: 'images/monsters/warped_soul.png',
-        dropChance: 25,
+        dropChance: 15,
         lootTable: [ { item: ITEMS.RIFT_WARD, weight: 1 } ]
     },
 
@@ -403,30 +469,33 @@ export const underdarkMonsters = {
         name: 'Demonic Overseer',
         image: 'images/monsters/demonic_overseer.png',
         isBoss: true,
-        dropChance: 100,
+        dropChance: 33,
         lootTable: [
-            { item: ITEMS.ABYSSAL_EDGE, weight: 10 },
-            { item: GEMS.BASE_RUBY_T2, weight: 5 },
+            { item: ITEMS.ABYSSAL_EDGE, weight: 1 },
+            { item: GEMS.BASE_RUBY_T2, weight: 2 },
         ]
     },
 
     // --- Sub-Zone: Fields of Madness (Levels 726-749) ---
     VOID_WRAITH: {
         name: 'Void Wraith',
-        image: 'images/monsters/sand_wraith.png', // Re-using image
-        dropChance: 35,
-        lootTable: [ { item: ITEMS.SHADOW_WEAVE_TUNIC, weight: 1 } ]
+        image: 'images/monsters/sand_wraith.png',
+        dropChance: 15,
+        lootTable: [
+            { item: ITEMS.SHADOW_WEAVE_TUNIC, weight: 1 },
+            { item: GEMS.BASE_SAPPHIRE, weight: 0.5 },
+        ]
     },
     SOUL_EATER: {
         name: 'Soul Eater',
         image: 'images/monsters/soul_eater.png',
-        dropChance: 32,
+        dropChance: 15,
         lootTable: [ { item: ITEMS.VOIDFORGED_GREAVES, weight: 1 } ]
     },
     MIND_SHARD: {
         name: 'Mind Shard',
         image: 'images/monsters/mind_shard.png',
-        dropChance: 28,
+        dropChance: 15,
         lootTable: [ { item: ITEMS.SOUL_EATER_RING, weight: 1 } ]
     },
 
@@ -435,9 +504,9 @@ export const underdarkMonsters = {
         name: 'Balor',
         image: 'images/monsters/balor.png',
         isBoss: true,
-        dropChance: 100,
+        dropChance: 22,
         lootTable: [
-            { item: ITEMS.BALORS_WHIP, weight: 10 },
+            { item: ITEMS.BALORS_WHIP, weight: 1 },
             { item: GEMS.BASE_SAPPHIRE_T2, weight: 5 },
         ]
     },
@@ -446,26 +515,28 @@ export const underdarkMonsters = {
     CHAOS_HOUND: {
         name: 'Chaos Hound',
         image: 'images/monsters/chaos_hound.png',
-        dropChance: 30,
+        dropChance: 15,
         lootTable: [ { item: ITEMS.CHAOS_HOUND_COLLAR, weight: 1 } ]
     },
     FLESH_GOLEM: {
         name: 'Flesh Golem',
         image: 'images/monsters/flesh_golem.png',
-        dropChance: 33,
-        lootTable: [ { item: ITEMS.FLESH_GOLEM_HEART, weight: 1 } ]
+        dropChance: 15,
+        lootTable: [
+            { item: ITEMS.FLESH_GOLEM_HEART, weight: 1 },
+            { item: GEMS.BASE_EMERALD, weight: 0.5 },
+        ]
     },
-    // Abyssal Leech also appears here.
 
     // --- Sub-Zone: The Soul Well (Boss Lvl 775) ---
     ABYSSAL_TYRANT: {
         name: 'Abyssal Tyrant',
         image: 'images/monsters/abyssal_tyrant.png',
         isBoss: true,
-        dropChance: 100,
+        dropChance: 50,
         lootTable: [
-            { item: ITEMS.CHAOS_CORE, weight: 8 },
-            { item: GEMS.BASE_EMERALD_T2, weight: 5 },
+            { item: ITEMS.CHAOS_CORE, weight: 1 },
+            { item: GEMS.BASE_EMERALD_T2, weight: 7 },
         ]
     },
 
@@ -473,26 +544,28 @@ export const underdarkMonsters = {
     RIFT_STALKER: {
         name: 'Rift Stalker',
         image: 'images/monsters/rift_stalker.png',
-        dropChance: 35,
+        dropChance: 15,
         lootTable: [ { item: ITEMS.RIFT_STALKER_CLOAK, weight: 1 } ]
     },
     CHAOS_BEAST: {
         name: 'Chaos Beast',
         image: 'images/monsters/chaos_beast.png',
-        dropChance: 31,
-        lootTable: [ { item: ITEMS.RING_OF_DESPAIR, weight: 1 } ]
+        dropChance: 15,
+        lootTable: [
+            { item: GEMS.BASE_TOPAZ, weight: 0.5 },
+            { item: ITEMS.VOIDFORGED_HELM, weight: 0.2 }, // Rare cross-drop
+        ]
     },
-    // Soul Eater also appears here.
     
     // --- Sub-Zone: The Final Abyss (Boss Lvl 800) ---
     MAW_OF_THE_ABYSS: {
         name: 'Maw of the Abyss',
         image: 'images/monsters/maw_of_the_abyss.png',
         isBoss: true,
-        dropChance: 100,
+        dropChance: 10,
         lootTable: [
-            { item: ITEMS.SOULCAGE_AMULET, weight: 10 },
-            { item: GEMS.BASE_AMETHYST_T2, weight: 3 },
+            { item: ITEMS.SOULCAGE_AMULET, weight: 1 },
+            { item: GEMS.BASE_TOPAZ_T2, weight: 7 },
         ]
     }
 };
