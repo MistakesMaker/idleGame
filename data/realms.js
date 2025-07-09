@@ -78,7 +78,7 @@ export const REALMS = [
                     // --- Sub-Zone: Tomb of the Guardian (Boss Lvl 275) ---
                     "tomb_of_the_guardian": { name: "Tomb of the Guardian", levelRange: [275, 275], monsterPool: [MONSTERS.SAND_WRAITH], coords: {top: '50%', left: '20%'}, isBoss: true, icon: 'images/icons/tomb_of_the_guardian.png' },
                     // --- Sub-Zone: Endless Dunes (Levels 276-299) ---
-                    "endless_dunes": { name: "Endless Dunes", levelRange: [276, 299], monsterPool: [MONSTERS.SAND_WRAITH, MONSTERS.GIANT_SCORPION, MONSTERS.SKELETAL_ARCHER], coords: {top: '20%', left: '30%'}, icon: 'images/icons/endless_dunes.png' },
+                    "endless_dunes": { name: "Endless Dunes", levelRange: [276, 299], monsterPool: [MONSTERS.GIANT_SCORPION, MONSTERS.SKELETAL_ARCHER], coords: {top: '20%', left: '30%'}, icon: 'images/icons/endless_dunes.png' },
                     // --- Sub-Zone: The Sand Pit (Boss Lvl 300) ---
                     "the_sand_pit": { name: "The Sand Pit", levelRange: [300, 300], monsterPool: [MONSTERS.GATEKEEPER_OF_THE_SANDS], coords: {top: '15%', left: '70%'}, isBoss: true, icon: 'images/icons/the_sand_pit.png' }
                 }
