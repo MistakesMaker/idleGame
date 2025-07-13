@@ -421,8 +421,8 @@ export function updateStatsPanel(elements, playerStats) {
     clickDamageStatEl.className = `currency-tier-${clickTier}`;
     clickDamageStatEl.textContent = formatNumber(playerStats.totalClickDamage);
 
-    bonusGoldStatEl.textContent = playerStats.bonusGold.toFixed(1);
-    magicFindStatEl.textContent = playerStats.magicFind.toFixed(1);
+    bonusGoldStatEl.textContent = `${playerStats.bonusGold.toFixed(1)}%`;
+    magicFindStatEl.textContent = `${playerStats.magicFind.toFixed(1)}%`;
 }
 
 
