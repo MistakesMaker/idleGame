@@ -335,6 +335,17 @@ export function monsterDefeated(gameState, playerStats, currentMonster) {
     else if (isBossLevel(level)) { xpGained *= 2; baseGoldDrop *= 2; } 
     else if (isMiniBossLevel(level)) { xpGained *= 1.5; baseGoldDrop *= 1.5; }
     
+    // --- START OF MODIFICATION: XP Diminishing Returns ---
+    const heroLevel = gameState.hero.level;
+    const levelDifference = heroLevel - level;
+
+    if (levelDifference > 0) {
+        const reductionPercent = levelDifference * 0.01; // 1% per level difference
+        const xpMultiplier = Math.max(0.1, 1 - reductionPercent); // Floor at 10%
+        xpGained *= xpMultiplier;
+    }
+    // --- END OF MODIFICATION ---
+
     const goldMasteryLevel = gameState.permanentUpgrades.GOLD_MASTERY || 0;
     const goldMasteryBonus = PERMANENT_UPGRADES.GOLD_MASTERY.bonusPerLevel * goldMasteryLevel;
     let goldAfterMastery = baseGoldDrop * (1 + (goldMasteryBonus / 100));
@@ -403,8 +414,6 @@ export function monsterDefeated(gameState, playerStats, currentMonster) {
     return { goldGained: finalGoldGained, xpGained, droppedItems: lootResult.droppedItems, droppedGems: lootResult.droppedGems, logMessages, events: lootResult.events };
 }
 
-
-// --- START OF MODIFICATION ---
 
 /**
  * Calculates the raw, unmodified, exponential HP of a monster at a specific level.
@@ -516,4 +525,3 @@ export function generateMonster(level, specialEncounter = null) {
     
     return { newMonster, newMonsterState };
 }
-// --- END OF MODIFICATION ---
