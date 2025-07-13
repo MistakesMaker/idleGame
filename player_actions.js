@@ -198,14 +198,34 @@ export function unequipItem(gameState, slotName) {
 }
 
 /**
- * Spends an attribute point on a given attribute.
+ * Spends a specified number of attribute points on a given attribute.
+ * @param {object} gameState The main game state object.
+ * @param {string} attribute The attribute to increase ('strength', 'agility', 'luck').
+ * @param {number | 'max'} amount The number of points to spend, or 'max' to spend all available points.
  */
-export function spendAttributePoint(gameState, attribute) {
-    if (gameState.hero.attributePoints > 0) {
-        gameState.hero.attributePoints--;
-        gameState.hero.attributes[attribute]++;
+export function spendMultipleAttributePoints(gameState, attribute, amount) {
+    let pointsToSpend = 0;
+    const availablePoints = gameState.hero.attributePoints;
+
+    if (amount === 'max') {
+        pointsToSpend = availablePoints;
+    } else {
+        pointsToSpend = Number(amount);
+    }
+
+    if (isNaN(pointsToSpend) || pointsToSpend <= 0) {
+        return; // Invalid amount
+    }
+
+    // Don't spend more points than are available
+    pointsToSpend = Math.min(pointsToSpend, availablePoints);
+
+    if (pointsToSpend > 0) {
+        gameState.hero.attributePoints -= pointsToSpend;
+        gameState.hero.attributes[attribute] += pointsToSpend;
     }
 }
+
 
 /**
  * Adds experience to the hero, handling level-ups.

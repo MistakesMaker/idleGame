@@ -83,9 +83,7 @@ export function initDOMElements() {
         attrStrengthEl: document.getElementById('attr-strength'),
         attrAgilityEl: document.getElementById('attr-agility'),
         attrLuckEl: document.getElementById('attr-luck'),
-        addStrengthBtn: document.getElementById('add-strength-btn'),
-        addAgilityBtn: document.getElementById('add-agility-btn'),
-        addLuckBtn: document.getElementById('add-luck-btn'),
+        attributesArea: document.getElementById('attributes-area'),
         clickDamageStatEl: document.getElementById('click-damage-stat'),
         dpsStatEl: document.getElementById('dps-stat'),
         bonusGoldStatEl: document.getElementById('bonus-gold-stat'),
@@ -166,6 +164,7 @@ export function initDOMElements() {
  */
 export function initSalvageFilterDOMElements() {
     return {
+        autoSalvageFilterBtn: document.getElementById('auto-salvage-filter-btn'),
         enableSalvageFilter: document.getElementById('enable-salvage-filter'),
         enableGemSalvage: document.getElementById('enable-gem-salvage'),
         salvageFilterControls: document.getElementById('salvage-filter-controls'),
@@ -380,7 +379,7 @@ export function updateHeroPanel(elements, gameState) {
     const {
         heroLevelEl, heroXpTextEl, heroXpBarEl, attributePointsEl,
         attrStrengthEl, attrAgilityEl, attrLuckEl,
-        addStrengthBtn, addAgilityBtn, addLuckBtn
+        attributesArea
     } = elements;
 
     const xpToNextLevel = getXpForNextLevel(gameState.hero.level);
@@ -392,11 +391,20 @@ export function updateHeroPanel(elements, gameState) {
     attrAgilityEl.textContent = gameState.hero.attributes.agility.toString();
     attrLuckEl.textContent = gameState.hero.attributes.luck.toString();
 
-    const havePoints = gameState.hero.attributePoints > 0;
-    (/** @type {HTMLButtonElement} */ (addStrengthBtn)).disabled = !havePoints;
-    (/** @type {HTMLButtonElement} */ (addAgilityBtn)).disabled = !havePoints;
-    (/** @type {HTMLButtonElement} */ (addLuckBtn)).disabled = !havePoints;
+    const points = gameState.hero.attributePoints;
+    const allAttrButtons = attributesArea.querySelectorAll('.attr-buy-btn');
+    allAttrButtons.forEach(btn => {
+        if (btn instanceof HTMLButtonElement) {
+            const amount = btn.dataset.amount;
+            if (amount === 'max') {
+                btn.disabled = points <= 0;
+            } else {
+                btn.disabled = points < Number(amount);
+            }
+        }
+    });
 }
+
 
 /**
  * Updates only the derived stats panel (Click Dmg, DPS, etc.).
@@ -792,7 +800,11 @@ export function updateUI(elements, gameState, playerStats, currentMonster, salva
             input.checked = filter.keepStats[input.dataset.statKey] || false;
         }
     });
+
+    // Salvage Button Glow
+    filterElements.autoSalvageFilterBtn.classList.toggle('filter-active-glow', filter.enabled);
 }
+
 
 /**
  * Creates the full HTML block for an item's stats and unique effects.

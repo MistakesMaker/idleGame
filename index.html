@@ -84,18 +84,35 @@
 
                 <h4>Attributes (<span id="attribute-points">0</span> points available)</h4>
                 <div id="attributes-area">
+                    <!-- START OF MODIFICATION -->
                     <div class="attribute-row" data-attribute="strength">
                         <span>Strength: <span id="attr-strength">0</span></span>
-                        <button class="attribute-btn" id="add-strength-btn" disabled>+</button>
+                        <div class="attr-buy-btn-group">
+                            <button class="attr-buy-btn" data-amount="1" id="add-strength-1-btn" disabled>+1</button>
+                            <button class="attr-buy-btn" data-amount="10" id="add-strength-10-btn" disabled>+10</button>
+                            <button class="attr-buy-btn" data-amount="100" id="add-strength-100-btn" disabled>+100</button>
+                            <button class="attr-buy-btn" data-amount="max" id="add-strength-max-btn" disabled>MAX</button>
+                        </div>
                     </div>
                     <div class="attribute-row" data-attribute="agility">
                         <span>Agility: <span id="attr-agility">0</span></span>
-                        <button class="attribute-btn" id="add-agility-btn" disabled>+</button>
+                         <div class="attr-buy-btn-group">
+                            <button class="attr-buy-btn" data-amount="1" id="add-agility-1-btn" disabled>+1</button>
+                            <button class="attr-buy-btn" data-amount="10" id="add-agility-10-btn" disabled>+10</button>
+                            <button class="attr-buy-btn" data-amount="100" id="add-agility-100-btn" disabled>+100</button>
+                            <button class="attr-buy-btn" data-amount="max" id="add-agility-max-btn" disabled>MAX</button>
+                        </div>
                     </div>
                     <div class="attribute-row" data-attribute="luck">
                         <span>Luck: <span id="attr-luck">0</span></span>
-                        <button class="attribute-btn" id="add-luck-btn" disabled>+</button>
+                         <div class="attr-buy-btn-group">
+                            <button class="attr-buy-btn" data-amount="1" id="add-luck-1-btn" disabled>+1</button>
+                            <button class="attr-buy-btn" data-amount="10" id="add-luck-10-btn" disabled>+10</button>
+                            <button class="attr-buy-btn" data-amount="100" id="add-luck-100-btn" disabled>+100</button>
+                            <button class="attr-buy-btn" data-amount="max" id="add-luck-max-btn" disabled>MAX</button>
+                        </div>
                     </div>
+                    <!-- END OF MODIFICATION -->
                 </div>
                 
                 <h4>Derived Stats</h4>
