@@ -1346,6 +1346,10 @@ document.addEventListener('DOMContentLoaded', () => {
                         ui.updateSocketingHighlights(elements, null, gameState);
                         ui.updateStatsPanel(elements, playerStats);
                         
+                        // --- START OF MODIFICATION ---
+                        ui.renderPaperdoll(elements, gameState);
+                        // --- END OF MODIFICATION ---
+                        
                         autoSave();
                         return;
                     }

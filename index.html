@@ -100,20 +100,28 @@
                 
                 <h4>Derived Stats</h4>
                 <div id="derived-stats-area">
-                    <p><i class="fas fa-hand-rock"></i> Click Damage: <span id="click-damage-stat">1</span></p>
-                    <p><i class="fas fa-sword"></i> Damage Per Second (DPS): <span id="dps-stat">0</span></p>
-                    <p><i class="fas fa-coins"></i> Bonus Gold: <span id="bonus-gold-stat">0</span>%</p>
-                    <p><i class="fas fa-star"></i> Magic Find: <span id="magic-find-stat">0</span>%</p>
+                    <p><span><i class="fas fa-hand-rock"></i> <span id="click-damage-stat">1</span></span><small>Click Damage</small></p>
+                    <p><span><i class="fas fa-fist-raised"></i> <span id="dps-stat">0</span></span><small>Damage Per Second (DPS)</small></p>
+                    <p><span><i class="fas fa-coins"></i> <span id="bonus-gold-stat">0</span>%</span><small>Gold Gain</small></p>
+                    <p><span><i class="fas fa-star"></i> <span id="magic-find-stat">0</span>%</span><small>Magic Find</small></p>
                 </div>
             </div>
 
             <div id="equipment-view" class="view">
                 <div id="equipment-view-content">
-                    <div id="preset-controls">
-                        <h4>Presets</h4>
-                        <button id="preset-btn-0" class="preset-btn">Preset 1</button>
-                        <button id="preset-btn-1" class="preset-btn">Preset 2</button>
-                        <button id="preset-btn-2" class="preset-btn">Preset 3</button>
+                    <div id="equipment-info-column">
+                        <div id="preset-controls">
+                            <h4>Presets</h4>
+                            <button id="preset-btn-0" class="preset-btn">Preset 1</button>
+                            <button id="preset-btn-1" class="preset-btn">Preset 2</button>
+                            <button id="preset-btn-2" class="preset-btn">Preset 3</button>
+                        </div>
+                        <div id="equipment-stats-summary">
+                            <h4>Gear Stats</h4>
+                            <div id="equipment-stats-list">
+                                <!-- Stats will be populated by JS -->
+                            </div>
+                        </div>
                     </div>
                     <div id="equipment-paperdoll">
                         <div id="slot-helmet" class="equipment-slot"></div><div id="slot-necklace" class="equipment-slot"></div>
@@ -286,7 +294,9 @@
                 
                 <div id="prestige-stats-area">
                     <h4>Prestige Bonuses</h4>
-                     <p><i class="fas fa-award"></i> Prestige Count: <span id="prestige-count-stat">0</span></p>
+                     <!-- START OF MODIFICATION: Removed the old Prestige Count line -->
+                     <!-- <p><i class="fas fa-award"></i> Prestige Count: <span id="prestige-count-stat">0</span></p> -->
+                     <!-- END OF MODIFICATION -->
                      <div id="absorbed-stats-list">
                         <!-- Absorbed stats will be dynamically inserted here -->
                      </div>

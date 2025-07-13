@@ -414,14 +414,17 @@ export function updateStatsPanel(elements, playerStats) {
     
     const dpsTier = getNumberTier(playerStats.totalDps);
     const clickTier = getNumberTier(playerStats.totalClickDamage);
-    dpsStatEl.className = `currency-tier-${dpsTier}`;
-    clickDamageStatEl.className = `currency-tier-${clickTier}`;
     
-    clickDamageStatEl.textContent = formatNumber(playerStats.totalClickDamage);
+    dpsStatEl.className = `currency-tier-${dpsTier}`;
     dpsStatEl.textContent = formatNumber(playerStats.totalDps);
+    
+    clickDamageStatEl.className = `currency-tier-${clickTier}`;
+    clickDamageStatEl.textContent = formatNumber(playerStats.totalClickDamage);
+
     bonusGoldStatEl.textContent = playerStats.bonusGold.toFixed(1);
     magicFindStatEl.textContent = playerStats.magicFind.toFixed(1);
 }
+
 
 /**
  * Updates only the gold upgrades panel.
@@ -654,9 +657,66 @@ export function renderPaperdoll(elements, gameState) {
             slotEl.appendChild(placeholder);
         }
     }
+    renderEquipmentStatsSummary(elements, gameState);
 }
 
 // --- END PERFORMANCE FIX: GRANULAR UI UPDATERS ---
+
+/**
+ * Calculates and displays a summary of stats from all currently equipped gear.
+ * @param {DOMElements} elements The object containing all DOM elements.
+ * @param {object} gameState The current game state.
+ */
+export function renderEquipmentStatsSummary(elements, gameState) {
+    const container = document.getElementById('equipment-stats-list');
+    if (!container) return;
+
+    const totalStats = {};
+    for (const slotName in gameState.equipment) {
+        const item = gameState.equipment[slotName];
+        if (item) {
+            const itemStats = getCombinedItemStats(item);
+            for (const statKey in itemStats) {
+                totalStats[statKey] = (totalStats[statKey] || 0) + itemStats[statKey];
+            }
+        }
+    }
+
+    container.innerHTML = '';
+    if (Object.keys(totalStats).length === 0) {
+        container.innerHTML = '<p style="font-size: 1em; color: #95a5a6;">No stats from equipped gear.</p>';
+        return;
+    }
+
+    const sortedStatKeys = Object.keys(totalStats).sort((a, b) => STAT_DISPLAY_ORDER.indexOf(a) - STAT_DISPLAY_ORDER.indexOf(b));
+
+    const statIconMap = {
+        [STATS.CLICK_DAMAGE.key]: 'fa-hand-rock',
+        [STATS.DPS.key]: 'fa-fist-raised',
+        [STATS.GOLD_GAIN.key]: 'fa-coins',
+        [STATS.MAGIC_FIND.key]: 'fa-star'
+    };
+
+    sortedStatKeys.forEach(statKey => {
+        const statInfo = Object.values(STATS).find(s => s.key === statKey) || { name: statKey, type: 'flat' };
+        const value = totalStats[statKey];
+        const isPercent = statInfo.type === 'percent';
+        const statValue = isPercent ? `+${value.toFixed(1)}%` : `+${formatNumber(value)}`;
+        const iconClass = statIconMap[statKey] || 'fa-question-circle';
+        
+        let statName = statInfo.name;
+        if (statKey === STATS.DPS.key) {
+            statName = 'Damage Per Second (DPS)';
+        } else if (isPercent) {
+            statName = statName.replace('% ', '');
+        }
+
+        const p = document.createElement('p');
+        p.title = statInfo.name;
+        p.innerHTML = `<span><i class="fas ${iconClass}"></i> ${statValue}</span><small>${statName}</small>`;
+        container.appendChild(p);
+    });
+}
 
 /**
  * The original, monolithic update function. Kept for full re-draws when necessary (e.g., on load, major view change).
@@ -778,7 +838,7 @@ function createDetailedItemStatBlockHTML(item) {
                          const statInfo = Object.values(STATS).find(s => s.key === statKey) || { name: statKey, type: 'flat' };
                          const statName = statInfo.name;
                          const value = gem.stats[statKey];
-                         const statValue = statInfo.type === 'percent' ? `${value.toFixed(1)}%` : formatNumber(value);
+                         const statValue = statInfo.type === 'percent' ? `${value}%` : formatNumber(value);
                          gemsHTML += `<li>+${statValue} ${statName}</li>`;
                     }
                 }
@@ -818,7 +878,7 @@ export function createTooltipHTML(item) {
     const isUnique = itemBase && itemBase.isUnique;
 
     const uniqueClass = isUnique ? 'unique-item-name' : '';
-    let headerHTML = `<div class="item-header"><span class="${item.rarity}">${item.name}</span></div>`;
+    let headerHTML = `<div class="item-header"><span class="${item.rarity} ${uniqueClass}">${item.name}</span></div>`;
     headerHTML += `<div style="font-size: 0.9em; color: #95a5a6; margin-bottom: 5px;">${item.rarity.charAt(0).toUpperCase() + item.rarity.slice(1)} ${item.type.charAt(0).toUpperCase() + item.type.slice(1)}</div>`;
 
     const detailedBlock = createDetailedItemStatBlockHTML(item);
@@ -851,7 +911,7 @@ export function createItemComparisonTooltipHTML(hoveredItem, equippedItem, equip
     const itemBase = ITEMS[hoveredItem.baseId];
 
     const uniqueClass = itemBase?.isUnique ? 'unique-item-name' : '';
-    let html = `<div class="item-header"><span class="${hoveredItem.rarity}">${hoveredItem.name}</span></div>`;
+    let html = `<div class="item-header"><span class="${hoveredItem.rarity} ${uniqueClass}">${hoveredItem.name}</span></div>`;
     html += `<div style="font-size: 0.9em; color: #95a5a6; margin-bottom: 5px;">${hoveredItem.rarity.charAt(0).toUpperCase() + hoveredItem.rarity.slice(1)} ${hoveredItem.type.charAt(0).toUpperCase() + hoveredItem.type.slice(1)}</div>`;
 
     const hoveredStats = getCombinedItemStats(hoveredItem);
@@ -1839,27 +1899,36 @@ export function showWikiTravelModal(elements, dropSources, playerMaxLevel, trave
     elements.modalBackdropEl.classList.remove('hidden');
 }
 
-// --- START PERFORMANCE FIX: NEW GRANULAR UI UPDATERS ---
-
 export function updatePrestigeUI(elements, gameState) {
-    const { prestigeCountStatEl, absorbedStatsListEl, prestigeRequirementTextEl, prestigeButton } = elements;
+    const { absorbedStatsListEl, prestigeRequirementTextEl, prestigeButton } = elements;
     
     absorbedStatsListEl.innerHTML = '';
+
+    const prestigeCount = gameState.prestigeCount || 0;
+    const prestigeCountEl = document.createElement('div');
+    prestigeCountEl.className = 'prestige-stat-entry';
+    prestigeCountEl.innerHTML = `<span><i class="fas fa-award"></i> ${prestigeCount}</span><small>Prestige Count</small>`;
+    absorbedStatsListEl.appendChild(prestigeCountEl);
+
     const prestigeStatsToShow = {
-        [STATS.DPS.key]: { icon: 'fa-sword', label: 'DPS' },
-        [STATS.CLICK_DAMAGE.key]: { icon: 'fa-hand-rock', label: 'Click Dmg' },
-        [STATS.GOLD_GAIN.key]: { icon: 'fa-coins', label: '% Gold Gain' },
-        [STATS.MAGIC_FIND.key]: { icon: 'fa-star', label: '% Magic Find' },
+        [STATS.CLICK_DAMAGE.key]: { icon: 'fa-hand-rock', label: 'Click Damage' },
+        [STATS.DPS.key]: { icon: 'fa-fist-raised', label: 'Damage Per Second (DPS)' },
+        [STATS.GOLD_GAIN.key]: { icon: 'fa-coins', label: 'Gold Gain' },
+        [STATS.MAGIC_FIND.key]: { icon: 'fa-star', label: 'Magic Find' },
     };
 
-    for (const [key, config] of Object.entries(prestigeStatsToShow)) {
-        if (gameState.absorbedStats[key] > 0) {
-            const isPercent = STATS[Object.keys(STATS).find(k => STATS[k].key === key)].type === 'percent';
-            const value = isPercent ? `${gameState.absorbedStats[key].toFixed(2)}%` : formatNumber(gameState.absorbedStats[key]);
+    const sortedStatKeys = Object.keys(gameState.absorbedStats).sort((a,b) => STAT_DISPLAY_ORDER.indexOf(a) - STAT_DISPLAY_ORDER.indexOf(b));
+
+    for (const statKey of sortedStatKeys) {
+        const config = prestigeStatsToShow[statKey];
+        if (config && gameState.absorbedStats[statKey] > 0) {
+            const isPercent = STATS[Object.keys(STATS).find(k => STATS[k].key === statKey)].type === 'percent';
+            const value = gameState.absorbedStats[statKey];
+            const statValue = isPercent ? `+${value.toFixed(2)}%` : `+${formatNumber(value)}`;
             
             const statEl = document.createElement('div');
             statEl.className = 'prestige-stat-entry';
-            statEl.innerHTML = `<i class="fas ${config.icon}"></i><div class="prestige-stat-text"><div>${config.label}:</div><div>${value}</div></div>`;
+            statEl.innerHTML = `<span><i class="fas ${config.icon}"></i> ${statValue}</span><small>${config.label}</small>`;
             absorbedStatsListEl.appendChild(statEl);
         }
     }
@@ -1876,10 +1945,10 @@ export function updatePrestigeUI(elements, gameState) {
                 if (effectKey === 'slimeSplit') {
                     const isEnabled = gameState.isSlimeSplitEnabled !== false;
                     const imgSrc = isEnabled ? 'images/game_assets/on_button.png' : 'images/game_assets/off_button.png';
-                    effectEl.innerHTML = `<img src="${imgSrc}" class="toggle-switch-img slime-split-toggle-img" alt="Toggle Slime Split"><div class="prestige-stat-text"><div>Absorbed Unique:</div><div>${effectData.name}${stackText}</div></div>`;
+                    effectEl.innerHTML = `<span><img src="${imgSrc}" class="toggle-switch-img slime-split-toggle-img" alt="Toggle Slime Split"></span><small>Absorbed Unique: ${effectData.name}${stackText}</small>`;
                     effectEl.title = `${effectData.description} Click to toggle ON/OFF.`;
                 } else {
-                    effectEl.innerHTML = `<i class="fas fa-magic"></i><div class="prestige-stat-text"><div>Absorbed Unique:</div><div>${effectData.name}${stackText}</div></div>`;
+                    effectEl.innerHTML = `<span><i class="fas fa-magic"></i></span><small>Absorbed Unique: ${effectData.name}${stackText}</small>`;
                     effectEl.title = effectData.description;
                 }
                 absorbedStatsListEl.appendChild(effectEl);
@@ -1892,14 +1961,13 @@ export function updatePrestigeUI(elements, gameState) {
     if (amethystSynergyValue > 0) {
         const synergyEl = document.createElement('div');
         synergyEl.className = 'prestige-stat-entry';
-        const synergyValueText = (amethystSynergyValue * 100).toFixed(1);
-        synergyEl.innerHTML = `<i class="fas fa-magic"></i><div class="prestige-stat-text"><div>Absorbed Synergy:</div><div>+${synergyValueText}% DPS to Click</div></div>`;
-        synergyEl.title = `Converts ${synergyValueText}% of your total DPS into Click Damage.`;
+        const synergyValueText = `+${(amethystSynergyValue * 100).toFixed(1)}%`;
+        synergyEl.innerHTML = `<span><i class="fas fa-magic"></i> ${synergyValueText}</span><small>DPS to Click Dmg</small>`;
+        synergyEl.title = `Converts ${synergyValueText} of your total DPS into Click Damage.`;
         absorbedStatsListEl.appendChild(synergyEl);
     }
 
     const nextPrestigeLevel = gameState.nextPrestigeLevel || 100;
-    prestigeCountStatEl.textContent = (gameState.prestigeCount || 0).toString();
     prestigeRequirementTextEl.innerHTML = `Defeat the boss at Level <b>${nextPrestigeLevel}</b> to Prestige.`;
     (/** @type {HTMLButtonElement} */ (prestigeButton)).disabled = !gameState.currentRunCompletedLevels.includes(nextPrestigeLevel);
 }
