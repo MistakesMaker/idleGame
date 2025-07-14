@@ -273,7 +273,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const strengthBonusClickFlat = hero.attributes.strength * 1;
         const strengthBonusClickPercent = hero.attributes.strength * 0.2;
         const agilityBonusDpsFlat = hero.attributes.agility * 1;
-        const agilityBonusDpsPercent = hero.attributes.agility * 0.3;
+        const agilityBonusDpsPercent = hero.attributes.agility * 0.8;
 
         let clickDamageSubtotal = newCalculatedStats.baseClickDamage + strengthBonusClickFlat;
         clickDamageSubtotal *= (1 + (strengthBonusClickPercent / 100));
@@ -2077,7 +2077,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function setupStatTooltipListeners() {
         const statTooltipContent = {
             strength: { title: 'Strength', description: 'Increases your raw power. Each point provides:', effects: ['<b>+1</b> Flat Click Damage', '<b>+0.2%</b> Total Click Damage'] },
-            agility: { title: 'Agility', description: 'Improves your hero\'s combat prowess. Each point provides:', effects: ['<b>+1</b> Flat DPS', '<b>+0.3%</b> Total DPS'] },
+            agility: { title: 'Agility', description: 'Improves your hero\'s combat prowess. Each point provides:', effects: ['<b>+1</b> Flat DPS', '<b>+0.8%</b> Total DPS'] },
             luck: { title: 'Luck', description: 'Increases your fortune in the dungeon. Each point provides:', effects: ['<b>+0.5%</b> Gold Gain'] }
         };
         const attributesArea = document.getElementById('attributes-area');
