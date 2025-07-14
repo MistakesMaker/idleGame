@@ -194,7 +194,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 keepSockets: 0,
                 keepStats: defaultKeepStats
             },
-            wikiFavorites: []
+            wikiFavorites: [],
+            tutorialCompleted: false,
+            unlockedFeatures: {
+                inventory: false,
+                equipment: false,
+                gems: false,
+                forge: false,
+                prestige: false,
+                wiki: false,
+            }
         };
     }
 
@@ -340,16 +349,46 @@ document.addEventListener('DOMContentLoaded', () => {
             result.droppedItems.forEach((item, index) => {
                 ui.showItemDropAnimation(elements.popupContainerEl, item, index);
                 ui.addItemToGrid(elements.inventorySlotsEl, item);
+                if (!gameState.unlockedFeatures.inventory) {
+                    gameState.unlockedFeatures.inventory = true;
+                    logMessage(elements.gameLogEl, '<b>Inventory Unlocked!</b> You can now view and manage your items.', 'legendary', isAutoScrollingLog);
+                    ui.updateTabVisibility(gameState);
+                    ui.flashTab('inventory-view');
+                }
+                if (item.sockets && item.sockets.length > 0 && !gameState.unlockedFeatures.gems) {
+                     logMessage(elements.gameLogEl, 'You found an item with strange, empty sockets. Perhaps there are special stones that could fit inside...', 'uncommon', isAutoScrollingLog);
+                }
             });
         }
         
         if (result.droppedGems && result.droppedGems.length > 0) {
             result.droppedGems.forEach((gemToPlace, index) => {
                 ui.showItemDropAnimation(elements.popupContainerEl, gemToPlace, index);
+                 if (!gameState.unlockedFeatures.gems) {
+                    gameState.unlockedFeatures.gems = true;
+                    logMessage(elements.gameLogEl, '<b>Gems Unlocked!</b> You can now view and socket powerful gems.', 'legendary', isAutoScrollingLog);
+                    ui.updateTabVisibility(gameState);
+                    ui.flashTab('gems-view');
+                }
             });
             refreshGemViewIfActive();
         }
     
+        const wasBossDefeated = isBigBossLevel(gameState.currentFightingLevel) || isBossLevel(gameState.currentFightingLevel);
+        if (wasBossDefeated && gameState.currentFightingLevel === gameState.nextPrestigeLevel) {
+            if (!gameState.unlockedFeatures.prestige) {
+                gameState.unlockedFeatures.prestige = true;
+                logMessage(elements.gameLogEl, '<b>Prestige Unlocked!</b> You can now reset your progress for powerful permanent bonuses.', 'legendary', isAutoScrollingLog);
+                ui.updatePrestigeUI(elements, gameState);
+            }
+            if (!gameState.unlockedFeatures.wiki) {
+                gameState.unlockedFeatures.wiki = true;
+                 logMessage(elements.gameLogEl, '<b>Item Wiki Unlocked!</b> Discover powerful items and their drop locations to prepare for your journey ahead.', 'legendary', isAutoScrollingLog);
+                 ui.updateTabVisibility(gameState);
+                 ui.flashTab('wiki-view');
+            }
+        }
+
         const levelUpLogs = player.gainXP(gameState, result.xpGained);
         if (levelUpLogs.length > 0) {
             levelUpLogs.forEach(msg => logMessage(elements.gameLogEl, msg, 'legendary', isAutoScrollingLog));
@@ -468,6 +507,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function fullUIRender() {
+        ui.updateTabVisibility(gameState);
         ui.updateUI(elements, gameState, playerStats, currentMonster, salvageMode, craftingGems, selectedItemForForge, bulkCombineSelection, bulkCombineDeselectedIds);
         renderMapAccordion();
         ui.renderPermanentUpgrades(elements, gameState);
@@ -1061,6 +1101,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 },
                 wikiFavorites: loadedState.wikiFavorites || [],
                 goldenSlimeStreak: loadedState.goldenSlimeStreak && typeof loadedState.goldenSlimeStreak === 'object' ? loadedState.goldenSlimeStreak : baseState.goldenSlimeStreak,
+                unlockedFeatures: {
+                    ...baseState.unlockedFeatures,
+                    ...(loadedState.unlockedFeatures || {})
+                },
+                tutorialCompleted: loadedState.tutorialCompleted || false
             };
             
             if (!gameState.presetSystemMigrated) {
@@ -1069,6 +1114,20 @@ document.addEventListener('DOMContentLoaded', () => {
             
             gameState.equipment = gameState.presets[gameState.activePresetIndex].equipment;
             
+            // --- One-time migration for veteran players ---
+            if (!gameState.tutorialCompleted) {
+                if (gameState.inventory.length > 0) gameState.unlockedFeatures.inventory = true;
+                if (Object.values(gameState.equipment).some(item => item !== null)) gameState.unlockedFeatures.equipment = true;
+                if (gameState.gems.length > 0) gameState.unlockedFeatures.gems = true;
+                if (gameState.scrap > 0) gameState.unlockedFeatures.forge = true;
+                if (gameState.maxLevel >= 100) {
+                    gameState.unlockedFeatures.prestige = true;
+                    gameState.unlockedFeatures.wiki = true;
+                }
+                gameState.tutorialCompleted = true;
+                console.log("Veteran player detected. Unlocking all relevant features.");
+            }
+
             calculateOfflineProgress();
         } else {
             gameState = getDefaultGameState();
@@ -1126,6 +1185,7 @@ document.addEventListener('DOMContentLoaded', () => {
         startNewMonster();
         logMessage(elements.gameLogEl, savedData ? "Saved game loaded!" : "Welcome! Your progress will be saved automatically.", '', isAutoScrollingLog);
         
+        // Initial UI setup based on unlocked features
         fullUIRender();
         
         autoSave(); 
@@ -1255,6 +1315,12 @@ document.addEventListener('DOMContentLoaded', () => {
             const result = player.salvageSelectedItems(gameState, salvageMode, playerStats);
             if (result.count > 0) {
                 logMessage(elements.gameLogEl, `Salvaged ${result.count} items for a total of ${formatNumber(result.scrapGained)} Scrap.`, 'uncommon', isAutoScrollingLog);
+                 if (!gameState.unlockedFeatures.forge) {
+                    gameState.unlockedFeatures.forge = true;
+                    logMessage(elements.gameLogEl, '<b>The Forge is Unlocked!</b> You can now use Scrap to reroll item stats.', 'legendary', isAutoScrollingLog);
+                    ui.updateTabVisibility(gameState);
+                    ui.flashTab('forge-view');
+                }
             } else {
                 logMessage(elements.gameLogEl, "No items selected for salvage.", '', isAutoScrollingLog);
             }
@@ -1274,6 +1340,12 @@ document.addEventListener('DOMContentLoaded', () => {
             const result = player.salvageByRarity(gameState, rarity, playerStats);
             if (result.count > 0) {
                 logMessage(elements.gameLogEl, `Salvaged ${result.count} ${rarity} items for ${formatNumber(result.scrapGained)} Scrap.`, 'uncommon', isAutoScrollingLog);
+                if (!gameState.unlockedFeatures.forge) {
+                    gameState.unlockedFeatures.forge = true;
+                    logMessage(elements.gameLogEl, '<b>The Forge is Unlocked!</b> You can now use Scrap to reroll item stats.', 'legendary', isAutoScrollingLog);
+                    ui.updateTabVisibility(gameState);
+                    ui.flashTab('forge-view');
+                }
                 ui.renderGrid(elements.inventorySlotsEl, gameState.inventory, { calculatePositions: false });
                 ui.updateCurrency(elements, gameState);
                 autoSave();
@@ -1385,6 +1457,12 @@ document.addEventListener('DOMContentLoaded', () => {
                             pendingRingEquip = result.item;
                             showRingSelectionModal(pendingRingEquip);
                         } else {
+                            if (!gameState.unlockedFeatures.equipment) {
+                                gameState.unlockedFeatures.equipment = true;
+                                logMessage(elements.gameLogEl, '<b>Equipment Unlocked!</b> You can now see your equipped gear.', 'legendary', isAutoScrollingLog);
+                                ui.updateTabVisibility(gameState);
+                                ui.flashTab('equipment-view');
+                            }
                             logMessage(elements.gameLogEl, result.message, '', isAutoScrollingLog);
                             recalculateStats();
                             ui.renderGrid(elements.inventorySlotsEl, gameState.inventory, { calculatePositions: false });
@@ -1541,6 +1619,12 @@ document.addEventListener('DOMContentLoaded', () => {
         addTapListener(elements.ringSelectionSlot1, () => {
             if (pendingRingEquip) {
                 player.equipRing(gameState, pendingRingEquip, 'ring1');
+                if (!gameState.unlockedFeatures.equipment) {
+                    gameState.unlockedFeatures.equipment = true;
+                    logMessage(elements.gameLogEl, '<b>Equipment Unlocked!</b> You can now see your equipped gear.', 'legendary', isAutoScrollingLog);
+                    ui.updateTabVisibility(gameState);
+                    ui.flashTab('equipment-view');
+                }
                 recalculateStats();
                 ui.renderGrid(elements.inventorySlotsEl, gameState.inventory, { calculatePositions: false });
                 ui.renderPaperdoll(elements, gameState);
@@ -1552,6 +1636,12 @@ document.addEventListener('DOMContentLoaded', () => {
         addTapListener(elements.ringSelectionSlot2, () => {
             if (pendingRingEquip) {
                 player.equipRing(gameState, pendingRingEquip, 'ring2');
+                 if (!gameState.unlockedFeatures.equipment) {
+                    gameState.unlockedFeatures.equipment = true;
+                    logMessage(elements.gameLogEl, '<b>Equipment Unlocked!</b> You can now see your equipped gear.', 'legendary', isAutoScrollingLog);
+                    ui.updateTabVisibility(gameState);
+                    ui.flashTab('equipment-view');
+                }
                 recalculateStats();
                 ui.renderGrid(elements.inventorySlotsEl, gameState.inventory, { calculatePositions: false });
                 ui.renderPaperdoll(elements, gameState);
@@ -1642,7 +1732,6 @@ document.addEventListener('DOMContentLoaded', () => {
         
         document.querySelectorAll('.tabs').forEach(tabContainer => {
             const tabs = tabContainer.querySelectorAll('.tab-button');
-            const parentPanel = tabContainer.parentElement;
             tabs.forEach((tab) => {
                 if (!(tab instanceof HTMLElement)) return;
                 const viewId = tab.dataset.view;
@@ -1655,7 +1744,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         return;
                     }
                     
-                    ui.switchView(elements, viewId);
+                    ui.switchView(elements, viewId, gameState);
 
                     switch(viewId) {
                         case 'map-view':
@@ -2116,14 +2205,14 @@ document.addEventListener('DOMContentLoaded', () => {
         addTapListener(elements.prestigeButton, () => {
             document.querySelector('.actions-panel').classList.add('hidden');
             document.querySelector('.upgrades-panel').classList.add('hidden');
-            ui.switchView(elements, 'prestige-view');
+            ui.switchView(elements, 'prestige-view', gameState);
             fullUIRender();
         });
     
         addTapListener(elements.cancelPrestigeButton, () => {
             document.querySelector('.actions-panel').classList.remove('hidden');
             document.querySelector('.upgrades-panel').classList.remove('hidden');
-            ui.switchView(elements, 'map-view');
+            ui.switchView(elements, 'map-view', gameState);
             fullUIRender();
         });
     
@@ -2231,6 +2320,8 @@ document.addEventListener('DOMContentLoaded', () => {
     
             gameState = {
                 ...baseState,
+                unlockedFeatures: gameState.unlockedFeatures, // CARRY OVER THE UNLOCKED FEATURES
+                tutorialCompleted: gameState.tutorialCompleted, // CARRY OVER THE TUTORIAL FLAG
                 permanentUpgrades: gameState.permanentUpgrades,
                 salvageFilter: gameState.salvageFilter,
                 wikiFavorites: gameState.wikiFavorites, 
@@ -2253,7 +2344,7 @@ document.addEventListener('DOMContentLoaded', () => {
             
             document.querySelector('.actions-panel').classList.remove('hidden');
             document.querySelector('.upgrades-panel').classList.remove('hidden');
-            ui.switchView(elements, 'map-view');
+            ui.switchView(elements, 'map-view', gameState);
             recalculateStats();
             startNewMonster();
             fullUIRender();

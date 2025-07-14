@@ -158,6 +158,10 @@ export function initDOMElements() {
         devToolMissingImagesList: document.getElementById('dev-tool-missing-images-list'),
         devToolOrphanedItemsList: document.getElementById('dev-tool-orphaned-items-list'),
         devToolCloseBtn: document.getElementById('dev-tool-close-btn'),
+        lockedView: document.getElementById('locked-view'),
+        lockedViewTitle: document.getElementById('locked-view-title'),
+        lockedViewMessage: document.getElementById('locked-view-message'),
+        lockedViewIcon: document.getElementById('locked-view-icon'),
     };
 }
 
@@ -737,18 +741,30 @@ export function updateUI(elements, gameState, playerStats, currentMonster, salva
     updatePrestigeUI(elements, gameState);
 
     // Grid Renders
-    renderGrid(inventorySlotsEl, gameState.inventory, { calculatePositions: true, salvageSelections: salvageMode.selections, showLockIcon: true });
-    renderGrid(gemSlotsEl, gameState.gems, { type: 'gem', calculatePositions: false, bulkCombineSelection, bulkCombineDeselectedIds });
-    renderGrid(forgeInventorySlotsEl, player.getAllItems(gameState), { calculatePositions: true, selectedItem: selectedItemForForge, showLockIcon: false });
+    if(gameState.unlockedFeatures.inventory) {
+        renderGrid(inventorySlotsEl, gameState.inventory, { calculatePositions: true, salvageSelections: salvageMode.selections, showLockIcon: true });
+    }
+    if(gameState.unlockedFeatures.gems) {
+        renderGrid(gemSlotsEl, gameState.gems, { type: 'gem', calculatePositions: false, bulkCombineSelection, bulkCombineDeselectedIds });
+    }
+    if(gameState.unlockedFeatures.forge) {
+        renderGrid(forgeInventorySlotsEl, player.getAllItems(gameState), { calculatePositions: true, selectedItem: selectedItemForForge, showLockIcon: false });
+    }
     
     // Paperdoll
-    renderPaperdoll(elements, gameState);
+    if(gameState.unlockedFeatures.equipment) {
+        renderPaperdoll(elements, gameState);
+    }
     
     // Gem Crafting
-    updateGemCraftingUI(elements, craftingGems, gameState);
+    if(gameState.unlockedFeatures.gems) {
+        updateGemCraftingUI(elements, craftingGems, gameState);
+    }
     
     // Forge
-    updateForge(elements, selectedItemForForge, gameState.scrap);
+    if(gameState.unlockedFeatures.forge) {
+        updateForge(elements, selectedItemForForge, gameState.scrap);
+    }
     
     // Presets
     document.querySelectorAll('.preset-btn').forEach((btn, index) => {
@@ -757,7 +773,7 @@ export function updateUI(elements, gameState, playerStats, currentMonster, salva
     });
 
     // Prestige View
-    if (elements.prestigeView.classList.contains('active')) {
+    if (elements.prestigeView.classList.contains('active') && gameState.unlockedFeatures.prestige) {
         const unlockedItemTypes = gameState.unlockedPrestigeSlots.map(slot => slot.replace(/\d/g, ''));
         const filteredInventory = player.getAllItems(gameState).filter(item => unlockedItemTypes.includes(item.type.replace(/\d/g, '')));
         renderGrid(prestigeInventoryDisplay, filteredInventory, { calculatePositions: true, showLockIcon: false });
@@ -1441,20 +1457,90 @@ export function showViewSlotsModal(elements, unlockedSlots) {
 
 
 /**
- * Switches the active view in the middle panel.
+ * Switches the active view in the middle panel, handling locked features.
+ * This is the new, robust version that prevents UI bugs.
  * @param {DOMElements} elements - The DOMElements object.
  * @param {string} viewIdToShow - The ID of the view to make active.
+ * @param {object} gameState - The current game state.
  */
-export function switchView(elements, viewIdToShow) {
-    const parentPanel = document.querySelector('.middle-panel');
-    parentPanel.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-    parentPanel.querySelectorAll('.tab-button').forEach(t => t.classList.remove('active'));
-    
-    const viewElement = document.getElementById(viewIdToShow);
-    const tabElement = parentPanel.querySelector(`.tab-button[data-view="${viewIdToShow}"]`);
+export function switchView(elements, viewIdToShow, gameState) {
+    const { unlockedFeatures } = gameState;
+    const { lockedView, lockedViewTitle, lockedViewMessage, lockedViewIcon } = elements;
 
-    if (viewElement) viewElement.classList.add('active');
-    if (tabElement) tabElement.classList.add('active');
+    const featureUnlockMap = {
+        'inventory-view': { flag: unlockedFeatures.inventory, title: 'Inventory Locked', message: 'Find your first piece of gear to unlock the inventory.', icon: 'fa-box-open' },
+        'equipment-view': { flag: unlockedFeatures.equipment, title: 'Equipment Locked', message: 'Equip an item from your inventory to unlock this view.', icon: 'fa-user-shield' },
+        'gems-view': { flag: unlockedFeatures.gems, title: 'Gems Locked', message: 'Find a Gem to unlock the Gemcutting bench.', icon: 'fa-gem' },
+        'forge-view': { flag: unlockedFeatures.forge, title: 'Forge Locked', message: 'Salvage an item for Scrap to unlock the Forge.', icon: 'fa-hammer' },
+        'wiki-view': { flag: unlockedFeatures.wiki, title: 'Wiki Locked', message: 'Defeat the boss at Level 100 to unlock the Item Wiki.', icon: 'fa-book' },
+        'prestige-view': { flag: unlockedFeatures.prestige, title: 'Prestige Locked', message: 'Defeat the boss at Level 100 to unlock Prestige.', icon: 'fa-star' }
+    };
+
+    const parentPanel = document.querySelector('.middle-panel');
+    const allViews = parentPanel.querySelectorAll('.view');
+    const allTabs = parentPanel.querySelectorAll('.tab-button');
+
+    // --- Core Fix: Hide all views first ---
+    allViews.forEach(v => v.classList.remove('active'));
+    allTabs.forEach(t => t.classList.remove('active'));
+
+    const tabElement = parentPanel.querySelector(`.tab-button[data-view="${viewIdToShow}"]`);
+    if (tabElement) {
+        tabElement.classList.add('active');
+    }
+    
+    const config = featureUnlockMap[viewIdToShow];
+    
+    if (config && !config.flag) {
+        // --- Show the customized locked view ---
+        lockedViewTitle.textContent = config.title;
+        lockedViewMessage.textContent = config.message;
+        lockedViewIcon.className = `fas ${config.icon} locked-view-icon`;
+        lockedView.classList.add('active');
+    } else {
+        // --- Show the intended, unlocked view ---
+        const viewElement = document.getElementById(viewIdToShow);
+        if (viewElement) {
+            viewElement.classList.add('active');
+        }
+    }
+}
+
+
+/**
+ * Updates the visual state of the tabs (enabled/disabled) based on unlocked features.
+ * @param {object} gameState - The current game state.
+ */
+export function updateTabVisibility(gameState) {
+    const { unlockedFeatures } = gameState;
+    const tabConfig = [
+        { view: 'inventory-view', flag: unlockedFeatures.inventory },
+        { view: 'equipment-view', flag: unlockedFeatures.equipment },
+        { view: 'gems-view', flag: unlockedFeatures.gems },
+        { view: 'forge-view', flag: unlockedFeatures.forge },
+        { view: 'wiki-view', flag: unlockedFeatures.wiki },
+    ];
+
+    tabConfig.forEach(config => {
+        const tabButton = document.querySelector(`.tab-button[data-view="${config.view}"]`);
+        if (tabButton) {
+            tabButton.classList.toggle('disabled-tab', !config.flag);
+        }
+    });
+}
+
+/**
+ * Temporarily makes a tab flash to draw the user's attention.
+ * @param {string} viewId - The data-view ID of the tab to flash.
+ */
+export function flashTab(viewId) {
+    const tabButton = document.querySelector(`.tab-button[data-view="${viewId}"]`);
+    if (tabButton) {
+        tabButton.classList.add('newly-unlocked-flash');
+        setTimeout(() => {
+            tabButton.classList.remove('newly-unlocked-flash');
+        }, 5000); // Animation lasts for 5 seconds
+    }
 }
 
 
@@ -1938,17 +2024,24 @@ export function updatePrestigeUI(elements, gameState) {
         if (count > 0) {
             const effectData = UNIQUE_EFFECTS[effectKey];
             if (effectData) {
-                const stackText = count > 1 ? ` (x${count})` : '';
                 const effectEl = document.createElement('div');
                 effectEl.className = 'prestige-stat-entry';
 
                 if (effectKey === 'slimeSplit') {
                     const isEnabled = gameState.isSlimeSplitEnabled !== false;
                     const imgSrc = isEnabled ? 'images/game_assets/on_button.png' : 'images/game_assets/off_button.png';
-                    effectEl.innerHTML = `<span><img src="${imgSrc}" class="toggle-switch-img slime-split-toggle-img" alt="Toggle Slime Split"></span><small>Absorbed Unique: ${effectData.name}${stackText}</small>`;
+                    const totalChance = count * 10;
+                    effectEl.innerHTML = `
+                        <span class="prestige-stat-text">
+                            <img src="${imgSrc}" class="toggle-switch-img slime-split-toggle-img" alt="Toggle Slime Split">
+                             ${totalChance}%
+                        </span>
+                        <small>Absorbed: ${effectData.name}</small>
+                    `;
                     effectEl.title = `${effectData.description} Click to toggle ON/OFF.`;
                 } else {
-                    effectEl.innerHTML = `<span><i class="fas fa-magic"></i></span><small>Absorbed Unique: ${effectData.name}${stackText}</small>`;
+                    const stackText = count > 1 ? ` (x${count})` : '';
+                    effectEl.innerHTML = `<span><i class="fas fa-magic"></i></span><small>Absorbed: ${effectData.name}${stackText}</small>`;
                     effectEl.title = effectData.description;
                 }
                 absorbedStatsListEl.appendChild(effectEl);

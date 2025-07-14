@@ -369,13 +369,17 @@ export function monsterDefeated(gameState, playerStats, currentMonster) {
     }
 
     // Check for Slime Split
-    let initialSlimeSplitChance = 0;
+    let slimeSplitChance = 0;
     const equippedSword = gameState.equipment.sword;
     const swordBase = equippedSword ? ITEMS[equippedSword.baseId] : null;
-    if (swordBase && swordBase.uniqueEffect === 'slimeSplit') initialSlimeSplitChance += 10;
-    if (gameState.absorbedUniqueEffects && gameState.absorbedUniqueEffects['slimeSplit']) initialSlimeSplitChance += gameState.absorbedUniqueEffects['slimeSplit'] * 10;
+    if (swordBase && swordBase.uniqueEffect === 'slimeSplit') {
+        slimeSplitChance += 10;
+    }
+    if (gameState.absorbedUniqueEffects && gameState.absorbedUniqueEffects['slimeSplit']) {
+        slimeSplitChance += (gameState.absorbedUniqueEffects['slimeSplit'] * 10);
+    }
 
-    if (gameState.isSlimeSplitEnabled && initialSlimeSplitChance > 0 && Math.random() * 100 < initialSlimeSplitChance) {
+    if (gameState.isSlimeSplitEnabled && slimeSplitChance > 0 && Math.random() * 100 < slimeSplitChance) {
         
         const slimeSpawnedResult = { 
             goldGained: finalGoldGained, 
@@ -394,7 +398,7 @@ export function monsterDefeated(gameState, playerStats, currentMonster) {
             baseGold: finalGoldGained, 
             hp: previousMonsterMaxHp * 0.5,
             goldReward: finalGoldGained * 3,
-            nextChance: initialSlimeSplitChance * 0.9,
+            nextChance: slimeSplitChance * 0.9,
         };
         
         return slimeSpawnedResult;
