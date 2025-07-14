@@ -115,7 +115,7 @@ const greenMeadowsMonsters = {
     // --- Sub-Zone: Royal Vanguard (Boss Lvl 75) ---
     ROYAL_GRIFFIN: {
         name: 'Royal Griffin',
-        image: 'images/monsters/griffin_chick.png', // Using chick image for now
+        image: 'images/monsters/royal_griffin.png', // Using chick image for now
         isBoss: true,
         dropChance: 100,
         lootTable: [

@@ -1,4 +1,3 @@
-// --- START OF FILE game.js ---
 
 import { REALMS } from './data/realms.js';
 import { MONSTERS } from './data/monsters.js';
@@ -1222,11 +1221,15 @@ document.addEventListener('DOMContentLoaded', () => {
         
         addTapListener(document.getElementById('attributes-area'), (e) => {
             if (!(e.target instanceof Element)) return;
-            const button = e.target.closest('.attribute-btn');
+            const button = e.target.closest('.attr-buy-btn');
             if (button instanceof HTMLButtonElement && !button.disabled) {
                 const attributeRow = button.closest('.attribute-row');
-                if (attributeRow instanceof HTMLElement && attributeRow.dataset.attribute) {
-                    player.spendAttributePoint(gameState, attributeRow.dataset.attribute);
+                const amountStr = button.dataset.amount;
+                if (attributeRow instanceof HTMLElement && attributeRow.dataset.attribute && amountStr) {
+                    // --- FIX: Convert amount to the correct type before calling ---
+                    const spendAmount = amountStr === 'max' ? 'max' : Number(amountStr);
+                    player.spendMultipleAttributePoints(gameState, attributeRow.dataset.attribute, spendAmount);
+                    // --- END FIX ---
                     recalculateStats();
                     ui.updateHeroPanel(elements, gameState);
                     ui.updateStatsPanel(elements, playerStats);
@@ -1762,6 +1765,12 @@ document.addEventListener('DOMContentLoaded', () => {
                             ui.populateSalvageFilter(elements, gameState);
                             ui.renderGrid(elements.inventorySlotsEl, gameState.inventory, { calculatePositions: false, salvageSelections: salvageMode.selections, showLockIcon: true });
                             ui.updateSocketingHighlights(elements, selectedGemForSocketing, gameState);
+                            // --- FIX: Explicitly set button state on tab switch ---
+                            const salvageFilterBtn = document.getElementById('auto-salvage-filter-btn');
+                            if (salvageFilterBtn) {
+                                salvageFilterBtn.classList.toggle('btn-pressed', gameState.salvageFilter.enabled);
+                            }
+                            // --- END FIX ---
                             break;
                         case 'gems-view':
                             ui.populateGemSortOptions(elements, gameState.gems, gemSortPreference);
@@ -1937,6 +1946,14 @@ document.addEventListener('DOMContentLoaded', () => {
             });
     
             salvageFilterControls.classList.toggle('hidden', !(/** @type {HTMLInputElement} */ (enableSalvageFilter)).checked);
+            
+            // --- FIX: Immediately update the button's glow ---
+            const salvageFilterBtn = document.getElementById('auto-salvage-filter-btn');
+            if (salvageFilterBtn) {
+                salvageFilterBtn.classList.toggle('btn-pressed', gameState.salvageFilter.enabled);
+            }
+            // --- END FIX ---
+
             autoSave();
         };
     
