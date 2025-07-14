@@ -238,7 +238,7 @@ export function gainXP(gameState, amount) {
     while (gameState.hero.xp >= xpToNextLevel) {
         gameState.hero.xp -= xpToNextLevel;
         gameState.hero.level++;
-        gameState.hero.attributePoints += 5;
+        gameState.hero.attributePoints += 2; // MODIFIED
         levelUpLogs.push(`Congratulations! You reached Level ${gameState.hero.level}!`);
         xpToNextLevel = getXpForNextLevel(gameState.hero.level);
     }
