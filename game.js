@@ -1,4 +1,3 @@
-
 import { REALMS } from './data/realms.js';
 import { MONSTERS } from './data/monsters.js';
 import { ITEMS } from './data/items.js';
@@ -101,6 +100,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let selectedGemForSocketing = null;
     let craftingGems = [];
     let selectedItemForForge = null;
+    let selectedStatToForgeKey = null;
     let isResetting = false; 
     let pendingLegacyKeeperUpgrade = false; 
     let bulkCombineSelection = { tier: null, selectionKey: null };
@@ -830,7 +830,7 @@ document.addEventListener('DOMContentLoaded', () => {
         elements.tooltipEl.className = 'hidden';
         elements.tooltipEl.classList.add(item.rarity);
 
-        if (isShiftPressed) {
+        if (isShiftPressed && item.baseId) {
             const itemBase = ITEMS[item.baseId];
             if (itemBase) {
                 elements.tooltipEl.innerHTML = ui.createLootTableTooltipHTML(itemBase);
@@ -1062,18 +1062,18 @@ document.addEventListener('DOMContentLoaded', () => {
         
         const savedData = localStorage.getItem('idleRPGSaveData');
         if (savedData) {
-             let loadedState = JSON.parse(savedData);
+            let loadedState = JSON.parse(savedData);
     
             // Start with a clean, complete default state
             const baseState = getDefaultGameState();
 
             // Safely merge the loaded state over the default state.
+            // This structure prevents errors if new properties are added to the default state
+            // but are not present in an old save file.
             gameState = { 
                 ...baseState, 
                 ...loadedState,
-                inventory: loadedState.inventory || [],
-                gems: loadedState.gems || [],
-                presets: loadedState.presets || baseState.presets,
+                // Deep merge nested objects to ensure new sub-properties are included
                 upgrades: { ...baseState.upgrades, ...(loadedState.upgrades || {}) },
                 hero: {
                     ...baseState.hero,
@@ -1087,9 +1087,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     ...baseState.permanentUpgrades,
                     ...(loadedState.permanentUpgrades || {})
                 },
-                absorbedStats: loadedState.absorbedStats || {},
-                absorbedSynergies: (typeof loadedState.absorbedSynergies === 'object' && !Array.isArray(loadedState.absorbedSynergies)) ? loadedState.absorbedSynergies : {},
-                absorbedUniqueEffects: loadedState.absorbedUniqueEffects || {},
                 salvageFilter: {
                     ...baseState.salvageFilter,
                     ...(loadedState.salvageFilter || {}),
@@ -1098,12 +1095,19 @@ document.addEventListener('DOMContentLoaded', () => {
                         ...((loadedState.salvageFilter || {}).keepStats || {})
                     }
                 },
-                wikiFavorites: loadedState.wikiFavorites || [],
-                goldenSlimeStreak: loadedState.goldenSlimeStreak && typeof loadedState.goldenSlimeStreak === 'object' ? loadedState.goldenSlimeStreak : baseState.goldenSlimeStreak,
                 unlockedFeatures: {
                     ...baseState.unlockedFeatures,
                     ...(loadedState.unlockedFeatures || {})
                 },
+                // Ensure these arrays/objects are not null/undefined from old saves
+                inventory: loadedState.inventory || [],
+                gems: loadedState.gems || [],
+                presets: loadedState.presets || baseState.presets,
+                absorbedStats: loadedState.absorbedStats || {},
+                absorbedSynergies: (typeof loadedState.absorbedSynergies === 'object' && !Array.isArray(loadedState.absorbedSynergies)) ? loadedState.absorbedSynergies : {},
+                absorbedUniqueEffects: loadedState.absorbedUniqueEffects || {},
+                wikiFavorites: loadedState.wikiFavorites || [],
+                goldenSlimeStreak: loadedState.goldenSlimeStreak && typeof loadedState.goldenSlimeStreak === 'object' ? loadedState.goldenSlimeStreak : baseState.goldenSlimeStreak,
                 tutorialCompleted: loadedState.tutorialCompleted || false
             };
             
@@ -1786,7 +1790,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             break;
                         case 'forge-view':
                             ui.renderGrid(elements.forgeInventorySlotsEl, player.getAllItems(gameState), { calculatePositions: true, selectedItem: selectedItemForForge, showLockIcon: false });
-                            ui.updateForge(elements, selectedItemForForge, gameState.scrap);
+                            ui.updateForge(elements, selectedItemForForge, selectedStatToForgeKey, gameState.scrap);
                             break;
                         case 'wiki-view':
                             applyWikiFilters();
@@ -1823,28 +1827,55 @@ document.addEventListener('DOMContentLoaded', () => {
             
             if (item && item.stats) {
                 selectedItemForForge = item; 
-                logMessage(elements.gameLogEl, `Selected <span class="${item.rarity}">${item.name}</span> for rerolling.`, 'uncommon', isAutoScrollingLog);
-                ui.updateForge(elements, selectedItemForForge, gameState.scrap);
+                selectedStatToForgeKey = null; // Reset selected stat when new item is chosen
+                ui.updateForge(elements, selectedItemForForge, selectedStatToForgeKey, gameState.scrap);
             }
         });
 
+        // NEW: Event listener for selecting a stat in the forge
+        addTapListener(elements.forgeStatListEl, (e) => {
+            if (!(e.target instanceof Element)) return;
+            const statEntry = e.target.closest('.forge-stat-entry');
+            if (!(statEntry instanceof HTMLElement) || !statEntry.dataset.statKey) return;
+            
+            selectedStatToForgeKey = statEntry.dataset.statKey;
+            ui.updateForge(elements, selectedItemForForge, selectedStatToForgeKey, gameState.scrap);
+        });
+
         addTapListener(elements.forgeRerollBtn, () => {
-            if (!selectedItemForForge) {
-                logMessage(elements.gameLogEl, "No item selected to reroll.", 'rare', isAutoScrollingLog);
+            if (!selectedItemForForge || !selectedStatToForgeKey) {
+                logMessage(elements.gameLogEl, "No item or stat selected to enhance.", 'rare', isAutoScrollingLog);
                 return;
             }
-
-            const result = player.rerollItemStats(gameState, selectedItemForForge);
-            logMessage(elements.gameLogEl, result.message, result.success ? 'epic' : 'rare', isAutoScrollingLog);
-            
+        
+            const result = player.rerollItemStats(gameState, selectedItemForForge, selectedStatToForgeKey);
+        
             if (result.success) {
+                let logText;
+                if (result.improvement > 0) {
+                    const statInfo = Object.values(STATS).find(s => s.key === selectedStatToForgeKey) || { key: 'unknown', name: 'Unknown', type: 'flat' };
+                    const isPercent = statInfo.type === 'percent';
+                    const improvementText = isPercent ? `${result.improvement.toFixed(1)}%` : formatNumber(result.improvement);
+                    // START OF MODIFICATION
+                    logText = `Successfully enhanced <b>${selectedItemForForge.name}</b>! ${statInfo.name} increased by <b>+${improvementText}</b>.`;
+                    // END OF MODIFICATION
+                    ui.showForgeImprovement(elements, selectedStatToForgeKey, result.improvement);
+                } else {
+                    logText = result.message;
+                }
+                logMessage(elements.gameLogEl, logText, 'epic', isAutoScrollingLog);
+        
                 recalculateStats();
-                ui.updateForge(elements, selectedItemForForge, gameState.scrap);
+                // We pass the *old* selected stat key to updateForge so it can highlight the correct row before it re-renders with the new value
+                ui.updateForge(elements, selectedItemForForge, selectedStatToForgeKey, gameState.scrap);
                 ui.updateCurrency(elements, gameState);
                 ui.updateStatsPanel(elements, playerStats);
                 ui.updateItemInGrid(elements.inventorySlotsEl, selectedItemForForge);
                 ui.renderPaperdoll(elements, gameState);
                 autoSave();
+            } else {
+                // Log hard failures, like not enough scrap (though button should be disabled)
+                logMessage(elements.gameLogEl, result.message, 'rare', isAutoScrollingLog);
             }
         });
 
@@ -2027,6 +2058,14 @@ document.addEventListener('DOMContentLoaded', () => {
             if (item) showItemTooltip(item, slotEl);
         });
         elements.prestigeEquipmentPaperdoll.addEventListener('mouseout', onGridMouseOut);
+
+        // Special listener for the forge item slot
+        elements.forgeSelectedItemEl.addEventListener('mouseover', (event) => {
+            if (selectedItemForForge && event.currentTarget instanceof HTMLElement) {
+                showItemTooltip(selectedItemForForge, event.currentTarget);
+            }
+        });
+        elements.forgeSelectedItemEl.addEventListener('mouseout', onGridMouseOut);
     }
     
     function setupGemTooltipListeners(){

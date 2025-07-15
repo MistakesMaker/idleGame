@@ -84,7 +84,6 @@
 
                 <h4>Attributes (<span id="attribute-points">0</span> points available)</h4>
                 <div id="attributes-area">
-                    <!-- START OF MODIFICATION -->
                     <div class="attribute-row" data-attribute="strength">
                         <span>Strength: <span id="attr-strength">0</span></span>
                         <div class="attr-buy-btn-group">
@@ -112,7 +111,6 @@
                             <button class="attr-buy-btn" data-amount="max" id="add-luck-max-btn" disabled>MAX</button>
                         </div>
                     </div>
-                    <!-- END OF MODIFICATION -->
                 </div>
                 
                 <h4>Derived Stats</h4>
@@ -207,13 +205,18 @@
             
              <div id="forge-view" class="view">
                 <h3>The Forge</h3>
-                <p>Select an item below to reroll its stats for 50 Scrap.</p>
+                <!-- START OF MODIFICATION -->
+                <p>Select an item below, then choose a stat to enhance for 500 Scrap.</p>
                 <div id="forge-main-area">
                     <div id="forge-selected-item">
-                        <!-- Selected item will be displayed here -->
+                        <!-- Selected item icon will be displayed here -->
                     </div>
-                    <button id="forge-reroll-btn" disabled>Reroll Stats (50 Scrap)</button>
+                    <div id="forge-stat-list">
+                        <!-- Selectable stats for the item will be displayed here -->
+                    </div>
                 </div>
+                <button id="forge-reroll-btn" disabled>Enhance Selected Stat (500 Scrap)</button>
+                <!-- END OF MODIFICATION -->
                 <div class="grid-scroll-container">
                     <div id="forge-inventory-slots" class="item-grid">
                         <!-- Player's inventory and equipment will appear here -->
@@ -317,9 +320,6 @@
                 
                 <div id="prestige-stats-area">
                     <h4>Prestige Bonuses</h4>
-                     <!-- START OF MODIFICATION: Removed the old Prestige Count line -->
-                     <!-- <p><i class="fas fa-award"></i> Prestige Count: <span id="prestige-count-stat">0</span></p> -->
-                     <!-- END OF MODIFICATION -->
                      <div id="absorbed-stats-list">
                         <!-- Absorbed stats will be dynamically inserted here -->
                      </div>

@@ -313,17 +313,18 @@ select option {
     border-radius: 8px; 
     border: 1px solid #4a637e; 
 }
-/* New style for log entries to enable word-break control */
+
 #game-log p.log-entry {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: baseline; /* Aligns text parts nicely */
     line-height: 1.4;
 }
-#game-log p.log-entry > .highlight {
-    display: inline-block; /* Treat highlight as a single block */
-    margin: 0 4px; /* Add a little space around highlights */
+
+/* START OF MODIFICATION */
+/* This rule ensures that styled spans and bold tags inside a log entry flow with the text. */
+#game-log p.log-entry > span,
+#game-log p.log-entry > b {
+    display: inline;
 }
+/* END OF MODIFICATION */
 
 #game-log p span.uncommon, #game-log .uncommon {
     color: inherit;
@@ -587,7 +588,25 @@ body.salvage-mode-active .item-grid .item-wrapper:not(.locked-item) { animation:
 #item-tooltip .stat-better { color: #2ecc71; font-weight: bold; }
 #item-tooltip .stat-worse { color: #e74c3c; font-weight: bold; }
 .tooltip-shift-hint { font-size: 0.8em; color: #7f8c8d; font-style: normal; font-weight: normal; }
-#item-tooltip .possible-stats-header { margin-top: 10px; font-size: 0.9em; color: #bdc3c7; font-style: italic; display: flex; justify-content: space-between; align-items: center; }
+/* START OF MODIFICATION */
+.tooltip-subheader {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    font-size: 0.9em;
+    color: #95a5a6;
+    margin-bottom: 8px;
+}
+#item-tooltip .possible-stats-header {
+    margin-top: 8px; /* Reduced from 10px */
+    font-size: 0.9em;
+    color: #bdc3c7;
+    font-style: italic;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+/* END OF MODIFICATION */
 
 .tooltip-comparison-container, .tooltip-ring-comparison { display: flex; gap: 15px; }
 .tooltip-comparison-container > div, .tooltip-ring-comparison > div { flex: 1; }
@@ -755,13 +774,94 @@ h5 .legendary { color: #f39c12; }
     100% { box-shadow: 0 0 5px rgba(52, 152, 219, 0.6); }
 }
 
-#forge-main-area { display: flex; flex-direction: column; align-items: center; gap: 15px; margin-bottom: 15px; }
-#forge-selected-item { width: 150px; height: 150px; }
-#forge-selected-item .item-wrapper { position: static; }
-#forge-selected-item .item { cursor: default; }
-#forge-selected-item .item:hover { transform: none; }
-#forge-reroll-btn { width: 80%; padding: 15px; font-size: 1.2em; background: linear-gradient(145deg, #e67e22, #f39c12); border-bottom-color: #d35400; }
-.item-wrapper.selected-for-forge .item { border: 3px solid #f1c40f !important; }
+/* --- FORGE STYLES (MODIFIED) --- */
+#forge-main-area {
+    display: flex;
+    gap: 20px;
+    align-items: flex-start; /* Align items to the top */
+    justify-content: center;
+    margin-bottom: 15px;
+    padding: 15px;
+    background: rgba(0,0,0,0.2);
+    border: 1px solid #4a637e;
+    border-radius: 8px;
+    min-height: 180px; /* Ensure a minimum height */
+}
+
+#forge-selected-item {
+    flex-shrink: 0;
+    width: 150px;
+    height: 150px;
+}
+#forge-selected-item .item-wrapper {
+    position: static; /* Let it sit naturally */
+    width: 100%;
+    height: 100%;
+    cursor: help; /* Change cursor to indicate it shows a tooltip */
+}
+#forge-selected-item .item {
+    cursor: help;
+}
+#forge-selected-item .item:hover {
+    transform: none;
+}
+#forge-stat-list {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-width: 350px;
+}
+
+.forge-stat-entry {
+    background-color: rgba(44, 62, 80, 0.7);
+    border: 1px solid #4a637e;
+    border-radius: 5px;
+    padding: 10px 10px 10px 15px; /* Add more left padding for the indicator */
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+    border-left: 5px solid transparent; /* Placeholder for selection indicator */
+}
+.forge-stat-entry:hover {
+    background-color: #4a637e;
+    border-color: #bdc3c7;
+}
+.forge-stat-entry.selected {
+    background-color: rgba(241, 196, 15, 0.15);
+    border-color: #f1c40f;
+    border-left-color: #f1c40f; /* Strong visual indicator */
+    transform: scale(1.02);
+}
+.stat-improvement-indicator {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #2ecc71;
+    font-weight: bold;
+    font-size: 1.1em;
+    animation: fade-in-out 1.5s ease-out forwards;
+}
+@keyframes fade-in-out {
+    0% { opacity: 0; transform: translateY(-50%) scale(0.8); }
+    20% { opacity: 1; transform: translateY(-50%) scale(1.1); }
+    80% { opacity: 1; transform: translateY(-50%) scale(1); }
+    100% { opacity: 0; transform: translateY(-60%); }
+}
+
+#forge-reroll-btn {
+    width: 80%;
+    max-width: 500px;
+    align-self: center;
+    padding: 15px;
+    font-size: 1.2em;
+    background: linear-gradient(145deg, #e67e22, #f39c12);
+    border-bottom-color: #d35400;
+}
+.item-wrapper.selected-for-forge .item {
+    border: 3px solid #f1c40f !important;
+}
 
 /* --- PRESTIGE VIEW --- */
 .game-container:has(#prestige-view.active) .middle-panel {

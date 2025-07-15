@@ -9,6 +9,7 @@ import { UNIQUE_EFFECTS } from './data/unique_effects.js';
 import * as player from './player_actions.js';
 import { REALMS } from './data/realms.js';
 import { PERMANENT_UPGRADES } from './data/upgrades.js';
+import { rarities } from './game.js';
 
 /** @typedef {Object<string, HTMLElement|HTMLButtonElement|HTMLInputElement|HTMLImageElement|HTMLSelectElement>} DOMElements */
 
@@ -107,6 +108,7 @@ export function initDOMElements() {
         gemCraftBtn: document.getElementById('gem-craft-btn'),
         forgeInventorySlotsEl: document.getElementById('forge-inventory-slots'),
         forgeSelectedItemEl: document.getElementById('forge-selected-item'),
+        forgeStatListEl: document.getElementById('forge-stat-list'),
         forgeRerollBtn: document.getElementById('forge-reroll-btn'),
         offlineProgressModalBackdrop: document.getElementById('offline-progress-modal-backdrop'),
         offlineProgressCloseBtn: document.getElementById('offline-progress-close-btn'),
@@ -719,8 +721,6 @@ export function renderEquipmentStatsSummary(elements, gameState) {
         let statName = statInfo.name;
         if (statKey === STATS.DPS.key) {
             statName = 'Damage Per Second (DPS)';
-        } else if (isPercent) {
-            statName = statName.replace('% ', '');
         }
 
         const p = document.createElement('p');
@@ -771,7 +771,7 @@ export function updateUI(elements, gameState, playerStats, currentMonster, salva
     
     // Forge
     if(gameState.unlockedFeatures.forge) {
-        updateForge(elements, selectedItemForForge, gameState.scrap);
+        updateForge(elements, selectedItemForForge, null, gameState.scrap);
     }
     
     // Presets
@@ -907,7 +907,16 @@ export function createTooltipHTML(item) {
 
     const uniqueClass = isUnique ? 'unique-item-name' : '';
     let headerHTML = `<div class="item-header"><span class="${item.rarity} ${uniqueClass}">${item.name}</span></div>`;
-    headerHTML += `<div style="font-size: 0.9em; color: #95a5a6; margin-bottom: 5px;">${item.rarity.charAt(0).toUpperCase() + item.rarity.slice(1)} ${item.type.charAt(0).toUpperCase() + item.type.slice(1)}</div>`;
+
+    // START OF MODIFICATION: Combine type and hint into a single flex container
+    const itemTypeString = `${item.rarity.charAt(0).toUpperCase() + item.rarity.slice(1)} ${item.type.charAt(0).toUpperCase() + item.type.slice(1)}`;
+    headerHTML += `
+        <div class="tooltip-subheader">
+            <span>${itemTypeString}</span>&nbsp;
+            <span class="tooltip-shift-hint">Hold [SHIFT] for blueprint</span>
+        </div>
+    `;
+    // END OF MODIFICATION
 
     const detailedBlock = createDetailedItemStatBlockHTML(item);
 
@@ -940,7 +949,16 @@ export function createItemComparisonTooltipHTML(hoveredItem, equippedItem, equip
 
     const uniqueClass = itemBase?.isUnique ? 'unique-item-name' : '';
     let html = `<div class="item-header"><span class="${hoveredItem.rarity} ${uniqueClass}">${hoveredItem.name}</span></div>`;
-    html += `<div style="font-size: 0.9em; color: #95a5a6; margin-bottom: 5px;">${hoveredItem.rarity.charAt(0).toUpperCase() + hoveredItem.rarity.slice(1)} ${hoveredItem.type.charAt(0).toUpperCase() + hoveredItem.type.slice(1)}</div>`;
+    
+    // START OF MODIFICATION: Combine type and hint into a single flex container
+    const itemTypeString = `${hoveredItem.rarity.charAt(0).toUpperCase() + hoveredItem.rarity.slice(1)} ${hoveredItem.type.charAt(0).toUpperCase() + hoveredItem.type.slice(1)}`;
+    html += `
+        <div class="tooltip-subheader">
+            <span>${itemTypeString}</span>&nbsp;
+            <span class="tooltip-shift-hint">Hold [SHIFT] for blueprint</span>
+        </div>
+    `;
+    // END OF MODIFICATION
 
     const hoveredStats = getCombinedItemStats(hoveredItem);
     let statsHTML = '';
@@ -1083,14 +1101,12 @@ export function createGemTooltipHTML(gem) {
 export function createLootTableTooltipHTML(itemBase) {
     let statsHTML = '<ul>';
 
-    // --- START OF FIX: Sort potential stats ---
-    const sortedPossibleStats = [...itemBase.possibleStats].sort((a, b) => STAT_DISPLAY_ORDER.indexOf(a.key) - STAT_DISPLAY_ORDER.indexOf(b.key));
-    // --- END OF FIX ---
+    const sortedPossibleStats = [...itemBase.possibleStats].sort((a, b) => STAT_DISPLAY_ORDER.indexOf(a.key) - STAT_DISPLAY_ORDER.indexOf(b));
 
-    sortedPossibleStats.forEach(statInfo => {
+    for (const statInfo of sortedPossibleStats) {
         const statName = Object.values(STATS).find(s => s.key === statInfo.key)?.name || statInfo.key;
         statsHTML += `<li>+ ${formatNumber(statInfo.min)} - ${formatNumber(statInfo.max)} ${statName}</li>`;
-    });
+    }
     statsHTML += '</ul>';
 
     let socketsHTML = '';
@@ -1115,24 +1131,35 @@ export function createLootTableTooltipHTML(itemBase) {
     const uniqueClass = isUnique ? 'unique-item-name' : '';
     const headerHTML = `<div class="item-header"><span class="${uniqueClass}">${itemBase.name}</span></div>`;
 
+    // START OF MODIFICATION: Remove the incorrect hint from this view.
     return `${headerHTML}
-            <div class="possible-stats-header">
-                Possible Stats:
-                <span class="tooltip-shift-hint">Hold [SHIFT] to compare</span>
+            <div class="possible-stats-header" style="justify-content: flex-start; margin-top: 5px; margin-bottom: 5px;">
+                <span>Possible Stats:</span>
             </div>
             ${statsHTML}
             ${socketsHTML}
             ${uniqueEffectHTML}`;
+    // END OF MODIFICATION
 }
 
 export function createLootComparisonTooltipHTML(potentialItem, equippedItem, equippedItem2 = null) {
     const potentialIsUnique = potentialItem.isUnique ? 'unique-item-name' : '';
     const headerHTML = `<div class="item-header"><span class="${potentialIsUnique}">${potentialItem.name}</span></div>`;
 
+    // START OF MODIFICATION: Combine type and hint into a single flex container
+    const itemTypeString = `${potentialItem.type.charAt(0).toUpperCase() + potentialItem.type.slice(1)}`;
+    let hintHTML = `
+        <div class="tooltip-subheader">
+            <span>${itemTypeString}</span>&nbsp;
+            <span class="tooltip-shift-hint">Release [SHIFT] for stats</span>
+        </div>
+    `;
+    // END OF MODIFICATION
+
     let potentialStatsHTML = '<ul>';
 
     // --- START OF FIX: Sort potential stats in comparison view ---
-    const sortedPossibleStats = [...potentialItem.possibleStats].sort((a, b) => STAT_DISPLAY_ORDER.indexOf(a.key) - STAT_DISPLAY_ORDER.indexOf(b.key));
+    const sortedPossibleStats = [...potentialItem.possibleStats].sort((a, b) => STAT_DISPLAY_ORDER.indexOf(a.key) - STAT_DISPLAY_ORDER.indexOf(b));
     // --- END OF FIX ---
 
     sortedPossibleStats.forEach(statInfo => {
@@ -1172,10 +1199,10 @@ export function createLootComparisonTooltipHTML(potentialItem, equippedItem, equ
     if (potentialItem.type === 'ring') {
         const equippedBlock1 = createComparisonBlock(equippedItem, "Ring 1");
         const equippedBlock2 = createComparisonBlock(equippedItem2, "Ring 2");
-        return `${headerHTML}<div class="tooltip-ring-comparison">${potentialBlock}${equippedBlock1}${equippedBlock2}</div>`;
+        return `${headerHTML}${hintHTML}<div class="tooltip-ring-comparison">${potentialBlock}${equippedBlock1}${equippedBlock2}</div>`;
     } else {
         const equippedBlock = createComparisonBlock(equippedItem, "Equipped");
-        return `${headerHTML}<div class="tooltip-comparison-container">${potentialBlock}${equippedBlock}</div>`;
+        return `${headerHTML}${hintHTML}<div class="tooltip-comparison-container">${potentialBlock}${equippedBlock}</div>`;
     }
 }
 
@@ -2095,16 +2122,62 @@ export function updateGemCraftingUI(elements, craftingGems, gameState) {
     (/** @type {HTMLButtonElement} */ (gemCraftBtn)).disabled = craftingGems.length !== 2 || gameState.scrap < 100;
 }
 
-export function updateForge(elements, selectedItem, currentScrap) {
-    const { forgeSelectedItemEl, forgeRerollBtn } = elements;
+export function updateForge(elements, selectedItem, selectedStatKey, currentScrap) {
+    const { forgeSelectedItemEl, forgeStatListEl, forgeRerollBtn } = elements;
+
+    // Update Item Icon
     if (selectedItem) {
         forgeSelectedItemEl.innerHTML = `<div class="item-wrapper">${createItemHTML(selectedItem, false)}</div>`;
     } else {
-        forgeSelectedItemEl.innerHTML = `<p>Select an item to begin.</p>`;
+        forgeSelectedItemEl.innerHTML = `<p style="text-align: center; margin-top: 50px;">Select an item to enhance.</p>`;
     }
-    (/** @type {HTMLButtonElement} */ (forgeRerollBtn)).disabled = !selectedItem || currentScrap < 50;
-    
-    // Update highlights
+
+    // Update Stat List
+    forgeStatListEl.innerHTML = '';
+    if (selectedItem && selectedItem.stats && Object.keys(selectedItem.stats).length > 0) {
+        const sortedStatKeys = Object.keys(selectedItem.stats).sort((a,b) => STAT_DISPLAY_ORDER.indexOf(a) - STAT_DISPLAY_ORDER.indexOf(b));
+        const itemBase = ITEMS[selectedItem.baseId];
+
+        for (const statKey of sortedStatKeys) {
+            const statInfo = Object.values(STATS).find(s => s.key === statKey) || { key: 'unknown', name: 'Unknown', type: 'flat' };
+            const statValue = selectedItem.stats[statKey];
+            const displayValue = statInfo.type === 'percent' ? `${statValue.toFixed(1)}%` : formatNumber(statValue);
+            
+            // Calculate percentage of max
+            let percentOfMax = 0;
+            const statDefinition = itemBase.possibleStats.find(p => p.key === statKey);
+            if(statDefinition) {
+                const rarityIndex = rarities.indexOf(selectedItem.rarity);
+                const total_stat_range = statDefinition.max - statDefinition.min;
+                const range_per_tier = total_stat_range / rarities.length;
+                const max_for_tier = statDefinition.min + (range_per_tier * (rarityIndex + 1));
+                if (max_for_tier > 0) { // Avoid division by zero
+                    percentOfMax = (statValue / max_for_tier) * 100;
+                }
+            }
+            const percentText = percentOfMax >= 100 ? `<span style="color: #f1c40f;">(MAX)</span>` : `(${percentOfMax.toFixed(1)}%)`;
+            
+            const statEntry = document.createElement('div');
+            statEntry.className = 'forge-stat-entry';
+            statEntry.dataset.statKey = statKey;
+            statEntry.innerHTML = `+${displayValue} ${statInfo.name} <small>${percentText}</small>`;
+            
+            if (statKey === selectedStatKey) {
+                statEntry.classList.add('selected');
+            }
+            
+            forgeStatListEl.appendChild(statEntry);
+        }
+    } else if (selectedItem) {
+        forgeStatListEl.innerHTML = `<p style="color: #95a5a6; text-align: center;">This item has no stats to enhance.</p>`;
+    }
+
+
+    // Update Reroll Button State
+    const canAfford = currentScrap >= 500;
+    (/** @type {HTMLButtonElement} */(forgeRerollBtn)).disabled = !selectedItem || !selectedStatKey || !canAfford;
+
+    // Update Highlights in Grid
     elements.forgeInventorySlotsEl.querySelectorAll('.selected-for-forge').forEach(el => el.classList.remove('selected-for-forge'));
     if (selectedItem) {
         const itemEl = elements.forgeInventorySlotsEl.querySelector(`.item-wrapper[data-id="${selectedItem.id}"]`);
@@ -2113,6 +2186,34 @@ export function updateForge(elements, selectedItem, currentScrap) {
         }
     }
 }
+
+/**
+ * Flashes a green improvement indicator next to a stat in the forge UI.
+ * @param {DOMElements} elements The DOM elements object.
+ * @param {string} statKey The key of the stat that was improved.
+ * @param {number} improvement The numerical value of the improvement.
+ */
+export function showForgeImprovement(elements, statKey, improvement) {
+    const statEntry = elements.forgeStatListEl.querySelector(`.forge-stat-entry[data-stat-key="${statKey}"]`);
+    if (!statEntry) return;
+
+    // Remove any existing indicator to reset the animation
+    const oldIndicator = statEntry.querySelector('.stat-improvement-indicator');
+    if (oldIndicator) {
+        oldIndicator.remove();
+    }
+
+    const indicator = document.createElement('span');
+    indicator.className = 'stat-improvement-indicator';
+    const statInfo = Object.values(STATS).find(s => s.key === statKey) || { key: 'unknown', name: 'Unknown', type: 'flat' };
+    const displayValue = statInfo.type === 'percent' ? `+${improvement.toFixed(1)}%` : `+${formatNumber(improvement)}`;
+    indicator.textContent = `[${displayValue}]`;
+    
+    statEntry.appendChild(indicator);
+
+    // The animation will automatically handle removal via `animation-fill-mode: forwards`.
+}
+
 
 export function updateActivePresetButton(elements, gameState) {
     document.querySelectorAll('.preset-btn').forEach((btn, index) => {

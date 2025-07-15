@@ -84,56 +84,6 @@ export function findNextAvailableSpot(itemWidth, itemHeight, inventory) {
     return findEmptySpot(itemWidth, itemHeight, inventory);
 }
 
-
-/**
- * Parses a message string containing HTML tags and splits it into text and highlighted segments.
- * This prevents highlighted words from being broken across lines.
- * @param {string} message - The message string, which may contain <span> tags.
- * @returns {DocumentFragment} A document fragment containing the parsed elements.
- */
-function parseMessage(message) {
-    const fragment = document.createDocumentFragment();
-    // Regex to split the string by HTML tags, keeping the tags in the result.
-    const parts = message.split(/(<[^>]+>)/);
-    
-    let isInsideTag = false;
-    let currentSpan = null;
-
-    for (const part of parts) {
-        if (!part) continue;
-
-        if (part.startsWith('<')) {
-            if (part.startsWith('</')) { // It's a closing tag
-                if (currentSpan) {
-                    fragment.appendChild(currentSpan);
-                    currentSpan = null;
-                }
-                isInsideTag = false;
-            } else { // It's an opening tag
-                isInsideTag = true;
-                currentSpan = document.createElement('span');
-                // Extract class from tag, e.g., <span class="epic"> -> "epic"
-                const classMatch = part.match(/class="([^"]+)"/);
-                if (classMatch) {
-                    currentSpan.className = 'highlight ' + classMatch[1];
-                }
-            }
-        } else if (isInsideTag && currentSpan) {
-            currentSpan.textContent = part;
-        } else {
-            // It's plain text, split by space to wrap words individually
-            const words = part.split(' ');
-            words.forEach((word, index) => {
-                if (word) {
-                    const textNode = document.createTextNode(word + (index === words.length - 1 ? '' : ' '));
-                    fragment.appendChild(textNode);
-                }
-            });
-        }
-    }
-    return fragment;
-}
-
 /**
  * Appends a message to the game log element.
  * @param {HTMLElement} gameLogEl - The game log container element.
@@ -143,12 +93,12 @@ function parseMessage(message) {
  */
 export function logMessage(gameLogEl, message, className = '', shouldAutoScroll = true) {
     const p = document.createElement('p');
-    p.className = 'log-entry'; // Use the new class for flexbox wrapping
+    p.className = 'log-entry';
     if(className) p.classList.add(className);
     
-    // Use the parser to build the content safely
-    const content = parseMessage(message);
-    p.appendChild(content);
+    // START OF MODIFICATION: Directly set innerHTML to allow natural flow of styled text.
+    p.innerHTML = message;
+    // END OF MODIFICATION
     
     gameLogEl.appendChild(p);
 

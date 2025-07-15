@@ -609,98 +609,61 @@ export function bulkCombineGems(gameState, tier, selectionKey, excludedIds) {
 
 
 /**
- * Rerolls the stat values of a given item from either inventory or equipment.
+ * Rerolls a single selected stat on a given item.
  * @param {object} gameState The main game state object.
  * @param {object} itemToReroll The item object to be rerolled.
- * @returns {{success: boolean, message: string}}
+ * @param {string} statToRerollKey The key of the stat to reroll.
+ * @returns {{success: boolean, message: string, improvement: number}}
  */
-export function rerollItemStats(gameState, itemToReroll) {
-    const cost = 50;
+export function rerollItemStats(gameState, itemToReroll, statToRerollKey) {
+    const cost = 500;
     if (gameState.scrap < cost) {
-        return { success: false, message: "Not enough Scrap to reroll!" };
+        return { success: false, message: "Not enough Scrap to enhance!", improvement: 0 };
     }
-    
-    if (!itemToReroll || !itemToReroll.baseId) {
-        return { success: false, message: "Invalid item selected for rerolling." };
+
+    if (!itemToReroll || !itemToReroll.baseId || !statToRerollKey) {
+        return { success: false, message: "Invalid item or stat selected.", improvement: 0 };
     }
 
     const itemBase = ITEMS[itemToReroll.baseId];
     if (!itemBase) {
-        return { success: false, message: `Could not find base definition for ${itemToReroll.name}.` };
+        return { success: false, message: `Could not find base definition for ${itemToReroll.name}.`, improvement: 0 };
     }
     
+    const statDefinition = itemBase.possibleStats.find(p => p.key === statToRerollKey);
+    if (!statDefinition) {
+        return { success: false, message: "Stat is not a valid rerollable stat for this item.", improvement: 0 };
+    }
+
     const rarityIndex = rarities.indexOf(itemToReroll.rarity);
-    const tier_max_percent = (rarityIndex + 1) / rarities.length;
-    let isMaxed = true;
-    
-    const currentStatKeys = Object.keys(itemToReroll.stats);
+    const total_stat_range = statDefinition.max - statDefinition.min;
+    const range_per_tier = total_stat_range / rarities.length;
+    const max_for_tier = statDefinition.min + (range_per_tier * (rarityIndex + 1));
+    const currentValue = itemToReroll.stats[statToRerollKey];
 
-    if (currentStatKeys.length === 0) {
-        isMaxed = false;
+    if (currentValue >= max_for_tier - 0.001) {
+        return { success: false, message: "This stat is already at its maximum value for this rarity!", improvement: 0 };
     }
 
-    for (const statKey of currentStatKeys) {
-        const statDefinition = itemBase.possibleStats.find(p => p.key === statKey);
-        if (!statDefinition) {
-            isMaxed = false; 
-            break;
-        }
-
-        const statRange = statDefinition.max - statDefinition.min;
-        const maxStatForTier = statDefinition.min + (statRange * tier_max_percent);
-
-        if (itemToReroll.stats[statKey] < maxStatForTier - 0.001) {
-            isMaxed = false;
-            break; 
-        }
-    }
-
-    if (isMaxed) {
-        return { success: false, message: "This item's stats are already perfect for its tier!" };
-    }
-
+    // Pay the cost
     gameState.scrap -= cost;
-    
-    if (typeof itemToReroll.rerollAttempts !== 'number') {
-        itemToReroll.rerollAttempts = 0;
-    }
-    itemToReroll.rerollAttempts++;
-    
-    const isGuaranteedRoll = itemToReroll.rerollAttempts >= 100;
 
-    const newStats = {};
-    const tier_min_percent = rarityIndex / rarities.length;
-    
-    for(const statKey of currentStatKeys) {
-        const statDefinition = itemBase.possibleStats.find(p => p.key === statKey);
-        if (statDefinition) {
-            const total_stat_range = statDefinition.max - statDefinition.min;
-            const range_per_tier = total_stat_range / rarities.length;
-
-            const min_for_tier = statDefinition.min + (range_per_tier * rarityIndex);
-            const max_for_tier = statDefinition.min + (range_per_tier * (rarityIndex + 1));
-            
-            let final_stat_value;
-
-            if (isGuaranteedRoll) {
-                final_stat_value = max_for_tier;
-            } else {
-                const tier_specific_range = max_for_tier - min_for_tier;
-                final_stat_value = min_for_tier + (Math.random() * tier_specific_range);
-            }
-            
-            newStats[statKey] = parseFloat(final_stat_value.toFixed(2));
-        }
+    // First Roll: 50/50 chance to improve
+    if (Math.random() < 0.5) {
+        // 50% chance to fail
+        return { success: true, message: "The enhancement failed. The stat remains unchanged.", improvement: 0 };
     }
+
+    // Success! Proceed to the second roll for improvement amount.
+    const gap = max_for_tier - currentValue;
+    const improvementFactor = Math.random(); // A random percentage from 0% to 100%
+    const improvementAmount = gap * improvementFactor;
     
-    itemToReroll.stats = newStats;
+    const newValue = currentValue + improvementAmount;
     
-    if (isGuaranteedRoll) {
-        itemToReroll.rerollAttempts = 0;
-        return { success: true, message: `FAILSAFE! After 100 attempts, the forge grants a PERFECT reroll on ${itemToReroll.name}!` };
-    } else {
-        return { success: true, message: `Successfully rerolled ${itemToReroll.name}! (Attempt #${itemToReroll.rerollAttempts})` };
-    }
+    itemToReroll.stats[statToRerollKey] = parseFloat(newValue.toFixed(2));
+
+    return { success: true, message: `Enhancement successful!`, improvement: parseFloat(improvementAmount.toFixed(2)) };
 }
 
 /**
