@@ -2309,6 +2309,11 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     
         addTapListener(elements.confirmPrestigeButton, () => {
+            // --- START OF FIX ---
+            selectedItemForForge = null;
+            selectedGemForSocketing = null;
+            // --- END OF FIX ---
+
             const itemsToAbsorb = gameState.unlockedPrestigeSlots
                 .map(slotName => gameState.equipment[slotName])
                 .filter(Boolean);
