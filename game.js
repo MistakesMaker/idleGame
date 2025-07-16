@@ -1289,7 +1289,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const toggleButton = e.target.closest('.slime-split-toggle-img');
             if (toggleButton) {
                 gameState.isSlimeSplitEnabled = !gameState.isSlimeSplitEnabled;
-                logMessage(elements.gameLogEl, `Slime Split effect is now <b class="legendary">${gameState.isSlimeSplitEnabled ? 'ON' : 'OFF'}</b>.`, '', isAutoScrollingLog);
+                logMessage(elements.gameLogEl, `Slime Split effect is now <b>${gameState.isSlimeSplitEnabled ? 'ON' : 'OFF'}</b>.`, 'legendary', isAutoScrollingLog);
                 ui.updatePrestigeUI(elements, gameState);
                 autoSave();
             }
@@ -1337,14 +1337,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
         addTapListener(document.getElementById('buy-loot-crate-btn'), () => {
             const result = player.buyLootCrate(gameState, logic.generateItem);
-            logMessage(elements.gameLogEl, result.message, '', isAutoScrollingLog);
             if (result.success && result.item) {
-                // START OF MODIFICATION
                 logMessage(elements.gameLogEl, `The crate contained: <b>${result.item.name}</b>`, result.item.rarity, isAutoScrollingLog);
-                // END OF MODIFICATION
                 ui.addItemToGrid(elements.inventorySlotsEl, result.item);
                 ui.updateCurrency(elements, gameState);
                 ui.updateUpgrades(elements, gameState);
+            } else {
+                logMessage(elements.gameLogEl, result.message, 'rare', isAutoScrollingLog);
             }
             autoSave();
         });
@@ -1623,7 +1622,9 @@ document.addEventListener('DOMContentLoaded', () => {
             if (craftingGems.length !== 2) return;
             
             const result = player.combineGems(gameState, craftingGems);
-            logMessage(elements.gameLogEl, result.message, result.success && result.newGem ? 'legendary' : 'rare', isAutoScrollingLog);
+            // START OF MODIFICATION
+            logMessage(elements.gameLogEl, result.newGem ? `Success! You fused a <b>${result.newGem.name}</b>!` : result.message, result.success && result.newGem ? 'legendary' : 'rare', isAutoScrollingLog);
+            // END OF MODIFICATION
             
             craftingGems = [];
             ui.updateGemCraftingUI(elements, craftingGems, gameState);
@@ -1913,9 +1914,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     const statInfo = Object.values(STATS).find(s => s.key === selectedStatToForgeKey) || { key: 'unknown', name: 'Unknown', type: 'flat' };
                     const isPercent = statInfo.type === 'percent';
                     const improvementText = isPercent ? `${result.improvement.toFixed(1)}%` : formatNumber(result.improvement);
-                    // START OF MODIFICATION
                     logText = `Successfully enhanced <b>${selectedItemForForge.name}</b>! ${statInfo.name} increased by <b>+${improvementText}</b>.`;
-                    // END OF MODIFICATION
                     ui.showForgeImprovement(elements, selectedStatToForgeKey, result.improvement);
                 } else {
                     logText = result.message;
@@ -1959,7 +1958,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const result = player.buyPermanentUpgrade(gameState, upgradeId);
             if (result.success) {
-                logMessage(elements.gameLogEl, `Purchased Level ${result.newLevel} of ${PERMANENT_UPGRADES[upgradeId].name}!`, 'epic', isAutoScrollingLog);
+                logMessage(elements.gameLogEl, `Purchased Level ${result.newLevel} of <b>${PERMANENT_UPGRADES[upgradeId].name}</b>!`, 'epic', isAutoScrollingLog);
                 recalculateStats();
                 ui.renderPermanentUpgrades(elements, gameState);
                 ui.updateCurrency(elements, gameState);
@@ -2536,7 +2535,7 @@ document.addEventListener('DOMContentLoaded', () => {
             gameState.permanentUpgrades.LEGACY_KEEPER++;
             gameState.unlockedPrestigeSlots.push(slotName);
             
-            logMessage(elements.gameLogEl, `You have unlocked the <b class="epic">${slotName.charAt(0).toUpperCase() + slotName.slice(1)}</b> slot for Prestige!`, 'epic', isAutoScrollingLog);
+            logMessage(elements.gameLogEl, `You have unlocked the <b>${slotName.charAt(0).toUpperCase() + slotName.slice(1)}</b> slot for Prestige!`, 'epic', isAutoScrollingLog);
             
             pendingLegacyKeeperUpgrade = false;
             closeThisModal();
