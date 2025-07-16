@@ -319,33 +319,17 @@ select option {
 }
 
 /* START OF MODIFICATION */
-/* This rule ensures that styled spans and bold tags inside a log entry flow with the text. */
-#game-log p.log-entry > span,
 #game-log p.log-entry > b {
-    display: inline;
+    font-weight: bold;
+    /* The b tag itself doesn't need styles; it will inherit from the parent <p> */
 }
+
+#game-log p.uncommon { text-shadow: 0 0 5px #2ecc71; }
+#game-log p.rare { text-shadow: 0 0 5px #3498db; }
+#game-log p.epic { text-shadow: 0 0 6px #3498db; } /* Changed from purple to blue */
+#game-log p.legendary { text-shadow: 0 0 7px #f39c12; }
 /* END OF MODIFICATION */
 
-#game-log p span.uncommon, #game-log .uncommon {
-    color: inherit;
-    text-shadow: 0 0 5px #2ecc71;
-    font-weight: bold;
-}
-#game-log p span.rare, #game-log .rare {
-    color: inherit;
-    text-shadow: 0 0 5px #3498db;
-    font-weight: bold;
-}
-#game-log p span.epic, #game-log .epic {
-    color: inherit;
-    text-shadow: 0 0 6px #9b59b6;
-    font-weight: bold;
-}
-#game-log p span.legendary, #game-log .legendary {
-    color: inherit;
-    text-shadow: 0 0 7px #f39c12;
-    font-weight: bold;
-}
 #game-log .golden-streak-text {
     color: #f1c40f;
     font-weight: normal;

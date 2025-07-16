@@ -1339,7 +1339,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const result = player.buyLootCrate(gameState, logic.generateItem);
             logMessage(elements.gameLogEl, result.message, '', isAutoScrollingLog);
             if (result.success && result.item) {
-                logMessage(elements.gameLogEl, `The crate contained: <span class="${result.item.rarity}">${result.item.name}</span>`, '', isAutoScrollingLog);
+                // START OF MODIFICATION
+                logMessage(elements.gameLogEl, `The crate contained: <b>${result.item.name}</b>`, result.item.rarity, isAutoScrollingLog);
+                // END OF MODIFICATION
                 ui.addItemToGrid(elements.inventorySlotsEl, result.item);
                 ui.updateCurrency(elements, gameState);
                 ui.updateUpgrades(elements, gameState);
@@ -1448,32 +1450,38 @@ document.addEventListener('DOMContentLoaded', () => {
                         logMessage(elements.gameLogEl, "Deselected gem.", '', isAutoScrollingLog);
                     } else {
                         selectedGemForSocketing = item;
-                        logMessage(elements.gameLogEl, `Selected ${item.name}. Click an item with an empty socket to place it.`, 'uncommon', isAutoScrollingLog);
+                        logMessage(elements.gameLogEl, `Selected <b>${item.name}</b>. Click an item with an empty socket to place it.`, 'uncommon', isAutoScrollingLog);
                     }
                     ui.updateSocketingHighlights(elements, selectedGemForSocketing, gameState);
                 }
             } else {
-                if (selectedGemForSocketing && item.sockets && item.sockets.includes(null)) {
-                    const gemToSocket = selectedGemForSocketing;
-                    const firstEmptySocketIndex = item.sockets.indexOf(null);
+                if (selectedGemForSocketing) {
+                    if (item.sockets && item.sockets.includes(null)) {
+                        const gemToSocket = selectedGemForSocketing;
+                        const firstEmptySocketIndex = item.sockets.indexOf(null);
 
-                    if (firstEmptySocketIndex > -1) {
-                        item.sockets[firstEmptySocketIndex] = gemToSocket;
-                        gameState.gems = gameState.gems.filter(g => g.id !== gemToSocket.id);
-                        selectedGemForSocketing = null;
+                        if (firstEmptySocketIndex > -1) {
+                            item.sockets[firstEmptySocketIndex] = gemToSocket;
+                            gameState.gems = gameState.gems.filter(g => g.id !== gemToSocket.id);
+                            selectedGemForSocketing = null;
 
-                        recalculateStats();
+                            recalculateStats();
 
-                        logMessage(elements.gameLogEl, `Socketed ${gemToSocket.name} into ${item.name}.`, 'epic', isAutoScrollingLog);
-                        // START OF BUGFIX
-                        refreshGemViewIfActive();
-                        // END OF BUGFIX
-                        ui.updateItemInGrid(elements.inventorySlotsEl, item, { forceRedraw: true });
-                        ui.updateSocketingHighlights(elements, null, gameState);
-                        ui.updateStatsPanel(elements, playerStats);
-                        ui.renderPaperdoll(elements, gameState);
-                        autoSave();
-                        return;
+                            logMessage(elements.gameLogEl, `Socketed <b>${gemToSocket.name}</b> into <b>${item.name}</b>.`, 'epic', isAutoScrollingLog);
+                            refreshGemViewIfActive();
+                            ui.updateItemInGrid(elements.inventorySlotsEl, item, { forceRedraw: true });
+                            ui.updateSocketingHighlights(elements, null, gameState);
+                            ui.updateStatsPanel(elements, playerStats);
+                            ui.renderPaperdoll(elements, gameState);
+                            autoSave();
+                            return;
+                        }
+                    } else {
+                        // The item does not have an available socket.
+                        logMessage(elements.gameLogEl, `The item <b>${item.name}</b> has no available sockets.`, 'rare', isAutoScrollingLog);
+                        selectedGemForSocketing = null; // Deselect gem
+                        ui.updateSocketingHighlights(elements, null, gameState); // Update UI
+                        return; // Prevent fall-through to equip logic
                     }
                 }
     
@@ -1549,10 +1557,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
                         recalculateStats();
 
-                        logMessage(elements.gameLogEl, `Socketed ${gemToSocket.name} into ${item.name}.`, 'epic', isAutoScrollingLog);
-                        // START OF BUGFIX
+                        logMessage(elements.gameLogEl, `Socketed <b>${gemToSocket.name}</b> into <b>${item.name}</b>.`, 'epic', isAutoScrollingLog);
                         refreshGemViewIfActive();
-                        // END OF BUGFIX
                         ui.renderPaperdoll(elements, gameState);
                         ui.updateSocketingHighlights(elements, null, gameState);
                         ui.updateStatsPanel(elements, playerStats);
@@ -1560,6 +1566,12 @@ document.addEventListener('DOMContentLoaded', () => {
                         autoSave();
                         return;
                     }
+                } else if (item) {
+                    // Item exists but has no empty socket.
+                    logMessage(elements.gameLogEl, `The item <b>${item.name}</b> has no available sockets.`, 'rare', isAutoScrollingLog);
+                    selectedGemForSocketing = null; // Deselect gem
+                    ui.updateSocketingHighlights(elements, null, gameState); // Update UI
+                    return; // Prevent fall-through to unequip logic
                 }
             }
 
