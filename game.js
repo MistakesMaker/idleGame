@@ -288,8 +288,11 @@ document.addEventListener('DOMContentLoaded', () => {
         let finalDps = dpsSubtotal * (1 + (dpsUpgradeBonusPercent / 100));
 
         const luckBonusGold = hero.attributes.luck * 0.5;
+        // START OF MODIFICATION
+        const luckBonusMagicFind = hero.attributes.luck * 0.1;
         const finalBonusGold = newCalculatedStats.bonusGold + luckBonusGold;
-        const finalMagicFind = newCalculatedStats.magicFind;
+        const finalMagicFind = newCalculatedStats.magicFind + luckBonusMagicFind;
+        // END OF MODIFICATION
 
         const dpsToClickSynergyValue = (gameState.absorbedSynergies && gameState.absorbedSynergies['dps_to_clickDamage']) || 0;
         totalSynergyValue += (dpsToClickSynergyValue * prestigeMultiplier);
@@ -1284,7 +1287,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 ui.updateCurrency(elements, gameState);
                 ui.updateUpgrades(elements, gameState);
                 ui.updateStatsPanel(elements, playerStats);
+                // START OF BUGFIX: Update permanent upgrades UI after spending gold
                 ui.renderPermanentUpgrades(elements, gameState);
+                // END OF BUGFIX
                 autoSave();
             }
         });
@@ -1421,7 +1426,9 @@ document.addEventListener('DOMContentLoaded', () => {
                         recalculateStats();
 
                         logMessage(elements.gameLogEl, `Socketed ${gemToSocket.name} into ${item.name}.`, 'epic', isAutoScrollingLog);
+                        // START OF BUGFIX
                         refreshGemViewIfActive();
+                        // END OF BUGFIX
                         ui.updateItemInGrid(elements.inventorySlotsEl, item, { forceRedraw: true });
                         ui.updateSocketingHighlights(elements, null, gameState);
                         ui.updateStatsPanel(elements, playerStats);
@@ -2113,11 +2120,13 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     function setupStatTooltipListeners() {
+        // START OF MODIFICATION
         const statTooltipContent = {
             strength: { title: 'Strength', description: 'Increases your raw power. Each point provides:', effects: ['<b>+1</b> Flat Click Damage', '<b>+0.2%</b> Total Click Damage'] },
             agility: { title: 'Agility', description: 'Improves your hero\'s combat prowess. Each point provides:', effects: ['<b>+1</b> Flat DPS', '<b>+0.8%</b> Total DPS'] },
-            luck: { title: 'Luck', description: 'Increases your fortune in the dungeon. Each point provides:', effects: ['<b>+0.5%</b> Gold Gain'] }
+            luck: { title: 'Luck', description: 'Increases your fortune in the dungeon. Each point provides:', effects: ['<b>+0.5%</b> Gold Gain', '<b>+0.1%</b> Magic Find'] }
         };
+        // END OF MODIFICATION
         const attributesArea = document.getElementById('attributes-area');
         attributesArea.addEventListener('mouseover', (event) => {
             if (!(event.target instanceof Element)) return;
