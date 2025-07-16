@@ -306,7 +306,7 @@ document.addEventListener('DOMContentLoaded', () => {
         statBreakdown.dps.sources.push({ label: 'From Agility', value: agilityBonusDpsFlat });
         statBreakdown.dps.multipliers.push({ label: 'From Agility', value: agilityBonusDpsPercent });
         
-        const luckBonusGold = hero.attributes.luck * 0.5;
+        const luckBonusGold = hero.attributes.luck * 1; // MODIFIED
         bonusGold += luckBonusGold;
         statBreakdown.goldGain.sources.push({ label: 'From Luck', value: luckBonusGold, isPercent: true });
         
@@ -2163,7 +2163,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const statTooltipContent = {
             strength: { title: 'Strength', description: 'Increases your raw power. Each point provides:', effects: ['<b>+1</b> Flat Click Damage', '<b>+0.2%</b> Total Click Damage'] },
             agility: { title: 'Agility', description: 'Improves your hero\'s combat prowess. Each point provides:', effects: ['<b>+1</b> Flat DPS', '<b>+0.8%</b> Total DPS'] },
-            luck: { title: 'Luck', description: 'Increases your fortune in the dungeon. Each point provides:', effects: ['<b>+0.5%</b> Gold Gain', '<b>+0.1%</b> Magic Find'] }
+            luck: { title: 'Luck', description: 'Increases your fortune in the dungeon. Each point provides:', effects: ['<b>+1%</b> Gold Gain', '<b>+0.1%</b> Magic Find'] }
         };
         // END OF MODIFICATION
         const attributesArea = document.getElementById('attributes-area');
