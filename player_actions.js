@@ -476,14 +476,12 @@ export function combineGems(gameState, craftingGems) {
     const id2 = gem2.id;
     gameState.gems = gameState.gems.filter(g => g.id !== id1 && g.id !== id2);
 
-    // --- START OF MODIFICATION: Check for Chisel bonus only on T1 gems ---
-    let successChance = 0.5; // Default chance
+    let successChance = 0.5;
     if (gem1.tier === 1 && gameState.artisanChiselUsed) {
-        successChance = 0.6; // 60% chance for T1 gems with chisel
+        successChance = 0.6;
     }
 
     if (Math.random() < successChance) {
-    // --- END OF MODIFICATION ---
         // SUCCESS
         const newTier = gem1.tier + 1;
         const newStats = {};
@@ -560,12 +558,10 @@ export function bulkCombineGems(gameState, tier, selectionKey, excludedIds) {
     const newGems = [];
     const usedGemIds = new Set();
     
-    // --- START OF MODIFICATION: Check for Chisel bonus only on T1 gems ---
-    let successChance = 0.5; // Default chance
+    let successChance = 0.5;
     if (tier === 1 && gameState.artisanChiselUsed) {
-        successChance = 0.6; // 60% chance for T1 gems with chisel
+        successChance = 0.6;
     }
-    // --- END OF MODIFICATION ---
 
     while (gemsToCombine.length >= 2) {
         if (gameState.scrap < costPerCombine) {
@@ -580,7 +576,7 @@ export function bulkCombineGems(gameState, tier, selectionKey, excludedIds) {
         usedGemIds.add(gem1.id);
         usedGemIds.add(gem2.id);
 
-        if (Math.random() < successChance) { // Use the successChance variable
+        if (Math.random() < successChance) {
             successes++;
             const newTier = gem1.tier + 1;
             const newStats = {};
@@ -627,26 +623,26 @@ export function bulkCombineGems(gameState, tier, selectionKey, excludedIds) {
  * @param {object} gameState The main game state object.
  * @param {object} itemToReroll The item object to be rerolled.
  * @param {string} statToRerollKey The key of the stat to reroll.
- * @returns {{success: boolean, message: string, improvement: number}}
+ * @returns {{success: boolean, improvement: number}}
  */
 export function rerollItemStats(gameState, itemToReroll, statToRerollKey) {
     const cost = 500;
     if (gameState.scrap < cost) {
-        return { success: false, message: "Not enough Scrap to enhance!", improvement: 0 };
+        return { success: false, improvement: 0 };
     }
 
     if (!itemToReroll || !itemToReroll.baseId || !statToRerollKey) {
-        return { success: false, message: "Invalid item or stat selected.", improvement: 0 };
+        return { success: false, improvement: 0 };
     }
 
     const itemBase = ITEMS[itemToReroll.baseId];
     if (!itemBase) {
-        return { success: false, message: `Could not find base definition for ${itemToReroll.name}.`, improvement: 0 };
+        return { success: false, improvement: 0 };
     }
     
     const statDefinition = itemBase.possibleStats.find(p => p.key === statToRerollKey);
     if (!statDefinition) {
-        return { success: false, message: "Stat is not a valid rerollable stat for this item.", improvement: 0 };
+        return { success: false, improvement: 0 };
     }
 
     const rarityIndex = rarities.indexOf(itemToReroll.rarity);
@@ -656,28 +652,24 @@ export function rerollItemStats(gameState, itemToReroll, statToRerollKey) {
     const currentValue = itemToReroll.stats[statToRerollKey];
 
     if (currentValue >= max_for_tier - 0.001) {
-        return { success: false, message: "This stat is already at its maximum value for this rarity!", improvement: 0 };
+        return { success: false, improvement: 0 };
     }
 
-    // Pay the cost
     gameState.scrap -= cost;
 
-    // First Roll: 50/50 chance to improve
     if (Math.random() < 0.5) {
-        // 50% chance to fail
-        return { success: true, message: "The enhancement failed. The stat remains unchanged.", improvement: 0 };
+        return { success: true, improvement: 0 };
     }
 
-    // Success! Proceed to the second roll for improvement amount.
     const gap = max_for_tier - currentValue;
-    const improvementFactor = Math.random(); // A random percentage from 0% to 100%
+    const improvementFactor = Math.random();
     const improvementAmount = gap * improvementFactor;
     
     const newValue = currentValue + improvementAmount;
     
     itemToReroll.stats[statToRerollKey] = parseFloat(newValue.toFixed(2));
 
-    return { success: true, message: `Enhancement successful!`, improvement: parseFloat(improvementAmount.toFixed(2)) };
+    return { success: true, improvement: parseFloat(improvementAmount.toFixed(2)) };
 }
 
 /**

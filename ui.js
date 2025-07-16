@@ -14,14 +14,12 @@ import { CONSUMABLES } from './data/consumables.js';
 
 /** @typedef {Object<string, HTMLElement|HTMLButtonElement|HTMLInputElement|HTMLImageElement|HTMLSelectElement>} DOMElements */
 
-// --- START OF FIX: Define the canonical display order for stats ---
 const STAT_DISPLAY_ORDER = [
     STATS.CLICK_DAMAGE.key,
     STATS.DPS.key,
     STATS.GOLD_GAIN.key,
     STATS.MAGIC_FIND.key,
 ];
-// --- END OF FIX ---
 
 /**
  * Checks if a dropped item should be considered a "boss unique".
@@ -436,8 +434,8 @@ export function updateStatsPanel(elements, playerStats) {
     clickDamageStatEl.className = `currency-tier-${clickTier}`;
     clickDamageStatEl.textContent = formatNumber(playerStats.totalClickDamage);
 
-    bonusGoldStatEl.textContent = `${playerStats.bonusGold.toFixed(1)}%`;
-    magicFindStatEl.textContent = `${playerStats.magicFind.toFixed(1)}%`;
+    bonusGoldStatEl.textContent = `${playerStats.bonusGold.toFixed(2)}%`;
+    magicFindStatEl.textContent = `${playerStats.magicFind.toFixed(2)}%`;
 }
 
 
@@ -716,7 +714,7 @@ export function renderEquipmentStatsSummary(elements, gameState) {
         const statInfo = Object.values(STATS).find(s => s.key === statKey) || { name: statKey, type: 'flat' };
         const value = totalStats[statKey];
         const isPercent = statInfo.type === 'percent';
-        const statValue = isPercent ? `+${value.toFixed(1)}%` : `+${formatNumber(value)}`;
+        const statValue = isPercent ? `+${value.toFixed(2)}%` : `+${formatNumber(value)}`;
         const iconClass = statIconMap[statKey] || 'fa-question-circle';
         
         let statName = statInfo.name;
@@ -842,8 +840,8 @@ function createDetailedItemStatBlockHTML(item) {
             const statInfo = Object.values(STATS).find(s => s.key === statKey) || { name: statKey, type: 'flat' };
             const statName = statInfo.name;
             const value = item.stats[statKey];
-            const statValue = statInfo.type === 'percent' ? `${value.toFixed(1)}%` : formatNumber(value);
-            statsHTML += `<li>+${statValue} ${statName}</li>`;
+            const statValue = statInfo.type === 'percent' ? `${value.toFixed(2)}%` : formatNumber(value);
+            statsHTML += `<li>+ ${statValue} ${statName}</li>`;
         }
     }
     statsHTML += '</ul>';
@@ -863,13 +861,13 @@ function createDetailedItemStatBlockHTML(item) {
                          const statInfo = Object.values(STATS).find(s => s.key === statKey) || { name: statKey, type: 'flat' };
                          const statName = statInfo.name;
                          const value = gem.stats[statKey];
-                         const statValue = statInfo.type === 'percent' ? `${value}%` : formatNumber(value);
-                         gemsHTML += `<li>+${statValue} ${statName}</li>`;
+                         const statValue = statInfo.type === 'percent' ? `${value.toFixed(2)}%` : formatNumber(value);
+                         gemsHTML += `<li>+ ${statValue} ${statName}</li>`;
                     }
                 }
                 if (gem.synergy) {
-                    const synergyPercentage = (gem.synergy.value * 100).toFixed(1);
-                    gemsHTML += `<li class="stat-special">+${synergyPercentage}% DPS to Click Dmg</li>`;
+                    const synergyPercentage = (gem.synergy.value * 100).toFixed(2);
+                    gemsHTML += `<li class="stat-special">+ ${synergyPercentage}% DPS to Click Dmg</li>`;
                 }
                 gemsHTML += '</ul>';
             }
@@ -953,23 +951,24 @@ export function createItemComparisonTooltipHTML(hoveredItem, equippedItem, equip
         </div>
     `;
 
-    // --- START OF MODIFICATION: Correct tooltip logic ---
-    const hoveredRawStats = hoveredItem.stats || {};
-    const hoveredCombinedStats = getCombinedItemStats(hoveredItem);
-    let statsHTML = '';
-
-    if (hoveredItem.type === 'ring' && equippedItem2) {
-        statsHTML = createDualRingComparison(hoveredItem, equippedItem, equippedItem2);
+    if (hoveredItem.type === 'ring') {
+        html += createDetailedItemStatBlockHTML(hoveredItem);
+        
+        if (equippedItem || equippedItem2) {
+            html += '<hr style="border-color: #4a637e; margin: 8px 0; border-style: solid none none;">';
+            html += createDualRingComparison(hoveredItem, equippedItem, equippedItem2);
+        }
     } else {
+        const hoveredRawStats = hoveredItem.stats || {};
+        const hoveredCombinedStats = getCombinedItemStats(hoveredItem);
         const equippedCombinedStats = equippedItem ? getCombinedItemStats(equippedItem) : {};
         const allStatKeys = new Set([...Object.keys(hoveredCombinedStats), ...Object.keys(equippedCombinedStats)]);
         
         let statListHtml = '<ul>';
-
         const sortedStatKeys = Array.from(allStatKeys).sort((a, b) => STAT_DISPLAY_ORDER.indexOf(a) - STAT_DISPLAY_ORDER.indexOf(b));
 
         for (const statKey of sortedStatKeys) {
-            const hoveredValue = hoveredRawStats[statKey] || 0; // Use raw stat for display
+            const hoveredValue = hoveredRawStats[statKey] || 0; 
             const hoveredTotal = hoveredCombinedStats[statKey] || 0;
             const equippedTotal = equippedCombinedStats[statKey] || 0;
             const diff = hoveredTotal - equippedTotal;
@@ -981,25 +980,20 @@ export function createItemComparisonTooltipHTML(hoveredItem, equippedItem, equip
             if (equippedItem && Math.abs(diff) > 0.001) {
                 const diffClass = diff > 0 ? 'stat-better' : 'stat-worse';
                 const sign = diff > 0 ? '+' : '';
-                const diffStr = isPercent ? `${diff.toFixed(1)}%` : formatNumber(diff);
+                const diffStr = isPercent ? `${diff.toFixed(2)}%` : formatNumber(diff);
                 diffSpan = ` <span class="${diffClass}">(${sign}${diffStr})</span>`;
             }
             
-            // Only add the line if the hovered item has the stat OR there's a difference to show
             if (hoveredValue > 0 || (equippedItem && diff !== 0)) {
-                const valueStr = isPercent ? `${hoveredValue.toFixed(1)}%` : formatNumber(hoveredValue);
-                const displayStr = hoveredValue > 0 ? `+${valueStr} ` : '';
+                const valueStr = isPercent ? `${hoveredValue.toFixed(2)}%` : formatNumber(hoveredValue);
+                const displayStr = hoveredValue > 0 ? `+ ${valueStr} ` : '';
                 statListHtml += `<li>${displayStr}${statInfo.name}${diffSpan}</li>`;
             }
         };
         statListHtml += '</ul>';
-        statsHTML = statListHtml;
+        html += statListHtml;
+        html += createDetailedItemStatBlockHTML(hoveredItem).replace(/<ul>.*?<\/ul>/, '');
     }
-    // --- END OF MODIFICATION ---
-    
-    html += statsHTML;
-    // Pass the raw item to this function so it doesn't double-count gem stats
-    html += createDetailedItemStatBlockHTML(hoveredItem).replace(/<ul>.*?<\/ul>/, ''); 
 
     if (hoveredItem.sockets) {
         html += `<div class="item-sockets" style="margin-top: 10px; padding-left:0; justify-content:center; position: static; transform: none;">`;
@@ -1021,7 +1015,6 @@ export function createItemComparisonTooltipHTML(hoveredItem, equippedItem, equip
  */
 function createDualRingComparison(hoveredItem, equippedRing1, equippedRing2) {
     let html = '<div class="tooltip-ring-comparison">';
-    const hoveredRawStats = hoveredItem.stats || {};
     const hoveredCombinedStats = getCombinedItemStats(hoveredItem);
     
     const generateComparisonSide = (equippedRing, title) => {
@@ -1038,7 +1031,6 @@ function createDualRingComparison(hoveredItem, equippedRing1, equippedRing2) {
              statListHtml += '<li>(No stats)</li>';
         }else {
             for (const statKey of sortedStatKeys) {
-                const hoveredValue = hoveredRawStats[statKey] || 0;
                 const hoveredTotal = hoveredCombinedStats[statKey] || 0;
                 const equippedTotal = equippedCombinedStats[statKey] || 0;
                 const diff = hoveredTotal - equippedTotal;
@@ -1048,14 +1040,9 @@ function createDualRingComparison(hoveredItem, equippedRing1, equippedRing2) {
                 if (Math.abs(diff) > 0.001) {
                     const diffClass = diff > 0 ? 'stat-better' : 'stat-worse';
                     const sign = diff > 0 ? '+' : '';
-                    const diffStr = statInfo.type === 'percent' ? `${diff.toFixed(1)}%` : formatNumber(diff);
+                    const diffStr = statInfo.type === 'percent' ? `${diff.toFixed(2)}%` : formatNumber(diff);
                     diffSpan = ` <span class="${diffClass}">(${sign}${diffStr})</span>`;
-                }
-
-                if (hoveredValue > 0 || (equippedRing && diff !== 0)) {
-                    const valueStr = statInfo.type === 'percent' ? `${hoveredValue.toFixed(1)}%` : formatNumber(hoveredValue);
-                    const displayStr = hoveredValue > 0 ? `+${valueStr} ` : '';
-                    statListHtml += `<li>${displayStr}${statInfo.name}${diffSpan}</li>`;
+                    statListHtml += `<li>${statInfo.name}${diffSpan}</li>`;
                 }
             };
         }
@@ -1079,22 +1066,20 @@ export function createGemTooltipHTML(gem) {
     let statsHTML = '<ul>';
 
     if (gem.stats) {
-        // --- START OF FIX: Sort gem stats ---
         const statKeys = Object.keys(gem.stats);
         statKeys.sort((a, b) => STAT_DISPLAY_ORDER.indexOf(a) - STAT_DISPLAY_ORDER.indexOf(b));
-        // --- END OF FIX ---
 
         for (const statKey of statKeys) {
             const statInfo = Object.values(STATS).find(s => s.key === statKey);
             const statName = statInfo ? statInfo.name : statKey;
             const value = gem.stats[statKey];
-            const statValue = statInfo && statInfo.type === 'percent' ? `${value}%` : formatNumber(value);
-            statsHTML += `<li>+${statValue} ${statName}</li>`;
+            const statValue = statInfo && statInfo.type === 'percent' ? `${value.toFixed(2)}%` : formatNumber(value);
+            statsHTML += `<li>+ ${statValue} ${statName}</li>`;
         }
     }
 
     if (gem.synergy) {
-        statsHTML += `<li class="stat-special" style="margin: 5px 0;">Special: +${(gem.synergy.value * 100).toFixed(2)}% of total DPS to Click Dmg</li>`;
+        statsHTML += `<li class="stat-special" style="margin: 5px 0;">Special: + ${(gem.synergy.value * 100).toFixed(2)}% of total DPS to Click Dmg</li>`;
     }
 
     if (statsHTML === '<ul>') {
@@ -1108,15 +1093,14 @@ export function createGemTooltipHTML(gem) {
 export function createLootTableTooltipHTML(itemBase) {
     let statsHTML = '<ul>';
 
-    const sortedPossibleStats = [...itemBase.possibleStats].sort((a, b) => STAT_DISPLAY_ORDER.indexOf(a.key) - STAT_DISPLAY_ORDER.indexOf(b));
+    // --- FIX: Sort the blueprint's possible stats before rendering ---
+    const sortedPossibleStats = [...itemBase.possibleStats].sort((a, b) => STAT_DISPLAY_ORDER.indexOf(a.key) - STAT_DISPLAY_ORDER.indexOf(b.key));
 
     for (const statInfo of sortedPossibleStats) {
         const statDefinition = Object.values(STATS).find(s => s.key === statInfo.key);
         const statName = statDefinition?.name || statInfo.key;
-        // --- START OF MODIFICATION: Add % sign for percent-based stats ---
         const valueSuffix = (statDefinition && statDefinition.type === 'percent') ? '%' : '';
         statsHTML += `<li>+ ${formatNumber(statInfo.min)}${valueSuffix} - ${formatNumber(statInfo.max)}${valueSuffix} ${statName}</li>`;
-        // --- END OF MODIFICATION ---
     }
     statsHTML += '</ul>';
 
@@ -1165,7 +1149,8 @@ export function createLootComparisonTooltipHTML(potentialItem, equippedItem, equ
 
     let potentialStatsHTML = '<ul>';
 
-    const sortedPossibleStats = [...potentialItem.possibleStats].sort((a, b) => STAT_DISPLAY_ORDER.indexOf(a.key) - STAT_DISPLAY_ORDER.indexOf(b));
+    // --- FIX: Sort the blueprint's possible stats before rendering ---
+    const sortedPossibleStats = [...potentialItem.possibleStats].sort((a, b) => STAT_DISPLAY_ORDER.indexOf(a.key) - STAT_DISPLAY_ORDER.indexOf(b.key));
 
     sortedPossibleStats.forEach(statInfo => {
         const statDefinition = Object.values(STATS).find(s => s.key === statInfo.key);
@@ -1173,6 +1158,7 @@ export function createLootComparisonTooltipHTML(potentialItem, equippedItem, equ
         const valueSuffix = (statDefinition && statDefinition.type === 'percent') ? '%' : '';
         potentialStatsHTML += `<li>+ ${formatNumber(statInfo.min)}${valueSuffix} - ${formatNumber(statInfo.max)}${valueSuffix} ${statName}</li>`;
     });
+    
     potentialStatsHTML += '</ul>';
     
     let uniqueEffectHTML = '';
@@ -1697,14 +1683,12 @@ function renderMap(contentEl, realm, viewingZoneId, gameState, fightingZoneId, {
             const isUnlocked = gameState.maxLevel >= subZone.levelRange[0];
             const isCompleted = gameState.completedLevels.includes(subZone.levelRange[1]);
             
-            // --- START OF MODIFICATION: Determine the correct icon source ---
             let iconSrc;
             if (subZone.isBoss && subZone.monsterPool && subZone.monsterPool.length === 1) {
                 iconSrc = subZone.monsterPool[0].image;
             } else {
                 iconSrc = subZone.icon;
             }
-            // --- END OF MODIFICATION ---
             
             const node = createMapNode(subZone.name, iconSrc, subZone.coords, isUnlocked, isCompleted, gameState.currentFightingLevel, subZone.levelRange, subZone.isBoss, false);
             if (isUnlocked) {
@@ -1921,14 +1905,14 @@ function createWikiItemCardHTML(itemData, isFavorited) {
             const statInfo = Object.values(STATS).find(s => s.key === statKey) || { name: statKey, type: 'flat' };
             const statName = statInfo.name;
             const value = itemBase.stats[statKey];
-            const statValue = statInfo.type === 'percent' ? `${value}%` : formatNumber(value);
-            statsHtml += `<li>+${statValue} ${statName}</li>`;
+            const statValue = statInfo.type === 'percent' ? `${value.toFixed(2)}%` : formatNumber(value);
+            statsHtml += `<li>+ ${statValue} ${statName}</li>`;
         }
     }
 
     itemBase.possibleStats?.forEach(stat => {
         const statName = Object.values(STATS).find(s => s.key === stat.key)?.name || stat.key;
-        statsHtml += `<li>+${formatNumber(stat.min)} to ${formatNumber(stat.max)} ${statName}</li>`;
+        statsHtml += `<li>+ ${formatNumber(stat.min)} to ${formatNumber(stat.max)} ${statName}</li>`;
     });
     
     if (itemBase.canHaveSockets && itemBase.maxSockets > 0) {
@@ -1936,7 +1920,7 @@ function createWikiItemCardHTML(itemData, isFavorited) {
     }
     
     if (itemBase.synergy) {
-        statsHtml += `<li class="stat-special">Special: +${(itemBase.synergy.value * 100).toFixed(2)}% of total DPS to Click Dmg</li>`;
+        statsHtml += `<li class="stat-special">Special: + ${(itemBase.synergy.value * 100).toFixed(2)}% of total DPS to Click Dmg</li>`;
     }
     
     if (itemBase.uniqueEffect) {
@@ -2103,10 +2087,8 @@ export function updatePrestigeUI(elements, gameState) {
     if (amethystSynergyValue > 0) {
         const synergyEl = document.createElement('div');
         synergyEl.className = 'prestige-stat-entry';
-        const synergyValueText = `+${(amethystSynergyValue * 100).toFixed(1)}%`;
-        // --- START OF FIX: Use a static icon class instead of a non-existent variable ---
+        const synergyValueText = `+${(amethystSynergyValue * 100).toFixed(2)}%`;
         synergyEl.innerHTML = `<span><i class="fas fa-magic"></i> ${synergyValueText}</span><small>DPS to Click Dmg</small>`;
-        // --- END OF FIX ---
         synergyEl.title = `Converts ${synergyValueText} of your total DPS into Click Damage.`;
         absorbedStatsListEl.appendChild(synergyEl);
     }
@@ -2153,7 +2135,7 @@ export function updateForge(elements, selectedItem, selectedStatKey, currentScra
         for (const statKey of sortedStatKeys) {
             const statInfo = Object.values(STATS).find(s => s.key === statKey) || { key: 'unknown', name: 'Unknown', type: 'flat' };
             const statValue = selectedItem.stats[statKey];
-            const displayValue = statInfo.type === 'percent' ? `${statValue.toFixed(1)}%` : formatNumber(statValue);
+            const displayValue = statInfo.type === 'percent' ? `${statValue.toFixed(2)}%` : formatNumber(statValue);
             
             // Calculate percentage of max
             let percentOfMax = 0;
@@ -2172,7 +2154,7 @@ export function updateForge(elements, selectedItem, selectedStatKey, currentScra
             const statEntry = document.createElement('div');
             statEntry.className = 'forge-stat-entry';
             statEntry.dataset.statKey = statKey;
-            statEntry.innerHTML = `+${displayValue} ${statInfo.name} <small>${percentText}</small>`;
+            statEntry.innerHTML = `+ ${displayValue} ${statInfo.name} <small>${percentText}</small>`;
             
             if (statKey === selectedStatKey) {
                 statEntry.classList.add('selected');
@@ -2203,9 +2185,9 @@ export function updateForge(elements, selectedItem, selectedStatKey, currentScra
  * Flashes a green improvement indicator next to a stat in the forge UI.
  * @param {DOMElements} elements The DOM elements object.
  * @param {string} statKey The key of the stat that was improved.
- * @param {number} improvement The numerical value of the improvement.
+ * @param {string} improvementText The pre-formatted text to display in the indicator.
  */
-export function showForgeImprovement(elements, statKey, improvement) {
+export function showForgeImprovement(elements, statKey, improvementText) {
     const statEntry = elements.forgeStatListEl.querySelector(`.forge-stat-entry[data-stat-key="${statKey}"]`);
     if (!statEntry) return;
 
@@ -2217,9 +2199,7 @@ export function showForgeImprovement(elements, statKey, improvement) {
 
     const indicator = document.createElement('span');
     indicator.className = 'stat-improvement-indicator';
-    const statInfo = Object.values(STATS).find(s => s.key === statKey) || { key: 'unknown', name: 'Unknown', type: 'flat' };
-    const displayValue = statInfo.type === 'percent' ? `+${improvement.toFixed(1)}%` : `+${formatNumber(improvement)}`;
-    indicator.textContent = `[${displayValue}]`;
+    indicator.textContent = `[${improvementText}]`;
     
     statEntry.appendChild(indicator);
 
@@ -2432,7 +2412,6 @@ export async function showDevToolModal(elements, wikiData) {
     }
 }
 
-// START OF MODIFICATION
 /**
  * Generates and displays the stat breakdown tooltip.
  * @param {DOMElements} elements The DOM elements object.
@@ -2448,7 +2427,6 @@ export function showStatBreakdownTooltip(elements, statKey, statBreakdown) {
 
     const data = statBreakdown[statKey];
     const statInfo = Object.values(STATS).find(s => s.key === statKey) || { name: 'Stat', type: 'flat' };
-    const isPercent = statKey === 'goldGain' || statKey === 'magicFind';
 
     let html = `<h4>${statInfo.name} Breakdown</h4><ul>`;
     
@@ -2458,7 +2436,7 @@ export function showStatBreakdownTooltip(elements, statKey, statBreakdown) {
             return;
         }
         if (source.value !== 0) {
-            const valueStr = source.isPercent ? `+${source.value.toFixed(1)}%` : `+${formatNumber(source.value)}`;
+            const valueStr = source.isPercent ? `+${source.value.toFixed(2)}%` : `+${formatNumber(source.value)}`;
             html += `<li>${source.label}: ${valueStr}</li>`;
         }
     });

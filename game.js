@@ -93,9 +93,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let currentMonster = { name: "Slime", data: MONSTERS.SLIME };
     let playerStats = { baseClickDamage: 1, baseDps: 0, totalClickDamage: 1, totalDps: 0, bonusGold: 0, magicFind: 0 };
-    // START OF MODIFICATION: Add statBreakdown state object
     let statBreakdown = {};
-    // END OF MODIFICATION
     let salvageMode = { active: false, selections: [] };
     let saveTimeout;
     let isShiftPressed = false;
@@ -213,7 +211,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function recalculateStats() {
-        // START OF MODIFICATION: Overhaul to store breakdown data
         statBreakdown = {
             clickDamage: { sources: [], multipliers: [], synergy: 0 },
             dps: { sources: [], multipliers: [], synergy: 0 },
@@ -361,7 +358,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (socket && socket.connected) {
             socket.emit('updatePlayerStats', { dps: playerStats.totalDps });
         }
-        // END OF MODIFICATION
     }
 
     /**
@@ -922,9 +918,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- BESTIARY LOGIC ---
     function buildWikiDatabase() {
         wikiState.data = [];
-        // --- START OF MODIFICATION: Include CONSUMABLES in the wiki ---
         const allItemBases = { ...ITEMS, ...GEMS, ...CONSUMABLES };
-        // --- END OF MODIFICATION ---
     
         for (const itemKey in allItemBases) {
             const itemBase = allItemBases[itemKey];
@@ -972,7 +966,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const highestUnlockedRealm = REALMS.slice().reverse().find(realm => highestLevelEverReached >= realm.requiredLevel);
         const maxRealmIndex = highestUnlockedRealm ? REALMS.indexOf(highestUnlockedRealm) : -1;
     
-        // 1. Initial filter pass based on standard criteria
         let filtered = wikiState.data.filter(itemData => {
             const isAccessible = itemData.dropSources.length === 0 || itemData.dropSources.some(source => source.realmIndex <= maxRealmIndex);
             if (!isAccessible) return false;
@@ -995,7 +988,6 @@ document.addEventListener('DOMContentLoaded', () => {
             return true;
         });
 
-        // 2. Apply special, mutually exclusive filters
         if (wikiShowFavorites) {
             filtered = filtered.filter(itemData => gameState.wikiFavorites.includes(itemData.id));
         } else if (wikiShowUpgradesOnly) {
@@ -1012,7 +1004,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     
                     let isStrictStatUpgrade = false;
                     for (const potentialStat of potentialItemBase.possibleStats) {
-                        // Only compare stats that the equipped item already has
                         if (equippedStats.hasOwnProperty(potentialStat.key)) {
                             if (potentialStat.max > equippedStats[potentialStat.key]) {
                                 isStrictStatUpgrade = true;
@@ -1022,7 +1013,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                     if (isStrictStatUpgrade) return true;
 
-                    // Only check sockets if the socket filter is active (value > 0)
                     if (wikiState.filters.sockets !== null && wikiState.filters.sockets > 0) {
                         const potentialMaxSockets = potentialItemBase.maxSockets || 0;
                         const equippedSockets = equippedItem.sockets ? equippedItem.sockets.length : 0;
@@ -1045,15 +1035,9 @@ document.addEventListener('DOMContentLoaded', () => {
         ui.renderWikiResults(elements.wikiResultsContainer, filtered, gameState.wikiFavorites, wikiShowFavorites, wikiShowUpgradesOnly);
     }
     
-    // --- END BESTIARY LOGIC ---
-
-    // --- START OF NEW GEM SORTING LOGIC ---
-    /**
-     * Sorts the gem array based on the current preference and re-renders the grid.
-     */
     function sortAndRenderGems() {
         const sortKey = gemSortPreference;
-        const sortedGems = [...gameState.gems]; // Create a mutable copy
+        const sortedGems = [...gameState.gems]; 
 
         sortedGems.sort((a, b) => {
             if (sortKey === 'tier_desc') {
@@ -1067,41 +1051,34 @@ document.addEventListener('DOMContentLoaded', () => {
                 const valB = b.synergy?.value || 0;
                 return valB - valA;
             }
-            // It's a stat key
             const valA = a.stats?.[sortKey] || 0;
             const valB = b.stats?.[sortKey] || 0;
             return valB - valA;
         });
 
-        // Re-calculate positions for the *entire sorted list* to ensure compaction.
         const placedGems = [];
-        // This is a crucial difference: we rebuild the positions for the *entire sorted array*,
-        // not just one gem. This guarantees the grid is always perfectly compacted and sorted.
         sortedGems.forEach(gem => {
             const spot = findNextAvailableSpot(gem.width, gem.height, placedGems);
             if (spot) {
                 gem.x = spot.x;
                 gem.y = spot.y;
-                placedGems.push(gem); // Add to the temporary placement list for this operation
+                placedGems.push(gem); 
             } else {
                 gem.x = -1; 
                 gem.y = -1;
             }
         });
 
-        // Now, we need to update the main gameState.gems array to reflect this new sorted order
-        // and their new positions.
         gameState.gems = sortedGems;
         
         ui.renderGrid(elements.gemSlotsEl, gameState.gems, {
             type: 'gem',
-            calculatePositions: false, // Positions are now pre-calculated
+            calculatePositions: false,
             bulkCombineSelection,
             bulkCombineDeselectedIds,
             selectedGemId: selectedGemForSocketing ? selectedGemForSocketing.id : null
         });
     }
-    // --- END OF NEW GEM SORTING LOGIC ---
 
 
     function main() {
@@ -1111,16 +1088,11 @@ document.addEventListener('DOMContentLoaded', () => {
         if (savedData) {
             let loadedState = JSON.parse(savedData);
     
-            // Start with a clean, complete default state
             const baseState = getDefaultGameState();
 
-            // Safely merge the loaded state over the default state.
-            // This structure prevents errors if new properties are added to the default state
-            // but are not present in an old save file.
             gameState = { 
                 ...baseState, 
                 ...loadedState,
-                // Deep merge nested objects to ensure new sub-properties are included
                 upgrades: { ...baseState.upgrades, ...(loadedState.upgrades || {}) },
                 hero: {
                     ...baseState.hero,
@@ -1146,7 +1118,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     ...baseState.unlockedFeatures,
                     ...(loadedState.unlockedFeatures || {})
                 },
-                // Ensure these arrays/objects are not null/undefined from old saves
                 inventory: loadedState.inventory || [],
                 gems: loadedState.gems || [],
                 presets: loadedState.presets || baseState.presets,
@@ -1161,12 +1132,11 @@ document.addEventListener('DOMContentLoaded', () => {
             };
             
             if (!gameState.presetSystemMigrated) {
-                gameState = migrateToPresetInventories(gameState); // Pass the merged state
+                gameState = migrateToPresetInventories(gameState);
             }
             
             gameState.equipment = gameState.presets[gameState.activePresetIndex].equipment;
             
-            // --- One-time migration for veteran players ---
             if (!gameState.tutorialCompleted) {
                 if (gameState.inventory.length > 0) gameState.unlockedFeatures.inventory = true;
                 if (Object.values(gameState.equipment).some(item => item !== null)) gameState.unlockedFeatures.equipment = true;
@@ -1186,7 +1156,6 @@ document.addEventListener('DOMContentLoaded', () => {
             gameState.equipment = gameState.presets[gameState.activePresetIndex].equipment;
         }
 
-        // One-time position calculation for gems from old saves.
         const allGems = gameState.gems;
         const gemsToPlace = allGems.filter(g => g.x === undefined || g.y === undefined || g.x === -1);
         if (gemsToPlace.length > 0) {
@@ -1237,7 +1206,6 @@ document.addEventListener('DOMContentLoaded', () => {
         startNewMonster();
         logMessage(elements.gameLogEl, savedData ? "Saved game loaded!" : "Welcome! Your progress will be saved automatically.", '', isAutoScrollingLog);
         
-        // Initial UI setup based on unlocked features
         fullUIRender();
         
         autoSave(); 
@@ -1279,10 +1247,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 const attributeRow = button.closest('.attribute-row');
                 const amountStr = button.dataset.amount;
                 if (attributeRow instanceof HTMLElement && attributeRow.dataset.attribute && amountStr) {
-                    // --- FIX: Convert amount to the correct type before calling ---
                     const spendAmount = amountStr === 'max' ? 'max' : Number(amountStr);
                     player.spendMultipleAttributePoints(gameState, attributeRow.dataset.attribute, spendAmount);
-                    // --- END FIX ---
                     recalculateStats();
                     ui.updateHeroPanel(elements, gameState);
                     ui.updateStatsPanel(elements, playerStats);
@@ -1333,9 +1299,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 ui.updateCurrency(elements, gameState);
                 ui.updateUpgrades(elements, gameState);
                 ui.updateStatsPanel(elements, playerStats);
-                // START OF BUGFIX: Update permanent upgrades UI after spending gold
                 ui.renderPermanentUpgrades(elements, gameState);
-                // END OF BUGFIX
                 autoSave();
             }
         });
@@ -1461,7 +1425,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     ui.updateSocketingHighlights(elements, selectedGemForSocketing, gameState);
                 }
             } else {
-                // --- START OF MODIFICATION: Handle Consumable Items ---
                 if (item.type === 'consumable') {
                     if (item.id === 'ARTISAN_CHISEL') {
                         if (confirm("Are you sure you want to use the Artisan's Chisel? This is a permanent, one-time upgrade to improve Tier 1 gem combining.")) {
@@ -1474,7 +1437,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                     return; // Prevent other actions for consumables
                 }
-                // --- END OF MODIFICATION ---
 
                 if (selectedGemForSocketing) {
                     if (item.sockets && item.sockets.includes(null)) {
@@ -1845,12 +1807,10 @@ document.addEventListener('DOMContentLoaded', () => {
                             ui.populateSalvageFilter(elements, gameState);
                             ui.renderGrid(elements.inventorySlotsEl, gameState.inventory, { calculatePositions: false, salvageSelections: salvageMode.selections, showLockIcon: true });
                             ui.updateSocketingHighlights(elements, selectedGemForSocketing, gameState);
-                            // --- FIX: Explicitly set button state on tab switch ---
                             const salvageFilterBtn = document.getElementById('auto-salvage-filter-btn');
                             if (salvageFilterBtn) {
                                 salvageFilterBtn.classList.toggle('btn-pressed', gameState.salvageFilter.enabled);
                             }
-                            // --- END FIX ---
                             break;
                         case 'gems-view':
                             ui.populateGemSortOptions(elements, gameState.gems, gemSortPreference);
@@ -1926,21 +1886,29 @@ document.addEventListener('DOMContentLoaded', () => {
         
             const result = player.rerollItemStats(gameState, selectedItemForForge, selectedStatToForgeKey);
         
+            // --- START OF MODIFICATION: Correctly handle log and popup messages ---
             if (result.success) {
-                let logText;
                 if (result.improvement > 0) {
                     const statInfo = Object.values(STATS).find(s => s.key === selectedStatToForgeKey) || { key: 'unknown', name: 'Unknown', type: 'flat' };
                     const isPercent = statInfo.type === 'percent';
-                    const improvementText = isPercent ? `${result.improvement.toFixed(1)}%` : formatNumber(result.improvement);
-                    logText = `Successfully enhanced <b>${selectedItemForForge.name}</b>! ${statInfo.name} increased by <b>+${improvementText}</b>.`;
-                    ui.showForgeImprovement(elements, selectedStatToForgeKey, result.improvement);
+                    
+                    const logImprovementText = isPercent ? `${result.improvement.toFixed(2)}%` : formatNumber(Math.max(1, result.improvement));
+                    const logText = `Successfully enhanced <b>${selectedItemForForge.name}</b>! ${statInfo.name} increased by <b>+${logImprovementText}</b>.`;
+
+                    let popupText;
+                    if(isPercent) {
+                        popupText = (result.improvement < 0.01) ? `< 0.01%` : `+${result.improvement.toFixed(2)}%`;
+                    } else {
+                        popupText = `+${formatNumber(Math.max(1, result.improvement))}`;
+                    }
+
+                    logMessage(elements.gameLogEl, logText, 'epic', isAutoScrollingLog);
+                    ui.showForgeImprovement(elements, selectedStatToForgeKey, popupText);
                 } else {
-                    logText = result.message;
+                    logMessage(elements.gameLogEl, "The enhancement failed. The stat remains unchanged.", 'uncommon', isAutoScrollingLog);
                 }
-                logMessage(elements.gameLogEl, logText, 'epic', isAutoScrollingLog);
         
                 recalculateStats();
-                // We pass the *old* selected stat key to updateForge so it can highlight the correct row before it re-renders with the new value
                 ui.updateForge(elements, selectedItemForForge, selectedStatToForgeKey, gameState.scrap);
                 ui.updateCurrency(elements, gameState);
                 ui.updateStatsPanel(elements, playerStats);
@@ -1948,9 +1916,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 ui.renderPaperdoll(elements, gameState);
                 autoSave();
             } else {
-                // Log hard failures, like not enough scrap (though button should be disabled)
-                logMessage(elements.gameLogEl, result.message, 'rare', isAutoScrollingLog);
+                logMessage(elements.gameLogEl, "Enhancement failed. Stat may be at its maximum value for this rarity.", 'rare', isAutoScrollingLog);
             }
+            // --- END OF MODIFICATION ---
         });
 
         addTapListener(elements.permanentUpgradesContainerEl, (e) => {
@@ -2052,12 +2020,10 @@ document.addEventListener('DOMContentLoaded', () => {
     
             salvageFilterControls.classList.toggle('hidden', !(/** @type {HTMLInputElement} */ (enableSalvageFilter)).checked);
             
-            // --- FIX: Immediately update the button's glow ---
             const salvageFilterBtn = document.getElementById('auto-salvage-filter-btn');
             if (salvageFilterBtn) {
                 salvageFilterBtn.classList.toggle('btn-pressed', gameState.salvageFilter.enabled);
             }
-            // --- END FIX ---
 
             autoSave();
         };
@@ -2188,13 +2154,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     function setupStatTooltipListeners() {
-        // START OF MODIFICATION: Update Luck tooltip
         const statTooltipContent = {
             strength: { title: 'Strength', description: 'Increases your raw power. Each point provides:', effects: ['<b>+1</b> Flat Click Damage', '<b>+0.2%</b> Total Click Damage'] },
             agility: { title: 'Agility', description: 'Improves your hero\'s combat prowess. Each point provides:', effects: ['<b>+1</b> Flat DPS', '<b>+0.8%</b> Total DPS'] },
             luck: { title: 'Luck', description: 'Increases your fortune in the dungeon. Each point provides:', effects: ['<b>+1%</b> Gold Gain', '<b>+0.1%</b> Magic Find'] }
         };
-        // END OF MODIFICATION
         const attributesArea = document.getElementById('attributes-area');
         attributesArea.addEventListener('mouseover', (event) => {
             if (!(event.target instanceof Element)) return;
@@ -2218,7 +2182,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         attributesArea.addEventListener('mouseout', () => elements.statTooltipEl.classList.add('hidden'));
 
-        // START OF MODIFICATION: Add new listener for derived stats
         const derivedStatsArea = document.getElementById('derived-stats-area');
         derivedStatsArea.addEventListener('mouseover', (event) => {
             if (!(event.target instanceof Element)) return;
@@ -2232,9 +2195,7 @@ document.addEventListener('DOMContentLoaded', () => {
             else if (p.querySelector('#magic-find-stat')) statKey = 'magicFind';
             else return;
 
-            // START OF FIX: Pass correct arguments
             ui.showStatBreakdownTooltip(elements, statKey, statBreakdown);
-            // END OF FIX
             const rect = p.getBoundingClientRect();
             elements.statTooltipEl.style.left = `${rect.left}px`;
             elements.statTooltipEl.style.top = `${rect.bottom + 5}px`;
@@ -2243,7 +2204,6 @@ document.addEventListener('DOMContentLoaded', () => {
         derivedStatsArea.addEventListener('mouseout', () => {
             elements.statTooltipEl.classList.add('hidden');
         });
-        // END OF MODIFICATION
     }
 
     function setupLootTooltipListeners() {
@@ -2412,10 +2372,8 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     
         addTapListener(elements.confirmPrestigeButton, () => {
-            // --- START OF BUGFIX ---
             selectedItemForForge = null;
             selectedGemForSocketing = null;
-            // --- END OF BUGFIX ---
 
             const itemsToAbsorb = gameState.unlockedPrestigeSlots
                 .map(slotName => gameState.equipment[slotName])
@@ -2484,10 +2442,10 @@ document.addEventListener('DOMContentLoaded', () => {
     
             gameState = {
                 ...baseState,
-                artisanChiselDropped: gameState.artisanChiselDropped, // CARRY OVER
-                artisanChiselUsed: gameState.artisanChiselUsed, // CARRY OVER
-                unlockedFeatures: gameState.unlockedFeatures, // CARRY OVER THE UNLOCKED FEATURES
-                tutorialCompleted: gameState.tutorialCompleted, // CARRY OVER THE TUTORIAL FLAG
+                artisanChiselDropped: gameState.artisanChiselDropped,
+                artisanChiselUsed: gameState.artisanChiselUsed,
+                unlockedFeatures: gameState.unlockedFeatures,
+                tutorialCompleted: gameState.tutorialCompleted,
                 permanentUpgrades: gameState.permanentUpgrades,
                 salvageFilter: gameState.salvageFilter,
                 wikiFavorites: gameState.wikiFavorites, 

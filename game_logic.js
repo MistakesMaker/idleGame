@@ -6,6 +6,7 @@ import { GEMS } from './data/gems.js';
 import { rarities } from './game.js';
 import { isBossLevel, isBigBossLevel, isMiniBossLevel, findSubZoneByLevel, formatNumber, findNextAvailableSpot } from './utils.js';
 import { PERMANENT_UPGRADES } from './data/upgrades.js';
+import { STATS } from './data/stat_pools.js';
 
 /**
  * Checks if a dropped item should be kept based on the player's salvage filter settings (strict AND logic).
@@ -92,7 +93,18 @@ export function generateItem(rarity, itemLevel, itemBase) {
         
         const tier_specific_range = max_for_tier - min_for_tier;
         
-        const final_stat_value = min_for_tier + (Math.random() * tier_specific_range);
+        let final_stat_value = min_for_tier + (Math.random() * tier_specific_range);
+
+        // --- START OF MODIFICATION: Enforce minimum stat values ---
+        const statDefinition = Object.values(STATS).find(s => s.key === statInfo.key);
+        if (statDefinition) {
+            if (statDefinition.type === 'flat') {
+                final_stat_value = Math.max(1, final_stat_value);
+            } else if (statDefinition.type === 'percent') {
+                final_stat_value = Math.max(0.01, final_stat_value);
+            }
+        }
+        // --- END OF MODIFICATION ---
 
         item.stats[statInfo.key] = parseFloat(final_stat_value.toFixed(2));
     });
@@ -145,7 +157,6 @@ export function dropLoot(currentMonster, gameState, playerStats) {
         return { droppedItems: [], droppedGems: [], logMessages: [], events: [] };
     }
 
-    // --- START OF MODIFICATION: Revised Loot Selection Logic ---
     let effectiveLootTable = [...monsterDef.lootTable];
     let totalWeight = effectiveLootTable.reduce((sum, entry) => sum + entry.weight, 0);
     let roll = Math.random() * totalWeight;
@@ -180,16 +191,12 @@ export function dropLoot(currentMonster, gameState, playerStats) {
             itemBaseToDrop = null;
         }
     }
-    // --- END OF MODIFICATION: Revised Loot Selection Logic ---
 
     if (!itemBaseToDrop) return { droppedItems: [], droppedGems: [], logMessages: [], events: [] };
 
-    // --- START OF MODIFICATION: One-Time Drop Flag Logic ---
-    // If the chisel is about to be dropped for the first time, set the flag.
     if (itemBaseToDrop.id === 'ARTISAN_CHISEL' && !gameState.artisanChiselDropped) {
         gameState.artisanChiselDropped = true;
     }
-    // --- END OF MODIFICATION ---
 
     const logMessages = [];
     const droppedItems = [];
@@ -375,7 +382,6 @@ export function monsterDefeated(gameState, playerStats, currentMonster) {
     else if (isBossLevel(level)) { xpGained *= 2; baseGoldDrop *= 2; } 
     else if (isMiniBossLevel(level)) { xpGained *= 1.5; baseGoldDrop *= 1.5; }
     
-    // --- START OF MODIFICATION: XP Diminishing Returns ---
     const heroLevel = gameState.hero.level;
     const levelDifference = heroLevel - level;
 
@@ -384,7 +390,6 @@ export function monsterDefeated(gameState, playerStats, currentMonster) {
         const xpMultiplier = Math.max(0.1, 1 - reductionPercent); // Floor at 10%
         xpGained *= xpMultiplier;
     }
-    // --- END OF MODIFICATION ---
 
     const goldMasteryLevel = gameState.permanentUpgrades.GOLD_MASTERY || 0;
     const goldMasteryBonus = PERMANENT_UPGRADES.GOLD_MASTERY.bonusPerLevel * goldMasteryLevel;
@@ -544,9 +549,7 @@ export function generateMonster(level, specialEncounter = null) {
                 const prevBossLevel = zoneIndex * 100;
                 const prevBossHp = generateMonster(prevBossLevel).newMonsterState.maxHp;
                 const zoneStartLevel = prevBossLevel + 1;
-                // --- START OF FIX ---
                 const targetStartHp = prevBossHp * targetPercentage;
-                // --- END OF FIX ---
                 const normalStartHp = calculateRawMonsterHp(zoneStartLevel);
                 const zoneMultiplier = targetStartHp / normalStartHp;
                 baseHpForLevel = calculateRawMonsterHp(level) * zoneMultiplier;
