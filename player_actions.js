@@ -361,7 +361,7 @@ export function salvageSelectedItems(gameState, salvageMode, playerStats) {
 
     salvageMode.selections.forEach(item => {
         const rarityIndex = rarities.indexOf(item.rarity);
-        totalScrapGained += Math.ceil(Math.pow(4, rarityIndex));
+        totalScrapGained += Math.ceil(Math.pow(3, rarityIndex));
     });
     
     totalScrapGained = Math.floor(totalScrapGained * playerStats.scrapBonus);
@@ -403,7 +403,7 @@ export function salvageByRarity(gameState, rarityToSalvage, playerStats) {
     gameState.inventory.forEach(item => {
         if (item.rarity === rarityToSalvage && !item.locked && !equippedIds.has(item.id)) {
             const rarityIndex = rarities.indexOf(item.rarity);
-            scrapGained += Math.ceil(Math.pow(4, rarityIndex));
+            scrapGained += Math.ceil(Math.pow(3, rarityIndex));
             itemsSalvagedCount++;
         } else {
             itemsToKeepInInventory.push(item);
