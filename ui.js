@@ -2419,3 +2419,52 @@ export async function showDevToolModal(elements, wikiData) {
         devToolOrphanedItemsList.innerHTML = '<li>No orphaned items found.</li>';
     }
 }
+
+// START OF MODIFICATION
+/**
+ * Generates and displays the stat breakdown tooltip.
+ * @param {DOMElements} elements The DOM elements object.
+ * @param {string} statKey The key of the stat to display (e.g., 'clickDamage').
+ * @param {object} statBreakdown The object containing the breakdown data.
+ */
+export function showStatBreakdownTooltip(elements, statKey, statBreakdown) {
+    const { statTooltipEl } = elements;
+    if (!statBreakdown[statKey]) {
+        statTooltipEl.innerHTML = '<h4>Error</h4><p>No breakdown available for this stat.</p>';
+        return;
+    }
+
+    const data = statBreakdown[statKey];
+    const statInfo = Object.values(STATS).find(s => s.key === statKey) || { name: 'Stat', type: 'flat' };
+    const isPercent = statKey === 'goldGain' || statKey === 'magicFind';
+
+    let html = `<h4>${statInfo.name} Breakdown</h4><ul>`;
+    
+    data.sources.forEach(source => {
+        // Skip rendering the 'Base' source for damage stats as it's not meaningful to the player
+        if ((statKey === 'clickDamage' || statKey === 'dps') && source.label === 'Base') {
+            return;
+        }
+        if (source.value !== 0) {
+            const valueStr = source.isPercent ? `+${source.value.toFixed(1)}%` : `+${formatNumber(source.value)}`;
+            html += `<li>${source.label}: ${valueStr}</li>`;
+        }
+    });
+
+    if (data.multipliers && data.multipliers.length > 0) {
+        html += `<li class="tooltip-divider"></li>`;
+        data.multipliers.forEach(multi => {
+            if (multi.value !== 0) {
+                html += `<li>${multi.label}: +${multi.value.toFixed(1)}%</li>`;
+            }
+        });
+    }
+
+    if (data.synergy > 0) {
+        html += `<li class="tooltip-divider"></li>`;
+        html += `<li>From Synergy: +${formatNumber(data.synergy)}</li>`;
+    }
+    
+    html += '</ul>';
+    statTooltipEl.innerHTML = html;
+}
