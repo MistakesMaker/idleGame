@@ -112,8 +112,7 @@ export const sunkenWorldMonsters = {
         image: "images/monsters/eldritch_tentacle.png",
         dropChance: 25,
         lootTable: [
-            { item: ITEMS.EYE_OF_THE_MAELSTROM, weight: 1 },
-            { item: GEMS.BASE_AMETHYST, weight: 0.2 }
+            { item: ITEMS.EYE_OF_THE_MAELSTROM, weight: 1 }
         ]
     },
     CTHULIAN_ASPECT: {

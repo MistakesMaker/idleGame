@@ -10,6 +10,7 @@ import * as player from './player_actions.js';
 import { REALMS } from './data/realms.js';
 import { PERMANENT_UPGRADES } from './data/upgrades.js';
 import { rarities } from './game.js';
+import { CONSUMABLES } from './data/consumables.js';
 
 /** @typedef {Object<string, HTMLElement|HTMLButtonElement|HTMLInputElement|HTMLImageElement|HTMLSelectElement>} DOMElements */
 
@@ -1897,13 +1898,22 @@ export function renderWikiResults(containerEl, filteredData, wikiFavorites, show
  * @returns {string} The HTML string for the card.
  */
 function createWikiItemCardHTML(itemData, isFavorited) {
-    const itemBase = ITEMS[itemData.id] || GEMS[itemData.id];
+    // --- START OF MODIFICATION: Correctly find the item base ---
+    const itemBase = ITEMS[itemData.id] || GEMS[itemData.id] || CONSUMABLES[itemData.id];
+    // --- END OF MODIFICATION ---
     const isUnique = itemBase.isUnique ? 'unique-item-name' : '';
     const rarity = itemBase.rarity || 'common'; 
 
     const starClass = isFavorited ? 'fas fa-star favorited' : 'far fa-star';
 
     let statsHtml = '<ul>';
+
+    // --- START OF MODIFICATION: Add consumable description ---
+    if (itemBase.type === 'consumable' && itemBase.description) {
+        statsHtml += `<li>${itemBase.description}</li>`;
+    }
+    // --- END OF MODIFICATION ---
+
     if (itemBase.stats) {
         for (const statKey in itemBase.stats) {
             const statInfo = Object.values(STATS).find(s => s.key === statKey) || { name: statKey, type: 'flat' };
@@ -2094,7 +2104,9 @@ export function updatePrestigeUI(elements, gameState) {
         const synergyEl = document.createElement('div');
         synergyEl.className = 'prestige-stat-entry';
         const synergyValueText = `+${(amethystSynergyValue * 100).toFixed(1)}%`;
+        // --- START OF FIX: Use a static icon class instead of a non-existent variable ---
         synergyEl.innerHTML = `<span><i class="fas fa-magic"></i> ${synergyValueText}</span><small>DPS to Click Dmg</small>`;
+        // --- END OF FIX ---
         synergyEl.title = `Converts ${synergyValueText} of your total DPS into Click Damage.`;
         absorbedStatsListEl.appendChild(synergyEl);
     }

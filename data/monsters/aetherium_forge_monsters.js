@@ -112,8 +112,7 @@ export const aetheriumForgeMonsters = {
         image: "images/monsters/echo_of_creation.png",
         dropChance: 25,
         lootTable: [
-            { item: ITEMS.THE_FIRST_SPARK, weight: 1 },
-            { item: GEMS.BASE_AMETHYST, weight: 0.4 }
+            { item: ITEMS.THE_FIRST_SPARK, weight: 1 }
         ]
     },
     THE_FIRST_SENTIENCE: {

@@ -112,8 +112,7 @@ export const celestialPlanesMonsters = {
         image: "images/monsters/archon.png",
         dropChance: 25,
         lootTable: [
-            { item: ITEMS.HEART_OF_A_STAR, weight: 1 },
-            { item: GEMS.BASE_AMETHYST, weight: 0.3 }
+            { item: ITEMS.HEART_OF_A_STAR, weight: 1 }
         ]
     },
     CELESTIAL_JUDGE: {

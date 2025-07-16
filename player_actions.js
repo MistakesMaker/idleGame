@@ -476,7 +476,14 @@ export function combineGems(gameState, craftingGems) {
     const id2 = gem2.id;
     gameState.gems = gameState.gems.filter(g => g.id !== id1 && g.id !== id2);
 
-    if (Math.random() < 0.5) {
+    // --- START OF MODIFICATION: Check for Chisel bonus only on T1 gems ---
+    let successChance = 0.5; // Default chance
+    if (gem1.tier === 1 && gameState.artisanChiselUsed) {
+        successChance = 0.6; // 60% chance for T1 gems with chisel
+    }
+
+    if (Math.random() < successChance) {
+    // --- END OF MODIFICATION ---
         // SUCCESS
         const newTier = gem1.tier + 1;
         const newStats = {};
@@ -552,6 +559,13 @@ export function bulkCombineGems(gameState, tier, selectionKey, excludedIds) {
     const gemsToCombine = [...matchingGems];
     const newGems = [];
     const usedGemIds = new Set();
+    
+    // --- START OF MODIFICATION: Check for Chisel bonus only on T1 gems ---
+    let successChance = 0.5; // Default chance
+    if (tier === 1 && gameState.artisanChiselUsed) {
+        successChance = 0.6; // 60% chance for T1 gems with chisel
+    }
+    // --- END OF MODIFICATION ---
 
     while (gemsToCombine.length >= 2) {
         if (gameState.scrap < costPerCombine) {
@@ -566,7 +580,7 @@ export function bulkCombineGems(gameState, tier, selectionKey, excludedIds) {
         usedGemIds.add(gem1.id);
         usedGemIds.add(gem2.id);
 
-        if (Math.random() < 0.5) { // Success
+        if (Math.random() < successChance) { // Use the successChance variable
             successes++;
             const newTier = gem1.tier + 1;
             const newStats = {};

@@ -145,15 +145,13 @@ export function dropLoot(currentMonster, gameState, playerStats) {
         return { droppedItems: [], droppedGems: [], logMessages: [], events: [] };
     }
 
-    const logMessages = [];
-    const droppedItems = [];
-    const droppedGems = [];
-    const events = [];
-    const totalWeight = monsterDef.lootTable.reduce((sum, entry) => sum + entry.weight, 0);
+    // --- START OF MODIFICATION: Revised Loot Selection Logic ---
+    let effectiveLootTable = [...monsterDef.lootTable];
+    let totalWeight = effectiveLootTable.reduce((sum, entry) => sum + entry.weight, 0);
     let roll = Math.random() * totalWeight;
-
     let itemBaseToDrop;
-    for (const entry of monsterDef.lootTable) {
+
+    for (const entry of effectiveLootTable) {
         if (roll < entry.weight) {
             itemBaseToDrop = entry.item;
             break;
@@ -161,7 +159,42 @@ export function dropLoot(currentMonster, gameState, playerStats) {
         roll -= entry.weight;
     }
 
+    // Check if the rolled item is the Chisel and if it should be re-rolled.
+    if (itemBaseToDrop && itemBaseToDrop.id === 'ARTISAN_CHISEL' && gameState.artisanChiselDropped) {
+        // The player already has the chisel, so we must re-roll from the remaining loot pool.
+        effectiveLootTable = effectiveLootTable.filter(entry => entry.item.id !== 'ARTISAN_CHISEL');
+        totalWeight = effectiveLootTable.reduce((sum, entry) => sum + entry.weight, 0);
+        
+        if (totalWeight > 0) {
+            roll = Math.random() * totalWeight;
+            itemBaseToDrop = null; // Reset before re-rolling
+            for (const entry of effectiveLootTable) {
+                if (roll < entry.weight) {
+                    itemBaseToDrop = entry.item;
+                    break;
+                }
+                roll -= entry.weight;
+            }
+        } else {
+            // This case occurs if the chisel was the only item in the loot table.
+            itemBaseToDrop = null;
+        }
+    }
+    // --- END OF MODIFICATION: Revised Loot Selection Logic ---
+
     if (!itemBaseToDrop) return { droppedItems: [], droppedGems: [], logMessages: [], events: [] };
+
+    // --- START OF MODIFICATION: One-Time Drop Flag Logic ---
+    // If the chisel is about to be dropped for the first time, set the flag.
+    if (itemBaseToDrop.id === 'ARTISAN_CHISEL' && !gameState.artisanChiselDropped) {
+        gameState.artisanChiselDropped = true;
+    }
+    // --- END OF MODIFICATION ---
+
+    const logMessages = [];
+    const droppedItems = [];
+    const droppedGems = [];
+    const events = [];
 
     const isGem = itemBaseToDrop.tier >= 1;
 
@@ -215,23 +248,30 @@ export function dropLoot(currentMonster, gameState, playerStats) {
         return { droppedItems, droppedGems, logMessages, events };
     }
     
-    // It's a regular item
-    let rarityRoll = Math.random() * 100;
-    rarityRoll -= playerStats.magicFind;
-
+    // It's a regular item or a consumable
+    const isConsumable = itemBaseToDrop.type === 'consumable';
     let rarity;
-    const isAnyBoss = isBossLevel(gameState.currentFightingLevel) || isBigBossLevel(gameState.currentFightingLevel) || isMiniBossLevel(gameState.currentFightingLevel);
+    if (isConsumable) {
+        rarity = 'legendary';
+    } else {
+        let rarityRoll = Math.random() * 100;
+        rarityRoll -= playerStats.magicFind;
 
-    if (isAnyBoss && rarityRoll < 5) rarity = 'legendary';
-    else if (rarityRoll < 5) rarity = 'legendary';
-    else if (rarityRoll < 20) rarity = 'epic';
-    else if (rarityRoll < 50) rarity = 'rare';
-    else if (rarityRoll < 85) rarity = 'uncommon';
-    else rarity = 'common';
+        const isAnyBoss = isBossLevel(gameState.currentFightingLevel) || isBigBossLevel(gameState.currentFightingLevel) || isMiniBossLevel(gameState.currentFightingLevel);
 
-    const item = generateItem(rarity, gameState.currentFightingLevel, itemBaseToDrop);
+        if (isAnyBoss && rarityRoll < 5) rarity = 'legendary';
+        else if (rarityRoll < 5) rarity = 'legendary';
+        else if (rarityRoll < 20) rarity = 'epic';
+        else if (rarityRoll < 50) rarity = 'rare';
+        else if (rarityRoll < 85) rarity = 'uncommon';
+        else rarity = 'common';
+    }
 
-    if (!shouldKeepItem(item, gameState.salvageFilter)) {
+    const item = isConsumable 
+        ? { ...itemBaseToDrop, id: Date.now() + Math.random(), rarity: 'legendary' } // Consumables are simple objects
+        : generateItem(rarity, gameState.currentFightingLevel, itemBaseToDrop);
+
+    if (!isConsumable && !shouldKeepItem(item, gameState.salvageFilter)) {
         const rarityIndex = rarities.indexOf(item.rarity);
         const scrapGained = Math.ceil(Math.pow(3, rarityIndex) * playerStats.scrapBonus);
         gameState.scrap += scrapGained;
@@ -504,7 +544,9 @@ export function generateMonster(level, specialEncounter = null) {
                 const prevBossLevel = zoneIndex * 100;
                 const prevBossHp = generateMonster(prevBossLevel).newMonsterState.maxHp;
                 const zoneStartLevel = prevBossLevel + 1;
+                // --- START OF FIX ---
                 const targetStartHp = prevBossHp * targetPercentage;
+                // --- END OF FIX ---
                 const normalStartHp = calculateRawMonsterHp(zoneStartLevel);
                 const zoneMultiplier = targetStartHp / normalStartHp;
                 baseHpForLevel = calculateRawMonsterHp(level) * zoneMultiplier;

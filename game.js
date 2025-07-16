@@ -2,6 +2,7 @@ import { REALMS } from './data/realms.js';
 import { MONSTERS } from './data/monsters.js';
 import { ITEMS } from './data/items.js';
 import { GEMS } from './data/gems.js';
+import { CONSUMABLES } from './data/consumables.js';
 import { STATS } from './data/stat_pools.js';
 import { PERMANENT_UPGRADES } from './data/upgrades.js';
 import { logMessage, formatNumber, getUpgradeCost, findSubZoneByLevel, findFirstLevelOfZone, isBossLevel, isBigBossLevel, getCombinedItemStats, isMiniBossLevel, findNextAvailableSpot } from './utils.js';
@@ -168,6 +169,8 @@ document.addEventListener('DOMContentLoaded', () => {
             absorbedStats: {},
             absorbedSynergies: {},
             absorbedUniqueEffects: {},
+            artisanChiselDropped: false,
+            artisanChiselUsed: false,
             prestigeCount: 0,
             nextPrestigeLevel: 100,
             specialEncounter: null,
@@ -919,7 +922,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- BESTIARY LOGIC ---
     function buildWikiDatabase() {
         wikiState.data = [];
-        const allItemBases = { ...ITEMS, ...GEMS };
+        // --- START OF MODIFICATION: Include CONSUMABLES in the wiki ---
+        const allItemBases = { ...ITEMS, ...GEMS, ...CONSUMABLES };
+        // --- END OF MODIFICATION ---
     
         for (const itemKey in allItemBases) {
             const itemBase = allItemBases[itemKey];
@@ -1150,7 +1155,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 absorbedUniqueEffects: loadedState.absorbedUniqueEffects || {},
                 wikiFavorites: loadedState.wikiFavorites || [],
                 goldenSlimeStreak: loadedState.goldenSlimeStreak && typeof loadedState.goldenSlimeStreak === 'object' ? loadedState.goldenSlimeStreak : baseState.goldenSlimeStreak,
-                tutorialCompleted: loadedState.tutorialCompleted || false
+                tutorialCompleted: loadedState.tutorialCompleted || false,
+                artisanChiselDropped: loadedState.artisanChiselDropped || false,
+                artisanChiselUsed: loadedState.artisanChiselUsed || false,
             };
             
             if (!gameState.presetSystemMigrated) {
@@ -1454,6 +1461,21 @@ document.addEventListener('DOMContentLoaded', () => {
                     ui.updateSocketingHighlights(elements, selectedGemForSocketing, gameState);
                 }
             } else {
+                // --- START OF MODIFICATION: Handle Consumable Items ---
+                if (item.type === 'consumable') {
+                    if (item.id === 'ARTISAN_CHISEL') {
+                        if (confirm("Are you sure you want to use the Artisan's Chisel? This is a permanent, one-time upgrade to improve Tier 1 gem combining.")) {
+                            gameState.artisanChiselUsed = true;
+                            gameState.inventory = gameState.inventory.filter(i => i.id !== item.id);
+                            logMessage(elements.gameLogEl, `You used the <b>Artisan's Chisel</b>! Your Tier 1 gem combine success rate is now permanently 60%.`, 'legendary', isAutoScrollingLog);
+                            ui.renderGrid(elements.inventorySlotsEl, gameState.inventory, { calculatePositions: true });
+                            autoSave();
+                        }
+                    }
+                    return; // Prevent other actions for consumables
+                }
+                // --- END OF MODIFICATION ---
+
                 if (selectedGemForSocketing) {
                     if (item.sockets && item.sockets.includes(null)) {
                         const gemToSocket = selectedGemForSocketing;
@@ -1476,11 +1498,10 @@ document.addEventListener('DOMContentLoaded', () => {
                             return;
                         }
                     } else {
-                        // The item does not have an available socket.
                         logMessage(elements.gameLogEl, `The item <b>${item.name}</b> has no available sockets.`, 'rare', isAutoScrollingLog);
-                        selectedGemForSocketing = null; // Deselect gem
-                        ui.updateSocketingHighlights(elements, null, gameState); // Update UI
-                        return; // Prevent fall-through to equip logic
+                        selectedGemForSocketing = null; 
+                        ui.updateSocketingHighlights(elements, null, gameState);
+                        return;
                     }
                 }
     
@@ -1566,11 +1587,10 @@ document.addEventListener('DOMContentLoaded', () => {
                         return;
                     }
                 } else if (item) {
-                    // Item exists but has no empty socket.
                     logMessage(elements.gameLogEl, `The item <b>${item.name}</b> has no available sockets.`, 'rare', isAutoScrollingLog);
-                    selectedGemForSocketing = null; // Deselect gem
-                    ui.updateSocketingHighlights(elements, null, gameState); // Update UI
-                    return; // Prevent fall-through to unequip logic
+                    selectedGemForSocketing = null;
+                    ui.updateSocketingHighlights(elements, null, gameState);
+                    return;
                 }
             }
 
@@ -1622,9 +1642,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (craftingGems.length !== 2) return;
             
             const result = player.combineGems(gameState, craftingGems);
-            // START OF MODIFICATION
             logMessage(elements.gameLogEl, result.newGem ? `Success! You fused a <b>${result.newGem.name}</b>!` : result.message, result.success && result.newGem ? 'legendary' : 'rare', isAutoScrollingLog);
-            // END OF MODIFICATION
             
             craftingGems = [];
             ui.updateGemCraftingUI(elements, craftingGems, gameState);
@@ -2466,6 +2484,8 @@ document.addEventListener('DOMContentLoaded', () => {
     
             gameState = {
                 ...baseState,
+                artisanChiselDropped: gameState.artisanChiselDropped, // CARRY OVER
+                artisanChiselUsed: gameState.artisanChiselUsed, // CARRY OVER
                 unlockedFeatures: gameState.unlockedFeatures, // CARRY OVER THE UNLOCKED FEATURES
                 tutorialCompleted: gameState.tutorialCompleted, // CARRY OVER THE TUTORIAL FLAG
                 permanentUpgrades: gameState.permanentUpgrades,

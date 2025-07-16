@@ -2,6 +2,7 @@
 
 import { ITEMS } from '../items.js';
 import { GEMS } from '../gems.js';
+import { CONSUMABLES } from '../consumables.js';
 
 // ====================================================================================
 // --- Green Meadows Zone Monsters (Levels 1-100) ---
@@ -522,7 +523,7 @@ const finalDungeonMonsters = {
             { item: ITEMS.DRAGONBONE_GREAVES, weight: 1 },
         ]
     },
-    // --- Sub-Zone: Throne Approach (Levels 376-399) ---
+    // --- Sub-Zone: Throne Approach & Archdemon's Lair (Levels 376-400) ---
     CHAOS_DEMON: {
         name: 'Chaos Demon',
         image: 'images/monsters/chaos_demon.png',
@@ -548,7 +549,7 @@ const finalDungeonMonsters = {
             { item: ITEMS.EYE_OF_THE_DRAGON, weight: 10 },
             { item: ITEMS.DRAGONFIRE_LOOP, weight: 10 },
             { item: ITEMS.DRAGONSCALE_BELT, weight: 10 },
-            { item: GEMS.BASE_AMETHYST, weight: 1 }
+            { item: CONSUMABLES.ARTISAN_CHISEL, weight: 1 }
         ]
     },
 };

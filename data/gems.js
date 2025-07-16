@@ -58,20 +58,6 @@ export const GEMS = {
         width: 1, height: 1,
         stats: { [STATS.MAGIC_FIND.key]: 0.25 }
     },
-    BASE_AMETHYST: {
-        id: 'BASE_AMETHYST',
-        name: 'T1 Gem (Amethyst)',
-        type: 'amethyst',
-        tier: 1,
-        isUnique: true,
-        icon: 'images/gems/amethyst_1.png',
-        width: 1, height: 1,
-        synergy: {
-            source: 'dps',
-            target: 'clickDamage',
-            value: 0.01
-        }
-    },
 
     // ================================================
     // --- TIER 2 GEMS (Drops starting in Levels 401+) ---
@@ -113,19 +99,5 @@ export const GEMS = {
         icon: 'images/gems/fused_t2.png',
         width: 1, height: 1,
         stats: { [STATS.MAGIC_FIND.key]: 0.5 } // 2x T1
-    },
-    BASE_AMETHYST_T2: {
-        id: 'BASE_AMETHYST_T2',
-        name: 'T2 Fused Gem',
-        type: 'amethyst',
-        tier: 2,
-        isUnique: true,
-        icon: 'images/gems/fused_t2.png',
-        width: 1, height: 1,
-        synergy: {
-            source: 'dps',
-            target: 'clickDamage',
-            value: 0.02 // 2x T1
-        }
     },
 };
