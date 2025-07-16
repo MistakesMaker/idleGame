@@ -12,11 +12,11 @@ export const underdarkMonsters = {
     CRYSTAL_SPIDER: {
         name: 'Crystal Spider',
         image: 'images/monsters/crystal_spider.png',
-        dropChance: 15,
+        dropChance: 30,
         lootTable: [
             { item: ITEMS.SHIMMERING_LEGGINGS, weight: 1 },
             { item: GEMS.BASE_RUBY, weight: 0.2 },
-            { item: ITEMS.FOCAL_GEM_RING, weight: 0.1 }, // Rare cross-drop
+            { item: ITEMS.FOCAL_GEM_RING, weight: 1 }, // Rare cross-drop
         ]
     },
     SHARD_SLIME: {
@@ -25,7 +25,7 @@ export const underdarkMonsters = {
         dropChance: 15,
         lootTable: [
             { item: ITEMS.FOCAL_GEM_RING, weight: 1 },
-            { item: ITEMS.CRYSTAL_TIPPED_SPEAR, weight: 0.1 },
+            { item: ITEMS.CRYSTAL_TIPPED_SPEAR, weight: 0.5 },
         ]
     },
     CRYSTAL_SCUTTLER: {
@@ -55,11 +55,11 @@ export const underdarkMonsters = {
     DEEP_GNOME_MINER: {
         name: 'Deep Gnome Miner',
         image: 'images/monsters/deep_gnome_miner.png',
-        dropChance: 15,
+        dropChance: 30,
         lootTable: [
             { item: ITEMS.GNOMISH_MINING_HELM, weight: 1 },
             { item: GEMS.BASE_EMERALD, weight: 0.2 },
-            { item: ITEMS.DEEP_GNOME_PICKAXE, weight: 0.1 }, // Rare cross-drop
+            { item: ITEMS.DEEP_GNOME_PICKAXE, weight: 1 }, // Rare cross-drop
         ]
     },
     CAVE_LURKER: {

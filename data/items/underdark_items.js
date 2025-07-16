@@ -43,7 +43,7 @@ export const underdarkItems = {
         width: 1, height: 1,
         canHaveSockets: true,
         maxSockets: 1,
-        possibleStats: [ { key: STATS.CLICK_DAMAGE.key, min: 1, max: 8000 } ]
+        possibleStats: [ { key: STATS.CLICK_DAMAGE.key, min: 1, max: 12000 } ]
     },
     CRYSTAL_TIPPED_SPEAR: {
         id: 'CRYSTAL_TIPPED_SPEAR',
@@ -53,7 +53,7 @@ export const underdarkItems = {
         width: 2, height: 3,
         canHaveSockets: true,
         maxSockets: 2,
-        possibleStats: [ { key: STATS.CLICK_DAMAGE.key, min: 4000, max: 12000 } ]
+        possibleStats: [ { key: STATS.CLICK_DAMAGE.key, min: 1, max: 20000 } ]
     },
 
     // --- Sub-Zone: Crystal Golem (Boss Lvl 425) ---
@@ -68,7 +68,7 @@ export const underdarkItems = {
         maxSockets: 2,
         possibleStats: [
             { key: STATS.GOLD_GAIN.key, min: 1, max: 150 },
-            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 3500 },
+            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 9999 },
             { key: STATS.DPS.key, min: 1, max: 65000 },
         ]
     },
@@ -84,7 +84,7 @@ export const underdarkItems = {
         maxSockets: 3,
         possibleStats: [ 
             { key: STATS.DPS.key, min: 1, max: 45000 },
-            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 9000 } ,
+            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 16000 } ,
          ]
     },
     ACOLYTES_ROBE: {
@@ -96,8 +96,8 @@ export const underdarkItems = {
         canHaveSockets: true,
         maxSockets: 3,
         possibleStats: [ 
-            { key: STATS.GOLD_GAIN.key, min: 180, max: 450 },
-            { key: STATS.CLICK_DAMAGE.key, min: 1000, max: 2500 } 
+            { key: STATS.GOLD_GAIN.key, min: 1, max: 700 },
+            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 13000 } 
          ]
     },
     RESONANT_AMULET: {
@@ -110,7 +110,7 @@ export const underdarkItems = {
         maxSockets: 3,
         possibleStats: [ 
             { key: STATS.DPS.key, min: 1, max: 40000 },
-            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 4500 },
+            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 10000 },
             { key: STATS.GOLD_GAIN.key, min: 1, max: 200 },
 
          ]
@@ -127,7 +127,7 @@ export const underdarkItems = {
         canHaveSockets: true,
         maxSockets: 3,
         possibleStats: [
-            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 19999 },
+            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 30000 },
             { key: STATS.DPS.key, min: 1, max: 50000 },
             { key: STATS.GOLD_GAIN.key, min: 500, max: 500 }
         ]
@@ -162,7 +162,10 @@ export const underdarkItems = {
         width: 2, height: 3,
         canHaveSockets: true,
         maxSockets: 1,
-        possibleStats: [ { key: STATS.CLICK_DAMAGE.key, min: 1, max: 17500 } ]
+        possibleStats: [ 
+            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 27500 },
+            { key: STATS.GOLD_GAIN.key, min: 1, max: 300 }
+         ]
     },
 
     // --- Sub-Zone: Gemstone Hoard (Boss Lvl 475) ---
@@ -279,7 +282,7 @@ export const underdarkItems = {
         width: 2, height: 3,
         canHaveSockets: true,
         maxSockets: 1,
-        possibleStats: [ { key: STATS.CLICK_DAMAGE.key, min: 1, max: 19000 } ]
+        possibleStats: [ { key: STATS.CLICK_DAMAGE.key, min: 1, max: 33000 } ]
     },
 
     // --- Sub-Zone: Fungal Guardian (Boss Lvl 525) ---
@@ -419,7 +422,7 @@ export const underdarkItems = {
         width: 2, height: 3,
         canHaveSockets: true,
         maxSockets: 3,
-        possibleStats: [ { key: STATS.CLICK_DAMAGE.key, min: 1, max: 22000 } ]
+        possibleStats: [ { key: STATS.CLICK_DAMAGE.key, min: 1, max: 40000 } ]
     },
     
     // --- Sub-Zone: The Great Fungus (Boss Lvl 600) ---
@@ -452,7 +455,7 @@ export const underdarkItems = {
         width: 2, height: 3,
         canHaveSockets: true,
         maxSockets: 3,
-        possibleStats: [ { key: STATS.CLICK_DAMAGE.key, min: 1, max: 24000 } ]
+        possibleStats: [ { key: STATS.CLICK_DAMAGE.key, min: 1, max: 45000 } ]
     },
     SPIDERSILK_SASH: {
         id: 'SPIDERSILK_SASH',
@@ -578,7 +581,7 @@ export const underdarkItems = {
         width: 2, height: 3,
         canHaveSockets: true,
         maxSockets: 3,
-        possibleStats: [ { key: STATS.CLICK_DAMAGE.key, min: 1, max: 26000 } ]
+        possibleStats: [ { key: STATS.CLICK_DAMAGE.key, min: 1, max: 50000 } ]
     },
 
     // --- Sub-Zone: House of Shadows (Boss Lvl 675) ---
@@ -698,7 +701,7 @@ export const underdarkItems = {
         width: 2, height: 3,
         canHaveSockets: true,
         maxSockets: 3,
-        possibleStats: [ { key: STATS.CLICK_DAMAGE.key, min: 1, max: 30000 } ]
+        possibleStats: [ { key: STATS.CLICK_DAMAGE.key, min: 1, max: 65000 } ]
     },
     RIFT_WARD: {
         id: 'RIFT_WARD',
@@ -797,7 +800,7 @@ export const underdarkItems = {
         canHaveSockets: true,
         maxSockets: 3,
         possibleStats: [
-            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 40000 },
+            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 70000 },
             { key: STATS.DPS.key, min: 1, max: 120000 }
         ]
     },

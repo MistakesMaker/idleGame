@@ -193,6 +193,7 @@ const orcVolcanoMonsters = {
             { item: ITEMS.ORCISH_CLEAVER, weight: 2 },
             { item: ITEMS.TOWER_SHIELD, weight: 1 },
             { item: ITEMS.STEEL_PLATEMAIL, weight: 2 },
+            { item: GEMS.BASE_SAPPHIRE, weight: 3 },
         ]
     },
 
