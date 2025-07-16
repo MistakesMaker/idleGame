@@ -835,10 +835,8 @@ function createDetailedItemStatBlockHTML(item) {
     
     let statsHTML = '<ul>';
     if (item.stats) {
-        // --- START OF FIX: Sort the stats before displaying ---
         const statKeys = Object.keys(item.stats);
         statKeys.sort((a, b) => STAT_DISPLAY_ORDER.indexOf(a) - STAT_DISPLAY_ORDER.indexOf(b));
-        // --- END OF FIX ---
 
         for (const statKey of statKeys) {
             const statInfo = Object.values(STATS).find(s => s.key === statKey) || { name: statKey, type: 'flat' };
@@ -859,10 +857,8 @@ function createDetailedItemStatBlockHTML(item) {
                 gemsHTML += `<div class="tooltip-gem-stats-header"><img src="${gem.icon}" alt="${gemName}">${gemName}</div>`;
                 gemsHTML += '<ul>';
                 if (gem.stats) {
-                    // --- START OF FIX: Sort gem stats too ---
                     const gemStatKeys = Object.keys(gem.stats);
                     gemStatKeys.sort((a, b) => STAT_DISPLAY_ORDER.indexOf(a) - STAT_DISPLAY_ORDER.indexOf(b));
-                    // --- END OF FIX ---
                     for (const statKey of gemStatKeys) {
                          const statInfo = Object.values(STATS).find(s => s.key === statKey) || { name: statKey, type: 'flat' };
                          const statName = statInfo.name;
@@ -909,7 +905,6 @@ export function createTooltipHTML(item) {
     const uniqueClass = isUnique ? 'unique-item-name' : '';
     let headerHTML = `<div class="item-header"><span class="${item.rarity} ${uniqueClass}">${item.name}</span></div>`;
 
-    // START OF MODIFICATION: Combine type and hint into a single flex container
     const itemTypeString = `${item.rarity.charAt(0).toUpperCase() + item.rarity.slice(1)} ${item.type.charAt(0).toUpperCase() + item.type.slice(1)}`;
     headerHTML += `
         <div class="tooltip-subheader">
@@ -917,7 +912,6 @@ export function createTooltipHTML(item) {
             <span class="tooltip-shift-hint">Hold [SHIFT] for blueprint</span>
         </div>
     `;
-    // END OF MODIFICATION
 
     const detailedBlock = createDetailedItemStatBlockHTML(item);
 
@@ -951,7 +945,6 @@ export function createItemComparisonTooltipHTML(hoveredItem, equippedItem, equip
     const uniqueClass = itemBase?.isUnique ? 'unique-item-name' : '';
     let html = `<div class="item-header"><span class="${hoveredItem.rarity} ${uniqueClass}">${hoveredItem.name}</span></div>`;
     
-    // START OF MODIFICATION: Combine type and hint into a single flex container
     const itemTypeString = `${hoveredItem.rarity.charAt(0).toUpperCase() + hoveredItem.rarity.slice(1)} ${hoveredItem.type.charAt(0).toUpperCase() + hoveredItem.type.slice(1)}`;
     html += `
         <div class="tooltip-subheader">
@@ -959,9 +952,8 @@ export function createItemComparisonTooltipHTML(hoveredItem, equippedItem, equip
             <span class="tooltip-shift-hint">Hold [SHIFT] for blueprint</span>
         </div>
     `;
-    // END OF MODIFICATION
 
-    // --- START OF MODIFICATION: Separate raw stats from combined stats ---
+    // --- START OF MODIFICATION: Correct tooltip logic ---
     const hoveredRawStats = hoveredItem.stats || {};
     const hoveredCombinedStats = getCombinedItemStats(hoveredItem);
     let statsHTML = '';
@@ -1119,8 +1111,12 @@ export function createLootTableTooltipHTML(itemBase) {
     const sortedPossibleStats = [...itemBase.possibleStats].sort((a, b) => STAT_DISPLAY_ORDER.indexOf(a.key) - STAT_DISPLAY_ORDER.indexOf(b));
 
     for (const statInfo of sortedPossibleStats) {
-        const statName = Object.values(STATS).find(s => s.key === statInfo.key)?.name || statInfo.key;
-        statsHTML += `<li>+ ${formatNumber(statInfo.min)} - ${formatNumber(statInfo.max)} ${statName}</li>`;
+        const statDefinition = Object.values(STATS).find(s => s.key === statInfo.key);
+        const statName = statDefinition?.name || statInfo.key;
+        // --- START OF MODIFICATION: Add % sign for percent-based stats ---
+        const valueSuffix = (statDefinition && statDefinition.type === 'percent') ? '%' : '';
+        statsHTML += `<li>+ ${formatNumber(statInfo.min)}${valueSuffix} - ${formatNumber(statInfo.max)}${valueSuffix} ${statName}</li>`;
+        // --- END OF MODIFICATION ---
     }
     statsHTML += '</ul>';
 
@@ -1146,7 +1142,6 @@ export function createLootTableTooltipHTML(itemBase) {
     const uniqueClass = isUnique ? 'unique-item-name' : '';
     const headerHTML = `<div class="item-header"><span class="${uniqueClass}">${itemBase.name}</span></div>`;
 
-    // START OF MODIFICATION: Remove the incorrect hint from this view.
     return `${headerHTML}
             <div class="possible-stats-header" style="justify-content: flex-start; margin-top: 5px; margin-bottom: 5px;">
                 <span>Possible Stats:</span>
@@ -1154,14 +1149,12 @@ export function createLootTableTooltipHTML(itemBase) {
             ${statsHTML}
             ${socketsHTML}
             ${uniqueEffectHTML}`;
-    // END OF MODIFICATION
 }
 
 export function createLootComparisonTooltipHTML(potentialItem, equippedItem, equippedItem2 = null) {
     const potentialIsUnique = potentialItem.isUnique ? 'unique-item-name' : '';
     const headerHTML = `<div class="item-header"><span class="${potentialIsUnique}">${potentialItem.name}</span></div>`;
 
-    // START OF MODIFICATION: Combine type and hint into a single flex container
     const itemTypeString = `${potentialItem.type.charAt(0).toUpperCase() + potentialItem.type.slice(1)}`;
     let hintHTML = `
         <div class="tooltip-subheader">
@@ -1169,17 +1162,16 @@ export function createLootComparisonTooltipHTML(potentialItem, equippedItem, equ
             <span class="tooltip-shift-hint">Release [SHIFT] for stats</span>
         </div>
     `;
-    // END OF MODIFICATION
 
     let potentialStatsHTML = '<ul>';
 
-    // --- START OF FIX: Sort potential stats in comparison view ---
     const sortedPossibleStats = [...potentialItem.possibleStats].sort((a, b) => STAT_DISPLAY_ORDER.indexOf(a.key) - STAT_DISPLAY_ORDER.indexOf(b));
-    // --- END OF FIX ---
 
     sortedPossibleStats.forEach(statInfo => {
-        const statName = Object.values(STATS).find(s => s.key === statInfo.key)?.name || statInfo.key;
-        potentialStatsHTML += `<li>+ ${formatNumber(statInfo.min)} - ${formatNumber(statInfo.max)} ${statName}</li>`;
+        const statDefinition = Object.values(STATS).find(s => s.key === statInfo.key);
+        const statName = statDefinition?.name || statInfo.key;
+        const valueSuffix = (statDefinition && statDefinition.type === 'percent') ? '%' : '';
+        potentialStatsHTML += `<li>+ ${formatNumber(statInfo.min)}${valueSuffix} - ${formatNumber(statInfo.max)}${valueSuffix} ${statName}</li>`;
     });
     potentialStatsHTML += '</ul>';
     
@@ -1912,21 +1904,17 @@ export function renderWikiResults(containerEl, filteredData, wikiFavorites, show
  * @returns {string} The HTML string for the card.
  */
 function createWikiItemCardHTML(itemData, isFavorited) {
-    // --- START OF MODIFICATION: Correctly find the item base ---
     const itemBase = ITEMS[itemData.id] || GEMS[itemData.id] || CONSUMABLES[itemData.id];
-    // --- END OF MODIFICATION ---
     const isUnique = itemBase.isUnique ? 'unique-item-name' : '';
-    const rarity = itemBase.rarity || 'common'; 
+    const rarity = itemBase.type === 'consumable' ? 'legendary' : (itemBase.rarity || 'common');
 
     const starClass = isFavorited ? 'fas fa-star favorited' : 'far fa-star';
 
     let statsHtml = '<ul>';
 
-    // --- START OF MODIFICATION: Add consumable description ---
     if (itemBase.type === 'consumable' && itemBase.description) {
         statsHtml += `<li>${itemBase.description}</li>`;
     }
-    // --- END OF MODIFICATION ---
 
     if (itemBase.stats) {
         for (const statKey in itemBase.stats) {
@@ -1938,12 +1926,10 @@ function createWikiItemCardHTML(itemData, isFavorited) {
         }
     }
 
-    // --- START OF WIKI FIX ---
     itemBase.possibleStats?.forEach(stat => {
         const statName = Object.values(STATS).find(s => s.key === stat.key)?.name || stat.key;
         statsHtml += `<li>+${formatNumber(stat.min)} to ${formatNumber(stat.max)} ${statName}</li>`;
     });
-    // --- END OF WIKI FIX ---
     
     if (itemBase.canHaveSockets && itemBase.maxSockets > 0) {
         statsHtml += `<li>Sockets: 0 - ${itemBase.maxSockets}</li>`;
