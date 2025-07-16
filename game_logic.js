@@ -233,7 +233,7 @@ export function dropLoot(currentMonster, gameState, playerStats) {
 
     if (!shouldKeepItem(item, gameState.salvageFilter)) {
         const rarityIndex = rarities.indexOf(item.rarity);
-        const scrapGained = Math.ceil(Math.pow(4, rarityIndex) * playerStats.scrapBonus);
+        const scrapGained = Math.ceil(Math.pow(3, rarityIndex) * playerStats.scrapBonus);
         gameState.scrap += scrapGained;
         logMessages.push({ message: `Auto-salvaged <span class="${item.rarity}">${item.name}</span> for ${scrapGained} scrap.`, class: '' });
         return { droppedItems: [], droppedGems: [], logMessages, events };
