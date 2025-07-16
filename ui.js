@@ -961,29 +961,29 @@ export function createItemComparisonTooltipHTML(hoveredItem, equippedItem, equip
     `;
     // END OF MODIFICATION
 
-    const hoveredStats = getCombinedItemStats(hoveredItem);
+    // --- START OF MODIFICATION: Separate raw stats from combined stats ---
+    const hoveredRawStats = hoveredItem.stats || {};
+    const hoveredCombinedStats = getCombinedItemStats(hoveredItem);
     let statsHTML = '';
 
     if (hoveredItem.type === 'ring' && equippedItem2) {
-        statsHTML = createDualRingComparison(hoveredStats, equippedItem, equippedItem2);
+        statsHTML = createDualRingComparison(hoveredItem, equippedItem, equippedItem2);
     } else {
-        const comparisonTargetStats = equippedItem ? getCombinedItemStats(equippedItem) : {};
-        const allStatKeys = new Set([...Object.keys(hoveredStats), ...Object.keys(comparisonTargetStats)]);
+        const equippedCombinedStats = equippedItem ? getCombinedItemStats(equippedItem) : {};
+        const allStatKeys = new Set([...Object.keys(hoveredCombinedStats), ...Object.keys(equippedCombinedStats)]);
         
         let statListHtml = '<ul>';
 
-        // --- START OF FIX: Use the defined order for comparison ---
         const sortedStatKeys = Array.from(allStatKeys).sort((a, b) => STAT_DISPLAY_ORDER.indexOf(a) - STAT_DISPLAY_ORDER.indexOf(b));
-        // --- END OF FIX ---
 
         for (const statKey of sortedStatKeys) {
-            const hoveredValue = hoveredStats[statKey] || 0;
-            const equippedValue = comparisonTargetStats[statKey] || 0;
-            const diff = hoveredValue - equippedValue;
+            const hoveredValue = hoveredRawStats[statKey] || 0; // Use raw stat for display
+            const hoveredTotal = hoveredCombinedStats[statKey] || 0;
+            const equippedTotal = equippedCombinedStats[statKey] || 0;
+            const diff = hoveredTotal - equippedTotal;
 
             const statInfo = Object.values(STATS).find(s => s.key === statKey) || { name: statKey, type: 'flat' };
             const isPercent = statInfo.type === 'percent';
-            const valueStr = isPercent ? `${hoveredValue.toFixed(1)}%` : formatNumber(hoveredValue);
             
             let diffSpan = '';
             if (equippedItem && Math.abs(diff) > 0.001) {
@@ -992,13 +992,21 @@ export function createItemComparisonTooltipHTML(hoveredItem, equippedItem, equip
                 const diffStr = isPercent ? `${diff.toFixed(1)}%` : formatNumber(diff);
                 diffSpan = ` <span class="${diffClass}">(${sign}${diffStr})</span>`;
             }
-            statListHtml += `<li>+${valueStr} ${statInfo.name}${diffSpan}</li>`;
+            
+            // Only add the line if the hovered item has the stat OR there's a difference to show
+            if (hoveredValue > 0 || (equippedItem && diff !== 0)) {
+                const valueStr = isPercent ? `${hoveredValue.toFixed(1)}%` : formatNumber(hoveredValue);
+                const displayStr = hoveredValue > 0 ? `+${valueStr} ` : '';
+                statListHtml += `<li>${displayStr}${statInfo.name}${diffSpan}</li>`;
+            }
         };
         statListHtml += '</ul>';
         statsHTML = statListHtml;
     }
+    // --- END OF MODIFICATION ---
     
     html += statsHTML;
+    // Pass the raw item to this function so it doesn't double-count gem stats
     html += createDetailedItemStatBlockHTML(hoveredItem).replace(/<ul>.*?<\/ul>/, ''); 
 
     if (hoveredItem.sockets) {
@@ -1014,22 +1022,22 @@ export function createItemComparisonTooltipHTML(hoveredItem, equippedItem, equip
 
 /**
  * Helper function to create the dual-ring comparison HTML block.
- * @param {object} hoveredStats - The combined stats of the hovered ring.
+ * @param {object} hoveredItem - The full hovered ring item object.
  * @param {object|null} equippedRing1 - The first equipped ring.
  * @param {object|null} equippedRing2 - The second equipped ring.
  * @returns {string} The HTML string for the comparison.
  */
-function createDualRingComparison(hoveredStats, equippedRing1, equippedRing2) {
+function createDualRingComparison(hoveredItem, equippedRing1, equippedRing2) {
     let html = '<div class="tooltip-ring-comparison">';
+    const hoveredRawStats = hoveredItem.stats || {};
+    const hoveredCombinedStats = getCombinedItemStats(hoveredItem);
     
     const generateComparisonSide = (equippedRing, title) => {
         let sideHtml = `<div><h5>vs. ${title}</h5>`;
-        const equippedStats = equippedRing ? getCombinedItemStats(equippedRing) : {};
-        const allStatKeys = new Set([...Object.keys(hoveredStats), ...Object.keys(equippedStats)]);
+        const equippedCombinedStats = equippedRing ? getCombinedItemStats(equippedRing) : {};
+        const allStatKeys = new Set([...Object.keys(hoveredCombinedStats), ...Object.keys(equippedCombinedStats)]);
         
-        // --- START OF FIX: Use the defined order for comparison ---
         const sortedStatKeys = Array.from(allStatKeys).sort((a, b) => STAT_DISPLAY_ORDER.indexOf(a) - STAT_DISPLAY_ORDER.indexOf(b));
-        // --- END OF FIX ---
         
         let statListHtml = '<ul>';
         if (sortedStatKeys.length === 0 && !equippedRing) {
@@ -1038,9 +1046,10 @@ function createDualRingComparison(hoveredStats, equippedRing1, equippedRing2) {
              statListHtml += '<li>(No stats)</li>';
         }else {
             for (const statKey of sortedStatKeys) {
-                const hoveredValue = hoveredStats[statKey] || 0;
-                const equippedValue = equippedStats[statKey] || 0;
-                const diff = hoveredValue - equippedValue;
+                const hoveredValue = hoveredRawStats[statKey] || 0;
+                const hoveredTotal = hoveredCombinedStats[statKey] || 0;
+                const equippedTotal = equippedCombinedStats[statKey] || 0;
+                const diff = hoveredTotal - equippedTotal;
                 const statInfo = Object.values(STATS).find(s => s.key === statKey) || { name: statKey, type: 'flat' };
                 
                 let diffSpan = '';
@@ -1050,7 +1059,12 @@ function createDualRingComparison(hoveredStats, equippedRing1, equippedRing2) {
                     const diffStr = statInfo.type === 'percent' ? `${diff.toFixed(1)}%` : formatNumber(diff);
                     diffSpan = ` <span class="${diffClass}">(${sign}${diffStr})</span>`;
                 }
-                statListHtml += `<li>${statInfo.name}${diffSpan}</li>`;
+
+                if (hoveredValue > 0 || (equippedRing && diff !== 0)) {
+                    const valueStr = statInfo.type === 'percent' ? `${hoveredValue.toFixed(1)}%` : formatNumber(hoveredValue);
+                    const displayStr = hoveredValue > 0 ? `+${valueStr} ` : '';
+                    statListHtml += `<li>${displayStr}${statInfo.name}${diffSpan}</li>`;
+                }
             };
         }
         statListHtml += '</ul>';
