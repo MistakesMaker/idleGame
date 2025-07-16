@@ -1284,6 +1284,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 ui.updateCurrency(elements, gameState);
                 ui.updateUpgrades(elements, gameState);
                 ui.updateStatsPanel(elements, playerStats);
+                ui.renderPermanentUpgrades(elements, gameState);
                 autoSave();
             }
         });
@@ -1424,11 +1425,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         ui.updateItemInGrid(elements.inventorySlotsEl, item, { forceRedraw: true });
                         ui.updateSocketingHighlights(elements, null, gameState);
                         ui.updateStatsPanel(elements, playerStats);
-                        
-                        // --- START OF MODIFICATION ---
                         ui.renderPaperdoll(elements, gameState);
-                        // --- END OF MODIFICATION ---
-                        
                         autoSave();
                         return;
                     }
@@ -1507,7 +1504,9 @@ document.addEventListener('DOMContentLoaded', () => {
                         recalculateStats();
 
                         logMessage(elements.gameLogEl, `Socketed ${gemToSocket.name} into ${item.name}.`, 'epic', isAutoScrollingLog);
+                        // START OF BUGFIX
                         refreshGemViewIfActive();
+                        // END OF BUGFIX
                         ui.renderPaperdoll(elements, gameState);
                         ui.updateSocketingHighlights(elements, null, gameState);
                         ui.updateStatsPanel(elements, playerStats);
@@ -2309,10 +2308,10 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     
         addTapListener(elements.confirmPrestigeButton, () => {
-            // --- START OF FIX ---
+            // --- START OF BUGFIX ---
             selectedItemForForge = null;
             selectedGemForSocketing = null;
-            // --- END OF FIX ---
+            // --- END OF BUGFIX ---
 
             const itemsToAbsorb = gameState.unlockedPrestigeSlots
                 .map(slotName => gameState.equipment[slotName])
