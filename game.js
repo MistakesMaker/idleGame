@@ -113,6 +113,8 @@ document.addEventListener('DOMContentLoaded', () => {
     let wikiShowFavorites = false;
     let wikiShowUpgradesOnly = false;
     let gemSortPreference = 'tier_desc'; // NEW: State for gem sorting
+    let heldKeys = new Set();
+    const MODIFIER_KEYS = ['q', 'w', 'e', 'r'];
 
     /** @type {DOMElements} */
     let elements = {};
@@ -435,7 +437,7 @@ document.addEventListener('DOMContentLoaded', () => {
             recalculateStats();
         }
     
-        ui.updateHeroPanel(elements, gameState);
+        ui.updateHeroPanel(elements, gameState, heldKeys);
         ui.updatePrestigeUI(elements, gameState);
         ui.updateCurrency(elements, gameState);
         ui.updateUpgrades(elements, gameState);
@@ -1032,6 +1034,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
     
+        // THIS IS THE FIXED LINE
         ui.renderWikiResults(elements.wikiResultsContainer, filtered, gameState.wikiFavorites, wikiShowFavorites, wikiShowUpgradesOnly);
     }
     
@@ -1217,6 +1220,12 @@ document.addEventListener('DOMContentLoaded', () => {
         window.addEventListener('beforeunload', saveOnExit);
 
         window.addEventListener('keydown', (e) => {
+            const key = e.key.toLowerCase();
+            if (MODIFIER_KEYS.includes(key) && !heldKeys.has(key)) {
+                heldKeys.add(key);
+                ui.updateHeroPanel(elements, gameState, heldKeys);
+            }
+
             if (e.key === 'Shift' && !isShiftPressed) {
                 isShiftPressed = true;
                 const elementUnderMouse = document.elementFromPoint(lastMousePosition.x, lastMousePosition.y);
@@ -1225,7 +1234,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
         });
+
         window.addEventListener('keyup', (e) => {
+            const key = e.key.toLowerCase();
+            if (MODIFIER_KEYS.includes(key)) {
+                heldKeys.delete(key);
+                ui.updateHeroPanel(elements, gameState, heldKeys);
+            }
+
             if (e.key === 'Shift') {
                 isShiftPressed = false;
                 const elementUnderMouse = document.elementFromPoint(lastMousePosition.x, lastMousePosition.y);
@@ -1234,7 +1250,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
         });
-        window.addEventListener('blur', () => { isShiftPressed = false; });
+
+        window.addEventListener('blur', () => { 
+            isShiftPressed = false; 
+            if (heldKeys.size > 0) {
+                heldKeys.clear();
+                ui.updateHeroPanel(elements, gameState, heldKeys);
+            }
+        });
+        
         window.addEventListener('mousemove', (e) => {
             lastMousePosition.x = e.clientX;
             lastMousePosition.y = e.clientY;
@@ -1242,18 +1266,23 @@ document.addEventListener('DOMContentLoaded', () => {
         
         addTapListener(document.getElementById('attributes-area'), (e) => {
             if (!(e.target instanceof Element)) return;
-            const button = e.target.closest('.attr-buy-btn');
+            const button = e.target.closest('.attribute-buy-btn');
             if (button instanceof HTMLButtonElement && !button.disabled) {
-                const attributeRow = button.closest('.attribute-row');
-                const amountStr = button.dataset.amount;
-                if (attributeRow instanceof HTMLElement && attributeRow.dataset.attribute && amountStr) {
-                    const spendAmount = amountStr === 'max' ? 'max' : Number(amountStr);
-                    player.spendMultipleAttributePoints(gameState, attributeRow.dataset.attribute, spendAmount);
-                    recalculateStats();
-                    ui.updateHeroPanel(elements, gameState);
-                    ui.updateStatsPanel(elements, playerStats);
-                    autoSave();
-                }
+                const attribute = button.dataset.attribute;
+                if (!attribute) return;
+                
+                /** @type {number | 'max'} */
+                let spendAmount = 1;
+                if (heldKeys.has('r')) spendAmount = 'max';
+                else if (heldKeys.has('e')) spendAmount = 1000;
+                else if (heldKeys.has('w')) spendAmount = 100;
+                else if (heldKeys.has('q')) spendAmount = 10;
+                
+                player.spendMultipleAttributePoints(gameState, attribute, spendAmount);
+                recalculateStats();
+                ui.updateHeroPanel(elements, gameState, heldKeys);
+                ui.updateStatsPanel(elements, playerStats);
+                autoSave();
             }
         });
 
@@ -1796,7 +1825,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             renderMapAccordion();
                             break;
                         case 'hero-view':
-                            ui.updateHeroPanel(elements, gameState);
+                            ui.updateHeroPanel(elements, gameState, heldKeys);
                             ui.updateStatsPanel(elements, playerStats);
                             break;
                         case 'equipment-view':
@@ -1886,7 +1915,6 @@ document.addEventListener('DOMContentLoaded', () => {
         
             const result = player.rerollItemStats(gameState, selectedItemForForge, selectedStatToForgeKey);
         
-            // --- START OF MODIFICATION: Correctly handle log and popup messages ---
             if (result.success) {
                 if (result.improvement > 0) {
                     const statInfo = Object.values(STATS).find(s => s.key === selectedStatToForgeKey) || { key: 'unknown', name: 'Unknown', type: 'flat' };
@@ -1918,7 +1946,6 @@ document.addEventListener('DOMContentLoaded', () => {
             } else {
                 logMessage(elements.gameLogEl, "Enhancement failed. Stat may be at its maximum value for this rarity.", 'rare', isAutoScrollingLog);
             }
-            // --- END OF MODIFICATION ---
         });
 
         addTapListener(elements.permanentUpgradesContainerEl, (e) => {
@@ -2160,27 +2187,42 @@ document.addEventListener('DOMContentLoaded', () => {
             luck: { title: 'Luck', description: 'Increases your fortune in the dungeon. Each point provides:', effects: ['<b>+1%</b> Gold Gain', '<b>+0.1%</b> Magic Find'] }
         };
         const attributesArea = document.getElementById('attributes-area');
+        
+        // START OF MODIFICATION: Listen on the parent, but check for the specific span target
         attributesArea.addEventListener('mouseover', (event) => {
             if (!(event.target instanceof Element)) return;
-            const row = event.target.closest('.attribute-row');
+
+            // Target only the span inside the attribute-row, not the whole row
+            const statSpan = event.target.closest('.attribute-row > span');
+            if (!statSpan) return;
+
+            const row = statSpan.closest('.attribute-row');
             if (!(row instanceof HTMLElement)) return;
+
             const attributeKey = row.dataset.attribute;
             if (!attributeKey) return;
-
+            
             const content = statTooltipContent[attributeKey];
             if (!content) return;
+            
             let html = `<h4>${content.title}</h4><p>${content.description}</p><ul>`;
             content.effects.forEach(effect => { html += `<li>- ${effect}</li>`; });
             html += '</ul>';
+            
             elements.statTooltipEl.innerHTML = html;
-            const nameSpan = row.querySelector('span');
-            if (!nameSpan) return;
-            const rect = nameSpan.getBoundingClientRect();
+            const rect = statSpan.getBoundingClientRect();
             elements.statTooltipEl.style.left = `${rect.right + 10}px`;
             elements.statTooltipEl.style.top = `${rect.top}px`;
             elements.statTooltipEl.classList.remove('hidden');
         });
-        attributesArea.addEventListener('mouseout', () => elements.statTooltipEl.classList.add('hidden'));
+        attributesArea.addEventListener('mouseout', (event) => {
+            if (!(event.target instanceof Element)) return;
+            const statSpan = event.target.closest('.attribute-row > span');
+            if (statSpan) {
+                elements.statTooltipEl.classList.add('hidden');
+            }
+        });
+        // END OF MODIFICATION
 
         const derivedStatsArea = document.getElementById('derived-stats-area');
         derivedStatsArea.addEventListener('mouseover', (event) => {

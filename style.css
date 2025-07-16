@@ -25,6 +25,34 @@ body {
 }
 
 h2, h3, h4 { font-family: 'Cinzel', serif; color: #f1c40f; text-shadow: 1px 1px 2px #000; }
+/* START OF MODIFICATION: New styles for sub-text */
+.panel p, .panel small {
+    margin-top: 0;
+    margin-bottom: 10px;
+}
+.panel .view-sub-text {
+    color: #ecf0f1; /* Make text white */
+    margin: 0 0 10px 0;
+    padding: 0; /* Remove horizontal padding/margin */
+}
+.panel h4 + .view-sub-text {
+    margin-top: -10px; /* Pull it up closer to the heading */
+    margin-bottom: 5px;
+}
+.panel .view-sub-text:has(+ .view-sub-text) {
+    margin-bottom: 2px;
+}
+.panel .view-sub-text b {
+    color: #ecf0f1;
+    font-weight: bold;
+}
+.panel small.view-sub-text {
+    font-size: 0.85em;
+    font-style: italic;
+    color: #95a5a6; /* Make hint text grey */
+}
+/* END OF MODIFICATION */
+
 .game-container { 
     display: flex; 
     flex-wrap: nowrap; 
@@ -318,7 +346,6 @@ select option {
     line-height: 1.4;
 }
 
-/* START OF MODIFICATION */
 #game-log p.log-entry > b {
     font-weight: bold;
     /* The b tag itself doesn't need styles; it will inherit from the parent <p> */
@@ -328,7 +355,6 @@ select option {
 #game-log p.rare { text-shadow: 0 0 5px #3498db; }
 #game-log p.epic { text-shadow: 0 0 6px #3498db; } /* Changed from purple to blue */
 #game-log p.legendary { text-shadow: 0 0 7px #f39c12; }
-/* END OF MODIFICATION */
 
 #game-log .golden-streak-text {
     color: #f1c40f;
@@ -342,9 +368,30 @@ select option {
 #hero-xp-bar { height: 100%; background: linear-gradient(to right, #9b59b6, #8e44ad); transition: width 0.5s ease-in-out; }
 #hero-xp-text { position: absolute; top: 0; left: 0; right: 0; line-height: 25px; font-size: 14px; color: white; text-shadow: 1px 1px 2px #000; }
 #attributes-area { background-color: rgba(0,0,0,0.2); border-radius: 5px; padding: 15px; margin-top: 10px; }
-.attribute-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; font-size: 1.1em; cursor: help; }
-.attribute-btn { padding: 5px 12px; font-size: 1.2em; line-height: 1; margin: 0; }
-.attribute-btn:not(:disabled) { background: linear-gradient(145deg, #27ae60, #2ecc71); border-bottom-color: #229954; animation: pulse-green 2s infinite; }
+.attribute-row { 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+    margin-bottom: 10px; 
+    font-size: 1em; 
+    cursor: help; 
+}
+
+.attribute-buy-btn {
+    padding: 8px 16px; 
+    font-size: 1em;    
+    line-height: 1;
+    margin: 0;
+    min-width: 80px; 
+    text-align: center;
+}
+
+.attribute-buy-btn:not(:disabled) { 
+    background: linear-gradient(145deg, #27ae60, #2ecc71); 
+    border-bottom-color: #229954; 
+    animation: pulse-green 2s infinite; 
+}
+
 @keyframes pulse-green { 0% { box-shadow: 0 0 0 0 rgba(46, 204, 113, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(46, 204, 113, 0); } 100% { box-shadow: 0 0 0 0 rgba(46, 204, 113, 0); } }
 
 #derived-stats-area {
@@ -572,7 +619,6 @@ body.salvage-mode-active .item-grid .item-wrapper:not(.locked-item) { animation:
 #item-tooltip .stat-better { color: #2ecc71; font-weight: bold; }
 #item-tooltip .stat-worse { color: #e74c3c; font-weight: bold; }
 .tooltip-shift-hint { font-size: 0.8em; color: #7f8c8d; font-style: normal; font-weight: normal; }
-/* START OF MODIFICATION */
 .tooltip-subheader {
     display: flex;
     justify-content: space-between;
@@ -590,7 +636,6 @@ body.salvage-mode-active .item-grid .item-wrapper:not(.locked-item) { animation:
     justify-content: space-between;
     align-items: center;
 }
-/* END OF MODIFICATION */
 
 .tooltip-comparison-container, .tooltip-ring-comparison { display: flex; gap: 15px; }
 .tooltip-comparison-container > div, .tooltip-ring-comparison > div { flex: 1; }
@@ -658,7 +703,7 @@ h5 .legendary { color: #f39c12; }
 }
 .tooltip-unique-effect h4 {
     margin: 0 0 5px 0;
-    color: #f39c12;
+    color: #f1c40f;
     text-shadow: 0 0 5px #f39c12;
 }
 .tooltip-unique-effect p {

@@ -376,11 +376,25 @@ export function updateCurrency(elements, gameState) {
 }
 
 /**
+ * Helper function to determine the attribute spend amount and button text based on held keys.
+ * @param {Set<string>} heldKeys - A Set of currently held modifier keys.
+ * @returns {{amount: number | 'max', text: string}}
+ */
+function getSpendAmountAndText(heldKeys) {
+    if (heldKeys.has('r')) return { amount: 'max', text: 'MAX' };
+    if (heldKeys.has('e')) return { amount: 1000, text: '+1k' };
+    if (heldKeys.has('w')) return { amount: 100, text: '+100' };
+    if (heldKeys.has('q')) return { amount: 10, text: '+10' };
+    return { amount: 1, text: '+1' };
+}
+
+/**
  * Updates only the Hero Info panel (level, XP, attributes).
  * @param {DOMElements} elements The object containing all DOM elements.
  * @param {object} gameState The current game state.
+ * @param {Set<string>} [heldKeys=new Set()] A Set of currently held modifier keys.
  */
-export function updateHeroPanel(elements, gameState) {
+export function updateHeroPanel(elements, gameState, heldKeys = new Set()) {
     const {
         heroLevelEl, heroXpTextEl, heroXpBarEl, attributePointsEl,
         attrStrengthEl, attrAgilityEl, attrLuckEl,
@@ -397,14 +411,16 @@ export function updateHeroPanel(elements, gameState) {
     attrLuckEl.textContent = gameState.hero.attributes.luck.toString();
 
     const points = gameState.hero.attributePoints;
-    const allAttrButtons = attributesArea.querySelectorAll('.attr-buy-btn');
+    const { amount, text } = getSpendAmountAndText(heldKeys);
+
+    const allAttrButtons = attributesArea.querySelectorAll('.attribute-buy-btn');
     allAttrButtons.forEach(btn => {
         if (btn instanceof HTMLButtonElement) {
-            const amount = btn.dataset.amount;
+            btn.textContent = text;
             if (amount === 'max') {
                 btn.disabled = points <= 0;
             } else {
-                btn.disabled = points < Number(amount);
+                btn.disabled = points < amount;
             }
         }
     });
@@ -1093,7 +1109,6 @@ export function createGemTooltipHTML(gem) {
 export function createLootTableTooltipHTML(itemBase) {
     let statsHTML = '<ul>';
 
-    // --- FIX: Sort the blueprint's possible stats before rendering ---
     const sortedPossibleStats = [...itemBase.possibleStats].sort((a, b) => STAT_DISPLAY_ORDER.indexOf(a.key) - STAT_DISPLAY_ORDER.indexOf(b.key));
 
     for (const statInfo of sortedPossibleStats) {
@@ -1149,7 +1164,6 @@ export function createLootComparisonTooltipHTML(potentialItem, equippedItem, equ
 
     let potentialStatsHTML = '<ul>';
 
-    // --- FIX: Sort the blueprint's possible stats before rendering ---
     const sortedPossibleStats = [...potentialItem.possibleStats].sort((a, b) => STAT_DISPLAY_ORDER.indexOf(a.key) - STAT_DISPLAY_ORDER.indexOf(b.key));
 
     sortedPossibleStats.forEach(statInfo => {

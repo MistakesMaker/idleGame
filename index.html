@@ -83,37 +83,28 @@
                 </div>
 
                 <h4>Attributes (<span id="attribute-points">0</span> points available)</h4>
+                <p class="view-sub-text">Spend your available points to increase your hero's core attributes.</p>
+                <small id="attribute-key-hint" class="view-sub-text">Hint: Hold <b>[Q]</b> to spend 10 points, <b>[W]</b> for 100, <b>[E]</b> for 1000, or <b>[R]</b> for Max.</small>
                 <div id="attributes-area">
                     <div class="attribute-row" data-attribute="strength">
                         <span>Strength: <span id="attr-strength">0</span></span>
-                        <div class="attr-buy-btn-group">
-                            <button class="attr-buy-btn" data-amount="1" id="add-strength-1-btn" disabled>+1</button>
-                            <button class="attr-buy-btn" data-amount="10" id="add-strength-10-btn" disabled>+10</button>
-                            <button class="attr-buy-btn" data-amount="100" id="add-strength-100-btn" disabled>+100</button>
-                            <button class="attr-buy-btn" data-amount="max" id="add-strength-max-btn" disabled>MAX</button>
-                        </div>
+                        <button class="attribute-buy-btn" id="buy-strength-btn" data-attribute="strength" disabled>+1</button>
                     </div>
                     <div class="attribute-row" data-attribute="agility">
                         <span>Agility: <span id="attr-agility">0</span></span>
-                         <div class="attr-buy-btn-group">
-                            <button class="attr-buy-btn" data-amount="1" id="add-agility-1-btn" disabled>+1</button>
-                            <button class="attr-buy-btn" data-amount="10" id="add-agility-10-btn" disabled>+10</button>
-                            <button class="attr-buy-btn" data-amount="100" id="add-agility-100-btn" disabled>+100</button>
-                            <button class="attr-buy-btn" data-amount="max" id="add-agility-max-btn" disabled>MAX</button>
-                        </div>
+                        <button class="attribute-buy-btn" id="buy-agility-btn" data-attribute="agility" disabled>+1</button>
                     </div>
                     <div class="attribute-row" data-attribute="luck">
                         <span>Luck: <span id="attr-luck">0</span></span>
-                         <div class="attr-buy-btn-group">
-                            <button class="attr-buy-btn" data-amount="1" id="add-luck-1-btn" disabled>+1</button>
-                            <button class="attr-buy-btn" data-amount="10" id="add-luck-10-btn" disabled>+10</button>
-                            <button class="attr-buy-btn" data-amount="100" id="add-luck-100-btn" disabled>+100</button>
-                            <button class="attr-buy-btn" data-amount="max" id="add-luck-max-btn" disabled>MAX</button>
-                        </div>
+                        <button class="attribute-buy-btn" id="buy-luck-btn" data-attribute="luck" disabled>+1</button>
                     </div>
                 </div>
                 
                 <h4>Derived Stats</h4>
+                <!-- START OF MODIFICATION -->
+                <p class="view-sub-text">Your overall combat and looting stats from all sources.</p>
+                <small class="view-sub-text">Hint: Hover over a stat to see a detailed breakdown.</small>
+                <!-- END OF MODIFICATION -->
                 <div id="derived-stats-area">
                     <p><span><i class="fas fa-hand-rock"></i> <span id="click-damage-stat">1</span></span><small>Click Damage</small></p>
                     <p><span><i class="fas fa-fist-raised"></i> <span id="dps-stat">0</span></span><small>Damage Per Second (DPS)</small></p>
@@ -205,7 +196,6 @@
             
              <div id="forge-view" class="view">
                 <h3>The Forge</h3>
-                <!-- START OF MODIFICATION -->
                 <p>Select an item below, then choose a stat to enhance for 500 Scrap.</p>
                 <div id="forge-main-area">
                     <div id="forge-selected-item">
@@ -216,7 +206,6 @@
                     </div>
                 </div>
                 <button id="forge-reroll-btn" disabled>Enhance Selected Stat (500 Scrap)</button>
-                <!-- END OF MODIFICATION -->
                 <div class="grid-scroll-container">
                     <div id="forge-inventory-slots" class="item-grid">
                         <!-- Player's inventory and equipment will appear here -->
