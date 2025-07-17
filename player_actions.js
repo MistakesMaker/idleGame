@@ -6,6 +6,7 @@ import { getXpForNextLevel, getUpgradeCost, findEmptySpot } from './utils.js';
 import { GEMS } from './data/gems.js';
 import { ITEMS } from './data/items.js';
 import { PERMANENT_UPGRADES } from './data/upgrades.js';
+import { CONSUMABLES } from './data/consumables.js';
 
 /**
  * Finds an item by its ID from all possible sources (main inventory and all preset inventories).
@@ -16,6 +17,10 @@ import { PERMANENT_UPGRADES } from './data/upgrades.js';
 export function findItemFromAllSources(gameState, itemId) {
     // Check loose inventory first
     let item = gameState.inventory.find(i => String(i.id) === itemId);
+    if (item) return item;
+
+    // Check consumables inventory
+    item = gameState.consumables.find(i => String(i.id) === itemId);
     if (item) return item;
 
     // Check all presets
@@ -703,4 +708,57 @@ export function buyPermanentUpgrade(gameState, upgradeId) {
     gameState.permanentUpgrades[upgradeId]++;
     
     return { success: true, message: `Purchased ${upgrade.name}!`, newLevel: gameState.permanentUpgrades[upgradeId] };
+}
+
+/**
+ * Consumes an item, applying its effect and removing it from the player's possession.
+ * @param {object} gameState - The main game state object.
+ * @param {string|number} itemId - The ID of the consumable item to use.
+ * @returns {{success: boolean, message: string}}
+ */
+export function consumeItem(gameState, itemId) {
+    const itemIndex = gameState.consumables.findIndex(c => c.id === itemId);
+    if (itemIndex === -1) {
+        return { success: false, message: "Consumable item not found." };
+    }
+
+    const item = gameState.consumables[itemIndex];
+    const itemBase = CONSUMABLES[item.baseId];
+    if (!itemBase || !itemBase.effect) {
+        return { success: false, message: "Item has no defined effect." };
+    }
+
+    const effect = itemBase.effect;
+
+    // Dispatcher for different effect types
+    switch (effect.type) {
+        case 'permanentFlag':
+            if (gameState[effect.key]) {
+                return { success: false, message: "You have already gained this permanent effect." };
+            }
+            gameState[effect.key] = true;
+            break;
+
+        case 'timedBuff':
+            // Future implementation
+            // const expiresAt = Date.now() + (effect.duration * 1000);
+            // gameState.activeBuffs.push({ id: item.baseId, name: effect.name, expiresAt });
+            return { success: false, message: "Timed buffs are not yet implemented." };
+        
+        case 'permanentStat':
+             // Future implementation
+            // gameState.hero.attributes[effect.statKey] += effect.value;
+            return { success: false, message: "Permanent stat buffs are not yet implemented." };
+
+        default:
+            return { success: false, message: "Unknown consumable effect type." };
+    }
+
+    // Remove the item from the consumables array
+    gameState.consumables.splice(itemIndex, 1);
+    
+    // Compact the consumables grid
+    gameState.consumables = compactInventory(gameState.consumables);
+
+    return { success: true, message: `You consumed the ${item.name}!` };
 }

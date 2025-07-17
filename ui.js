@@ -1,5 +1,3 @@
-// --- START OF FILE ui.js ---
-
 import { STATS } from './data/stat_pools.js';
 import { getXpForNextLevel, getUpgradeCost, formatNumber, findSubZoneByLevel, getCombinedItemStats, findEmptySpot, findFirstLevelOfZone } from './utils.js';
 import { ITEMS } from './data/items.js';
@@ -70,6 +68,7 @@ export function initDOMElements() {
         monsterHealthTextEl: document.getElementById('monster-health-text'),
         monsterAreaEl: document.getElementById('monster-area'),
         inventorySlotsEl: document.getElementById('inventory-slots'),
+        consumablesSlotsEl: document.getElementById('consumables-slots'), // <-- NEW
         gameLogEl: document.getElementById('game-log'),
         scrollToBottomBtn: document.getElementById('scroll-to-bottom-btn'),
         prestigeButton: document.getElementById('prestige-button'),
@@ -605,6 +604,7 @@ export function updateLootPanel(elements, currentMonster, gameState) {
  * @param {string} type 'item' or 'gem'.
  */
 export function addItemToGrid(containerEl, item, type = 'item') {
+    if (!containerEl) return; // <-- NEW: Safeguard
     const wrapper = document.createElement('div');
     wrapper.className = type === 'gem' ? 'gem-wrapper' : 'item-wrapper';
     wrapper.dataset.id = String(item.id);
@@ -751,7 +751,7 @@ export function renderEquipmentStatsSummary(elements, gameState) {
  */
 export function updateUI(elements, gameState, playerStats, currentMonster, salvageMode, craftingGems = [], selectedItemForForge = null, bulkCombineSelection = {}, bulkCombineDeselectedIds = new Set()) {
     const {
-        inventorySlotsEl, gemSlotsEl, forgeInventorySlotsEl,
+        inventorySlotsEl, gemSlotsEl, forgeInventorySlotsEl, consumablesSlotsEl, // <-- MODIFIED
         prestigeEquipmentPaperdoll, prestigeInventoryDisplay, prestigeSelectionCount, prestigeSelectionMax
     } = elements;
 
@@ -767,6 +767,10 @@ export function updateUI(elements, gameState, playerStats, currentMonster, salva
     // Grid Renders
     if(gameState.unlockedFeatures.inventory) {
         renderGrid(inventorySlotsEl, gameState.inventory, { calculatePositions: true, salvageSelections: salvageMode.selections, showLockIcon: true });
+    }
+    // --- NEW: Render consumables grid ---
+    if(gameState.unlockedFeatures.consumables) {
+        renderGrid(consumablesSlotsEl, gameState.consumables, { calculatePositions: true, showLockIcon: false });
     }
     if(gameState.unlockedFeatures.gems) {
         renderGrid(gemSlotsEl, gameState.gems, { type: 'gem', calculatePositions: false, bulkCombineSelection, bulkCombineDeselectedIds });
@@ -1576,6 +1580,7 @@ export function switchView(elements, viewIdToShow, gameState) {
 
     const featureUnlockMap = {
         'inventory-view': { flag: unlockedFeatures.inventory, title: 'Inventory Locked', message: 'Find your first piece of gear to unlock the inventory.', icon: 'fa-box-open' },
+        'consumables-view': { flag: unlockedFeatures.consumables, title: 'Consumables Locked', message: 'Find a special consumable item to unlock this pouch.', icon: 'fa-flask' }, // <-- NEW
         'equipment-view': { flag: unlockedFeatures.equipment, title: 'Equipment Locked', message: 'Equip an item from your inventory to unlock this view.', icon: 'fa-user-shield' },
         'gems-view': { flag: unlockedFeatures.gems, title: 'Gems Locked', message: 'Find a Gem to unlock the Gemcutting bench.', icon: 'fa-gem' },
         'forge-view': { flag: unlockedFeatures.forge, title: 'Forge Locked', message: 'Salvage an item for Scrap to unlock the Forge.', icon: 'fa-hammer' },
@@ -1622,6 +1627,7 @@ export function updateTabVisibility(gameState) {
     const { unlockedFeatures } = gameState;
     const tabConfig = [
         { view: 'inventory-view', flag: unlockedFeatures.inventory },
+        { view: 'consumables-view', flag: unlockedFeatures.consumables }, // <-- NEW
         { view: 'equipment-view', flag: unlockedFeatures.equipment },
         { view: 'gems-view', flag: unlockedFeatures.gems },
         { view: 'forge-view', flag: unlockedFeatures.forge },

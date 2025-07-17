@@ -61,6 +61,9 @@
                 <button class="tab-button" data-view="hero-view">Hero</button>
                 <button class="tab-button" data-view="equipment-view">Equipment</button>
                 <button class="tab-button" data-view="inventory-view">Inventory</button>
+                <!-- START OF MODIFICATION -->
+                <button class="tab-button" data-view="consumables-view">Consumables</button>
+                <!-- END OF MODIFICATION -->
                 <button class="tab-button" data-view="gems-view">Gems</button>
                 <button class="tab-button" data-view="forge-view">Forge</button>
                 <button class="tab-button" data-view="wiki-view">Wiki</button>
@@ -101,10 +104,8 @@
                 </div>
                 
                 <h4>Derived Stats</h4>
-                <!-- START OF MODIFICATION -->
                 <p class="view-sub-text">Your overall combat and looting stats from all sources.</p>
                 <small class="view-sub-text">Hint: Hover over a stat to see a detailed breakdown.</small>
-                <!-- END OF MODIFICATION -->
                 <div id="derived-stats-area">
                     <p><span><i class="fas fa-hand-rock"></i> <span id="click-damage-stat">1</span></span><small>Click Damage</small></p>
                     <p><span><i class="fas fa-fist-raised"></i> <span id="dps-stat">0</span></span><small>Damage Per Second (DPS)</small></p>
@@ -158,6 +159,18 @@
                     </div>
                 </div>
             </div>
+
+            <!-- START OF MODIFICATION -->
+            <div id="consumables-view" class="view">
+                <h3>Consumables</h3>
+                <p>Click on an item to use it. Be careful, as many effects are permanent!</p>
+                <div class="grid-scroll-container">
+                    <div id="consumables-slots" class="item-grid">
+                        <!-- Consumable items will be positioned here by JS -->
+                    </div>
+                </div>
+            </div>
+            <!-- END OF MODIFICATION -->
 
             <div id="gems-view" class="view">
                 <h3>Gems</h3>
@@ -382,8 +395,7 @@
                     <div id="unlock-slot-helmet" class="equipment-slot"></div><div id="unlock-slot-necklace" class="equipment-slot"></div>
                     <div id="unlock-slot-platebody" class="equipment-slot"></div><div id="unlock-slot-platelegs" class="equipment-slot"></div>
                     <div id="unlock-slot-belt" class="equipment-slot"></div><div id="unlock-slot-sword" class="equipment-slot"></div>
-                    <div id="unlock-slot-shield" class="equipment-slot"></div><div id="unlock-slot-ring1" class="equipment-slot"></div>
-                    <div id="unlock-slot-ring2" class="equipment-slot"></div>
+                    <div id="unlock-slot-shield" class="equipment-slot"></div><div id="unlock-slot-ring1" class="equipment-slot"></div><div id="unlock-slot-ring2" class="equipment-slot"></div>
                 </div>
             </div>
             <button id="unlock-slot-cancel-btn">Cancel</button>

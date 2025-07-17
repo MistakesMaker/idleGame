@@ -162,6 +162,8 @@ document.addEventListener('DOMContentLoaded', () => {
             monster: { hp: 10, maxHp: 10 },
             equipment: { ...defaultEquipmentState }, // This will be a REFERENCE to the active preset's equipment
             inventory: [], // This is now for "loose" items only
+            consumables: [], // <-- NEW: For consumable items
+            activeBuffs: [],   // <-- NEW: For timed effects
             gems: [],
             monsterKillCounts: {},
             unlockedPrestigeSlots: ['sword'], 
@@ -208,6 +210,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 forge: false,
                 prestige: false,
                 wiki: false,
+                consumables: false, // <-- NEW
             }
         };
     }
@@ -268,6 +271,9 @@ document.addEventListener('DOMContentLoaded', () => {
             statBreakdown.magicFind.sources.push({ label: 'From Prestige', value: val, isPercent: true });
         }
 
+        // --- Active Buffs ---
+        // TODO: Later, when buffs are implemented
+        
         // --- Gear Stats ---
         let clickFromGear = 0, dpsFromGear = 0, goldFromGear = 0, magicFromGear = 0;
         let synergyFromGems = 0;
@@ -390,13 +396,26 @@ document.addEventListener('DOMContentLoaded', () => {
         if (result.droppedItems && result.droppedItems.length > 0) {
             result.droppedItems.forEach((item, index) => {
                 ui.showItemDropAnimation(elements.popupContainerEl, item, index);
-                ui.addItemToGrid(elements.inventorySlotsEl, item);
-                if (!gameState.unlockedFeatures.inventory) {
-                    gameState.unlockedFeatures.inventory = true;
-                    logMessage(elements.gameLogEl, '<b>Inventory Unlocked!</b> You can now view and manage your items.', 'legendary', isAutoScrollingLog);
-                    ui.updateTabVisibility(gameState);
-                    ui.flashTab('inventory-view');
+                
+                // --- NEW: Route consumables correctly ---
+                if (item.type === 'consumable') {
+                    ui.addItemToGrid(elements.consumablesSlotsEl, item);
+                    if (!gameState.unlockedFeatures.consumables) {
+                        gameState.unlockedFeatures.consumables = true;
+                        logMessage(elements.gameLogEl, '<b>Consumables Unlocked!</b> You can now use special one-time-use items from a new tab.', 'legendary', isAutoScrollingLog);
+                        ui.updateTabVisibility(gameState);
+                        ui.flashTab('consumables-view');
+                    }
+                } else {
+                    ui.addItemToGrid(elements.inventorySlotsEl, item);
+                    if (!gameState.unlockedFeatures.inventory) {
+                        gameState.unlockedFeatures.inventory = true;
+                        logMessage(elements.gameLogEl, '<b>Inventory Unlocked!</b> You can now view and manage your items.', 'legendary', isAutoScrollingLog);
+                        ui.updateTabVisibility(gameState);
+                        ui.flashTab('inventory-view');
+                    }
                 }
+                
                 if (item.sockets && item.sockets.length > 0 && !gameState.unlockedFeatures.gems) {
                      logMessage(elements.gameLogEl, 'You found an item with strange, empty sockets. Perhaps there are special stones that could fit inside...', 'uncommon', isAutoScrollingLog);
                 }
@@ -538,6 +557,27 @@ document.addEventListener('DOMContentLoaded', () => {
         ui.updateMonsterHealthBar(elements, gameState.monster);
     }
 
+    /**
+     * --- NEW: Handles timed buffs ---
+     */
+    function updateActiveBuffs() {
+        if (!gameState.activeBuffs || gameState.activeBuffs.length === 0) return;
+
+        const now = Date.now();
+        const expiredBuffs = gameState.activeBuffs.filter(buff => now >= buff.expiresAt);
+        
+        if (expiredBuffs.length > 0) {
+            gameState.activeBuffs = gameState.activeBuffs.filter(buff => now < buff.expiresAt);
+            expiredBuffs.forEach(buff => {
+                logMessage(elements.gameLogEl, `Your <b>${buff.name}</b> buff has worn off.`, 'rare', isAutoScrollingLog);
+            });
+            
+            recalculateStats();
+            // TODO: Update a new UI element that shows active buffs
+            ui.updateStatsPanel(elements, playerStats);
+        }
+    }
+
     function gameLoop() {
         if (playerStats.totalDps > 0 && gameState.monster.hp > 0) {
             attack(playerStats.totalDps, false);
@@ -546,10 +586,13 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             ui.updateMonsterHealthBar(elements, gameState.monster);
         }
+        // --- NEW: Check buffs every second ---
+        updateActiveBuffs();
     }
 
     function fullUIRender() {
         ui.updateTabVisibility(gameState);
+        // --- MODIFIED: Pass consumablesSlotsEl to updateUI ---
         ui.updateUI(elements, gameState, playerStats, currentMonster, salvageMode, craftingGems, selectedItemForForge, bulkCombineSelection, bulkCombineDeselectedIds);
         renderMapAccordion();
         ui.renderPermanentUpgrades(elements, gameState);
@@ -1122,6 +1165,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     ...(loadedState.unlockedFeatures || {})
                 },
                 inventory: loadedState.inventory || [],
+                consumables: loadedState.consumables || [], // <-- NEW
+                activeBuffs: loadedState.activeBuffs || [],   // <-- NEW
                 gems: loadedState.gems || [],
                 presets: loadedState.presets || baseState.presets,
                 absorbedStats: loadedState.absorbedStats || {},
@@ -1145,6 +1190,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (Object.values(gameState.equipment).some(item => item !== null)) gameState.unlockedFeatures.equipment = true;
                 if (gameState.gems.length > 0) gameState.unlockedFeatures.gems = true;
                 if (gameState.scrap > 0) gameState.unlockedFeatures.forge = true;
+                if (gameState.consumables.length > 0) gameState.unlockedFeatures.consumables = true; // <-- NEW
                 if (gameState.maxLevel >= 100) {
                     gameState.unlockedFeatures.prestige = true;
                     gameState.unlockedFeatures.wiki = true;
@@ -1455,20 +1501,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             } else {
                 if (item.type === 'consumable') {
-                    if (item.baseId === 'ARTISAN_CHISEL') {
-                        ui.showConfirmationModal(
-                            elements,
-                            'Use Artisan\'s Chisel?',
-                            `<p>Are you sure you want to use the <b>Artisan's Chisel</b>?</p><p>This is a permanent, one-time upgrade to improve Tier 1 gem combining success rate from 50% to 60%.</p>`,
-                            () => {
-                                gameState.artisanChiselUsed = true;
-                                gameState.inventory = gameState.inventory.filter(i => i.id !== item.id);
-                                logMessage(elements.gameLogEl, `You used the <b>Artisan's Chisel</b>! Your Tier 1 gem combine success rate is now permanently 60%.`, 'legendary', isAutoScrollingLog);
-                                ui.renderGrid(elements.inventorySlotsEl, gameState.inventory, { calculatePositions: true });
+                    ui.showConfirmationModal(
+                        elements,
+                        `Use ${item.name}?`,
+                        `<p>${item.description}</p><p>This action is irreversible.</p>`,
+                        () => {
+                            const result = player.consumeItem(gameState, item.id);
+                            logMessage(elements.gameLogEl, result.message, 'legendary', isAutoScrollingLog);
+                            if (result.success) {
+                                fullUIRender();
+                                recalculateStats();
                                 autoSave();
                             }
-                        );
-                    }
+                        }
+                    );
                     return;
                 }
 
@@ -1553,6 +1599,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
         addTapListener(elements.inventorySlotsEl, gridClickHandler);
         addTapListener(elements.gemSlotsEl, gridClickHandler);
+        // --- NEW: Add listener for the new consumables grid ---
+        const consumablesGrid = document.getElementById('consumables-slots');
+        if (consumablesGrid) {
+            addTapListener(consumablesGrid, gridClickHandler);
+        }
         
         addTapListener(document.getElementById('equipment-paperdoll'), (event) => {
             if (!(event.target instanceof Element)) return;
@@ -1846,6 +1897,9 @@ document.addEventListener('DOMContentLoaded', () => {
                                 salvageFilterBtn.classList.toggle('btn-pressed', gameState.salvageFilter.enabled);
                             }
                             break;
+                        case 'consumables-view': // <-- NEW
+                            ui.renderGrid(elements.consumablesSlotsEl, gameState.consumables, { calculatePositions: true });
+                            break;
                         case 'gems-view':
                             ui.populateGemSortOptions(elements, gameState.gems, gemSortPreference);
                             ui.renderGrid(elements.gemSlotsEl, gameState.gems, {
@@ -2097,7 +2151,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const id = wrapper.dataset.id;
             if (!id) return;
 
-            const item = player.findItemFromAllSources(gameState, id);
+            // --- MODIFIED: Check consumables array ---
+            const item = player.findItemFromAllSources(gameState, id) || gameState.consumables.find(c => String(c.id) === id);
             if(item) {
                 showItemTooltip(item, wrapper);
             }
@@ -2106,6 +2161,13 @@ document.addEventListener('DOMContentLoaded', () => {
         elements.inventorySlotsEl.addEventListener('mouseover', onGridMouseOver);
         elements.inventorySlotsEl.addEventListener('mouseout', onGridMouseOut);
     
+        // --- NEW: Add listeners for consumables grid ---
+        const consumablesGrid = document.getElementById('consumables-slots');
+        if (consumablesGrid) {
+            consumablesGrid.addEventListener('mouseover', onGridMouseOver);
+            consumablesGrid.addEventListener('mouseout', onGridMouseOut);
+        }
+
         const equipmentSlots = document.getElementById('equipment-paperdoll');
         equipmentSlots.addEventListener('mouseover', (event) => {
             if (!(event.target instanceof Element)) return;

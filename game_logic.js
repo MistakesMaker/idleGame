@@ -194,9 +194,12 @@ export function dropLoot(currentMonster, gameState, playerStats) {
 
     if (!itemBaseToDrop) return { droppedItems: [], droppedGems: [], logMessages: [], events: [] };
 
-    if (itemBaseToDrop.id === 'ARTISAN_CHISEL' && !gameState.artisanChiselDropped) {
+    // START OF MODIFICATION
+    const isConsumable = itemBaseToDrop.type === 'consumable';
+    if (isConsumable && itemBaseToDrop.id === 'ARTISAN_CHISEL' && !gameState.artisanChiselDropped) {
         gameState.artisanChiselDropped = true;
     }
+    // END OF MODIFICATION
 
     const logMessages = [];
     const droppedItems = [];
@@ -256,7 +259,6 @@ export function dropLoot(currentMonster, gameState, playerStats) {
     }
     
     // It's a regular item or a consumable
-    const isConsumable = itemBaseToDrop.type === 'consumable';
     let rarity;
     if (isConsumable) {
         rarity = 'legendary';
@@ -286,16 +288,29 @@ export function dropLoot(currentMonster, gameState, playerStats) {
         return { droppedItems: [], droppedGems: [], logMessages, events };
     }
 
-    const spot = findNextAvailableSpot(item.width, item.height, gameState.inventory);
-    
-    if (spot) {
-        item.x = spot.x;
-        item.y = spot.y;
-        gameState.inventory.push(item);
-        droppedItems.push(item);
+    // --- START OF MODIFICATION: Route item to correct inventory ---
+    if (isConsumable) {
+        const spot = findNextAvailableSpot(item.width, item.height, gameState.consumables);
+        if (spot) {
+            item.x = spot.x;
+            item.y = spot.y;
+            gameState.consumables.push(item);
+            droppedItems.push(item); // Keep using droppedItems for animation
+        } else {
+            logMessages.push({ message: `The ${currentMonster.name} dropped a consumable, but your pouch is full!`, class: 'rare' });
+        }
     } else {
-        logMessages.push({ message: `The ${currentMonster.name} dropped an item, but your inventory is full!`, class: 'rare' });
+        const spot = findNextAvailableSpot(item.width, item.height, gameState.inventory);
+        if (spot) {
+            item.x = spot.x;
+            item.y = spot.y;
+            gameState.inventory.push(item);
+            droppedItems.push(item);
+        } else {
+            logMessages.push({ message: `The ${currentMonster.name} dropped an item, but your inventory is full!`, class: 'rare' });
+        }
     }
+    // --- END OF MODIFICATION ---
 
     return { droppedItems, droppedGems, logMessages, events };
 }
