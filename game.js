@@ -1459,7 +1459,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         ui.showConfirmationModal(
                             elements,
                             'Use Artisan\'s Chisel?',
-                            `<p>Are you sure you want to use the <b>Artisan's Chisel</b>? This is a permanent, one-time upgrade to improve Tier 1 gem combining success rate from 50% to 60%.</p>`,
+                            `<p>Are you sure you want to use the <b>Artisan's Chisel</b>?</p><p>This is a permanent, one-time upgrade to improve Tier 1 gem combining success rate from 50% to 60%.</p>`,
                             () => {
                                 gameState.artisanChiselUsed = true;
                                 gameState.inventory = gameState.inventory.filter(i => i.id !== item.id);
