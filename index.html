@@ -61,10 +61,6 @@
                 <button class="tab-button" data-view="hero-view">Hero</button>
                 <button class="tab-button" data-view="equipment-view">Equipment</button>
                 <button class="tab-button" data-view="inventory-view">Inventory</button>
-                <!-- START OF MODIFICATION -->
-                <button class="tab-button" data-view="consumables-view">Consumables</button>
-                <!-- END OF MODIFICATION -->
-                <button class="tab-button" data-view="gems-view">Gems</button>
                 <button class="tab-button" data-view="forge-view">Forge</button>
                 <button class="tab-button" data-view="wiki-view">Wiki</button>
             </div>
@@ -141,70 +137,78 @@
             </div>
 
             <div id="inventory-view" class="view">
-                <h3>Inventory</h3>
-                <div class="inventory-actions">
-                    <button id="auto-salvage-filter-btn">Auto-Salvage Filter</button>
-                    <button id="salvage-mode-btn">Select to Salvage</button>
-                    <button id="select-all-salvage-btn" class="hidden">Select All</button>
-                    <button id="confirm-salvage-btn" class="hidden">Salvage Selected (<span id="salvage-count">0</span>)</button>
-                </div>
-                <div id="salvage-by-rarity-controls" class="inventory-actions hidden">
-                    <button class="salvage-rarity-btn" data-rarity="common">Salvage Common</button>
-                    <button class="salvage-rarity-btn" data-rarity="uncommon">Salvage Uncommon</button>
-                    <button class="salvage-rarity-btn" data-rarity="rare">Salvage Rare</button>
-                </div>
-                <div class="grid-scroll-container">
-                    <div id="inventory-slots" class="item-grid">
-                        <!-- Items will be positioned here by JS -->
-                    </div>
-                </div>
-            </div>
-
-            <!-- START OF MODIFICATION -->
-            <div id="consumables-view" class="view">
-                <h3>Consumables</h3>
-                <p>Click on an item to use it. Be careful, as many effects are permanent!</p>
-                <div class="grid-scroll-container">
-                    <div id="consumables-slots" class="item-grid">
-                        <!-- Consumable items will be positioned here by JS -->
-                    </div>
-                </div>
-            </div>
-            <!-- END OF MODIFICATION -->
-
-            <div id="gems-view" class="view">
-                <h3>Gems</h3>
-
-                <div class="gem-controls">
-                    <label for="gem-sort-select">Sort by:</label>
-                    <select id="gem-sort-select"></select>
+                <!-- START OF MODIFICATION: New sub-tab structure -->
+                <div class="sub-tabs">
+                    <button class="sub-tab-button active" data-subview="inventory-gear-view">Gear</button>
+                    <button class="sub-tab-button" data-subview="inventory-gems-view">Gems</button>
+                    <button class="sub-tab-button" data-subview="inventory-consumables-view">Consumables</button>
                 </div>
 
-                <p>Click a gem to select it for socketing. Then, click an item with an empty socket to insert the gem.</p>
-                <div class="grid-scroll-container">
-                    <div id="gem-slots" class="item-grid">
-                        <!-- Gems will be dynamically inserted here -->
+                <div class="sub-view-container">
+                    <div id="inventory-gear-view" class="sub-view active">
+                        <h3>Gear</h3>
+                        <div class="inventory-actions">
+                            <button id="auto-salvage-filter-btn">Auto-Salvage Filter</button>
+                            <button id="salvage-mode-btn">Select to Salvage</button>
+                            <button id="select-all-salvage-btn" class="hidden">Select All</button>
+                            <button id="confirm-salvage-btn" class="hidden">Salvage Selected (<span id="salvage-count">0</span>)</button>
+                        </div>
+                        <div id="salvage-by-rarity-controls" class="inventory-actions hidden">
+                            <button class="salvage-rarity-btn" data-rarity="common">Salvage Common</button>
+                            <button class="salvage-rarity-btn" data-rarity="uncommon">Salvage Uncommon</button>
+                            <button class="salvage-rarity-btn" data-rarity="rare">Salvage Rare</button>
+                        </div>
+                        <div class="grid-scroll-container">
+                            <div id="inventory-slots" class="item-grid">
+                                <!-- Items will be positioned here by JS -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="inventory-gems-view" class="sub-view">
+                        <h3>Gems</h3>
+                        <div class="gem-controls">
+                            <label for="gem-sort-select">Sort by:</label>
+                            <select id="gem-sort-select"></select>
+                        </div>
+                        <p>Click a gem to select it for socketing. Then, click an item with an empty socket to insert the gem.</p>
+                        <div class="grid-scroll-container">
+                            <div id="gem-slots" class="item-grid">
+                                <!-- Gems will be dynamically inserted here -->
+                            </div>
+                        </div>
+                        <div id="gem-crafter" style="margin-top: 20px;">
+                            <h4>Gemcutting</h4>
+                            <p>Combine 2 gems of the same tier for a 50/50 chance to upgrade.</p>
+                            <small>Hint: Hold [SHIFT] and click a gem to move it to a crafting slot.</small>
+                            <div id="gem-crafting-slots">
+                                <div class="gem-crafting-slot" data-slot="0"></div>
+                                <div class="gem-crafting-slot" data-slot="1"></div>
+                            </div>
+                            <button id="gem-craft-btn" disabled>Combine (Cost: 100 Scrap)</button>
+                        </div>
+                        <div id="gem-bulk-crafter" style="margin-top: 20px; border-top: 2px solid #4a637e; padding-top: 15px;">
+                            <h4>Bulk Combine</h4>
+                            <p>Automatically combine all matching gems of a selected tier and stat.</p>
+                            <div id="gem-bulk-controls" style="display: flex; gap: 15px; justify-content: center; align-items: center; margin: 15px 0;">
+                                <select id="bulk-combine-tier-select"></select>
+                                <select id="bulk-combine-stat-select"></select>
+                                <button id="bulk-combine-btn">Combine Selected</button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div id="inventory-consumables-view" class="sub-view">
+                        <h3>Consumables</h3>
+                        <p>Click on an item to use it. Be careful, as many effects are permanent!</p>
+                        <div class="grid-scroll-container">
+                            <div id="consumables-slots" class="item-grid">
+                                <!-- Consumable items will be positioned here by JS -->
+                            </div>
+                        </div>
                     </div>
                 </div>
-                <div id="gem-crafter" style="margin-top: 20px;">
-                    <h4>Gemcutting</h4>
-                    <p>Combine 2 gems of the same tier for a 50/50 chance to upgrade.</p>
-                    <small>Hint: Hold [SHIFT] and click a gem to move it to a crafting slot.</small>
-                    <div id="gem-crafting-slots">
-                        <div class="gem-crafting-slot" data-slot="0"></div>
-                        <div class="gem-crafting-slot" data-slot="1"></div>
-                    </div>
-                    <button id="gem-craft-btn" disabled>Combine (Cost: 100 Scrap)</button>
-                </div>
-                <div id="gem-bulk-crafter" style="margin-top: 20px; border-top: 2px solid #4a637e; padding-top: 15px;">
-                    <h4>Bulk Combine</h4>
-                    <p>Automatically combine all matching gems of a selected tier and stat.</p>
-                    <div id="gem-bulk-controls" style="display: flex; gap: 15px; justify-content: center; align-items: center; margin: 15px 0;">
-                        <select id="bulk-combine-tier-select"></select>
-                        <select id="bulk-combine-stat-select"></select>
-                        <button id="bulk-combine-btn">Combine Selected</button>
-                    </div>
-                </div>
+                <!-- END OF MODIFICATION -->
             </div>
             
              <div id="forge-view" class="view">
@@ -395,7 +399,8 @@
                     <div id="unlock-slot-helmet" class="equipment-slot"></div><div id="unlock-slot-necklace" class="equipment-slot"></div>
                     <div id="unlock-slot-platebody" class="equipment-slot"></div><div id="unlock-slot-platelegs" class="equipment-slot"></div>
                     <div id="unlock-slot-belt" class="equipment-slot"></div><div id="unlock-slot-sword" class="equipment-slot"></div>
-                    <div id="unlock-slot-shield" class="equipment-slot"></div><div id="unlock-slot-ring1" class="equipment-slot"></div><div id="unlock-slot-ring2" class="equipment-slot"></div>
+                    <div id="unlock-slot-shield" class="equipment-slot"></div><div id="unlock-slot-ring1" class="equipment-slot"></div>
+                    <div id="unlock-slot-ring2" class="equipment-slot"></div>
                 </div>
             </div>
             <button id="unlock-slot-cancel-btn">Cancel</button>

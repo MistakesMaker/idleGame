@@ -68,7 +68,7 @@ export function initDOMElements() {
         monsterHealthTextEl: document.getElementById('monster-health-text'),
         monsterAreaEl: document.getElementById('monster-area'),
         inventorySlotsEl: document.getElementById('inventory-slots'),
-        consumablesSlotsEl: document.getElementById('consumables-slots'), // <-- NEW
+        consumablesSlotsEl: document.getElementById('consumables-slots'),
         gameLogEl: document.getElementById('game-log'),
         scrollToBottomBtn: document.getElementById('scroll-to-bottom-btn'),
         prestigeButton: document.getElementById('prestige-button'),
@@ -604,7 +604,7 @@ export function updateLootPanel(elements, currentMonster, gameState) {
  * @param {string} type 'item' or 'gem'.
  */
 export function addItemToGrid(containerEl, item, type = 'item') {
-    if (!containerEl) return; // <-- NEW: Safeguard
+    if (!containerEl) return;
     const wrapper = document.createElement('div');
     wrapper.className = type === 'gem' ? 'gem-wrapper' : 'item-wrapper';
     wrapper.dataset.id = String(item.id);
@@ -751,7 +751,7 @@ export function renderEquipmentStatsSummary(elements, gameState) {
  */
 export function updateUI(elements, gameState, playerStats, currentMonster, salvageMode, craftingGems = [], selectedItemForForge = null, bulkCombineSelection = {}, bulkCombineDeselectedIds = new Set()) {
     const {
-        inventorySlotsEl, gemSlotsEl, forgeInventorySlotsEl, consumablesSlotsEl, // <-- MODIFIED
+        inventorySlotsEl, gemSlotsEl, forgeInventorySlotsEl, consumablesSlotsEl,
         prestigeEquipmentPaperdoll, prestigeInventoryDisplay, prestigeSelectionCount, prestigeSelectionMax
     } = elements;
 
@@ -764,29 +764,40 @@ export function updateUI(elements, gameState, playerStats, currentMonster, salva
     updateLootPanel(elements, currentMonster, gameState);
     updatePrestigeUI(elements, gameState);
 
-    // Grid Renders
-    if(gameState.unlockedFeatures.inventory) {
-        renderGrid(inventorySlotsEl, gameState.inventory, { calculatePositions: true, salvageSelections: salvageMode.selections, showLockIcon: true });
+    // Grid Renders for the active inventory sub-view
+    const inventoryView = document.getElementById('inventory-view');
+    if (inventoryView && inventoryView.classList.contains('active')) {
+        const activeSubView = inventoryView.querySelector('.sub-view.active');
+        if (activeSubView) {
+            switch (activeSubView.id) {
+                case 'inventory-gear-view':
+                    if (gameState.unlockedFeatures.inventory) {
+                        renderGrid(inventorySlotsEl, gameState.inventory, { calculatePositions: true, salvageSelections: salvageMode.selections, showLockIcon: true });
+                    }
+                    break;
+                case 'inventory-gems-view':
+                    if (gameState.unlockedFeatures.gems) {
+                        renderGrid(gemSlotsEl, gameState.gems, { type: 'gem', calculatePositions: false, bulkCombineSelection, bulkCombineDeselectedIds });
+                        updateGemCraftingUI(elements, craftingGems, gameState);
+                    }
+                    break;
+                case 'inventory-consumables-view':
+                    if (gameState.unlockedFeatures.consumables) {
+                        renderGrid(consumablesSlotsEl, gameState.consumables, { calculatePositions: true, showLockIcon: false });
+                    }
+                    break;
+            }
+        }
     }
-    // --- NEW: Render consumables grid ---
-    if(gameState.unlockedFeatures.consumables) {
-        renderGrid(consumablesSlotsEl, gameState.consumables, { calculatePositions: true, showLockIcon: false });
-    }
-    if(gameState.unlockedFeatures.gems) {
-        renderGrid(gemSlotsEl, gameState.gems, { type: 'gem', calculatePositions: false, bulkCombineSelection, bulkCombineDeselectedIds });
-    }
-    if(gameState.unlockedFeatures.forge) {
+    
+    // Grid render for Forge view
+    if(document.getElementById('forge-view')?.classList.contains('active') && gameState.unlockedFeatures.forge) {
         renderGrid(forgeInventorySlotsEl, player.getAllItems(gameState), { calculatePositions: true, selectedItem: selectedItemForForge, showLockIcon: false });
     }
     
     // Paperdoll
     if(gameState.unlockedFeatures.equipment) {
         renderPaperdoll(elements, gameState);
-    }
-    
-    // Gem Crafting
-    if(gameState.unlockedFeatures.gems) {
-        updateGemCraftingUI(elements, craftingGems, gameState);
     }
     
     // Forge
@@ -1580,9 +1591,7 @@ export function switchView(elements, viewIdToShow, gameState) {
 
     const featureUnlockMap = {
         'inventory-view': { flag: unlockedFeatures.inventory, title: 'Inventory Locked', message: 'Find your first piece of gear to unlock the inventory.', icon: 'fa-box-open' },
-        'consumables-view': { flag: unlockedFeatures.consumables, title: 'Consumables Locked', message: 'Find a special consumable item to unlock this pouch.', icon: 'fa-flask' }, // <-- NEW
         'equipment-view': { flag: unlockedFeatures.equipment, title: 'Equipment Locked', message: 'Equip an item from your inventory to unlock this view.', icon: 'fa-user-shield' },
-        'gems-view': { flag: unlockedFeatures.gems, title: 'Gems Locked', message: 'Find a Gem to unlock the Gemcutting bench.', icon: 'fa-gem' },
         'forge-view': { flag: unlockedFeatures.forge, title: 'Forge Locked', message: 'Salvage an item for Scrap to unlock the Forge.', icon: 'fa-hammer' },
         'wiki-view': { flag: unlockedFeatures.wiki, title: 'Wiki Locked', message: 'Defeat the boss at Level 100 to unlock the Item Wiki.', icon: 'fa-book' },
         'prestige-view': { flag: unlockedFeatures.prestige, title: 'Prestige Locked', message: 'Defeat the boss at Level 100 to unlock Prestige.', icon: 'fa-star' }
@@ -1618,6 +1627,27 @@ export function switchView(elements, viewIdToShow, gameState) {
     }
 }
 
+/**
+ * Switches the active sub-view within the inventory panel.
+ * @param {string} subViewIdToShow - The ID of the sub-view to make active.
+ */
+export function switchInventorySubView(subViewIdToShow) {
+    const parentPanel = document.getElementById('inventory-view');
+    if (!parentPanel) return;
+
+    const allSubViews = parentPanel.querySelectorAll('.sub-view');
+    const allSubTabs = parentPanel.querySelectorAll('.sub-tab-button');
+
+    allSubViews.forEach(v => v.classList.remove('active'));
+    allSubTabs.forEach(t => t.classList.remove('active'));
+
+    const subViewElement = document.getElementById(subViewIdToShow);
+    const subTabElement = parentPanel.querySelector(`.sub-tab-button[data-subview="${subViewIdToShow}"]`);
+
+    if (subViewElement) subViewElement.classList.add('active');
+    if (subTabElement) subTabElement.classList.add('active');
+}
+
 
 /**
  * Updates the visual state of the tabs (enabled/disabled) based on unlocked features.
@@ -1627,9 +1657,7 @@ export function updateTabVisibility(gameState) {
     const { unlockedFeatures } = gameState;
     const tabConfig = [
         { view: 'inventory-view', flag: unlockedFeatures.inventory },
-        { view: 'consumables-view', flag: unlockedFeatures.consumables }, // <-- NEW
         { view: 'equipment-view', flag: unlockedFeatures.equipment },
-        { view: 'gems-view', flag: unlockedFeatures.gems },
         { view: 'forge-view', flag: unlockedFeatures.forge },
         { view: 'wiki-view', flag: unlockedFeatures.wiki },
     ];
@@ -1640,6 +1668,20 @@ export function updateTabVisibility(gameState) {
             tabButton.classList.toggle('disabled-tab', !config.flag);
         }
     });
+
+    // Handle sub-tabs inside inventory
+    const inventoryView = document.getElementById('inventory-view');
+    if (inventoryView) {
+        const gemsSubTab = inventoryView.querySelector('.sub-tab-button[data-subview="inventory-gems-view"]');
+        const consumablesSubTab = inventoryView.querySelector('.sub-tab-button[data-subview="inventory-consumables-view"]');
+        
+        if(gemsSubTab instanceof HTMLElement) {
+            gemsSubTab.style.display = unlockedFeatures.gems ? '' : 'none';
+        }
+        if(consumablesSubTab instanceof HTMLElement) {
+            consumablesSubTab.style.display = unlockedFeatures.consumables ? '' : 'none';
+        }
+    }
 }
 
 /**
@@ -2230,7 +2272,7 @@ export function updateForge(elements, selectedItem, selectedStatKey, currentScra
                     percentOfMax = (statValue / max_for_tier) * 100;
                 }
             }
-            const percentText = percentOfMax >= 100 ? `<span style="color: #f1c40f;">(MAX)</span>` : `(${percentOfMax.toFixed(1)}%)`;
+            const percentText = percentOfMax >= 100 ? `<span style="color: #f1c4f;">(MAX)</span>` : `(${percentOfMax.toFixed(1)}%)`;
             
             const statEntry = document.createElement('div');
             statEntry.className = 'forge-stat-entry';

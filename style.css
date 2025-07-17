@@ -1834,3 +1834,71 @@ h5 .legendary { color: #f39c12; }
         box-shadow: 0 0 0 0 rgba(241, 196, 15, 0);
     }
 }
+/* --- START: Inventory Sub-Tab Styles --- */
+.sub-tabs {
+    display: flex;
+    border-bottom: 2px solid #34495e;
+    margin-bottom: 15px;
+    flex-shrink: 0;
+}
+
+.sub-tab-button {
+    flex-grow: 1;
+    padding: 8px; /* Slightly smaller than main tabs */
+    margin: 0;
+    border-radius: 5px 5px 0 0;
+    border-bottom: none;
+    background: #2c3e50; /* Darker than main tabs */
+    font-size: 0.9em;
+    box-shadow: none;
+    border-bottom: 2px solid transparent; /* For the active state */
+}
+
+.sub-tab-button:hover {
+    background: #34495e;
+}
+
+.sub-tab-button.active {
+    background: #34495e;
+    color: #f1c40f;
+    border-bottom-color: #f1c40f; /* Highlight line */
+}
+
+.sub-view-container {
+    flex-grow: 1;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+.sub-view {
+    display: none; /* Hide all sub-views by default */
+    flex-grow: 1;
+    flex-direction: column;
+    min-height: 0;
+}
+
+.sub-view.active {
+    display: flex; /* Show only the active one */
+}
+
+/* Make sure headers inside the sub-views look correct */
+.sub-view h3 {
+    margin-top: 0;
+    text-align: center;
+}
+
+/* Ensure the grid scroll containers fill the space correctly */
+#inventory-gear-view .grid-scroll-container,
+#inventory-gems-view .grid-scroll-container,
+#inventory-consumables-view .grid-scroll-container {
+    margin-top: 0;
+}
+
+/* Hide the main tab buttons for the views we moved */
+.tab-button[data-view="gems-view"],
+.tab-button[data-view="consumables-view"] {
+    display: none;
+}
+/* --- END: Inventory Sub-Tab Styles --- */

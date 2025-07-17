@@ -162,8 +162,8 @@ document.addEventListener('DOMContentLoaded', () => {
             monster: { hp: 10, maxHp: 10 },
             equipment: { ...defaultEquipmentState }, // This will be a REFERENCE to the active preset's equipment
             inventory: [], // This is now for "loose" items only
-            consumables: [], // <-- NEW: For consumable items
-            activeBuffs: [],   // <-- NEW: For timed effects
+            consumables: [],
+            activeBuffs: [],
             gems: [],
             monsterKillCounts: {},
             unlockedPrestigeSlots: ['sword'], 
@@ -210,7 +210,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 forge: false,
                 prestige: false,
                 wiki: false,
-                consumables: false, // <-- NEW
+                consumables: false,
             }
         };
     }
@@ -373,9 +373,13 @@ document.addEventListener('DOMContentLoaded', () => {
      * This now correctly re-sorts and re-compacts the grid.
      */
     function refreshGemViewIfActive() {
-        if (elements.gemSlotsEl.closest('.view')?.classList.contains('active')) {
-            ui.populateGemSortOptions(elements, gameState.gems, gemSortPreference);
-            sortAndRenderGems();
+        const inventoryView = document.getElementById('inventory-view');
+        if (inventoryView && inventoryView.classList.contains('active')) {
+            const gemsSubView = document.getElementById('inventory-gems-view');
+            if (gemsSubView && gemsSubView.classList.contains('active')) {
+                ui.populateGemSortOptions(elements, gameState.gems, gemSortPreference);
+                sortAndRenderGems();
+            }
         }
     }
 
@@ -397,14 +401,13 @@ document.addEventListener('DOMContentLoaded', () => {
             result.droppedItems.forEach((item, index) => {
                 ui.showItemDropAnimation(elements.popupContainerEl, item, index);
                 
-                // --- NEW: Route consumables correctly ---
                 if (item.type === 'consumable') {
                     ui.addItemToGrid(elements.consumablesSlotsEl, item);
                     if (!gameState.unlockedFeatures.consumables) {
                         gameState.unlockedFeatures.consumables = true;
-                        logMessage(elements.gameLogEl, '<b>Consumables Unlocked!</b> You can now use special one-time-use items from a new tab.', 'legendary', isAutoScrollingLog);
+                        logMessage(elements.gameLogEl, '<b>Consumables Unlocked!</b> You can now use special one-time-use items from a new tab in your inventory.', 'legendary', isAutoScrollingLog);
                         ui.updateTabVisibility(gameState);
-                        ui.flashTab('consumables-view');
+                        ui.flashTab('inventory-view');
                     }
                 } else {
                     ui.addItemToGrid(elements.inventorySlotsEl, item);
@@ -427,9 +430,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 ui.showItemDropAnimation(elements.popupContainerEl, gemToPlace, index);
                  if (!gameState.unlockedFeatures.gems) {
                     gameState.unlockedFeatures.gems = true;
-                    logMessage(elements.gameLogEl, '<b>Gems Unlocked!</b> You can now view and socket powerful gems.', 'legendary', isAutoScrollingLog);
+                    logMessage(elements.gameLogEl, '<b>Gems Unlocked!</b> You can now view and socket powerful gems from a new tab in your inventory.', 'legendary', isAutoScrollingLog);
                     ui.updateTabVisibility(gameState);
-                    ui.flashTab('gems-view');
+                    ui.flashTab('inventory-view');
                 }
             });
             refreshGemViewIfActive();
@@ -557,9 +560,6 @@ document.addEventListener('DOMContentLoaded', () => {
         ui.updateMonsterHealthBar(elements, gameState.monster);
     }
 
-    /**
-     * --- NEW: Handles timed buffs ---
-     */
     function updateActiveBuffs() {
         if (!gameState.activeBuffs || gameState.activeBuffs.length === 0) return;
 
@@ -573,7 +573,6 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             
             recalculateStats();
-            // TODO: Update a new UI element that shows active buffs
             ui.updateStatsPanel(elements, playerStats);
         }
     }
@@ -586,13 +585,11 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             ui.updateMonsterHealthBar(elements, gameState.monster);
         }
-        // --- NEW: Check buffs every second ---
         updateActiveBuffs();
     }
 
     function fullUIRender() {
         ui.updateTabVisibility(gameState);
-        // --- MODIFIED: Pass consumablesSlotsEl to updateUI ---
         ui.updateUI(elements, gameState, playerStats, currentMonster, salvageMode, craftingGems, selectedItemForForge, bulkCombineSelection, bulkCombineDeselectedIds);
         renderMapAccordion();
         ui.renderPermanentUpgrades(elements, gameState);
@@ -1077,7 +1074,6 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
     
-        // THIS IS THE FIXED LINE
         ui.renderWikiResults(elements.wikiResultsContainer, filtered, gameState.wikiFavorites, wikiShowFavorites, wikiShowUpgradesOnly);
     }
     
@@ -1125,8 +1121,7 @@ document.addEventListener('DOMContentLoaded', () => {
             selectedGemId: selectedGemForSocketing ? selectedGemForSocketing.id : null
         });
     }
-
-
+    
     function main() {
         elements = ui.initDOMElements();
         
@@ -1165,8 +1160,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     ...(loadedState.unlockedFeatures || {})
                 },
                 inventory: loadedState.inventory || [],
-                consumables: loadedState.consumables || [], // <-- NEW
-                activeBuffs: loadedState.activeBuffs || [],   // <-- NEW
+                consumables: loadedState.consumables || [],
+                activeBuffs: loadedState.activeBuffs || [],
                 gems: loadedState.gems || [],
                 presets: loadedState.presets || baseState.presets,
                 absorbedStats: loadedState.absorbedStats || {},
@@ -1190,7 +1185,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (Object.values(gameState.equipment).some(item => item !== null)) gameState.unlockedFeatures.equipment = true;
                 if (gameState.gems.length > 0) gameState.unlockedFeatures.gems = true;
                 if (gameState.scrap > 0) gameState.unlockedFeatures.forge = true;
-                if (gameState.consumables.length > 0) gameState.unlockedFeatures.consumables = true; // <-- NEW
+                if (gameState.consumables.length > 0) gameState.unlockedFeatures.consumables = true;
                 if (gameState.maxLevel >= 100) {
                     gameState.unlockedFeatures.prestige = true;
                     gameState.unlockedFeatures.wiki = true;
@@ -1599,11 +1594,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         addTapListener(elements.inventorySlotsEl, gridClickHandler);
         addTapListener(elements.gemSlotsEl, gridClickHandler);
-        // --- NEW: Add listener for the new consumables grid ---
-        const consumablesGrid = document.getElementById('consumables-slots');
-        if (consumablesGrid) {
-            addTapListener(consumablesGrid, gridClickHandler);
-        }
+        addTapListener(elements.consumablesSlotsEl, gridClickHandler);
         
         addTapListener(document.getElementById('equipment-paperdoll'), (event) => {
             if (!(event.target instanceof Element)) return;
@@ -1889,6 +1880,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             ui.updateActivePresetButton(elements, gameState);
                             break;
                         case 'inventory-view':
+                            ui.switchInventorySubView('inventory-gear-view');
                             ui.populateSalvageFilter(elements, gameState);
                             ui.renderGrid(elements.inventorySlotsEl, gameState.inventory, { calculatePositions: false, salvageSelections: salvageMode.selections, showLockIcon: true });
                             ui.updateSocketingHighlights(elements, selectedGemForSocketing, gameState);
@@ -1896,21 +1888,6 @@ document.addEventListener('DOMContentLoaded', () => {
                             if (salvageFilterBtn) {
                                 salvageFilterBtn.classList.toggle('btn-pressed', gameState.salvageFilter.enabled);
                             }
-                            break;
-                        case 'consumables-view': // <-- NEW
-                            ui.renderGrid(elements.consumablesSlotsEl, gameState.consumables, { calculatePositions: true });
-                            break;
-                        case 'gems-view':
-                            ui.populateGemSortOptions(elements, gameState.gems, gemSortPreference);
-                            ui.renderGrid(elements.gemSlotsEl, gameState.gems, {
-                                type: 'gem',
-                                calculatePositions: false,
-                                bulkCombineSelection,
-                                bulkCombineDeselectedIds,
-                                selectedGemId: selectedGemForSocketing ? selectedGemForSocketing.id : null
-                            });
-                            populateBulkCombineControls();
-                            ui.updateGemCraftingUI(elements, craftingGems, gameState);
                             break;
                         case 'forge-view':
                             ui.renderGrid(elements.forgeInventorySlotsEl, player.getAllItems(gameState), { calculatePositions: true, selectedItem: selectedItemForForge, showLockIcon: false });
@@ -1922,6 +1899,29 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 });
             });
+        });
+
+        document.querySelector('.sub-tabs')?.addEventListener('click', (e) => {
+            if (!(e.target instanceof HTMLElement) || !e.target.matches('.sub-tab-button')) return;
+
+            const subViewId = e.target.dataset.subview;
+            if (!subViewId) return;
+
+            ui.switchInventorySubView(subViewId);
+            
+            switch(subViewId) {
+                case 'inventory-gear-view':
+                    ui.renderGrid(elements.inventorySlotsEl, gameState.inventory, { calculatePositions: false, salvageSelections: salvageMode.selections, showLockIcon: true });
+                    break;
+                case 'inventory-gems-view':
+                    refreshGemViewIfActive();
+                    populateBulkCombineControls();
+                    ui.updateGemCraftingUI(elements, craftingGems, gameState);
+                    break;
+                case 'inventory-consumables-view':
+                    ui.renderGrid(elements.consumablesSlotsEl, gameState.consumables, { calculatePositions: true, showLockIcon: false });
+                    break;
+            }
         });
 
         if (elements.gemSortSelect) {
@@ -1956,7 +1956,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-        // NEW: Event listener for selecting a stat in the forge
         addTapListener(elements.forgeStatListEl, (e) => {
             if (!(e.target instanceof Element)) return;
             const statEntry = e.target.closest('.forge-stat-entry');
@@ -2151,7 +2150,6 @@ document.addEventListener('DOMContentLoaded', () => {
             const id = wrapper.dataset.id;
             if (!id) return;
 
-            // --- MODIFIED: Check consumables array ---
             const item = player.findItemFromAllSources(gameState, id) || gameState.consumables.find(c => String(c.id) === id);
             if(item) {
                 showItemTooltip(item, wrapper);
@@ -2161,11 +2159,9 @@ document.addEventListener('DOMContentLoaded', () => {
         elements.inventorySlotsEl.addEventListener('mouseover', onGridMouseOver);
         elements.inventorySlotsEl.addEventListener('mouseout', onGridMouseOut);
     
-        // --- NEW: Add listeners for consumables grid ---
-        const consumablesGrid = document.getElementById('consumables-slots');
-        if (consumablesGrid) {
-            consumablesGrid.addEventListener('mouseover', onGridMouseOver);
-            consumablesGrid.addEventListener('mouseout', onGridMouseOut);
+        if (elements.consumablesSlotsEl) {
+            elements.consumablesSlotsEl.addEventListener('mouseover', onGridMouseOver);
+            elements.consumablesSlotsEl.addEventListener('mouseout', onGridMouseOut);
         }
 
         const equipmentSlots = document.getElementById('equipment-paperdoll');
@@ -2255,11 +2251,9 @@ document.addEventListener('DOMContentLoaded', () => {
         };
         const attributesArea = document.getElementById('attributes-area');
         
-        // START OF MODIFICATION: Listen on the parent, but check for the specific span target
         attributesArea.addEventListener('mouseover', (event) => {
             if (!(event.target instanceof Element)) return;
 
-            // Target only the span inside the attribute-row, not the whole row
             const statSpan = event.target.closest('.attribute-row > span');
             if (!statSpan) return;
 
@@ -2289,7 +2283,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 elements.statTooltipEl.classList.add('hidden');
             }
         });
-        // END OF MODIFICATION
 
         const derivedStatsArea = document.getElementById('derived-stats-area');
         derivedStatsArea.addEventListener('mouseover', (event) => {
