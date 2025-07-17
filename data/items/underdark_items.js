@@ -110,7 +110,7 @@ export const underdarkItems = {
         maxSockets: 3,
         possibleStats: [ 
             { key: STATS.DPS.key, min: 1, max: 40000 },
-            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 10000 },
+            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 16000 },
             { key: STATS.GOLD_GAIN.key, min: 1, max: 200 },
 
          ]

@@ -874,7 +874,7 @@ document.addEventListener('DOMContentLoaded', () => {
         elements.tooltipEl.classList.add(item.rarity);
 
         if (isShiftPressed && item.baseId) {
-            const itemBase = ITEMS[item.baseId];
+            const itemBase = ITEMS[item.baseId] || CONSUMABLES[item.baseId];
             if (itemBase) {
                 elements.tooltipEl.innerHTML = ui.createLootTableTooltipHTML(itemBase);
             } else {
@@ -1455,16 +1455,21 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             } else {
                 if (item.type === 'consumable') {
-                    if (item.id === 'ARTISAN_CHISEL') {
-                        if (confirm("Are you sure you want to use the Artisan's Chisel? This is a permanent, one-time upgrade to improve Tier 1 gem combining.")) {
-                            gameState.artisanChiselUsed = true;
-                            gameState.inventory = gameState.inventory.filter(i => i.id !== item.id);
-                            logMessage(elements.gameLogEl, `You used the <b>Artisan's Chisel</b>! Your Tier 1 gem combine success rate is now permanently 60%.`, 'legendary', isAutoScrollingLog);
-                            ui.renderGrid(elements.inventorySlotsEl, gameState.inventory, { calculatePositions: true });
-                            autoSave();
-                        }
+                    if (item.baseId === 'ARTISAN_CHISEL') {
+                        ui.showConfirmationModal(
+                            elements,
+                            'Use Artisan\'s Chisel?',
+                            `<p>Are you sure you want to use the <b>Artisan's Chisel</b>? This is a permanent, one-time upgrade to improve Tier 1 gem combining success rate from 50% to 60%.</p>`,
+                            () => {
+                                gameState.artisanChiselUsed = true;
+                                gameState.inventory = gameState.inventory.filter(i => i.id !== item.id);
+                                logMessage(elements.gameLogEl, `You used the <b>Artisan's Chisel</b>! Your Tier 1 gem combine success rate is now permanently 60%.`, 'legendary', isAutoScrollingLog);
+                                ui.renderGrid(elements.inventorySlotsEl, gameState.inventory, { calculatePositions: true });
+                                autoSave();
+                            }
+                        );
                     }
-                    return; // Prevent other actions for consumables
+                    return;
                 }
 
                 if (selectedGemForSocketing) {

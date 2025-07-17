@@ -275,7 +275,7 @@ export function dropLoot(currentMonster, gameState, playerStats) {
     }
 
     const item = isConsumable 
-        ? { ...itemBaseToDrop, id: Date.now() + Math.random(), rarity: 'legendary' } // Consumables are simple objects
+        ? { ...itemBaseToDrop, id: Date.now() + Math.random(), baseId: itemBaseToDrop.id, rarity: 'legendary' } // Consumables are simple objects
         : generateItem(rarity, gameState.currentFightingLevel, itemBaseToDrop);
 
     if (!isConsumable && !shouldKeepItem(item, gameState.salvageFilter)) {

@@ -745,6 +745,7 @@ export function renderEquipmentStatsSummary(elements, gameState) {
     });
 }
 
+
 /**
  * The original, monolithic update function. Kept for full re-draws when necessary (e.g., on load, major view change).
  */
@@ -913,7 +914,9 @@ function createDetailedItemStatBlockHTML(item) {
  */
 export function createTooltipHTML(item) {
     if (!item) return '';
-    const itemBase = ITEMS[item.baseId];
+    const itemBase = ITEMS[item.baseId] || CONSUMABLES[item.baseId];
+    if (!itemBase) return ''; // Safeguard
+    
     const isUnique = itemBase && itemBase.isUnique;
 
     const uniqueClass = isUnique ? 'unique-item-name' : '';
@@ -923,11 +926,14 @@ export function createTooltipHTML(item) {
     headerHTML += `
         <div class="tooltip-subheader">
             <span>${itemTypeString}</span>&nbsp;
-            <span class="tooltip-shift-hint">Hold [SHIFT] for blueprint</span>
+            ${item.type !== 'consumable' ? '<span class="tooltip-shift-hint">Hold [SHIFT] for blueprint</span>' : ''}
         </div>
     `;
 
-    const detailedBlock = createDetailedItemStatBlockHTML(item);
+    const detailedBlock = (item.type === 'consumable' && itemBase.description)
+        ? `<ul><li>${itemBase.description}</li></ul>`
+        : createDetailedItemStatBlockHTML(item);
+
 
     let socketsHTML = '';
     if (item.sockets) {
@@ -1398,6 +1404,61 @@ export function showInfoPopup(popupContainerEl, text, options = {}) {
     popupContainerEl.appendChild(popup);
     setTimeout(() => popup.remove(), duration);
 }
+
+/**
+ * Shows a generic confirmation modal.
+ * @param {DOMElements} elements The DOM elements object.
+ * @param {string} title The title for the modal.
+ * @param {string} bodyHtml The HTML content for the modal body.
+ * @param {function(Event): void} onConfirm The callback function to execute when the confirm button is clicked.
+ */
+export function showConfirmationModal(elements, title, bodyHtml, onConfirm) {
+    elements.modalTitleEl.textContent = title;
+    elements.modalBodyEl.innerHTML = bodyHtml;
+    elements.modalCloseBtnEl.classList.add('hidden'); // Hide the default close button
+
+    const confirmBtn = document.createElement('button');
+    confirmBtn.textContent = 'Confirm';
+    confirmBtn.style.background = 'linear-gradient(145deg, #27ae60, #2ecc71)';
+    confirmBtn.style.borderBottomColor = '#229954';
+
+    const cancelBtn = document.createElement('button');
+    cancelBtn.textContent = 'Cancel';
+    cancelBtn.style.background = '#c0392b';
+    cancelBtn.style.borderBottomColor = '#922b21';
+
+    const buttonContainer = document.createElement('div');
+    buttonContainer.style.marginTop = '20px';
+    buttonContainer.appendChild(confirmBtn);
+    buttonContainer.appendChild(cancelBtn);
+    elements.modalBodyEl.appendChild(buttonContainer);
+
+    const closeModal = () => {
+        elements.modalBackdropEl.classList.add('hidden');
+        elements.modalCloseBtnEl.classList.remove('hidden'); // Restore default close button visibility
+        confirmBtn.remove(); // Clean up listeners by removing the element
+        cancelBtn.remove();
+    };
+
+    confirmBtn.addEventListener('click', (e) => {
+        onConfirm(e);
+        closeModal();
+    });
+
+    cancelBtn.addEventListener('click', closeModal);
+    
+    // Also allow closing by clicking the backdrop
+    const backdropCloseHandler = (e) => {
+        if (e.target === elements.modalBackdropEl) {
+            closeModal();
+            elements.modalBackdropEl.removeEventListener('click', backdropCloseHandler);
+        }
+    };
+    elements.modalBackdropEl.addEventListener('click', backdropCloseHandler);
+
+    elements.modalBackdropEl.classList.remove('hidden');
+}
+
 
 export function createMapNode(name, iconSrc, coords, isUnlocked, isCompleted, currentFightingLevel, levelRange = null, isBoss = false, isFightingZone = false) {
     const node = document.createElement('div');
