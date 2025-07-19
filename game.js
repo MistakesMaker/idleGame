@@ -1,3 +1,5 @@
+// --- START OF FILE game.js ---
+
 import { REALMS } from './data/realms.js';
 import { MONSTERS } from './data/monsters.js';
 import { ITEMS } from './data/items.js';
@@ -2558,6 +2560,11 @@ document.addEventListener('DOMContentLoaded', () => {
             for (const [effectKey, count] of Object.entries(newAbsorbedUniqueEffects)) {
                 finalAbsorbedUniqueEffects[effectKey] = (finalAbsorbedUniqueEffects[effectKey] || 0) + count;
             }
+
+            // --- START OF MODIFICATION (PART 1) ---
+            // Save the current preset names before resetting the state
+            const oldPresetNames = gameState.presets.map(p => p.name);
+            // --- END OF MODIFICATION (PART 1) ---
     
             const spentPoints = heroToPrestige.attributes.strength + heroToPrestige.attributes.agility + heroToPrestige.attributes.luck;
             const newTotalAttributePoints = heroToPrestige.attributePoints + spentPoints;
@@ -2594,8 +2601,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 currentRunCompletedLevels: [],
             };
             gameState.equipment = gameState.presets[gameState.activePresetIndex].equipment;
-
     
+            // --- START OF MODIFICATION (PART 2) ---
+            // Restore the saved preset names
+            if (oldPresetNames) {
+                gameState.presets.forEach((preset, index) => {
+                    if (oldPresetNames[index]) {
+                        preset.name = oldPresetNames[index];
+                    }
+                });
+            }
+            // --- END OF MODIFICATION (PART 2) ---
+            
             logMessage(elements.gameLogEl, `PRESTIGE! You are reborn with greater power. Your next goal is Level ${gameState.nextPrestigeLevel}.`, 'legendary', isAutoScrollingLog);
             
             document.querySelector('.actions-panel').classList.remove('hidden');
