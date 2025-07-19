@@ -1,3 +1,5 @@
+// --- START OF FILE ui.js ---
+
 import { STATS } from './data/stat_pools.js';
 import { getXpForNextLevel, getUpgradeCost, formatNumber, findSubZoneByLevel, getCombinedItemStats, findEmptySpot, findFirstLevelOfZone } from './utils.js';
 import { ITEMS } from './data/items.js';
@@ -160,11 +162,11 @@ export function initDOMElements() {
         lockedViewTitle: document.getElementById('locked-view-title'),
         lockedViewMessage: document.getElementById('locked-view-message'),
         lockedViewIcon: document.getElementById('locked-view-icon'),
-        // --- MODIFICATION: Add new elements ---
         inventoryLockedSubView: document.getElementById('inventory-locked-sub-view'),
         inventoryLockedSubViewIcon: document.getElementById('inventory-locked-sub-view-icon'),
         inventoryLockedSubViewTitle: document.getElementById('inventory-locked-sub-view-title'),
         inventoryLockedSubViewMessage: document.getElementById('inventory-locked-sub-view-message'),
+        activeBuffsContainer: document.getElementById('active-buffs-container'),
     };
 }
 
@@ -180,6 +182,22 @@ export function initSalvageFilterDOMElements() {
         filterKeepRarity: document.getElementById('filter-keep-rarity'),
         filterKeepSockets: document.getElementById('filter-keep-sockets'),
         filterKeepStatsContainer: document.getElementById('filter-keep-stats-container')
+    };
+}
+
+/**
+ * Gathers DOM elements specific to the Hunts Modal.
+ */
+export function initHuntsDOMElements() {
+    return {
+        huntsBtn: document.getElementById('hunts-btn'),
+        huntsModalBackdrop: document.getElementById('hunts-modal-backdrop'),
+        huntsCloseBtn: document.getElementById('hunts-close-btn'),
+        activeHuntSection: document.getElementById('active-hunt-section'),
+        activeHuntCard: document.getElementById('active-hunt-card'),
+        noActiveHuntText: document.getElementById('no-active-hunt-text'),
+        rerollHuntsBtn: document.getElementById('reroll-hunts-btn'),
+        availableHuntsContainer: document.getElementById('available-hunts-container'),
     };
 }
 
@@ -767,6 +785,12 @@ export function updateUI(elements, gameState, playerStats, currentMonster, salva
     updateMonsterUI(elements, gameState, currentMonster);
     updateLootPanel(elements, currentMonster, gameState);
     updatePrestigeUI(elements, gameState);
+
+    // Hunts Button State
+    const huntsBtn = document.getElementById('hunts-btn');
+    if (huntsBtn) {
+        (/** @type {HTMLButtonElement} */ (huntsBtn)).disabled = !gameState.unlockedFeatures.hunts;
+    }
 
     // Grid Renders for the active inventory sub-view
     const inventoryView = document.getElementById('inventory-view');
@@ -2612,4 +2636,115 @@ export function showStatBreakdownTooltip(elements, statKey, statBreakdown) {
     
     html += '</ul>';
     statTooltipEl.innerHTML = html;
+}
+
+/**
+ * Renders the Hunts modal UI.
+ * @param {DOMElements} elements
+ * @param {object} gameState
+ */
+export function renderHuntsView(elements, gameState) {
+    const { activeHuntCard, noActiveHuntText, availableHuntsContainer, rerollHuntsBtn } = initHuntsDOMElements();
+
+    // Render Active Hunt
+    if (gameState.hunts.active) {
+        activeHuntCard.innerHTML = createHuntCardHTML(gameState.hunts.active, null, true, gameState.hunts.progress);
+        activeHuntCard.classList.remove('hidden');
+        noActiveHuntText.classList.add('hidden');
+    } else {
+        activeHuntCard.classList.add('hidden');
+        noActiveHuntText.classList.remove('hidden');
+    }
+
+    // Render Available Bounties
+    availableHuntsContainer.innerHTML = '';
+    gameState.hunts.available.forEach((hunt, index) => {
+        if (hunt) {
+            const card = document.createElement('div');
+            card.innerHTML = createHuntCardHTML(hunt, index, false);
+            availableHuntsContainer.appendChild(card);
+        }
+    });
+
+    // Update Reroll Button
+    (/** @type {HTMLButtonElement} */ (rerollHuntsBtn)).textContent = `Reroll All (${gameState.hunts.available.length})`;
+    (/** @type {HTMLButtonElement} */ (rerollHuntsBtn)).disabled = gameState.hunts.dailyRerollsLeft <= 0;
+}
+
+/**
+ * Creates the HTML for a single hunt card.
+ * @param {object} hunt
+ * @param {number|null} index
+ * @param {boolean} isActive
+ * @param {number} [progress=0]
+ * @returns {string}
+ */
+function createHuntCardHTML(hunt, index, isActive, progress = 0) {
+    const reward = CONSUMABLES[hunt.rewardId];
+    const description = hunt.description.replace('{quantity}', formatNumber(hunt.quantity));
+
+    let actionButtonHTML;
+    if (isActive) {
+        const progressPercent = Math.min(100, (progress / hunt.quantity) * 100);
+        const isComplete = progress >= hunt.quantity;
+        actionButtonHTML = `
+            <div class="hunt-actions">
+                <div class="hunt-progress-bar-container"><div class="hunt-progress-bar" style="width: ${progressPercent}%;"></div></div>
+                <div class="hunt-progress-text">${formatNumber(progress)} / ${formatNumber(hunt.quantity)}</div>
+                <button id="complete-hunt-btn" ${!isComplete ? 'disabled' : ''}>Complete</button>
+            </div>
+        `;
+    } else {
+        actionButtonHTML = `<div class="hunt-actions"><button data-index="${index}">Accept</button></div>`;
+    }
+
+    return `
+        <div class="hunt-card">
+            <div class="hunt-reward">
+                <img src="${reward.icon}" alt="${reward.name}" title="${reward.description}">
+                <span class="hunt-reward-name">${reward.name}</span>
+            </div>
+            <div class="hunt-details">
+                <p class="hunt-title">${hunt.title}</p>
+                <p class="hunt-description">${description}</p>
+            </div>
+            ${actionButtonHTML}
+        </div>
+    `;
+}
+
+/**
+ * Renders the active buffs UI.
+ * @param {DOMElements} elements
+ * @param {object[]} activeBuffs
+ */
+export function updateActiveBuffsUI(elements, activeBuffs) {
+    const container = elements.activeBuffsContainer;
+    if (!container) return;
+
+    container.innerHTML = '';
+    if (activeBuffs.length === 0) {
+        container.classList.add('hidden');
+        return;
+    }
+    
+    container.classList.remove('hidden');
+    const now = Date.now();
+
+    activeBuffs.forEach(buff => {
+        const remainingSeconds = Math.max(0, Math.floor((buff.expiresAt - now) / 1000));
+        const minutes = Math.floor(remainingSeconds / 60);
+        const seconds = remainingSeconds % 60;
+        const timeStr = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+
+        const buffEl = document.createElement('div');
+        buffEl.className = 'active-buff';
+        
+        const consumableBase = Object.values(CONSUMABLES).find(c => c.effect && c.effect.name === buff.name);
+        if (consumableBase) {
+            buffEl.title = consumableBase.description;
+            buffEl.innerHTML = `<img src="${consumableBase.icon}" alt="${buff.name}"><span class="buff-timer">${timeStr}</span>`;
+            container.appendChild(buffEl);
+        }
+    });
 }

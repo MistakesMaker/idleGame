@@ -1,17 +1,21 @@
+// --- START OF FILE data/consumables.js ---
+
 /*
 * CONSUMABLE DEFINITION GUIDE
 *
-* This file defines special, one-time use items that grant permanent effects
-* or provide other unique actions.
-*
 * id: A unique key for the consumable.
 * name: The display name for the UI.
-* type: Must be 'consumable' to be handled correctly.
-* icon: The path to the item's image.
-* width/height: The item's size in the inventory grid.
-* description: A player-facing description explaining what the item does.
+* type: Must be 'consumable'.
+* icon: Path to the item's image.
+* width/height: Item's size in the inventory grid.
+* description: Player-facing explanation of what the item does.
+* effect: An object describing the item's function.
+*   - type: 'permanentFlag' -> Sets a boolean flag in gameState to true.
+*   - type: 'resource' -> Instantly grants a specified amount of a resource.
+*   - type: 'timedBuff' -> Applies a temporary buff to a player stat.
 */
 export const CONSUMABLES = {
+    // --- PERMANENT UPGRADES ---
     ARTISAN_CHISEL: {
         id: 'ARTISAN_CHISEL',
         name: "Artisan's Chisel",
@@ -19,6 +23,158 @@ export const CONSUMABLES = {
         icon: 'images/icons/artisan_chisel.png',
         width: 2,
         height: 2,
-        description: "A one-time use tool from a master craftsman. When consumed, permanently increases your T1 gems combining success rate from 50% to 60%."
-    }
+        description: "A one-time use tool from a master craftsman. When consumed, permanently increases your T1 gems combining success rate from 50% to 60%.",
+        effect: {
+            type: 'permanentFlag',
+            key: 'artisanChiselUsed'
+        }
+    },
+
+    // --- RESOURCE REWARDS ---
+    SCRAP_CACHE_SMALL: {
+        id: 'SCRAP_CACHE_SMALL',
+        name: 'Small Scrap Cache',
+        type: 'consumable',
+        icon: 'images/consumables/scrap_cache_small.png',
+        width: 1, height: 1,
+        description: "A small bundle of salvaged parts. Grants 1,000 Scrap when consumed.",
+        effect: {
+            type: 'resource',
+            resource: 'scrap',
+            amount: 1000
+        }
+    },
+    SCRAP_CACHE_MEDIUM: {
+        id: 'SCRAP_CACHE_MEDIUM',
+        name: 'Medium Scrap Cache',
+        type: 'consumable',
+        icon: 'images/consumables/scrap_cache_medium.png',
+        width: 1, height: 1,
+        description: "A well-packed crate of salvaged parts. Grants 5,000 Scrap when consumed.",
+        effect: {
+            type: 'resource',
+            resource: 'scrap',
+            amount: 5000
+        }
+    },
+    SCRAP_CACHE_LARGE: {
+        id: 'SCRAP_CACHE_LARGE',
+        name: 'Large Scrap Cache',
+        type: 'consumable',
+        icon: 'images/consumables/scrap_cache_large.png',
+        width: 1, height: 1,
+        description: "A massive hoard of salvaged parts. Grants 25,000 Scrap when consumed.",
+        effect: {
+            type: 'resource',
+            resource: 'scrap',
+            amount: 25000
+        }
+    },
+
+    // --- TIMED BUFFS ---
+    GOLD_BOOSTER_MINOR: {
+        id: 'GOLD_BOOSTER_MINOR',
+        name: 'Minor Gold Booster',
+        type: 'consumable',
+        icon: 'images/consumables/gold_booster_minor.png',
+        width: 1, height: 1,
+        description: "A charm of minor fortune. Increases Gold Gain by 50% for 10 minutes.",
+        effect: {
+            type: 'timedBuff',
+            name: 'Minor Gold Boost',
+            statKey: 'bonusGold',
+            value: 50,
+            duration: 600 // 10 minutes in seconds
+        }
+    },
+    GOLD_BOOSTER_MAJOR: {
+        id: 'GOLD_BOOSTER_MAJOR',
+        name: 'Major Gold Booster',
+        type: 'consumable',
+        icon: 'images/consumables/gold_booster_major.png',
+        width: 1, height: 1,
+        description: "A charm of major fortune. Increases Gold Gain by 200% for 10 minutes.",
+        effect: {
+            type: 'timedBuff',
+            name: 'Major Gold Boost',
+            statKey: 'bonusGold',
+            value: 200,
+            duration: 600
+        }
+    },
+    XP_ELIXIR_MINOR: {
+        id: 'XP_ELIXIR_MINOR',
+        name: 'Minor Elixir of Learning',
+        type: 'consumable',
+        icon: 'images/consumables/xp_elixir_minor.png',
+        width: 1, height: 1,
+        description: "A simple brew that sharpens the mind. Increases XP Gain by 50% for 15 minutes.",
+        effect: {
+            type: 'timedBuff',
+            name: 'Minor XP Boost',
+            statKey: 'bonusXp', // We will need to add logic to handle this stat
+            value: 50,
+            duration: 900 // 15 minutes
+        }
+    },
+    XP_ELIXIR_MAJOR: {
+        id: 'XP_ELIXIR_MAJOR',
+        name: 'Major Elixir of Learning',
+        type: 'consumable',
+        icon: 'images/consumables/xp_elixir_major.png',
+        width: 1, height: 1,
+        description: "A potent brew that expands the mind. Increases XP Gain by 200% for 15 minutes.",
+        effect: {
+            type: 'timedBuff',
+            name: 'Major XP Boost',
+            statKey: 'bonusXp',
+            value: 200,
+            duration: 900
+        }
+    },
+    MAGIC_FIND_POTION_MINOR: {
+        id: 'MAGIC_FIND_POTION_MINOR',
+        name: 'Potion of Minor Luck',
+        type: 'consumable',
+        icon: 'images/consumables/magic_find_potion_minor.png',
+        width: 1, height: 1,
+        description: "A swirling, iridescent liquid. Increases Magic Find by 10% for 5 minutes.",
+        effect: {
+            type: 'timedBuff',
+            name: 'Minor Luck',
+            statKey: 'magicFind',
+            value: 10,
+            duration: 300 // 5 minutes
+        }
+    },
+    GEM_SEEKER_DRAFT_MINOR: {
+        id: 'GEM_SEEKER_DRAFT_MINOR',
+        name: 'Minor Gem Seeker\'s Draft',
+        type: 'consumable',
+        icon: 'images/consumables/gem_seeker_draft_minor.png',
+        width: 1, height: 1,
+        description: "Makes your eyes sharp to the glimmer of gems. Increases Gem Find chance by 5% for 10 minutes.",
+        effect: {
+            type: 'timedBuff',
+            name: 'Minor Gem Seeker',
+            statKey: 'gemFindChance',
+            value: 5,
+            duration: 600
+        }
+    },
+    GEM_SEEKER_DRAFT_MAJOR: {
+        id: 'GEM_SEEKER_DRAFT_MAJOR',
+        name: 'Major Gem Seeker\'s Draft',
+        type: 'consumable',
+        icon: 'images/consumables/gem_seeker_draft_major.png',
+        width: 1, height: 1,
+        description: "Makes your eyes exceptionally sharp. Increases Gem Find chance by 20% for 10 minutes.",
+        effect: {
+            type: 'timedBuff',
+            name: 'Major Gem Seeker',
+            statKey: 'gemFindChance',
+            value: 20,
+            duration: 600
+        }
+    },
 };

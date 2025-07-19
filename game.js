@@ -7,10 +7,11 @@ import { GEMS } from './data/gems.js';
 import { CONSUMABLES } from './data/consumables.js';
 import { STATS } from './data/stat_pools.js';
 import { PERMANENT_UPGRADES } from './data/upgrades.js';
-import { logMessage, formatNumber, getUpgradeCost, findSubZoneByLevel, findFirstLevelOfZone, isBossLevel, isBigBossLevel, getCombinedItemStats, isMiniBossLevel, findNextAvailableSpot } from './utils.js';
+import { logMessage, formatNumber, getUpgradeCost, findSubZoneByLevel, findFirstLevelOfZone, isBossLevel, isBigBossLevel, getCombinedItemStats, isMiniBossLevel, findNextAvailableSpot, getRandomInt } from './utils.js';
 import * as ui from './ui.js';
 import * as player from './player_actions.js';
 import * as logic from './game_logic.js';
+import { HUNT_POOLS } from './data/hunts.js';
 
 export const rarities = ['common', 'uncommon', 'rare', 'epic', 'legendary'];
 
@@ -94,7 +95,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let isMapRenderPending = true; // Flag to control map re-rendering
 
     let currentMonster = { name: "Slime", data: MONSTERS.SLIME };
-    let playerStats = { baseClickDamage: 1, baseDps: 0, totalClickDamage: 1, totalDps: 0, bonusGold: 0, magicFind: 0 };
+    let playerStats = { baseClickDamage: 1, baseDps: 0, totalClickDamage: 1, totalDps: 0, bonusGold: 0, magicFind: 0, bonusXp: 0 };
     let statBreakdown = {};
     let salvageMode = { active: false, selections: [] };
     let saveTimeout;
@@ -205,8 +206,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 prestige: false,
                 wiki: false,
                 consumables: false,
+                hunts: false,
             },
             pendingSubTabViewFlash: null,
+            hunts: {
+                dailyRerollsLeft: 5,
+                lastRerollTimestamp: null,
+                available: [null, null, null],
+                active: null,
+                progress: 0,
+                completionCounts: {},
+            },
         };
     }
 
@@ -241,6 +251,7 @@ document.addEventListener('DOMContentLoaded', () => {
         let baseDps = 0;
         let bonusGold = 0;
         let magicFind = 0;
+        let bonusXp = 0;
 
         statBreakdown.clickDamage.sources.push({ label: 'Base', value: 1 });
         
@@ -267,7 +278,13 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         // --- Active Buffs ---
-        // TODO: Later, when buffs are implemented
+        if (gameState.activeBuffs) {
+            gameState.activeBuffs.forEach(buff => {
+                if(buff.statKey === 'bonusGold') bonusGold += buff.value;
+                if(buff.statKey === 'magicFind') magicFind += buff.value;
+                if(buff.statKey === 'bonusXp') bonusXp += buff.value;
+            });
+        }
         
         // --- Gear Stats ---
         let clickFromGear = 0, dpsFromGear = 0, goldFromGear = 0, magicFromGear = 0;
@@ -309,7 +326,7 @@ document.addEventListener('DOMContentLoaded', () => {
         statBreakdown.dps.sources.push({ label: 'From Agility', value: agilityBonusDpsFlat });
         statBreakdown.dps.multipliers.push({ label: 'From Agility', value: agilityBonusDpsPercent });
         
-        const luckBonusGold = hero.attributes.luck * 1; // MODIFIED
+        const luckBonusGold = hero.attributes.luck * 1;
         bonusGold += luckBonusGold;
         statBreakdown.goldGain.sources.push({ label: 'From Luck', value: luckBonusGold, isPercent: true });
         
@@ -349,6 +366,7 @@ document.addEventListener('DOMContentLoaded', () => {
             totalDps: finalDps,
             bonusGold: bonusGold,
             magicFind: magicFind,
+            bonusXp: bonusXp,
             critChance: permanentUpgradeBonuses.critChance,
             critDamage: 1.5 + (permanentUpgradeBonuses.critDamage / 100),
             multiStrikeChance: permanentUpgradeBonuses.multiStrike,
@@ -374,6 +392,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function handleMonsterDefeated() {
+        player.checkHuntProgress(gameState, currentMonster);
+
         const oldSubZone = findSubZoneByLevel(gameState.currentFightingLevel);
         const oldRealmIndex = oldSubZone ? REALMS.findIndex(r => Object.values(r.zones).some(z => z === oldSubZone.parentZone)) : -1;
     
@@ -439,7 +459,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
-        const levelUpLogs = player.gainXP(gameState, result.xpGained);
+        const levelUpLogs = player.gainXP(gameState, result.xpGained, playerStats.bonusXp);
         if (levelUpLogs.length > 0) {
             levelUpLogs.forEach(msg => logMessage(elements.gameLogEl, msg, 'legendary', isAutoScrollingLog));
             recalculateStats();
@@ -500,7 +520,6 @@ document.addEventListener('DOMContentLoaded', () => {
         gameState.monster = newMonsterState;
         ui.updateMonsterUI(elements, gameState, newMonster);
 
-        // --- START OF MODIFICATION: New Wiki Unlock Trigger ---
         // Check if the wiki isn't unlocked yet and if the player is encountering the Level 25 Mini-Boss
         if (!gameState.unlockedFeatures.wiki && gameState.currentFightingLevel === 25) {
             gameState.unlockedFeatures.wiki = true;
@@ -508,7 +527,6 @@ document.addEventListener('DOMContentLoaded', () => {
             ui.updateTabVisibility(gameState);
             ui.flashTab('wiki-view');
         }
-        // --- END OF MODIFICATION ---
     }
 
     function attack(baseDamage, isClick = false) {
@@ -570,6 +588,7 @@ document.addEventListener('DOMContentLoaded', () => {
             
             recalculateStats();
             ui.updateStatsPanel(elements, playerStats);
+            ui.updateActiveBuffsUI(elements, gameState.activeBuffs); // Update buff display
         }
     }
 
@@ -589,6 +608,7 @@ document.addEventListener('DOMContentLoaded', () => {
         ui.updateUI(elements, gameState, playerStats, currentMonster, salvageMode, craftingGems, selectedItemForForge, bulkCombineSelection, bulkCombineDeselectedIds);
         renderMapAccordion();
         ui.renderPermanentUpgrades(elements, gameState);
+        ui.updateActiveBuffsUI(elements, gameState.activeBuffs);
     }
 
     function autoSave() {
@@ -880,6 +900,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const baseXp = 20;
         const xpPower = 1.2;
         let xpPerKill = baseXp * Math.pow(level, xpPower);
+        xpPerKill *= (1 + (playerStats.bonusXp / 100));
         
         if (isBigBossLevel(level)) {
             xpPerKill *= 3;
@@ -908,7 +929,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const startingLevel = gameState.hero.level;
         gameState.gold += totalGoldGained;
         gameState.scrap += totalScrapGained;
-        player.gainXP(gameState, totalXPGained);
+        player.gainXP(gameState, totalXPGained, playerStats.bonusXp);
         const finalLevel = gameState.hero.level;
 
         recalculateStats();
@@ -1152,7 +1173,54 @@ document.addEventListener('DOMContentLoaded', () => {
             selectedGemId: selectedGemForSocketing ? selectedGemForSocketing.id : null
         });
     }
-        function main() {
+
+    // --- HUNTS LOGIC ---
+    function generateNewHunt(indexToReplace) {
+        player.generateNewHunt(gameState, indexToReplace, HUNT_POOLS);
+    }
+    
+    function populateInitialHunts() {
+        for (let i = 0; i < gameState.hunts.available.length; i++) {
+            if (gameState.hunts.available[i] === null) {
+                generateNewHunt(i);
+            }
+        }
+    }
+
+    function acceptHunt(index) {
+        if(player.acceptHunt(gameState, index)) {
+            ui.renderHuntsView(elements, gameState);
+            autoSave();
+        }
+    }
+
+    function completeHunt() {
+        const reward = player.completeHunt(gameState);
+        if (reward) {
+            logMessage(elements.gameLogEl, `Hunt complete! You received a <span class="legendary">${reward.name}</span>!`, '', isAutoScrollingLog);
+            
+            const indexToReplace = gameState.hunts.available.findIndex(h => h === null);
+            if (indexToReplace !== -1) {
+                generateNewHunt(indexToReplace);
+            }
+            ui.renderHuntsView(elements, gameState);
+            autoSave();
+        }
+    }
+
+    function rerollHunts() {
+        if(player.rerollHunts(gameState)) {
+            logMessage(elements.gameLogEl, 'Bounties rerolled!', 'uncommon', isAutoScrollingLog);
+            ui.renderHuntsView(elements, gameState);
+            autoSave();
+        }
+    }
+
+    function checkDailyResets() {
+        player.checkDailyResets(gameState);
+    }
+
+    function main() {
         elements = ui.initDOMElements();
         
         const savedData = localStorage.getItem('idleRPGSaveData');
@@ -1203,6 +1271,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 artisanChiselDropped: loadedState.artisanChiselDropped || false,
                 artisanChiselUsed: loadedState.artisanChiselUsed || false,
                 pendingSubTabViewFlash: loadedState.pendingSubTabViewFlash || null,
+                hunts: {
+                    ...baseState.hunts,
+                    ...(loadedState.hunts || {}),
+                    completionCounts: (loadedState.hunts && loadedState.hunts.completionCounts) ? loadedState.hunts.completionCounts : {},
+                }
             };
             
             if (!gameState.presetSystemMigrated) {
@@ -1217,6 +1290,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (gameState.gems.length > 0) gameState.unlockedFeatures.gems = true;
                 if (gameState.scrap > 0) gameState.unlockedFeatures.forge = true;
                 if (gameState.consumables.length > 0) gameState.unlockedFeatures.consumables = true;
+                if (gameState.prestigeCount > 0) gameState.unlockedFeatures.hunts = true;
                 if (gameState.maxLevel >= 100) {
                     gameState.unlockedFeatures.prestige = true;
                     gameState.unlockedFeatures.wiki = true;
@@ -1276,6 +1350,11 @@ document.addEventListener('DOMContentLoaded', () => {
             currentViewingZoneId = 'world';
         }
         
+        checkDailyResets();
+        if (gameState.unlockedFeatures.hunts) {
+            populateInitialHunts();
+        }
+
         setupEventListeners();
         recalculateStats();
         startNewMonster();
@@ -1286,6 +1365,7 @@ document.addEventListener('DOMContentLoaded', () => {
         autoSave(); 
         setInterval(autoSave, 30000);
         setInterval(gameLoop, 1000);
+        setInterval(checkDailyResets, 60000); // Check for daily resets every minute
     }    
     
     function setupEventListeners() {
@@ -1334,6 +1414,33 @@ document.addEventListener('DOMContentLoaded', () => {
         window.addEventListener('mousemove', (e) => {
             lastMousePosition.x = e.clientX;
             lastMousePosition.y = e.clientY;
+        });
+        
+        document.body.addEventListener('mouseover', (e) => {
+            if (!(e.target instanceof HTMLElement)) return;
+    
+            // Tooltip for the disabled Hunts button
+            const huntsBtn = e.target.closest('#hunts-btn');
+            if (huntsBtn && (/** @type {HTMLButtonElement} */ (huntsBtn)).disabled) {
+                elements.tooltipEl.className = 'hidden';
+                elements.tooltipEl.innerHTML = `
+                    <div class="item-header" style="color: #f1c40f;">Unlock Hunts</div>
+                    <p style="margin: 5px 0 0 0; font-size: 0.9em;">Complete your first Prestige to unlock the Hunter's Board.</p>
+                `;
+                const rect = huntsBtn.getBoundingClientRect();
+                elements.tooltipEl.style.left = `${rect.left}px`;
+                elements.tooltipEl.style.top = `${rect.bottom + 5}px`;
+                elements.tooltipEl.classList.remove('hidden');
+                return; // Stop here to prevent other tooltips from showing
+            }
+        });
+    
+        document.body.addEventListener('mouseout', (e) => {
+            if (!(e.target instanceof HTMLElement)) return;
+            const huntsBtn = e.target.closest('#hunts-btn');
+            if (huntsBtn && (/** @type {HTMLButtonElement} */ (huntsBtn)).disabled) {
+                elements.tooltipEl.classList.add('hidden');
+            }
         });
         
         addTapListener(document.getElementById('attributes-area'), (e) => {
@@ -1406,6 +1513,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         
         addTapListener(elements.monsterImageEl, clickMonster);
+
         addTapListener(document.getElementById('salvage-mode-btn'), () => {
             salvageMode.active = !salvageMode.active;
             ui.toggleSalvageMode(elements, salvageMode.active);
@@ -2087,6 +2195,7 @@ document.addEventListener('DOMContentLoaded', () => {
         setupSalvageFilterListeners();
         setupViewSlotsListeners();
         setupWikiListeners();
+        setupHuntsListeners();
     }
     
     function setupLogScrollListeners() {
@@ -2508,7 +2617,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 ...baseState,
                 artisanChiselDropped: gameState.artisanChiselDropped,
                 artisanChiselUsed: gameState.artisanChiselUsed,
-                unlockedFeatures: gameState.unlockedFeatures,
+                unlockedFeatures: {
+                    ...gameState.unlockedFeatures,
+                    hunts: true, // Unlock hunts after first prestige
+                },
                 tutorialCompleted: gameState.tutorialCompleted,
                 permanentUpgrades: gameState.permanentUpgrades,
                 salvageFilter: gameState.salvageFilter,
@@ -2524,6 +2636,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 hero: prestgedHeroState,
                 currentFightingLevel: 1,
                 currentRunCompletedLevels: [],
+                hunts: { // Carry over hunt progress
+                    ...baseState.hunts,
+                    completionCounts: gameState.hunts.completionCounts || {},
+                },
             };
             gameState.equipment = gameState.presets[gameState.activePresetIndex].equipment;
     
@@ -2534,6 +2650,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 });
             }
+
+            populateInitialHunts();
     
             logMessage(elements.gameLogEl, `PRESTIGE! You are reborn with greater power. Your next goal is Level ${gameState.nextPrestigeLevel}.`, 'legendary', isAutoScrollingLog);
             
@@ -2780,6 +2898,39 @@ document.addEventListener('DOMContentLoaded', () => {
         addTapListener(devToolModalBackdrop, (e) => {
             if (e.target === devToolModalBackdrop) {
                 devToolModalBackdrop.classList.add('hidden');
+            }
+        });
+    }
+
+    function setupHuntsListeners() {
+        const { huntsBtn, huntsModalBackdrop, huntsCloseBtn, rerollHuntsBtn, availableHuntsContainer, activeHuntSection } = ui.initHuntsDOMElements();
+
+        addTapListener(huntsBtn, () => {
+            ui.renderHuntsView(elements, gameState);
+            huntsModalBackdrop.classList.remove('hidden');
+        });
+
+        const close = () => huntsModalBackdrop.classList.add('hidden');
+        addTapListener(huntsCloseBtn, close);
+        addTapListener(huntsModalBackdrop, e => {
+            if (e.target === huntsModalBackdrop) close();
+        });
+
+        addTapListener(rerollHuntsBtn, rerollHunts);
+
+        addTapListener(availableHuntsContainer, e => {
+            if (!(e.target instanceof HTMLElement)) return;
+            const button = e.target.closest('button');
+            if (button && button.dataset.index) {
+                acceptHunt(parseInt(button.dataset.index, 10));
+            }
+        });
+
+        addTapListener(activeHuntSection, e => {
+            if (!(e.target instanceof HTMLElement)) return;
+            const button = e.target.closest('button');
+            if (button && button.id === 'complete-hunt-btn') {
+                completeHunt();
             }
         });
     }

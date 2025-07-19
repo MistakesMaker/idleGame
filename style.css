@@ -2015,3 +2015,161 @@ h5 .legendary { color: #f39c12; }
     font-size: 1.2em;
     max-width: 400px;
 }
+/* --- HUNTS MODAL & UI --- */
+#hunts-btn {
+    width: 100%;
+    margin: 10px 0;
+    background: linear-gradient(145deg, #e67e22, #f39c12);
+    border-bottom-color: #d35400;
+}
+
+#hunts-modal-backdrop {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+    background-color: rgba(0,0,0,0.8); 
+    z-index: 10002; 
+    display: flex; justify-content: center; align-items: center;
+}
+#hunts-modal {
+    background-color: #2c3e50; 
+    padding: 25px; 
+    border-radius: 12px; 
+    border: 2px solid #e67e22; 
+    box-shadow: 0 0 20px rgba(230, 126, 34, 0.5); 
+    width: 90%; max-width: 800px;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+}
+#hunts-modal-body {
+    margin: 20px 0;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 25px;
+}
+#active-hunt-section {
+    padding: 15px;
+    border: 1px solid #34495e;
+    border-radius: 8px;
+    background-color: rgba(0,0,0,0.2);
+}
+#active-hunt-section h4 {
+    margin-top: 0;
+    color: #2ecc71;
+}
+.available-hunts-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+.available-hunts-header h4 {
+    margin: 0;
+}
+#reroll-hunts-btn {
+    margin: 0;
+    font-size: 14px;
+    padding: 8px 12px;
+}
+#available-hunts-container {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.hunt-card {
+    background-color: rgba(44, 62, 80, 0.7);
+    border: 1px solid #4a637e;
+    border-radius: 8px;
+    padding: 15px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+.hunt-details {
+    flex-grow: 1;
+}
+.hunt-title {
+    font-family: 'Cinzel', serif;
+    font-size: 1.1em;
+    font-weight: bold;
+    color: #f1c40f;
+    margin: 0 0 5px 0;
+}
+.hunt-description {
+    margin: 0 0 10px 0;
+    color: #bdc3c7;
+}
+.hunt-reward {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.9em;
+}
+.hunt-reward img {
+    width: 32px;
+    height: 32px;
+    border-radius: 4px;
+    background: rgba(0,0,0,0.5);
+    padding: 2px;
+}
+.hunt-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+}
+.hunt-progress-bar-container {
+    width: 100px;
+    height: 10px;
+    background-color: #1a1a1a;
+    border-radius: 5px;
+    overflow: hidden;
+}
+.hunt-progress-bar {
+    width: 0%;
+    height: 100%;
+    background: linear-gradient(to right, #2ecc71, #27ae60);
+    transition: width 0.3s ease;
+}
+.hunt-progress-text {
+    font-size: 0.8em;
+    color: #95a5a6;
+}
+#hunts-close-btn {
+    margin-top: 20px;
+    background: #c0392b;
+    border-bottom-color: #922b21;
+    align-self: center;
+}
+/* --- HUNTS BUTTON DISABLED STATE --- */
+#hunts-btn:disabled {
+    background: #566573;
+    color: #95a5a6;
+    cursor: help; /* Change cursor to a question mark */
+    border-bottom-color: #43515c;
+    transform: none;
+    box-shadow: none;
+}
+.hunt-reward {
+    display: flex;
+    flex-direction: column; /* --- MODIFICATION: Stack icon and text vertically --- */
+    align-items: center;
+    gap: 8px;
+    font-size: 0.9em;
+    text-align: center; /* --- MODIFICATION: Center the text --- */
+    width: 100px; /* --- MODIFICATION: Give it a fixed width --- */
+    flex-shrink: 0; /* --- MODIFICATION: Prevent it from shrinking --- */
+}
+.hunt-reward img {
+    width: 48px; /* --- MODIFICATION: Make icon a bit bigger --- */
+    height: 48px;
+    border-radius: 4px;
+    background: rgba(0,0,0,0.5);
+    padding: 2px;
+}
+/* --- NEW RULE --- */
+.hunt-reward-name {
+    color: #ecf0f1;
+    font-weight: bold;
+}

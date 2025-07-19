@@ -243,3 +243,15 @@ export function getCombinedItemStats(item) {
     }
     return combinedStats;
 }
+
+/**
+ * Returns a random integer between min (inclusive) and max (inclusive).
+ * @param {number} min - The minimum possible value.
+ * @param {number} max - The maximum possible value.
+ * @returns {number} A random integer within the range.
+ */
+export function getRandomInt(min, max) {
+    min = Math.ceil(min);
+    max = Math.floor(max);
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+}

@@ -2,11 +2,13 @@
 
 import { rarities } from './game.js';
 import { REALMS } from './data/realms.js';
-import { getXpForNextLevel, getUpgradeCost, findEmptySpot } from './utils.js';
+import { getXpForNextLevel, getUpgradeCost, findEmptySpot, getRandomInt, findSubZoneByLevel, formatNumber } from './utils.js';
 import { GEMS } from './data/gems.js';
 import { ITEMS } from './data/items.js';
 import { PERMANENT_UPGRADES } from './data/upgrades.js';
 import { CONSUMABLES } from './data/consumables.js';
+import { HUNT_POOLS } from './data/hunts.js';
+import { MONSTERS } from './data/monsters.js';
 
 /**
  * Finds an item by its ID from all possible sources (main inventory and all preset inventories).
@@ -235,15 +237,16 @@ export function spendMultipleAttributePoints(gameState, attribute, amount) {
 /**
  * Adds experience to the hero, handling level-ups.
  */
-export function gainXP(gameState, amount) {
+export function gainXP(gameState, amount, bonusXpPercent = 0) {
+    const finalAmount = Math.ceil(amount * (1 + (bonusXpPercent / 100)));
     const levelUpLogs = [];
-    gameState.hero.xp += amount;
+    gameState.hero.xp += finalAmount;
     let xpToNextLevel = getXpForNextLevel(gameState.hero.level);
 
     while (gameState.hero.xp >= xpToNextLevel) {
         gameState.hero.xp -= xpToNextLevel;
         gameState.hero.level++;
-        gameState.hero.attributePoints += 2; // MODIFIED
+        gameState.hero.attributePoints += 2;
         levelUpLogs.push(`Congratulations! You reached Level ${gameState.hero.level}!`);
         xpToNextLevel = getXpForNextLevel(gameState.hero.level);
     }
@@ -671,6 +674,7 @@ export function consumeItem(gameState, itemId) {
     }
 
     const effect = itemBase.effect;
+    let message = `You consumed the ${item.name}!`;
 
     // Dispatcher for different effect types
     switch (effect.type) {
@@ -682,15 +686,15 @@ export function consumeItem(gameState, itemId) {
             break;
 
         case 'timedBuff':
-            // Future implementation
-            // const expiresAt = Date.now() + (effect.duration * 1000);
-            // gameState.activeBuffs.push({ id: item.baseId, name: effect.name, expiresAt });
-            return { success: false, message: "Timed buffs are not yet implemented." };
+            const expiresAt = Date.now() + (effect.duration * 1000);
+            gameState.activeBuffs.push({ ...effect, expiresAt });
+            message = `You feel the effects of <b>${effect.name}</b>!`;
+            break;
         
-        case 'permanentStat':
-             // Future implementation
-            // gameState.hero.attributes[effect.statKey] += effect.value;
-            return { success: false, message: "Permanent stat buffs are not yet implemented." };
+        case 'resource':
+            gameState[effect.resource] = (gameState[effect.resource] || 0) + effect.amount;
+            message = `You gained <b>${formatNumber(effect.amount)} ${effect.resource.charAt(0).toUpperCase() + effect.resource.slice(1)}</b>!`;
+            break;
 
         default:
             return { success: false, message: "Unknown consumable effect type." };
@@ -702,5 +706,210 @@ export function consumeItem(gameState, itemId) {
     // Compact the consumables grid
     gameState.consumables = compactInventory(gameState.consumables);
 
-    return { success: true, message: `You consumed the ${item.name}!` };
+    return { success: true, message };
+}
+
+// ===================================
+// --- HUNTS SYSTEM LOGIC ---
+// ===================================
+
+/**
+ * Generates a new hunt to fill an empty slot on the board.
+ * Uses a weighted system based on the player's current progress.
+ * @param {object} gameState
+ * @param {number} indexToReplace The index in the `available` array to fill.
+ * @param {object[]} huntPools The full definition of all possible hunts.
+ */
+export function generateNewHunt(gameState, indexToReplace, huntPools) {
+    const currentHighPoint = gameState.currentRunCompletedLevels.length > 0 ? Math.max(...gameState.currentRunCompletedLevels) : 1;
+
+    // 1. Find all tiers the player has unlocked in this run
+    const availableTiers = huntPools.filter(tier => currentHighPoint >= tier.requiredLevel);
+    if (availableTiers.length === 0) return;
+
+    // 2. Assign weights based on proximity to the player's current tier
+    const currentTierIndex = availableTiers.length - 1;
+    const tierWeights = [
+        { tierIndex: currentTierIndex, weight: 50 },
+        { tierIndex: currentTierIndex - 1, weight: 35 },
+        { tierIndex: currentTierIndex - 2, weight: 15 }, 
+    ];
+
+    const validWeightedTiers = tierWeights.filter(t => t.tierIndex >= 0);
+
+    // 3. Roll to select a tier
+    const roll = Math.random() * 100;
+    let selectedTierIndex;
+    let cumulativeWeight = 0;
+
+    for (const tier of validWeightedTiers) {
+        cumulativeWeight += tier.weight;
+        if (roll <= cumulativeWeight) {
+            if (tier.tierIndex === currentTierIndex - 2) {
+                // If we landed in the "all older tiers" bucket, pick one of them randomly
+                selectedTierIndex = getRandomInt(0, Math.max(0, currentTierIndex - 2));
+            } else {
+                selectedTierIndex = tier.tierIndex;
+            }
+            break;
+        }
+    }
+    
+    if (selectedTierIndex === undefined) {
+        selectedTierIndex = currentTierIndex;
+    }
+
+    const chosenTierPool = availableTiers[selectedTierIndex].hunts;
+    
+    // 4. Select a random hunt from the chosen tier, avoiding duplicates
+    const availableHuntIds = gameState.hunts.available.map(h => h ? h.id : null);
+    let potentialHunts = chosenTierPool.filter(hunt => !availableHuntIds.includes(hunt.id));
+    
+    if (potentialHunts.length === 0) {
+        const allAvailableHunts = availableTiers.flatMap(t => t.hunts);
+        potentialHunts = allAvailableHunts.filter(hunt => !availableHuntIds.includes(hunt.id));
+        if (potentialHunts.length === 0) return; 
+    }
+
+    const huntTemplate = { ...potentialHunts[Math.floor(Math.random() * potentialHunts.length)] };
+
+    // 5. Calculate dynamic quantity
+    const completionCount = gameState.hunts.completionCounts[huntTemplate.id] || 0;
+    const completionBonus = completionCount * 10;
+    const quantity = getRandomInt(huntTemplate.quantityMin + completionBonus, huntTemplate.quantityMax + completionBonus);
+
+    // 6. Create the final hunt object for the game state
+    const chosenRewardId = huntTemplate.rewardIds[Math.floor(Math.random() * huntTemplate.rewardIds.length)];
+
+    const newHunt = {
+        ...huntTemplate,
+        quantity: quantity,
+        rewardId: chosenRewardId, // Set the specific, chosen reward for this instance
+        instanceId: Date.now() + Math.random(),
+    };
+
+    gameState.hunts.available[indexToReplace] = newHunt;
+}
+
+/**
+ * Sets an available hunt as the player's active hunt.
+ * @param {object} gameState
+ * @param {number} index The index of the hunt in the `available` array.
+ * @returns {boolean} True if successful.
+ */
+export function acceptHunt(gameState, index) {
+    if (gameState.hunts.active || !gameState.hunts.available[index]) {
+        return false;
+    }
+    gameState.hunts.active = gameState.hunts.available[index];
+    gameState.hunts.available[index] = null;
+    gameState.hunts.progress = 0;
+    return true;
+}
+
+/**
+ * Checks if a defeated monster contributes to the active hunt.
+ * @param {object} gameState
+ * @param {object} defeatedMonster - The `currentMonster` object.
+ */
+export function checkHuntProgress(gameState, defeatedMonster) {
+    const activeHunt = gameState.hunts.active;
+    if (!activeHunt || gameState.hunts.progress >= activeHunt.quantity) return;
+
+    let isMatch = false;
+    const monsterId = Object.keys(MONSTERS).find(key => MONSTERS[key] === defeatedMonster.data);
+
+    switch (activeHunt.type) {
+        case 'kill_specific':
+            if (monsterId === activeHunt.target) {
+                isMatch = true;
+            }
+            break;
+        case 'kill_category':
+            const subZone = findSubZoneByLevel(gameState.currentFightingLevel);
+            const realm = subZone ? REALMS.find(r => Object.values(r.zones).includes(subZone.parentZone)) : null;
+            const zoneId = realm ? Object.keys(realm.zones).find(id => realm.zones[id] === subZone.parentZone) : null;
+
+            let conditionsMet = 0;
+            let conditionsRequired = Object.keys(activeHunt.target).length;
+
+            if (activeHunt.target.isBoss && defeatedMonster.data.isBoss) conditionsMet++;
+            if (activeHunt.target.realm && realm && realm.name === activeHunt.target.realm) conditionsMet++;
+            if (activeHunt.target.zoneId && zoneId === activeHunt.target.zoneId) conditionsMet++;
+            if (activeHunt.target.nameContains && defeatedMonster.name.includes(activeHunt.target.nameContains)) conditionsMet++;
+            
+            if (conditionsMet === conditionsRequired) {
+                isMatch = true;
+            }
+            break;
+    }
+
+    if (isMatch) {
+        gameState.hunts.progress++;
+    }
+}
+
+/**
+ * Completes the active hunt, grants the reward, and clears the active slot.
+ * @param {object} gameState
+ * @returns {object|null} The reward consumable object if successful.
+ */
+export function completeHunt(gameState) {
+    const activeHunt = gameState.hunts.active;
+    if (!activeHunt || gameState.hunts.progress < activeHunt.quantity) {
+        return null;
+    }
+
+    // Grant reward
+    const rewardBase = CONSUMABLES[activeHunt.rewardId];
+    const rewardItem = {
+        ...rewardBase,
+        id: Date.now() + Math.random(),
+        baseId: rewardBase.id,
+    };
+    gameState.consumables.push(rewardItem);
+    gameState.consumables = compactInventory(gameState.consumables);
+
+    // Update completion count
+    const count = gameState.hunts.completionCounts[activeHunt.id] || 0;
+    gameState.hunts.completionCounts[activeHunt.id] = count + 1;
+
+    // Clear active hunt
+    gameState.hunts.active = null;
+    gameState.hunts.progress = 0;
+    
+    return rewardItem;
+}
+
+/**
+ * Spends a reroll charge to replace all available hunts.
+ * @param {object} gameState
+ * @returns {boolean} True if successful.
+ */
+export function rerollHunts(gameState) {
+    if (gameState.hunts.dailyRerollsLeft <= 0) {
+        return false;
+    }
+    gameState.hunts.dailyRerollsLeft--;
+    for (let i = 0; i < gameState.hunts.available.length; i++) {
+        // Only replace unaccepted hunts
+        if (gameState.hunts.available[i]) {
+            generateNewHunt(gameState, i, HUNT_POOLS);
+        }
+    }
+    return true;
+}
+
+/**
+ * Checks if the daily reroll reset timestamp has passed and resets if needed.
+ * @param {object} gameState
+ */
+export function checkDailyResets(gameState) {
+    const now = new Date();
+    const lastReset = gameState.hunts.lastRerollTimestamp ? new Date(gameState.hunts.lastRerollTimestamp) : null;
+
+    if (!lastReset || lastReset.getUTCDay() !== now.getUTCDay()) {
+        gameState.hunts.dailyRerollsLeft = 5;
+        gameState.hunts.lastRerollTimestamp = now.getTime();
+    }
 }

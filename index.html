@@ -305,6 +305,7 @@
                 <p><i class="fas fa-cogs"></i> <span id="scrap-stat" class="currency-tier-0">0</span></p>
             </div>
 
+            <button id="hunts-btn">Hunts</button>
             <button id="reset-game-btn">Hard Reset</button>
 
             <div id="upgrades-area">
@@ -485,6 +486,32 @@
                 </div>
             </div>
             <button id="dev-tool-close-btn">Close</button>
+        </div>
+    </div>
+
+    <!-- NEW HUNTS MODAL -->
+    <div id="hunts-modal-backdrop" class="hidden">
+        <div id="hunts-modal">
+            <h3 id="hunts-modal-title">Hunter's Board</h3>
+            <div id="hunts-modal-body">
+                <div id="active-hunt-section">
+                    <h4>Active Hunt</h4>
+                    <div id="active-hunt-card" class="hidden">
+                        <!-- Active Hunt content will be injected by JS -->
+                    </div>
+                    <p id="no-active-hunt-text">Accept a hunt from the available bounties below.</p>
+                </div>
+                <div id="available-hunts-section">
+                    <div class="available-hunts-header">
+                        <h4>Available Bounties</h4>
+                        <button id="reroll-hunts-btn">Reroll All (5)</button>
+                    </div>
+                    <div id="available-hunts-container">
+                        <!-- Available Hunt cards will be injected by JS -->
+                    </div>
+                </div>
+            </div>
+            <button id="hunts-close-btn">Close</button>
         </div>
     </div>
 
