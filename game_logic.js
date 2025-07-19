@@ -7,6 +7,7 @@ import { rarities } from './game.js';
 import { isBossLevel, isBigBossLevel, isMiniBossLevel, findSubZoneByLevel, formatNumber, findNextAvailableSpot } from './utils.js';
 import { PERMANENT_UPGRADES } from './data/upgrades.js';
 import { STATS } from './data/stat_pools.js';
+import * as player from './player_actions.js'; // --- MODIFICATION: Import player actions ---
 
 /**
  * Checks if a dropped item should be kept based on the player's salvage filter settings (strict AND logic).
@@ -319,6 +320,10 @@ export function dropLoot(currentMonster, gameState, playerStats) {
  * Handles the logic when a monster is defeated.
  */
 export function monsterDefeated(gameState, playerStats, currentMonster) {
+    // --- START MODIFICATION: Call hunt progress check ---
+    player.checkHuntProgress(gameState, currentMonster);
+    // --- END MODIFICATION ---
+
     const level = gameState.currentFightingLevel;
     const logMessages = [];
     const previousMonsterMaxHp = gameState.monster.maxHp;
@@ -392,6 +397,7 @@ export function monsterDefeated(gameState, playerStats, currentMonster) {
 
     let baseGoldDrop = 10 + (3 * Math.pow(effectiveLevel, 2.1));
     let xpGained = 20 * Math.pow(level, 1.2);
+    xpGained *= (1 + (playerStats.bonusXp / 100)); // Apply XP bonus from consumables
     
     if (isBigBossLevel(level)) { xpGained *= 3; baseGoldDrop *= 3; } 
     else if (isBossLevel(level)) { xpGained *= 2; baseGoldDrop *= 2; } 

@@ -767,9 +767,20 @@ export function renderEquipmentStatsSummary(elements, gameState) {
     });
 }
 
+/**
+ * Updates the state of the Hunts button (enabled/disabled).
+ * @param {object} gameState The current game state.
+ */
+export function updateHuntsButton(gameState) {
+    const huntsBtn = document.getElementById('hunts-btn');
+    if (huntsBtn) {
+        (/** @type {HTMLButtonElement} */ (huntsBtn)).disabled = !gameState.unlockedFeatures.hunts;
+    }
+}
+
 
 /**
- * The original, monolithic update function. Kept for full re-draws when necessary (e.g., on load, major view change).
+ * The main UI update function.
  */
 export function updateUI(elements, gameState, playerStats, currentMonster, salvageMode, craftingGems = [], selectedItemForForge = null, bulkCombineSelection = {}, bulkCombineDeselectedIds = new Set()) {
     const {
@@ -785,12 +796,7 @@ export function updateUI(elements, gameState, playerStats, currentMonster, salva
     updateMonsterUI(elements, gameState, currentMonster);
     updateLootPanel(elements, currentMonster, gameState);
     updatePrestigeUI(elements, gameState);
-
-    // Hunts Button State
-    const huntsBtn = document.getElementById('hunts-btn');
-    if (huntsBtn) {
-        (/** @type {HTMLButtonElement} */ (huntsBtn)).disabled = !gameState.unlockedFeatures.hunts;
-    }
+    updateHuntsButton(gameState);
 
     // Grid Renders for the active inventory sub-view
     const inventoryView = document.getElementById('inventory-view');
@@ -1296,10 +1302,15 @@ export function createItemHTML(item, showLock = true) {
     
     const lockHTML = showLock && item.locked !== undefined ? `<i class="fas ${item.locked ? 'fa-lock' : 'fa-lock-open'} lock-icon"></i>` : '';
 
+    // --- START OF NEW CODE ---
+    const quantityHTML = item.quantity && item.quantity > 1 ? `<div class="item-quantity-display">${item.quantity}</div>` : '';
+    // --- END OF NEW CODE ---
+
     return `<div class="item ${item.rarity}">
                 <img src="${iconSrc}" class="item-icon" alt="${item.name}">
                 ${socketsHTML}
                 ${lockHTML}
+                ${quantityHTML}
             </div>`;
 }
 
@@ -2066,6 +2077,12 @@ export function renderWikiResults(containerEl, filteredData, wikiFavorites, show
  * @param {boolean} isFavorited - Whether the item is currently favorited.
  * @returns {string} The HTML string for the card.
  */
+/**
+ * Creates the HTML for a single item card in the wiki.
+ * @param {object} itemData - The processed data for a single item.
+ * @param {boolean} isFavorited - Whether the item is currently favorited.
+ * @returns {string} The HTML string for the card.
+ */
 function createWikiItemCardHTML(itemData, isFavorited) {
     const itemBase = ITEMS[itemData.id] || GEMS[itemData.id] || CONSUMABLES[itemData.id];
     const isUnique = itemBase.isUnique ? 'unique-item-name' : '';
@@ -2113,16 +2130,31 @@ function createWikiItemCardHTML(itemData, isFavorited) {
     if (itemData.dropSources.length > 0) {
         const sortedSources = itemData.dropSources.sort((a, b) => a.level - b.level);
         sortedSources.forEach(source => {
-            dropsHtml += `
-                <li class="wiki-drop-source">
-                    <img src="${source.monster.image}" alt="${source.monster.name}">
-                    <div class="wiki-drop-source-details">
-                         <span class="wiki-monster-name">${source.monster.name}</span>
-                         <span class="wiki-monster-location">${source.location}</span>
-                    </div>
-                    <span class="drop-chance">${source.chance.toFixed(2)}%</span>
-                </li>
-            `;
+            // --- START OF MODIFICATION ---
+            if (source.isHunt) {
+                dropsHtml += `
+                    <li class="wiki-drop-source">
+                        <img src="images/icons/hunts_icon.png" alt="Hunter's Board">
+                        <div class="wiki-drop-source-details">
+                             <span class="wiki-monster-name">${source.monster.name}</span>
+                             <span class="wiki-monster-location">${source.location}</span>
+                        </div>
+                        <span class="drop-chance">Reward</span>
+                    </li>
+                `;
+            } else {
+                dropsHtml += `
+                    <li class="wiki-drop-source">
+                        <img src="${source.monster.image}" alt="${source.monster.name}">
+                        <div class="wiki-drop-source-details">
+                             <span class="wiki-monster-name">${source.monster.name}</span>
+                             <span class="wiki-monster-location">${source.location}</span>
+                        </div>
+                        <span class="drop-chance">${source.chance.toFixed(2)}%</span>
+                    </li>
+                `;
+            }
+            // --- END OF MODIFICATION ---
         });
     } else {
         dropsHtml = '<li>No known drop sources.</li>';
@@ -2596,8 +2628,9 @@ export async function showDevToolModal(elements, wikiData) {
  * @param {DOMElements} elements The DOM elements object.
  * @param {string} statKey The key of the stat to display (e.g., 'clickDamage').
  * @param {object} statBreakdown The object containing the breakdown data.
+ * @param {object} gameState The current game state.
  */
-export function showStatBreakdownTooltip(elements, statKey, statBreakdown) {
+export function showStatBreakdownTooltip(elements, statKey, statBreakdown, gameState) {
     const { statTooltipEl } = elements;
     if (!statBreakdown[statKey]) {
         statTooltipEl.innerHTML = '<h4>Error</h4><p>No breakdown available for this stat.</p>';
@@ -2619,6 +2652,24 @@ export function showStatBreakdownTooltip(elements, statKey, statBreakdown) {
             html += `<li>${source.label}: ${valueStr}</li>`;
         }
     });
+
+    // --- START OF MODIFICATION ---
+    const buffStatMap = {
+        'goldGain': 'bonusGold',
+        'magicFind': 'magicFind',
+        // Add other mappings here if you create more buff types
+    };
+    const relevantBuffKey = buffStatMap[statKey];
+
+    if (relevantBuffKey && gameState.activeBuffs) {
+        gameState.activeBuffs.forEach(buff => {
+            if (buff.statKey === relevantBuffKey && buff.value > 0) {
+                const valueStr = `+${buff.value.toFixed(2)}%`;
+                html += `<li>From ${buff.name}: ${valueStr}</li>`;
+            }
+        });
+    }
+    // --- END OF MODIFICATION ---
 
     if (data.multipliers && data.multipliers.length > 0) {
         html += `<li class="tooltip-divider"></li>`;
@@ -2667,8 +2718,9 @@ export function renderHuntsView(elements, gameState) {
     });
 
     // Update Reroll Button
-    (/** @type {HTMLButtonElement} */ (rerollHuntsBtn)).textContent = `Reroll All (${gameState.hunts.available.length})`;
-    (/** @type {HTMLButtonElement} */ (rerollHuntsBtn)).disabled = gameState.hunts.dailyRerollsLeft <= 0;
+    const rerollButton = /** @type {HTMLButtonElement} */ (rerollHuntsBtn);
+    rerollButton.textContent = `Reroll All (${gameState.hunts.dailyRerollsLeft})`;
+    rerollButton.disabled = gameState.hunts.dailyRerollsLeft <= 0;
 }
 
 /**
@@ -2700,8 +2752,8 @@ function createHuntCardHTML(hunt, index, isActive, progress = 0) {
 
     return `
         <div class="hunt-card">
-            <div class="hunt-reward">
-                <img src="${reward.icon}" alt="${reward.name}" title="${reward.description}">
+            <div class="hunt-reward" data-reward-id="${reward.id}">
+                <img src="${reward.icon}" alt="${reward.name}">
                 <span class="hunt-reward-name">${reward.name}</span>
             </div>
             <div class="hunt-details">

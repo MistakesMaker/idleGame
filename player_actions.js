@@ -700,11 +700,17 @@ export function consumeItem(gameState, itemId) {
             return { success: false, message: "Unknown consumable effect type." };
     }
 
-    // Remove the item from the consumables array
-    gameState.consumables.splice(itemIndex, 1);
-    
-    // Compact the consumables grid
-    gameState.consumables = compactInventory(gameState.consumables);
+    // --- START OF MODIFICATION ---
+    // Handle stacking logic
+    if (item.quantity && item.quantity > 1) {
+        item.quantity--;
+    } else {
+        // Remove the item from the consumables array if it's the last one
+        gameState.consumables.splice(itemIndex, 1);
+        // Compact the consumables grid
+        gameState.consumables = compactInventory(gameState.consumables);
+    }
+    // --- END OF MODIFICATION ---
 
     return { success: true, message };
 }
@@ -862,13 +868,29 @@ export function completeHunt(gameState) {
 
     // Grant reward
     const rewardBase = CONSUMABLES[activeHunt.rewardId];
-    const rewardItem = {
-        ...rewardBase,
-        id: Date.now() + Math.random(),
-        baseId: rewardBase.id,
-    };
-    gameState.consumables.push(rewardItem);
-    gameState.consumables = compactInventory(gameState.consumables);
+    
+    // --- START OF MODIFICATION ---
+    // Check for an existing stack
+    const existingStack = gameState.consumables.find(c => c.baseId === rewardBase.id);
+
+    if (existingStack) {
+        existingStack.quantity = (existingStack.quantity || 1) + 1;
+    } else {
+        const rewardItem = {
+            ...rewardBase,
+            id: Date.now() + Math.random(),
+            baseId: rewardBase.id,
+            quantity: 1, // Start the stack
+        };
+        gameState.consumables.push(rewardItem);
+        gameState.consumables = compactInventory(gameState.consumables);
+    }
+    // --- END OF MODIFICATION ---
+    
+    if (!gameState.unlockedFeatures.consumables) {
+        gameState.unlockedFeatures.consumables = true;
+        gameState.pendingSubTabViewFlash = 'inventory-consumables-view'; // Flag for the UI to flash the correct sub-tab
+    }
 
     // Update completion count
     const count = gameState.hunts.completionCounts[activeHunt.id] || 0;
@@ -878,7 +900,8 @@ export function completeHunt(gameState) {
     gameState.hunts.active = null;
     gameState.hunts.progress = 0;
     
-    return rewardItem;
+    // --- MODIFICATION: Return the base definition for the log message, since we might not have created a new item ---
+    return rewardBase;
 }
 
 /**

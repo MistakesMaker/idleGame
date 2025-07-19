@@ -891,6 +891,21 @@ h5 .legendary { color: #f39c12; }
 .item-wrapper.selected-for-forge .item {
     border: 3px solid #f1c40f !important;
 }
+/* --- Item Quantity Display --- */
+.item-quantity-display {
+    position: absolute;
+    bottom: 2px;
+    right: 4px;
+    background-color: rgba(0, 0, 0, 0.8);
+    color: #ecf0f1;
+    font-size: 0.8em;
+    font-weight: bold;
+    padding: 1px 5px;
+    border-radius: 4px;
+    border: 1px solid #7f8c8d;
+    z-index: 4; /* Ensures it's above sockets */
+    pointer-events: none; /* Prevents it from interfering with clicks */
+}
 
 /* --- PRESTIGE VIEW --- */
 .game-container:has(#prestige-view.active) .middle-panel {

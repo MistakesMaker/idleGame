@@ -959,33 +959,49 @@ document.addEventListener('DOMContentLoaded', () => {
      * @param {object | null} item The item to display.
      * @param {HTMLElement} element The element to anchor the tooltip to.
      */
-    function showItemTooltip(item, element) {
-        if (!item) return;
+    /**
+ * Shows a dynamic tooltip for an item.
+ * @param {object | null} item The item to display.
+ * @param {HTMLElement} element The element to anchor the tooltip to.
+ */
+function showItemTooltip(item, element) {
+    if (!item) return;
 
-        elements.tooltipEl.className = 'hidden';
-        elements.tooltipEl.classList.add(item.rarity);
+    elements.tooltipEl.className = 'hidden';
+    elements.tooltipEl.classList.add(item.rarity);
 
-        if (isShiftPressed && item.baseId) {
-            const itemBase = ITEMS[item.baseId] || CONSUMABLES[item.baseId];
-            if (itemBase) {
-                elements.tooltipEl.innerHTML = ui.createLootTableTooltipHTML(itemBase);
-            } else {
-                elements.tooltipEl.innerHTML = ui.createTooltipHTML(item);
-            }
+    if (isShiftPressed && item.baseId) {
+        const itemBase = ITEMS[item.baseId] || CONSUMABLES[item.baseId];
+        if (itemBase) {
+            elements.tooltipEl.innerHTML = ui.createLootTableTooltipHTML(itemBase);
         } else {
-            if (item.type === 'ring') {
-                elements.tooltipEl.innerHTML = ui.createItemComparisonTooltipHTML(item, gameState.equipment.ring1, gameState.equipment.ring2);
-            } else {
-                const equippedItem = gameState.equipment[item.type];
-                elements.tooltipEl.innerHTML = ui.createItemComparisonTooltipHTML(item, equippedItem);
-            }
+            elements.tooltipEl.innerHTML = ui.createTooltipHTML(item);
         }
-
-        const rect = element.getBoundingClientRect();
-        elements.tooltipEl.style.left = `${rect.right + 10}px`;
-        elements.tooltipEl.style.top = `${rect.top}px`;
-        elements.tooltipEl.classList.remove('hidden');
+    } else {
+        // --- START OF MODIFICATION ---
+        if (item.type === 'consumable') {
+            const consumableBase = CONSUMABLES[item.baseId];
+            if (consumableBase) {
+                elements.tooltipEl.innerHTML = `
+                    <div class="item-header"><span class="legendary">${consumableBase.name}</span></div>
+                    <ul><li>${consumableBase.description}</li></ul>
+                `;
+            }
+        } 
+        // --- END OF MODIFICATION ---
+        else if (item.type === 'ring') {
+            elements.tooltipEl.innerHTML = ui.createItemComparisonTooltipHTML(item, gameState.equipment.ring1, gameState.equipment.ring2);
+        } else {
+            const equippedItem = gameState.equipment[item.type];
+            elements.tooltipEl.innerHTML = ui.createItemComparisonTooltipHTML(item, equippedItem);
+        }
     }
+
+    const rect = element.getBoundingClientRect();
+    elements.tooltipEl.style.left = `${rect.right + 10}px`;
+    elements.tooltipEl.style.top = `${rect.top}px`;
+    elements.tooltipEl.classList.remove('hidden');
+}
     
     /**
      * Shows a focused comparison tooltip for a pending ring vs one equipped ring.
@@ -1051,6 +1067,24 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 }
             }
+            // Check for Hunt Rewards
+            for (const tier of HUNT_POOLS) {
+                for (const hunt of tier.hunts) {
+                    if (hunt.rewardIds.includes(itemBase.id)) {
+                        itemEntry.dropSources.push({
+                            monster: { name: "Hunter's Board" }, // Special identifier
+                            chance: 100, // Placeholder, as it's a guaranteed reward
+                            location: `Tier ${tier.requiredLevel}+ Hunts`,
+                            level: tier.requiredLevel,
+                            realmIndex: 0, // Hunts are cross-realm
+                            isHunt: true, // Special flag for the UI
+                        });
+                        // We can break here since we only need to know it's a hunt reward once per tier
+                        break; 
+                    }
+                }
+            }
+            // --- END OF NEW CODE ---
             wikiState.data.push(itemEntry);
         }
     }
@@ -1219,8 +1253,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function checkDailyResets() {
         player.checkDailyResets(gameState);
     }
-
-    function main() {
+     function main() {
         elements = ui.initDOMElements();
         
         const savedData = localStorage.getItem('idleRPGSaveData');
@@ -2441,7 +2474,7 @@ document.addEventListener('DOMContentLoaded', () => {
             else if (p.querySelector('#magic-find-stat')) statKey = 'magicFind';
             else return;
 
-            ui.showStatBreakdownTooltip(elements, statKey, statBreakdown);
+            ui.showStatBreakdownTooltip(elements, statKey, statBreakdown, gameState);
             const rect = p.getBoundingClientRect();
             elements.statTooltipEl.style.left = `${rect.left}px`;
             elements.statTooltipEl.style.top = `${rect.bottom + 5}px`;
@@ -2933,6 +2966,39 @@ document.addEventListener('DOMContentLoaded', () => {
                 completeHunt();
             }
         });
+
+        // --- START OF MODIFICATION ---
+        huntsModalBackdrop.addEventListener('mouseover', (e) => {
+            if (!(e.target instanceof HTMLElement)) return;
+        
+            const rewardEl = e.target.closest('.hunt-reward');
+            if (rewardEl instanceof HTMLElement && rewardEl.dataset.rewardId) {
+                const rewardId = rewardEl.dataset.rewardId;
+                const consumableBase = CONSUMABLES[rewardId];
+                if (consumableBase) {
+                    elements.tooltipEl.className = 'hidden'; // Reset classes
+                    elements.tooltipEl.classList.add('legendary'); // Consumables are legendary rarity
+                    elements.tooltipEl.innerHTML = `
+                        <div class="item-header"><span class="legendary">${consumableBase.name}</span></div>
+                        <ul><li>${consumableBase.description}</li></ul>
+                    `;
+        
+                    const rect = rewardEl.getBoundingClientRect();
+                    elements.tooltipEl.style.left = `${rect.right + 10}px`;
+                    elements.tooltipEl.style.top = `${rect.top}px`;
+                    elements.tooltipEl.classList.remove('hidden');
+                }
+            }
+        });
+        
+        huntsModalBackdrop.addEventListener('mouseout', (e) => {
+            if (!(e.target instanceof HTMLElement)) return;
+            const rewardEl = e.target.closest('.hunt-reward');
+            if (rewardEl) {
+                elements.tooltipEl.classList.add('hidden');
+            }
+        });
+        // --- END OF MODIFICATION ---
     }
 
     function migrateToPresetInventories(loadedState) {
