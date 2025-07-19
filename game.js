@@ -131,14 +131,6 @@ document.addEventListener('DOMContentLoaded', () => {
             stats: new Map(),
         }
     };
-
-    let socket = null;
-    if (typeof io !== 'undefined') {
-        socket = io('https://idlegame-oqyq.onrender.com');
-    }
-
-    let raidPanel = null;
-    let raidPlayerId = `Player_${Math.random().toString(36).substr(2, 5)}`;
     
     const defaultEquipmentState = { sword: null, shield: null, helmet: null, necklace: null, platebody: null, platelegs: null, ring1: null, ring2: null, belt: null };
 
@@ -365,10 +357,6 @@ document.addEventListener('DOMContentLoaded', () => {
             gemFindChance: permanentUpgradeBonuses.gemFind,
             legacyKeeperBonus: permanentUpgradeBonuses.legacyKeeper,
         };
-
-        if (socket && socket.connected) {
-            socket.emit('updatePlayerStats', { dps: playerStats.totalDps });
-        }
     }
 
     /**
@@ -826,7 +814,6 @@ document.addEventListener('DOMContentLoaded', () => {
         pendingRingEquip = null;
     }
 
-    // --- START: ADD THIS NEW FUNCTION ---
     /**
      * Handles the core logic of placing a selected gem into an item's socket.
      * @param {object} itemToSocketInto The item receiving the gem.
@@ -860,7 +847,6 @@ document.addEventListener('DOMContentLoaded', () => {
             autoSave();
         }
     }
-    // --- END: ADD THIS NEW FUNCTION ---
 
     function calculateOfflineProgress() {
         if (!gameState.lastSaveTimestamp) return;
@@ -2110,7 +2096,6 @@ document.addEventListener('DOMContentLoaded', () => {
         setupGemTooltipListeners();
         setupStatTooltipListeners();
         setupLootTooltipListeners();
-        setupRaidListeners();
         setupPrestigeListeners();
         setupLegacyKeeperModalListeners();
         setupSalvageFilterListeners();
@@ -2411,81 +2396,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    function createRaidPanel() {
-        if (!socket) return;
-        if (document.getElementById('raid-panel')) return;
-        const raidContainer = document.getElementById('raid-container');
-        if (!raidContainer) return;
-        raidContainer.innerHTML = `<div id="raid-panel"><div id="raid-boss-info"><h2 id="raid-boss-name">Loading...</h2><div id="raid-boss-health-bar-container"><div id="raid-boss-health-bar"></div></div><p id="raid-boss-health-text">0 / 0</p></div><div id="raid-main-content"><div id="raid-attack-area"><button id="raid-attack-button">ATTACK!</button></div><div id="raid-player-list"><h3>Participants</h3><ul></ul></div></div></div>`;
-        raidPanel = document.getElementById('raid-panel');
-        const attackButton = document.getElementById('raid-attack-button');
-        if (attackButton) {
-            addTapListener(attackButton, () => {
-                socket.emit('attackRaidBoss', { damage: playerStats.totalClickDamage });
-            });
-        }
-        socket.emit('joinRaid', { id: raidPlayerId, dps: playerStats.totalDps });
-    }
-
-    function destroyRaidPanel() {
-        if (raidPanel) {
-            raidPanel.remove();
-            raidPanel = null;
-        }
-    }
-
-    function updateRaidUI(raidState) {
-        if (!raidPanel) return;
-        const boss = raidState.boss;
-        const bossNameEl = document.getElementById('raid-boss-name');
-        const bossHealthTextEl = document.getElementById('raid-boss-health-text');
-        const bossHealthBarEl = document.getElementById('raid-boss-health-bar');
-        if (bossNameEl) bossNameEl.textContent = boss.name;
-        if (bossHealthTextEl) bossHealthTextEl.textContent = `${formatNumber(Math.ceil(boss.currentHp))} / ${formatNumber(boss.maxHp)}`;
-        if (bossHealthBarEl) {
-            const healthPercent = (boss.currentHp / boss.maxHp) * 100;
-            (/**@type {HTMLElement}*/(bossHealthBarEl)).style.width = `${healthPercent}%`;
-        }
-        const playerListEl = raidPanel.querySelector('#raid-player-list ul');
-        if (playerListEl) {
-            playerListEl.innerHTML = '';
-            Object.values(raidState.players).forEach(player => {
-                const li = document.createElement('li');
-                li.textContent = `${player.id} - ${formatNumber(player.dps)} DPS`;
-                playerListEl.appendChild(li);
-            });
-        }
-    }
-    
-    function setupRaidListeners() {
-        const raidBtn = document.getElementById('raid-btn');
-        if (!socket || !raidBtn) {
-            if(raidBtn) raidBtn.style.display = 'none';
-            return;
-        };
-
-        addTapListener(raidBtn, () => {
-            if (raidPanel) {
-                destroyRaidPanel();
-                socket.disconnect();
-                socket.connect();
-            } else {
-                createRaidPanel();
-            }
-        });
-        socket.on('connect', () => { logMessage(elements.gameLogEl, 'Connected to Raid Server!', 'uncommon', isAutoScrollingLog); });
-        socket.on('disconnect', () => { logMessage(elements.gameLogEl, 'Disconnected from Raid Server.', 'rare', isAutoScrollingLog); destroyRaidPanel(); });
-        socket.on('raidUpdate', (raidState) => { updateRaidUI(raidState); });
-        socket.on('raidOver', (data) => {
-            logMessage(elements.gameLogEl, `RAID OVER: ${data.message}`, 'legendary', isAutoScrollingLog);
-            const scrapReward = 500;
-            gameState.scrap += scrapReward;
-            logMessage(elements.gameLogEl, `You received ${formatNumber(scrapReward)} Scrap for participating!`, 'epic', isAutoScrollingLog);
-            ui.updateCurrency(elements, gameState);
-            destroyRaidPanel();
-        });
-    }
-
     function setupPrestigeListeners() {
         addTapListener(elements.prestigeButton, () => {
             document.querySelector('.actions-panel').classList.add('hidden');
@@ -2593,7 +2503,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 finalAbsorbedUniqueEffects[effectKey] = (finalAbsorbedUniqueEffects[effectKey] || 0) + count;
             }
     
-            // Save the current preset names before resetting the state
             const oldPresetNames = gameState.presets.map(p => p.name);
     
             const spentPoints = heroToPrestige.attributes.strength + heroToPrestige.attributes.agility + heroToPrestige.attributes.luck;
@@ -2632,7 +2541,6 @@ document.addEventListener('DOMContentLoaded', () => {
             };
             gameState.equipment = gameState.presets[gameState.activePresetIndex].equipment;
     
-            // Restore the saved preset names
             if (oldPresetNames) {
                 gameState.presets.forEach((preset, index) => {
                     if (oldPresetNames[index]) {

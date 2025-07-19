@@ -11,7 +11,6 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" />
     <!-- Stylesheets -->
     <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="raid.css">
 </head>
 <body>
     <div class="game-container">
@@ -207,13 +206,11 @@
                         </div>
                     </div>
                     
-                    <!-- START OF MODIFICATION: New locked sub-view -->
                     <div id="inventory-locked-sub-view" class="sub-view">
                         <i id="inventory-locked-sub-view-icon" class="fas fa-lock"></i>
                         <h3 id="inventory-locked-sub-view-title">Feature Locked</h3>
                         <p id="inventory-locked-sub-view-message">You have not yet unlocked this feature.</p>
                     </div>
-                    <!-- END OF MODIFICATION -->
                 </div>
             </div>
             
@@ -308,7 +305,6 @@
                 <p><i class="fas fa-cogs"></i> <span id="scrap-stat" class="currency-tier-0">0</span></p>
             </div>
 
-            <button id="raid-btn">Raid</button>
             <button id="reset-game-btn">Hard Reset</button>
             <button id="buy-loot-crate-btn">Buy Crate (Cost: 50 Scrap)</button>
 
@@ -353,7 +349,6 @@
         </div>
     </div>
     
-    <div id="raid-container"></div>
     <div id="save-indicator" class="hidden">Game Saved!</div>
     <div id="item-tooltip" class="hidden"></div>
     <div id="stat-tooltip" class="hidden"></div>
@@ -496,7 +491,6 @@
 
 
     <!-- Scripts -->
-    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <script type="module" src="game.js"></script>
 </body>
 </html>
