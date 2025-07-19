@@ -112,7 +112,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let wikiFavorites = [];
     let wikiShowFavorites = false;
     let wikiShowUpgradesOnly = false;
-    let gemSortPreference = 'tier_desc'; // NEW: State for gem sorting
+    let gemSortPreference = 'tier_desc';
     let heldKeys = new Set();
     const MODIFIER_KEYS = ['q', 'w', 'e', 'r'];
 
@@ -161,7 +161,7 @@ document.addEventListener('DOMContentLoaded', () => {
             gold: 0, scrap: 0, upgrades: { clickDamage: 0, dps: 0 }, maxLevel: 1, currentFightingLevel: 1,
             monster: { hp: 10, maxHp: 10 },
             equipment: { ...defaultEquipmentState }, // This will be a REFERENCE to the active preset's equipment
-            inventory: [], // This is now for "loose" items only
+            inventory: [],
             consumables: [],
             activeBuffs: [],
             gems: [],
@@ -211,7 +211,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 prestige: false,
                 wiki: false,
                 consumables: false,
-            }
+            },
+            // --- MODIFICATION: New state for pending sub-tab flash ---
+            pendingSubTabViewFlash: null,
         };
     }
 
@@ -370,7 +372,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     /**
      * Helper function to refresh the gem view if it's currently active.
-     * This now correctly re-sorts and re-compacts the grid.
      */
     function refreshGemViewIfActive() {
         const inventoryView = document.getElementById('inventory-view');
@@ -408,6 +409,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         logMessage(elements.gameLogEl, '<b>Consumables Unlocked!</b> You can now use special one-time-use items from a new tab in your inventory.', 'legendary', isAutoScrollingLog);
                         ui.updateTabVisibility(gameState);
                         ui.flashTab('inventory-view');
+                        // --- MODIFICATION: Set pending sub-tab flash ---
+                        gameState.pendingSubTabViewFlash = 'inventory-consumables-view';
                     }
                 } else {
                     ui.addItemToGrid(elements.inventorySlotsEl, item);
@@ -433,6 +436,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     logMessage(elements.gameLogEl, '<b>Gems Unlocked!</b> You can now view and socket powerful gems from a new tab in your inventory.', 'legendary', isAutoScrollingLog);
                     ui.updateTabVisibility(gameState);
                     ui.flashTab('inventory-view');
+                    // --- MODIFICATION: Set pending sub-tab flash ---
+                    gameState.pendingSubTabViewFlash = 'inventory-gems-view';
                 }
             });
             refreshGemViewIfActive();
@@ -1121,8 +1126,7 @@ document.addEventListener('DOMContentLoaded', () => {
             selectedGemId: selectedGemForSocketing ? selectedGemForSocketing.id : null
         });
     }
-    
-    function main() {
+        function main() {
         elements = ui.initDOMElements();
         
         const savedData = localStorage.getItem('idleRPGSaveData');
@@ -1172,6 +1176,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 tutorialCompleted: loadedState.tutorialCompleted || false,
                 artisanChiselDropped: loadedState.artisanChiselDropped || false,
                 artisanChiselUsed: loadedState.artisanChiselUsed || false,
+                // --- MODIFICATION: Ensure new state property is loaded or defaulted ---
+                pendingSubTabViewFlash: loadedState.pendingSubTabViewFlash || null,
             };
             
             if (!gameState.presetSystemMigrated) {
@@ -1880,7 +1886,20 @@ document.addEventListener('DOMContentLoaded', () => {
                             ui.updateActivePresetButton(elements, gameState);
                             break;
                         case 'inventory-view':
-                            ui.switchInventorySubView('inventory-gear-view');
+                            // --- MODIFICATION: Handle pending sub-tab flash ---
+                            if (gameState.pendingSubTabViewFlash) {
+                                const subViewToFlash = gameState.pendingSubTabViewFlash;
+                                ui.switchInventorySubView(subViewToFlash);
+                                const subTabButton = document.querySelector(`.sub-tab-button[data-subview="${subViewToFlash}"]`);
+                                if(subTabButton) {
+                                    subTabButton.classList.add('newly-unlocked-flash');
+                                    setTimeout(() => subTabButton.classList.remove('newly-unlocked-flash'), 5000);
+                                }
+                                gameState.pendingSubTabViewFlash = null; // Clear the flag
+                            } else {
+                                ui.switchInventorySubView('inventory-gear-view');
+                            }
+                            
                             ui.populateSalvageFilter(elements, gameState);
                             ui.renderGrid(elements.inventorySlotsEl, gameState.inventory, { calculatePositions: false, salvageSelections: salvageMode.selections, showLockIcon: true });
                             ui.updateSocketingHighlights(elements, selectedGemForSocketing, gameState);
@@ -1903,24 +1922,35 @@ document.addEventListener('DOMContentLoaded', () => {
 
         document.querySelector('.sub-tabs')?.addEventListener('click', (e) => {
             if (!(e.target instanceof HTMLElement) || !e.target.matches('.sub-tab-button')) return;
-
+        
             const subViewId = e.target.dataset.subview;
             if (!subViewId) return;
-
-            ui.switchInventorySubView(subViewId);
-            
-            switch(subViewId) {
-                case 'inventory-gear-view':
-                    ui.renderGrid(elements.inventorySlotsEl, gameState.inventory, { calculatePositions: false, salvageSelections: salvageMode.selections, showLockIcon: true });
-                    break;
-                case 'inventory-gems-view':
-                    refreshGemViewIfActive();
-                    populateBulkCombineControls();
-                    ui.updateGemCraftingUI(elements, craftingGems, gameState);
-                    break;
-                case 'inventory-consumables-view':
-                    ui.renderGrid(elements.consumablesSlotsEl, gameState.consumables, { calculatePositions: true, showLockIcon: false });
-                    break;
+        
+            const featureMap = {
+                'inventory-gems-view': { flag: gameState.unlockedFeatures.gems, title: 'Gems Locked', message: 'Find a Gem to unlock the Gemcutting bench.', icon: 'fa-gem' },
+                'inventory-consumables-view': { flag: gameState.unlockedFeatures.consumables, title: 'Consumables Locked', message: 'Find a special consumable item to unlock this pouch.', icon: 'fa-flask' }
+            };
+        
+            const config = featureMap[subViewId];
+        
+            if (config && !config.flag) {
+                ui.showLockedInventorySubView(elements, config);
+            } else {
+                ui.switchInventorySubView(subViewId);
+        
+                switch(subViewId) {
+                    case 'inventory-gear-view':
+                        ui.renderGrid(elements.inventorySlotsEl, gameState.inventory, { calculatePositions: false, salvageSelections: salvageMode.selections, showLockIcon: true });
+                        break;
+                    case 'inventory-gems-view':
+                        refreshGemViewIfActive();
+                        populateBulkCombineControls();
+                        ui.updateGemCraftingUI(elements, craftingGems, gameState);
+                        break;
+                    case 'inventory-consumables-view':
+                        ui.renderGrid(elements.consumablesSlotsEl, gameState.consumables, { calculatePositions: true, showLockIcon: false });
+                        break;
+                }
             }
         });
 

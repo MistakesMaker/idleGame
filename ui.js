@@ -160,6 +160,11 @@ export function initDOMElements() {
         lockedViewTitle: document.getElementById('locked-view-title'),
         lockedViewMessage: document.getElementById('locked-view-message'),
         lockedViewIcon: document.getElementById('locked-view-icon'),
+        // --- MODIFICATION: Add new elements ---
+        inventoryLockedSubView: document.getElementById('inventory-locked-sub-view'),
+        inventoryLockedSubViewIcon: document.getElementById('inventory-locked-sub-view-icon'),
+        inventoryLockedSubViewTitle: document.getElementById('inventory-locked-sub-view-title'),
+        inventoryLockedSubViewMessage: document.getElementById('inventory-locked-sub-view-message'),
     };
 }
 
@@ -1601,7 +1606,6 @@ export function switchView(elements, viewIdToShow, gameState) {
     const allViews = parentPanel.querySelectorAll('.view');
     const allTabs = parentPanel.querySelectorAll('.tab-button');
 
-    // --- Core Fix: Hide all views first ---
     allViews.forEach(v => v.classList.remove('active'));
     allTabs.forEach(t => t.classList.remove('active'));
 
@@ -1613,13 +1617,11 @@ export function switchView(elements, viewIdToShow, gameState) {
     const config = featureUnlockMap[viewIdToShow];
     
     if (config && !config.flag) {
-        // --- Show the customized locked view ---
         lockedViewTitle.textContent = config.title;
         lockedViewMessage.textContent = config.message;
         lockedViewIcon.className = `fas ${config.icon} locked-view-icon`;
         lockedView.classList.add('active');
     } else {
-        // --- Show the intended, unlocked view ---
         const viewElement = document.getElementById(viewIdToShow);
         if (viewElement) {
             viewElement.classList.add('active');
@@ -1646,6 +1648,29 @@ export function switchInventorySubView(subViewIdToShow) {
 
     if (subViewElement) subViewElement.classList.add('active');
     if (subTabElement) subTabElement.classList.add('active');
+}
+
+/**
+ * Shows the locked sub-view screen with a custom message.
+ * @param {DOMElements} elements - The DOMElements object.
+ * @param {object} lockConfig - The configuration for the locked view.
+ * @param {string} lockConfig.title - The title to display.
+ * @param {string} lockConfig.message - The message to display.
+ * @param {string} lockConfig.icon - The Font Awesome icon class.
+ */
+export function showLockedInventorySubView(elements, { title, message, icon }) {
+    const {
+        inventoryLockedSubView,
+        inventoryLockedSubViewIcon,
+        inventoryLockedSubViewTitle,
+        inventoryLockedSubViewMessage
+    } = elements;
+
+    inventoryLockedSubViewTitle.textContent = title;
+    inventoryLockedSubViewMessage.textContent = message;
+    inventoryLockedSubViewIcon.className = `fas ${icon}`;
+
+    switchInventorySubView('inventory-locked-sub-view');
 }
 
 
@@ -1675,11 +1700,11 @@ export function updateTabVisibility(gameState) {
         const gemsSubTab = inventoryView.querySelector('.sub-tab-button[data-subview="inventory-gems-view"]');
         const consumablesSubTab = inventoryView.querySelector('.sub-tab-button[data-subview="inventory-consumables-view"]');
         
-        if(gemsSubTab instanceof HTMLElement) {
-            gemsSubTab.style.display = unlockedFeatures.gems ? '' : 'none';
+        if(gemsSubTab) {
+            gemsSubTab.classList.toggle('disabled-tab', !unlockedFeatures.gems);
         }
-        if(consumablesSubTab instanceof HTMLElement) {
-            consumablesSubTab.style.display = unlockedFeatures.consumables ? '' : 'none';
+        if(consumablesSubTab) {
+            consumablesSubTab.classList.toggle('disabled-tab', !unlockedFeatures.consumables);
         }
     }
 }
@@ -2272,7 +2297,7 @@ export function updateForge(elements, selectedItem, selectedStatKey, currentScra
                     percentOfMax = (statValue / max_for_tier) * 100;
                 }
             }
-            const percentText = percentOfMax >= 100 ? `<span style="color: #f1c4f;">(MAX)</span>` : `(${percentOfMax.toFixed(1)}%)`;
+            const percentText = percentOfMax >= 100 ? `<span style="color: #f1c40f;">(MAX)</span>` : `(${percentOfMax.toFixed(1)}%)`;
             
             const statEntry = document.createElement('div');
             statEntry.className = 'forge-stat-entry';

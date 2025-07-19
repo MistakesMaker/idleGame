@@ -1901,4 +1901,117 @@ h5 .legendary { color: #f39c12; }
 .tab-button[data-view="consumables-view"] {
     display: none;
 }
-/* --- END: Inventory Sub-Tab Styles --- */
+/* --- START: Inventory Sub-Tab Styles --- */
+.sub-tabs {
+    display: flex;
+    border-bottom: 2px solid #34495e;
+    margin-bottom: 15px;
+    flex-shrink: 0;
+}
+
+.sub-tab-button {
+    flex-grow: 1;
+    padding: 8px; /* Slightly smaller than main tabs */
+    margin: 0;
+    border-radius: 5px 5px 0 0;
+    border-bottom: none;
+    background: #2c3e50; /* Darker than main tabs */
+    font-size: 0.9em;
+    box-shadow: none;
+    border-bottom: 2px solid transparent; /* For the active state */
+}
+
+.sub-tab-button:hover {
+    background: #34495e;
+}
+
+.sub-tab-button.active {
+    background: #34495e;
+    color: #f1c40f;
+    border-bottom-color: #f1c40f; /* Highlight line */
+}
+
+/* New style for disabled sub-tabs */
+.sub-tab-button.disabled-tab {
+    color: #7f8c8d;
+    background: #2c3e50;
+    cursor: pointer;
+    box-shadow: none;
+}
+
+.sub-tab-button.disabled-tab:hover {
+    background: #34495e;
+}
+
+
+.sub-view-container {
+    flex-grow: 1;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+.sub-view {
+    display: none; /* Hide all sub-views by default */
+    flex-grow: 1;
+    flex-direction: column;
+    min-height: 0;
+}
+
+.sub-view.active {
+    display: flex; /* Show only the active one */
+}
+
+/* Make sure headers inside the sub-views look correct */
+.sub-view h3 {
+    margin-top: 0;
+    text-align: center;
+}
+
+/* Ensure the grid scroll containers fill the space correctly */
+#inventory-gear-view .grid-scroll-container,
+#inventory-gems-view .grid-scroll-container,
+#inventory-consumables-view .grid-scroll-container {
+    margin-top: 0;
+}
+
+/* Hide the main tab buttons for the views we moved */
+.tab-button[data-view="gems-view"],
+.tab-button[data-view="consumables-view"] {
+    display: none;
+}
+
+/* Styling for the new locked sub-view, mirroring the main locked view */
+#inventory-locked-sub-view {
+    display: none; /* Hidden by default */
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding: 40px;
+    gap: 15px;
+    color: #95a5a6;
+    height: 100%;
+    flex-grow: 1;
+}
+
+#inventory-locked-sub-view.active {
+    display: flex; /* Shown when active */
+}
+
+#inventory-locked-sub-view-icon {
+    font-size: 5em;
+    color: #4a637e;
+    margin-bottom: 20px;
+}
+
+#inventory-locked-sub-view-title {
+    font-size: 2em;
+    color: #ecf0f1;
+}
+
+#inventory-locked-sub-view-message {
+    font-size: 1.2em;
+    max-width: 400px;
+}

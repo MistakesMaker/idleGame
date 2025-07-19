@@ -137,7 +137,6 @@
             </div>
 
             <div id="inventory-view" class="view">
-                <!-- START OF MODIFICATION: New sub-tab structure -->
                 <div class="sub-tabs">
                     <button class="sub-tab-button active" data-subview="inventory-gear-view">Gear</button>
                     <button class="sub-tab-button" data-subview="inventory-gems-view">Gems</button>
@@ -207,8 +206,15 @@
                             </div>
                         </div>
                     </div>
+                    
+                    <!-- START OF MODIFICATION: New locked sub-view -->
+                    <div id="inventory-locked-sub-view" class="sub-view">
+                        <i id="inventory-locked-sub-view-icon" class="fas fa-lock"></i>
+                        <h3 id="inventory-locked-sub-view-title">Feature Locked</h3>
+                        <p id="inventory-locked-sub-view-message">You have not yet unlocked this feature.</p>
+                    </div>
+                    <!-- END OF MODIFICATION -->
                 </div>
-                <!-- END OF MODIFICATION -->
             </div>
             
              <div id="forge-view" class="view">
