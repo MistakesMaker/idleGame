@@ -452,12 +452,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 logMessage(elements.gameLogEl, '<b>Prestige Unlocked!</b> You can now reset your progress for powerful permanent bonuses.', 'legendary', isAutoScrollingLog);
                 ui.updatePrestigeUI(elements, gameState);
             }
-            if (!gameState.unlockedFeatures.wiki) {
-                gameState.unlockedFeatures.wiki = true;
-                 logMessage(elements.gameLogEl, '<b>Item Wiki Unlocked!</b> Discover powerful items and their drop locations to prepare for your journey ahead.', 'legendary', isAutoScrollingLog);
-                 ui.updateTabVisibility(gameState);
-                 ui.flashTab('wiki-view');
-            }
         }
 
         const levelUpLogs = player.gainXP(gameState, result.xpGained);
@@ -520,6 +514,16 @@ document.addEventListener('DOMContentLoaded', () => {
         currentMonster = newMonster;
         gameState.monster = newMonsterState;
         ui.updateMonsterUI(elements, gameState, newMonster);
+
+        // --- START OF MODIFICATION: New Wiki Unlock Trigger ---
+        // Check if the wiki isn't unlocked yet and if the new monster is the Level 25 Mini-Boss
+        if (!gameState.unlockedFeatures.wiki && gameState.currentFightingLevel === 25) {
+            gameState.unlockedFeatures.wiki = true;
+            logMessage(elements.gameLogEl, '<b>Item Wiki Unlocked!</b> You can now research items and their drop locations.', 'legendary', isAutoScrollingLog);
+            ui.updateTabVisibility(gameState);
+            ui.flashTab('wiki-view');
+        }
+        // --- END OF MODIFICATION ---
     }
 
     function attack(baseDamage, isClick = false) {
@@ -2560,7 +2564,7 @@ document.addEventListener('DOMContentLoaded', () => {
             for (const [effectKey, count] of Object.entries(newAbsorbedUniqueEffects)) {
                 finalAbsorbedUniqueEffects[effectKey] = (finalAbsorbedUniqueEffects[effectKey] || 0) + count;
             }
-
+    
             // --- START OF MODIFICATION (PART 1) ---
             // Save the current preset names before resetting the state
             const oldPresetNames = gameState.presets.map(p => p.name);
@@ -2612,7 +2616,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
             }
             // --- END OF MODIFICATION (PART 2) ---
-            
+    
             logMessage(elements.gameLogEl, `PRESTIGE! You are reborn with greater power. Your next goal is Level ${gameState.nextPrestigeLevel}.`, 'legendary', isAutoScrollingLog);
             
             document.querySelector('.actions-panel').classList.remove('hidden');
