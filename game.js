@@ -304,13 +304,13 @@ document.addEventListener('DOMContentLoaded', () => {
         statBreakdown.magicFind.sources.push({ label: 'From Gear', value: magicFromGear, isPercent: true });
         
         // --- Attribute Bonuses ---
-        const strengthBonusClickFlat = hero.attributes.strength * 1;
+        const strengthBonusClickFlat = hero.attributes.strength * 5;
         const strengthBonusClickPercent = hero.attributes.strength * 0.2;
         baseClickDamage += strengthBonusClickFlat;
         statBreakdown.clickDamage.sources.push({ label: 'From Strength', value: strengthBonusClickFlat });
         statBreakdown.clickDamage.multipliers.push({ label: 'From Strength', value: strengthBonusClickPercent });
 
-        const agilityBonusDpsFlat = hero.attributes.agility * 1;
+        const agilityBonusDpsFlat = hero.attributes.agility * 10;
         const agilityBonusDpsPercent = hero.attributes.agility * 0.8;
         baseDps += agilityBonusDpsFlat;
         statBreakdown.dps.sources.push({ label: 'From Agility', value: agilityBonusDpsFlat });
@@ -2275,8 +2275,8 @@ document.addEventListener('DOMContentLoaded', () => {
     
     function setupStatTooltipListeners() {
         const statTooltipContent = {
-            strength: { title: 'Strength', description: 'Increases your raw power. Each point provides:', effects: ['<b>+1</b> Flat Click Damage', '<b>+0.2%</b> Total Click Damage'] },
-            agility: { title: 'Agility', description: 'Improves your hero\'s combat prowess. Each point provides:', effects: ['<b>+1</b> Flat DPS', '<b>+0.8%</b> Total DPS'] },
+            strength: { title: 'Strength', description: 'Increases your raw power. Each point provides:', effects: ['<b>+5</b> Flat Click Damage', '<b>+0.2%</b> Total Click Damage'] },
+            agility: { title: 'Agility', description: 'Improves your hero\'s combat prowess. Each point provides:', effects: ['<b>+10</b> Flat DPS', '<b>+0.8%</b> Total DPS'] },
             luck: { title: 'Luck', description: 'Increases your fortune in the dungeon. Each point provides:', effects: ['<b>+1%</b> Gold Gain', '<b>+0.1%</b> Magic Find'] }
         };
         const attributesArea = document.getElementById('attributes-area');
