@@ -214,7 +214,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 wiki: false,
                 consumables: false,
             },
-            // --- MODIFICATION: New state for pending sub-tab flash ---
             pendingSubTabViewFlash: null,
         };
     }
@@ -411,7 +410,6 @@ document.addEventListener('DOMContentLoaded', () => {
                         logMessage(elements.gameLogEl, '<b>Consumables Unlocked!</b> You can now use special one-time-use items from a new tab in your inventory.', 'legendary', isAutoScrollingLog);
                         ui.updateTabVisibility(gameState);
                         ui.flashTab('inventory-view');
-                        // --- MODIFICATION: Set pending sub-tab flash ---
                         gameState.pendingSubTabViewFlash = 'inventory-consumables-view';
                     }
                 } else {
@@ -438,7 +436,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     logMessage(elements.gameLogEl, '<b>Gems Unlocked!</b> You can now view and socket powerful gems from a new tab in your inventory.', 'legendary', isAutoScrollingLog);
                     ui.updateTabVisibility(gameState);
                     ui.flashTab('inventory-view');
-                    // --- MODIFICATION: Set pending sub-tab flash ---
                     gameState.pendingSubTabViewFlash = 'inventory-gems-view';
                 }
             });
@@ -516,7 +513,7 @@ document.addEventListener('DOMContentLoaded', () => {
         ui.updateMonsterUI(elements, gameState, newMonster);
 
         // --- START OF MODIFICATION: New Wiki Unlock Trigger ---
-        // Check if the wiki isn't unlocked yet and if the new monster is the Level 25 Mini-Boss
+        // Check if the wiki isn't unlocked yet and if the player is encountering the Level 25 Mini-Boss
         if (!gameState.unlockedFeatures.wiki && gameState.currentFightingLevel === 25) {
             gameState.unlockedFeatures.wiki = true;
             logMessage(elements.gameLogEl, '<b>Item Wiki Unlocked!</b> You can now research items and their drop locations.', 'legendary', isAutoScrollingLog);
@@ -828,7 +825,44 @@ document.addEventListener('DOMContentLoaded', () => {
         elements.ringSelectionModalBackdrop.classList.add('hidden');
         pendingRingEquip = null;
     }
-        function calculateOfflineProgress() {
+
+    // --- START: ADD THIS NEW FUNCTION ---
+    /**
+     * Handles the core logic of placing a selected gem into an item's socket.
+     * @param {object} itemToSocketInto The item receiving the gem.
+     * @param {object} gemToSocket The gem being placed.
+     */
+    function performSocketing(itemToSocketInto, gemToSocket) {
+        if (!itemToSocketInto || !gemToSocket || !itemToSocketInto.sockets || !itemToSocketInto.sockets.includes(null)) {
+            logMessage(elements.gameLogEl, "Socketing action failed. Please try again.", "rare", isAutoScrollingLog);
+            return; 
+        }
+
+        const firstEmptySocketIndex = itemToSocketInto.sockets.indexOf(null);
+        if (firstEmptySocketIndex > -1) {
+            itemToSocketInto.sockets[firstEmptySocketIndex] = gemToSocket;
+            gameState.gems = gameState.gems.filter(g => g.id !== gemToSocket.id);
+            
+            recalculateStats();
+
+            logMessage(elements.gameLogEl, `Socketed <b>${gemToSocket.name}</b> into <b>${itemToSocketInto.name}</b>.`, 'epic', isAutoScrollingLog);
+            
+            refreshGemViewIfActive();
+
+            // Check if the item is in the main inventory grid to update it
+            const inventoryGridItem = elements.inventorySlotsEl.querySelector(`.item-wrapper[data-id="${itemToSocketInto.id}"]`);
+            if (inventoryGridItem) {
+                ui.updateItemInGrid(elements.inventorySlotsEl, itemToSocketInto, { forceRedraw: true });
+            }
+            
+            ui.updateStatsPanel(elements, playerStats);
+            ui.renderPaperdoll(elements, gameState); // This will redraw equipped items correctly
+            autoSave();
+        }
+    }
+    // --- END: ADD THIS NEW FUNCTION ---
+
+    function calculateOfflineProgress() {
         if (!gameState.lastSaveTimestamp) return;
 
         const offlineDurationSeconds = (Date.now() - gameState.lastSaveTimestamp) / 1000;
@@ -1182,7 +1216,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 tutorialCompleted: loadedState.tutorialCompleted || false,
                 artisanChiselDropped: loadedState.artisanChiselDropped || false,
                 artisanChiselUsed: loadedState.artisanChiselUsed || false,
-                // --- MODIFICATION: Ensure new state property is loaded or defaulted ---
                 pendingSubTabViewFlash: loadedState.pendingSubTabViewFlash || null,
             };
             
@@ -1527,31 +1560,30 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 if (selectedGemForSocketing) {
                     if (item.sockets && item.sockets.includes(null)) {
-                        const gemToSocket = selectedGemForSocketing;
-                        const firstEmptySocketIndex = item.sockets.indexOf(null);
-
-                        if (firstEmptySocketIndex > -1) {
-                            item.sockets[firstEmptySocketIndex] = gemToSocket;
-                            gameState.gems = gameState.gems.filter(g => g.id !== gemToSocket.id);
-                            selectedGemForSocketing = null;
-
-                            recalculateStats();
-
-                            logMessage(elements.gameLogEl, `Socketed <b>${gemToSocket.name}</b> into <b>${item.name}</b>.`, 'epic', isAutoScrollingLog);
-                            refreshGemViewIfActive();
-                            ui.updateItemInGrid(elements.inventorySlotsEl, item, { forceRedraw: true });
-                            ui.updateSocketingHighlights(elements, null, gameState);
-                            ui.updateStatsPanel(elements, playerStats);
-                            ui.renderPaperdoll(elements, gameState);
-                            autoSave();
-                            return;
-                        }
+                        const gemToSocket = selectedGemForSocketing; // Keep a reference
+                        
+                        // Show confirmation modal
+                        ui.showConfirmationModal(
+                            elements,
+                            'Confirm Socket',
+                            `<p>Are you sure you want to insert:</p>
+                             <p><span class="gem-quality">${gemToSocket.name}</span></p>
+                             <p>into</p>
+                             <p><span class="${item.rarity}">${item.name}</span>?</p>`,
+                            () => {
+                                // This code runs only if the user clicks "Confirm"
+                                performSocketing(item, gemToSocket);
+                            }
+                        );
+                        
                     } else {
                         logMessage(elements.gameLogEl, `The item <b>${item.name}</b> has no available sockets.`, 'rare', isAutoScrollingLog);
-                        selectedGemForSocketing = null; 
-                        ui.updateSocketingHighlights(elements, null, gameState);
-                        return;
                     }
+                    
+                    // Deselect the gem immediately after showing the modal or error
+                    selectedGemForSocketing = null; 
+                    ui.updateSocketingHighlights(elements, null, gameState);
+                    return; // Stop further execution in the click handler
                 }
     
                 if (event.target.closest('.lock-icon')) {
@@ -1617,31 +1649,28 @@ document.addEventListener('DOMContentLoaded', () => {
             if (selectedGemForSocketing) {
                 const item = gameState.equipment[slotName];
                 if (item && item.sockets && item.sockets.includes(null)) {
-                    const gemToSocket = selectedGemForSocketing;
-                    const firstEmptySocketIndex = item.sockets.indexOf(null);
+                    const gemToSocket = selectedGemForSocketing; // Keep reference
+                    
+                    ui.showConfirmationModal(
+                        elements,
+                        'Confirm Socket',
+                        `<p>Are you sure you want to insert:</p>
+                         <p><span class="gem-quality">${gemToSocket.name}</span></p>
+                         <p>into</p>
+                         <p><span class="${item.rarity}">${item.name}</span>?</p>`,
+                        () => {
+                            performSocketing(item, gemToSocket);
+                        }
+                    );
 
-                    if (firstEmptySocketIndex > -1) {
-                        item.sockets[firstEmptySocketIndex] = gemToSocket;
-                        gameState.gems = gameState.gems.filter(g => g.id !== gemToSocket.id);
-                        selectedGemForSocketing = null;
-
-                        recalculateStats();
-
-                        logMessage(elements.gameLogEl, `Socketed <b>${gemToSocket.name}</b> into <b>${item.name}</b>.`, 'epic', isAutoScrollingLog);
-                        refreshGemViewIfActive();
-                        ui.renderPaperdoll(elements, gameState);
-                        ui.updateSocketingHighlights(elements, null, gameState);
-                        ui.updateStatsPanel(elements, playerStats);
-                        
-                        autoSave();
-                        return;
-                    }
                 } else if (item) {
                     logMessage(elements.gameLogEl, `The item <b>${item.name}</b> has no available sockets.`, 'rare', isAutoScrollingLog);
-                    selectedGemForSocketing = null;
-                    ui.updateSocketingHighlights(elements, null, gameState);
-                    return;
                 }
+                
+                // Deselect gem immediately regardless of outcome
+                selectedGemForSocketing = null;
+                ui.updateSocketingHighlights(elements, null, gameState);
+                return; // Stop further execution
             }
 
             const unequippedItem = gameState.equipment[slotName];
@@ -1892,7 +1921,6 @@ document.addEventListener('DOMContentLoaded', () => {
                             ui.updateActivePresetButton(elements, gameState);
                             break;
                         case 'inventory-view':
-                            // --- MODIFICATION: Handle pending sub-tab flash ---
                             if (gameState.pendingSubTabViewFlash) {
                                 const subViewToFlash = gameState.pendingSubTabViewFlash;
                                 ui.switchInventorySubView(subViewToFlash);
@@ -2565,10 +2593,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 finalAbsorbedUniqueEffects[effectKey] = (finalAbsorbedUniqueEffects[effectKey] || 0) + count;
             }
     
-            // --- START OF MODIFICATION (PART 1) ---
             // Save the current preset names before resetting the state
             const oldPresetNames = gameState.presets.map(p => p.name);
-            // --- END OF MODIFICATION (PART 1) ---
     
             const spentPoints = heroToPrestige.attributes.strength + heroToPrestige.attributes.agility + heroToPrestige.attributes.luck;
             const newTotalAttributePoints = heroToPrestige.attributePoints + spentPoints;
@@ -2606,7 +2632,6 @@ document.addEventListener('DOMContentLoaded', () => {
             };
             gameState.equipment = gameState.presets[gameState.activePresetIndex].equipment;
     
-            // --- START OF MODIFICATION (PART 2) ---
             // Restore the saved preset names
             if (oldPresetNames) {
                 gameState.presets.forEach((preset, index) => {
@@ -2615,7 +2640,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 });
             }
-            // --- END OF MODIFICATION (PART 2) ---
     
             logMessage(elements.gameLogEl, `PRESTIGE! You are reborn with greater power. Your next goal is Level ${gameState.nextPrestigeLevel}.`, 'legendary', isAutoScrollingLog);
             
