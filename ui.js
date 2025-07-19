@@ -477,7 +477,6 @@ export function updateUpgrades(elements, gameState) {
     
     document.getElementById('upgrade-click-damage').classList.toggle('disabled', gameState.gold < clickCost);
     document.getElementById('upgrade-dps').classList.toggle('disabled', gameState.gold < dpsCost);
-    (/** @type {HTMLButtonElement} */ (document.getElementById('buy-loot-crate-btn'))).disabled = gameState.scrap < 50;
 }
 
 /**

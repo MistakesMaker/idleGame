@@ -1406,20 +1406,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         
         addTapListener(elements.monsterImageEl, clickMonster);
-
-        addTapListener(document.getElementById('buy-loot-crate-btn'), () => {
-            const result = player.buyLootCrate(gameState, logic.generateItem);
-            if (result.success && result.item) {
-                logMessage(elements.gameLogEl, `The crate contained: <b>${result.item.name}</b>`, result.item.rarity, isAutoScrollingLog);
-                ui.addItemToGrid(elements.inventorySlotsEl, result.item);
-                ui.updateCurrency(elements, gameState);
-                ui.updateUpgrades(elements, gameState);
-            } else {
-                logMessage(elements.gameLogEl, result.message, 'rare', isAutoScrollingLog);
-            }
-            autoSave();
-        });
-
         addTapListener(document.getElementById('salvage-mode-btn'), () => {
             salvageMode.active = !salvageMode.active;
             ui.toggleSalvageMode(elements, salvageMode.active);

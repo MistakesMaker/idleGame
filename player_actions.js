@@ -291,64 +291,6 @@ export function buyMaxUpgrade(gameState, upgradeType) {
 }
 
 /**
- * Buys a loot crate with scrap.
- */
-export function buyLootCrate(gameState, generateItemFn) {
-    const cost = 50;
-    if (gameState.scrap < cost) {
-        return { success: false, message: "Not enough Scrap!", item: null };
-    }
-
-    const currentRealmData = REALMS[gameState.currentRealmIndex];
-    if (!currentRealmData) {
-         return { success: false, message: "Error: Could not find current realm data.", item: null };
-    }
-
-    const realmMonsters = new Set();
-    for (const zoneId in currentRealmData.zones) {
-        const zone = currentRealmData.zones[zoneId];
-        for (const subZoneId in zone.subZones) {
-            const subZone = zone.subZones[subZoneId];
-            if (gameState.completedLevels.some(lvl => lvl >= subZone.levelRange[0] && lvl <= subZone.levelRange[1])) {
-                subZone.monsterPool.forEach(monster => realmMonsters.add(monster));
-            }
-        }
-    }
-
-    const availableItems = [];
-    realmMonsters.forEach(monster => {
-        if (monster.lootTable) {
-            monster.lootTable.forEach(lootEntry => {
-                if (!lootEntry.item.isUnique) {
-                    availableItems.push(lootEntry.item);
-                }
-            });
-        }
-    });
-
-    if (availableItems.length === 0) {
-        return { success: false, message: "No available items in loot crate! Defeat more monsters in this realm to unlock their drops.", item: null };
-    }
-
-    gameState.scrap -= cost;
-    const itemBase = availableItems[Math.floor(Math.random() * availableItems.length)];
-    const rarityRoll = Math.floor(Math.random() * (rarities.length - 1)) + 1;
-    const rarity = rarities[rarityRoll];
-    const item = generateItemFn(rarity, gameState.maxLevel, itemBase);
-    
-    const spot = findEmptySpot(item.width, item.height, gameState.inventory);
-    if (spot) {
-        item.x = spot.x;
-        item.y = spot.y;
-        gameState.inventory.push(item);
-        return { success: true, message: `Bought a loot crate for ${cost} Scrap!`, item };
-    } else {
-        gameState.scrap += cost;
-        return { success: false, message: "Not enough space in your inventory for the item from the crate!", item: null };
-    }
-}
-
-/**
  * Salvages selected items for scrap.
  * @param {object} gameState - The main game state object.
  * @param {object} salvageMode - The salvage mode state, containing selections.
