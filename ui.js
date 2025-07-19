@@ -1167,8 +1167,17 @@ export function createLootTableTooltipHTML(itemBase) {
     const uniqueClass = isUnique ? 'unique-item-name' : '';
     const headerHTML = `<div class="item-header"><span class="${uniqueClass}">${itemBase.name}</span></div>`;
 
+    const itemTypeString = `${itemBase.type.charAt(0).toUpperCase() + itemBase.type.slice(1)}`;
+    const subHeaderHTML = `
+        <div class="tooltip-subheader">
+            <span>${itemTypeString}</span> 
+            <span class="tooltip-shift-hint">Hold [SHIFT] to compare</span>
+        </div>
+    `;
+
     return `${headerHTML}
-            <div class="possible-stats-header" style="justify-content: flex-start; margin-top: 5px; margin-bottom: 5px;">
+            ${subHeaderHTML}
+            <div class="possible-stats-header" style="justify-content: flex-start; margin-top: 5px; margin-bottom: 5px;">   
                 <span>Possible Stats:</span>
             </div>
             ${statsHTML}
@@ -1183,8 +1192,7 @@ export function createLootComparisonTooltipHTML(potentialItem, equippedItem, equ
     const itemTypeString = `${potentialItem.type.charAt(0).toUpperCase() + potentialItem.type.slice(1)}`;
     let hintHTML = `
         <div class="tooltip-subheader">
-            <span>${itemTypeString}</span>&nbsp;
-            <span class="tooltip-shift-hint">Release [SHIFT] for stats</span>
+            <span>${itemTypeString}</span>
         </div>
     `;
 
