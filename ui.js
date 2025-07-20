@@ -2106,8 +2106,10 @@ function createWikiItemCardHTML(itemData, isFavorited) {
     }
 
     itemBase.possibleStats?.forEach(stat => {
-        const statName = Object.values(STATS).find(s => s.key === stat.key)?.name || stat.key;
-        statsHtml += `<li>+ ${formatNumber(stat.min)} to ${formatNumber(stat.max)} ${statName}</li>`;
+        const statDefinition = Object.values(STATS).find(s => s.key === stat.key);
+        const statName = statDefinition?.name || stat.key;
+        const valueSuffix = (statDefinition && statDefinition.type === 'percent') ? '%' : '';
+        statsHtml += `<li>+ ${formatNumber(stat.min)}${valueSuffix} - ${formatNumber(stat.max)}${valueSuffix} ${statName}</li>`;
     });
     
     if (itemBase.canHaveSockets && itemBase.maxSockets > 0) {
