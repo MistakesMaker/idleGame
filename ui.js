@@ -2085,7 +2085,7 @@ export function renderWikiResults(containerEl, filteredData, wikiFavorites, show
 function createWikiItemCardHTML(itemData, isFavorited) {
     const itemBase = ITEMS[itemData.id] || GEMS[itemData.id] || CONSUMABLES[itemData.id];
     const isUnique = itemBase.isUnique ? 'unique-item-name' : '';
-    const rarity = itemBase.type === 'consumable' ? 'legendary' : (itemBase.rarity || 'common');
+    const rarity = itemBase.type === 'consumable' ? '' : (itemBase.rarity || 'common');
 
     const starClass = isFavorited ? 'fas fa-star favorited' : 'far fa-star';
 
