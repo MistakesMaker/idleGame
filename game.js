@@ -2583,21 +2583,34 @@ function showItemTooltip(item, element) {
             const itemBase = currentMonster.data.lootTable[lootIndex]?.item;
             if (!itemBase) return;
             elements.tooltipEl.className = 'hidden';
-            
-            if (itemBase.tier >= 1) {
-                elements.tooltipEl.innerHTML = ui.createGemTooltipHTML(itemBase);
-                elements.tooltipEl.classList.add('gem-quality');
-            }
-            else if (isShiftPressed) {
-                if (itemBase.type === 'ring') {
-                    elements.tooltipEl.innerHTML = ui.createLootComparisonTooltipHTML(itemBase, gameState.equipment.ring1, gameState.equipment.ring2);
-                } else {
-                    const equippedItem = gameState.equipment[itemBase.type];
-                    elements.tooltipEl.innerHTML = ui.createLootComparisonTooltipHTML(itemBase, equippedItem);
-                }
+
+            // --- START OF MODIFICATION ---
+            if (itemBase.type === 'consumable') {
+                // Handle consumables specifically
+                elements.tooltipEl.classList.add('legendary'); // Consumables are treated as legendary rarity for tooltips
+                elements.tooltipEl.innerHTML = `
+                    <div class="item-header"><span class="legendary">${itemBase.name}</span></div>
+                    <ul><li>${itemBase.description}</li></ul>
+                `;
             } else {
-                elements.tooltipEl.innerHTML = ui.createLootTableTooltipHTML(itemBase);
+                // Existing logic for items and gems
+                if (itemBase.tier >= 1) {
+                    elements.tooltipEl.innerHTML = ui.createGemTooltipHTML(itemBase);
+                    elements.tooltipEl.classList.add('gem-quality');
+                }
+                else if (isShiftPressed) {
+                    if (itemBase.type === 'ring') {
+                        elements.tooltipEl.innerHTML = ui.createLootComparisonTooltipHTML(itemBase, gameState.equipment.ring1, gameState.equipment.ring2);
+                    } else {
+                        const equippedItem = gameState.equipment[itemBase.type];
+                        elements.tooltipEl.innerHTML = ui.createLootComparisonTooltipHTML(itemBase, equippedItem);
+                    }
+                } else {
+                    elements.tooltipEl.innerHTML = ui.createLootTableTooltipHTML(itemBase);
+                }
             }
+            // --- END OF MODIFICATION ---
+
             const rect = entryEl.getBoundingClientRect();
             elements.tooltipEl.style.left = `${rect.right + 10}px`;
             elements.tooltipEl.style.top = `${rect.top}px`;
