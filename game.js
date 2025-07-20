@@ -1445,9 +1445,28 @@ function showItemTooltip(item, element) {
         setInterval(checkDailyResets, 60000); // Check for daily resets every minute
     }    
     
-    function setupEventListeners() {
-        window.addEventListener('beforeunload', saveOnExit);
+        function setupEventListeners() {
+        // --- START OF MODIFICATION: Z-INDEX BUG FIX ---
+        const gameContainer = document.querySelector('.game-container');
+        if (gameContainer) {
+            gameContainer.addEventListener('mouseover', (e) => {
+                if (!(e.target instanceof HTMLElement)) return;
 
+                // This checks if the mouse is currently over an element that is *supposed* to show a tooltip.
+                const isInteractive = e.target.closest(
+                    '.item-wrapper, .gem-wrapper, .equipment-slot, .attribute-row > span, p[title], .active-buff, .loot-table-entry, .wiki-item-card, #hunts-btn:disabled, .hunt-reward, .ring-selection-option'
+                );
+
+                // If the mouse is NOT over an interactive element (e.g., it's over the panel background),
+                // we forcefully hide both tooltips as a failsafe.
+                if (!isInteractive) {
+                    elements.tooltipEl.classList.add('hidden');
+                    elements.statTooltipEl.classList.add('hidden');
+                }
+            });
+        }
+
+        window.addEventListener('beforeunload', saveOnExit);
         window.addEventListener('keydown', (e) => {
             const key = e.key.toLowerCase();
             if (MODIFIER_KEYS.includes(key) && !heldKeys.has(key)) {
