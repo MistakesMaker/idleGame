@@ -393,7 +393,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function handleMonsterDefeated() {
         player.checkHuntProgress(gameState, currentMonster);
-
+        const huntsModal = document.getElementById('hunts-modal-backdrop');
+        if (huntsModal && !huntsModal.classList.contains('hidden')) {
+            ui.renderHuntsView(elements, gameState);
+        }
+        ui.updateHuntsButtonGlow(gameState);
         const oldSubZone = findSubZoneByLevel(gameState.currentFightingLevel);
         const oldRealmIndex = oldSubZone ? REALMS.findIndex(r => Object.values(r.zones).some(z => z === oldSubZone.parentZone)) : -1;
     
@@ -1223,6 +1227,7 @@ function showItemTooltip(item, element) {
 
     function acceptHunt(index) {
         if(player.acceptHunt(gameState, index)) {
+            generateNewHunt(index); 
             ui.renderHuntsView(elements, gameState);
             autoSave();
         }
@@ -1238,6 +1243,7 @@ function showItemTooltip(item, element) {
                 generateNewHunt(indexToReplace);
             }
             ui.renderHuntsView(elements, gameState);
+            ui.updateHuntsButtonGlow(gameState);
             autoSave();
         }
     }
@@ -1387,7 +1393,7 @@ function showItemTooltip(item, element) {
         if (gameState.unlockedFeatures.hunts) {
             populateInitialHunts();
         }
-
+        ui.updateHuntsButtonGlow(gameState); // Check glow status on load
         setupEventListeners();
         recalculateStats();
         startNewMonster();

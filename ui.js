@@ -2800,3 +2800,13 @@ export function updateActiveBuffsUI(elements, activeBuffs) {
         }
     });
 }
+/**
+ * Updates the glow effect on the main Hunts button if a hunt is ready to be completed.
+ * @param {object} gameState The current game state.
+ */
+export function updateHuntsButtonGlow(gameState) {
+    const huntsBtn = document.getElementById('hunts-btn');
+    if (!huntsBtn) return;
+    const isComplete = gameState.hunts.active && gameState.hunts.progress >= gameState.hunts.active.quantity;
+    huntsBtn.classList.toggle('hunt-ready-glow', isComplete);
+}
