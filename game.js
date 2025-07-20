@@ -1445,9 +1445,8 @@ function showItemTooltip(item, element) {
         setInterval(checkDailyResets, 60000); // Check for daily resets every minute
     }    
     
-    function setupEventListeners() {
+        function setupEventListeners() {
         window.addEventListener('beforeunload', saveOnExit);
-
         window.addEventListener('keydown', (e) => {
             const key = e.key.toLowerCase();
             if (MODIFIER_KEYS.includes(key) && !heldKeys.has(key)) {
