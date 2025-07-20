@@ -479,7 +479,7 @@ export const underdarkMonsters = {
     // --- Sub-Zone: Fields of Madness (Levels 726-749) ---
     VOID_WRAITH: {
         name: 'Void Wraith',
-        image: 'images/monsters/sand_wraith.png',
+        image: 'images/monsters/void_wraith.png',
         dropChance: 15,
         lootTable: [
             { item: ITEMS.SHADOW_WEAVE_TUNIC, weight: 1 },
