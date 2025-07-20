@@ -834,6 +834,7 @@ const undeadDesertItems = {
         possibleStats: [
             { key: STATS.CLICK_DAMAGE.key, min: 2000, max: 8000 },
             { key: STATS.GOLD_GAIN.key, min: 20, max: 50 },
+            { key: STATS.DPS.key, min: 20000, max: 50000 },
         ]
     },
     DUNE_STRIDERS_SASH: {
