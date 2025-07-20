@@ -16,13 +16,13 @@
 */
 export const CONSUMABLES = {
     // --- PERMANENT UPGRADES ---
-    ARTISAN_CHISEL: {
-        id: 'ARTISAN_CHISEL',
-        name: "Artisan's Chisel",
+    WISDOM_OF_THE_OVERWORLD: {
+        id: 'WISDOM_OF_THE_OVERWORLD',
+        name: "Wisdom of the Overworld",
         type: 'consumable',
-        icon: 'images/icons/artisan_chisel.png',
+        icon: 'images/icons/wisdom_of_the_overworld.png',
         width: 2, height: 2,
-        description: "A one-time use tool from a master craftsman. When consumed, permanently increases your T1 gems combining success rate from 50% to 60%.",
+        description: "A one-time use scroll from ancient times. When consumed, permanently increases your T1 gems combining success rate from 50% to 60%.",
         effect: {
             type: 'permanentFlag',
             key: 'artisanChiselUsed'
