@@ -406,25 +406,25 @@ export function activatePreset(gameState, presetIndex) {
 /**
  * Attempts to combine two identical-tier gems into a new, higher-tier gem.
  * @param {object} gameState The main game state object.
- * @param {Array<object>} craftingGems An array of the two gems being combined.
+ * @param {Array<string|number>} craftingGemIds An array of the two gem IDs being combined.
  * @returns {{success: boolean, message: string, newGem: object|null}}
  */
-export function combineGems(gameState, craftingGems) {
+export function combineGems(gameState, craftingGemIds) {
     const cost = 100;
     if (gameState.scrap < cost) {
         return { success: false, message: "Not enough Scrap to combine.", newGem: null };
     }
 
-    const [gem1, gem2] = craftingGems;
+    const gem1 = gameState.gems.find(g => g.id === craftingGemIds[0]);
+    const gem2 = gameState.gems.find(g => g.id === craftingGemIds[1]);
     
     if (!gem1 || !gem2 || gem1.tier !== gem2.tier) {
         return { success: false, message: "You must combine two gems of the same tier.", newGem: null };
     }
     
     gameState.scrap -= cost;
-    const id1 = gem1.id;
-    const id2 = gem2.id;
-    gameState.gems = gameState.gems.filter(g => g.id !== id1 && g.id !== id2);
+    // Remove the two source gems from the main state AFTER the attempt.
+    gameState.gems = gameState.gems.filter(g => g.id !== gem1.id && g.id !== gem2.id);
 
     let successChance = 0.5;
     if (gem1.tier === 1 && gameState.artisanChiselUsed) {

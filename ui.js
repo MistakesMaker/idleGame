@@ -308,13 +308,20 @@ export function populateGemSortOptions(elements, gems, currentSort) {
  * @param {object} options - Configuration options.
  */
 export function renderGrid(containerEl, items, options = {}) {
-    const { calculatePositions = false, type = 'item', selectedItem = null, salvageSelections = [], showLockIcon = true, bulkCombineSelection = {}, bulkCombineDeselectedIds = new Set(), selectedGemId = null } = options;
+    const { calculatePositions = false, type = 'item', selectedItem = null, salvageSelections = [], showLockIcon = true, bulkCombineSelection = {}, bulkCombineDeselectedIds = new Set(), selectedGemId = null, craftingGemIds = [] } = options;
     
     containerEl.innerHTML = '';
     const tempPlacement = []; 
     let maxRow = 0;
 
     for (const item of items) {
+        // --- START OF MODIFICATION ---
+        // Don't render gems that are currently in a crafting slot.
+        if (type === 'gem' && craftingGemIds.includes(item.id)) {
+            continue;
+        }
+        // --- END OF MODIFICATION ---
+
         const wrapper = document.createElement('div');
         wrapper.className = type === 'gem' ? 'gem-wrapper' : 'item-wrapper';
         
@@ -811,7 +818,7 @@ export function updateUI(elements, gameState, playerStats, currentMonster, salva
                     break;
                 case 'inventory-gems-view':
                     if (gameState.unlockedFeatures.gems) {
-                        renderGrid(gemSlotsEl, gameState.gems, { type: 'gem', calculatePositions: false, bulkCombineSelection, bulkCombineDeselectedIds });
+                        renderGrid(gemSlotsEl, gameState.gems, { type: 'gem', calculatePositions: false, bulkCombineSelection, bulkCombineDeselectedIds, craftingGemIds: craftingGems });
                         updateGemCraftingUI(elements, craftingGems, gameState);
                     }
                     break;
@@ -974,7 +981,7 @@ export function createTooltipHTML(item) {
     const itemTypeString = `${item.rarity.charAt(0).toUpperCase() + item.rarity.slice(1)} ${item.type.charAt(0).toUpperCase() + item.type.slice(1)}`;
     headerHTML += `
         <div class="tooltip-subheader">
-            <span>${itemTypeString}</span>&nbsp;
+            <span>${itemTypeString}</span> 
             ${item.type !== 'consumable' ? '<span class="tooltip-shift-hint">Hold [SHIFT] for blueprint</span>' : ''}
         </div>
     `;
@@ -1017,7 +1024,7 @@ export function createItemComparisonTooltipHTML(hoveredItem, equippedItem, equip
     const itemTypeString = `${hoveredItem.rarity.charAt(0).toUpperCase() + hoveredItem.rarity.slice(1)} ${hoveredItem.type.charAt(0).toUpperCase() + hoveredItem.type.slice(1)}`;
     html += `
         <div class="tooltip-subheader">
-            <span>${itemTypeString}</span>&nbsp;
+            <span>${itemTypeString}</span> 
             <span class="tooltip-shift-hint">Hold [SHIFT] for blueprint</span>
         </div>
     `;
@@ -1313,7 +1320,6 @@ export function createItemHTML(item, showLock = true) {
                 ${quantityHTML}
             </div>`;
 }
-
 export function createGemHTML(gem) {
     if (!gem) return '';
     return `<div class="gem gem-quality" data-gem-id="${String(gem.id)}">
@@ -2020,7 +2026,6 @@ export function populateWikiFilters(elements, allItemTypes, allStatKeys) {
         }
     });
 }
-
 /**
  * Renders the results of a wiki search into the container.
  * @param {HTMLElement} containerEl - The container element for the results.
@@ -2077,12 +2082,6 @@ export function renderWikiResults(containerEl, filteredData, wikiFavorites, show
  * @param {boolean} isFavorited - Whether the item is currently favorited.
  * @returns {string} The HTML string for the card.
  */
-/**
- * Creates the HTML for a single item card in the wiki.
- * @param {object} itemData - The processed data for a single item.
- * @param {boolean} isFavorited - Whether the item is currently favorited.
- * @returns {string} The HTML string for the card.
- */
 function createWikiItemCardHTML(itemData, isFavorited) {
     const itemBase = ITEMS[itemData.id] || GEMS[itemData.id] || CONSUMABLES[itemData.id];
     const isUnique = itemBase.isUnique ? 'unique-item-name' : '';
@@ -2130,7 +2129,6 @@ function createWikiItemCardHTML(itemData, isFavorited) {
     if (itemData.dropSources.length > 0) {
         const sortedSources = itemData.dropSources.sort((a, b) => a.level - b.level);
         sortedSources.forEach(source => {
-            // --- START OF MODIFICATION ---
             if (source.isHunt) {
                 dropsHtml += `
                     <li class="wiki-drop-source">
@@ -2154,7 +2152,6 @@ function createWikiItemCardHTML(itemData, isFavorited) {
                     </li>
                 `;
             }
-            // --- END OF MODIFICATION ---
         });
     } else {
         dropsHtml = '<li>No known drop sources.</li>';
@@ -2315,16 +2312,20 @@ export function updateAutoProgressToggle(elements, isAutoProgressing) {
     }
 }
 
-export function updateGemCraftingUI(elements, craftingGems, gameState) {
+export function updateGemCraftingUI(elements, craftingGemIds, gameState) {
     const { gemCraftingSlotsContainer, gemCraftBtn } = elements;
     const craftingSlots = gemCraftingSlotsContainer.querySelectorAll('.gem-crafting-slot');
     craftingSlots.forEach((slot, index) => {
         slot.innerHTML = '';
-        if (craftingGems[index]) {
-            slot.innerHTML = createGemHTML(craftingGems[index]);
+        const gemId = craftingGemIds[index];
+        if (gemId) {
+            const gemObject = gameState.gems.find(g => g.id === gemId);
+            if (gemObject) {
+                slot.innerHTML = createGemHTML(gemObject);
+            }
         }
     });
-    (/** @type {HTMLButtonElement} */ (gemCraftBtn)).disabled = craftingGems.length !== 2 || gameState.scrap < 100;
+    (/** @type {HTMLButtonElement} */ (gemCraftBtn)).disabled = craftingGemIds.length !== 2 || gameState.scrap < 100;
 }
 
 export function updateForge(elements, selectedItem, selectedStatKey, currentScrap) {
@@ -2653,11 +2654,10 @@ export function showStatBreakdownTooltip(elements, statKey, statBreakdown, gameS
         }
     });
 
-    // --- START OF MODIFICATION ---
     const buffStatMap = {
         'goldGain': 'bonusGold',
         'magicFind': 'magicFind',
-        // Add other mappings here if you create more buff types
+        'bonusXp': 'bonusXp',
     };
     const relevantBuffKey = buffStatMap[statKey];
 
@@ -2669,7 +2669,6 @@ export function showStatBreakdownTooltip(elements, statKey, statBreakdown, gameS
             }
         });
     }
-    // --- END OF MODIFICATION ---
 
     if (data.multipliers && data.multipliers.length > 0) {
         html += `<li class="tooltip-divider"></li>`;

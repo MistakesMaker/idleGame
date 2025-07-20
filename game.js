@@ -1215,7 +1215,8 @@ function showItemTooltip(item, element) {
             calculatePositions: false,
             bulkCombineSelection,
             bulkCombineDeselectedIds,
-            selectedGemId: selectedGemForSocketing ? selectedGemForSocketing.id : null
+            selectedGemId: selectedGemForSocketing ? selectedGemForSocketing.id : null,
+            craftingGemIds: craftingGems
         });
     }
 
@@ -1639,6 +1640,9 @@ function showItemTooltip(item, element) {
             if (!item) return;
 
             if (isGem) {
+                // Prevent interaction with gems in crafting slots via main grid
+                if (craftingGems.includes(item.id)) return;
+
                 const isBulkSelected = bulkCombineSelection.tier && bulkCombineSelection.selectionKey && item.tier === bulkCombineSelection.tier;
                 if (isBulkSelected) {
                     if (bulkCombineDeselectedIds.has(item.id)) {
@@ -1652,14 +1656,14 @@ function showItemTooltip(item, element) {
 
                 if (isShiftPressed) {
                     if (craftingGems.length < 2) {
-                         if (craftingGems.length > 0 && craftingGems[0].tier !== item.tier) {
+                        const firstCraftingGem = craftingGems.length > 0 ? gameState.gems.find(g => g.id === craftingGems[0]) : null;
+                         if (firstCraftingGem && firstCraftingGem.tier !== item.tier) {
                             logMessage(elements.gameLogEl, "You can only combine gems of the same tier.", "rare", isAutoScrollingLog);
                             return;
                         }
-                        craftingGems.push(item);
-                        gameState.gems = gameState.gems.filter(g => g.id !== item.id);
+                        craftingGems.push(item.id); // Store ID
                         ui.updateGemCraftingUI(elements, craftingGems, gameState);
-                        refreshGemViewIfActive();
+                        refreshGemViewIfActive(); // Re-render to hide gem from main grid
                     }
                 } else {
                     if (selectedGemForSocketing && selectedGemForSocketing.id === item.id) {
@@ -1824,24 +1828,24 @@ function showItemTooltip(item, element) {
             if (slotIndexStr === null || slotIndexStr === undefined) return;
             const slotIndex = parseInt(slotIndexStr, 10);
 
-            const gemInSlot = craftingGems[slotIndex];
+            const gemIdInSlot = craftingGems[slotIndex];
         
-            if (gemInSlot) {
-                gameState.gems.push(gemInSlot);
-                craftingGems[slotIndex] = undefined; 
-                craftingGems = craftingGems.filter(Boolean);
-                refreshGemViewIfActive();
+            if (gemIdInSlot) {
+                // Gem is being removed from a crafting slot
+                craftingGems.splice(slotIndex, 1);
+                refreshGemViewIfActive(); // Re-render main grid to show the gem again
             } 
             else if (selectedGemForSocketing) {
+                // A selected gem is being placed into an empty crafting slot
                 if (craftingGems.length < 2) {
-                    if (craftingGems.length > 0 && craftingGems[0].tier !== selectedGemForSocketing.tier) {
+                    const firstCraftingGem = craftingGems.length > 0 ? gameState.gems.find(g => g.id === craftingGems[0]) : null;
+                    if (firstCraftingGem && firstCraftingGem.tier !== selectedGemForSocketing.tier) {
                         logMessage(elements.gameLogEl, "You can only combine gems of the same tier.", "rare", isAutoScrollingLog);
                         return;
                     }
         
-                    craftingGems.push(selectedGemForSocketing);
-                    gameState.gems = gameState.gems.filter(g => g.id !== selectedGemForSocketing.id);
-                    refreshGemViewIfActive();
+                    craftingGems.push(selectedGemForSocketing.id); // Store ID
+                    refreshGemViewIfActive(); // Re-render main grid to hide the gem
                     selectedGemForSocketing = null;
                 }
             }
@@ -1849,13 +1853,13 @@ function showItemTooltip(item, element) {
             ui.updateSocketingHighlights(elements, null, gameState);
         });
 
-        addTapListener(elements.gemCraftBtn, () => {
+                addTapListener(elements.gemCraftBtn, () => {
             if (craftingGems.length !== 2) return;
             
             const result = player.combineGems(gameState, craftingGems);
-            logMessage(elements.gameLogEl, result.newGem ? `Success! You fused a <b>${result.newGem.name}</b>!` : result.message, result.success && result.newGem ? 'legendary' : 'rare', isAutoScrollingLog);
+            logMessage(elements.gameLogEl, result.message, result.success && result.newGem ? 'legendary' : 'rare', isAutoScrollingLog);
             
-            craftingGems = [];
+            craftingGems = []; // Clear the IDs
             ui.updateGemCraftingUI(elements, craftingGems, gameState);
             refreshGemViewIfActive();
 
