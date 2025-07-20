@@ -2793,8 +2793,7 @@ export function updateActiveBuffsUI(elements, activeBuffs) {
         
         const consumableBase = Object.values(CONSUMABLES).find(c => c.effect && c.effect.name === buff.name);
         if (consumableBase) {
-            buffEl.title = consumableBase.description;
-            buffEl.innerHTML = `<img src="${consumableBase.icon}" alt="${buff.name}"><span class="buff-timer">${timeStr}</span>`;
+          buffEl.innerHTML = `<img src="${consumableBase.icon}" alt="${buff.name}"><span class="buff-timer">${timeStr}</span>`;
             container.appendChild(buffEl);
         }
     });
