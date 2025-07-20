@@ -685,12 +685,22 @@ export function consumeItem(gameState, itemId) {
             gameState[effect.key] = true;
             break;
 
-        case 'timedBuff':
-            const expiresAt = Date.now() + (effect.duration * 1000);
-            gameState.activeBuffs.push({ ...effect, expiresAt });
+    case 'timedBuff':
+        const existingBuff = gameState.activeBuffs.find(b => b.name === effect.name);
+        const newExpiresAt = Date.now() + (effect.duration * 1000);
+
+        if (existingBuff) {
+            // If the buff already exists, just refresh its timer.
+            existingBuff.expiresAt = newExpiresAt;
+            message = `You refreshed the duration of <b>${effect.name}</b>!`;
+        } else {
+            // Otherwise, add the new buff.
+            gameState.activeBuffs.push({ ...effect, expiresAt: newExpiresAt });
             message = `You feel the effects of <b>${effect.name}</b>!`;
-            break;
-        
+        }
+    break;   
+
+
         case 'resource':
             gameState[effect.resource] = (gameState[effect.resource] || 0) + effect.amount;
             message = `You gained <b>${formatNumber(effect.amount)} ${effect.resource.charAt(0).toUpperCase() + effect.resource.slice(1)}</b>!`;

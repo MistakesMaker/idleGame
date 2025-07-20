@@ -21,8 +21,7 @@ export const CONSUMABLES = {
         name: "Artisan's Chisel",
         type: 'consumable',
         icon: 'images/icons/artisan_chisel.png',
-        width: 2,
-        height: 2,
+        width: 2, height: 2,
         description: "A one-time use tool from a master craftsman. When consumed, permanently increases your T1 gems combining success rate from 50% to 60%.",
         effect: {
             type: 'permanentFlag',

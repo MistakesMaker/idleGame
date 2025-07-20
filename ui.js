@@ -1,7 +1,7 @@
 // --- START OF FILE ui.js ---
 
 import { STATS } from './data/stat_pools.js';
-import { getXpForNextLevel, getUpgradeCost, formatNumber, findSubZoneByLevel, getCombinedItemStats, findEmptySpot, findFirstLevelOfZone } from './utils.js';
+import { getXpForNextLevel, getUpgradeCost, formatNumber, findSubZoneByLevel, getCombinedItemStats, findEmptySpot, findFirstLevelOfZone, formatTime } from './utils.js';
 import { ITEMS } from './data/items.js';
 import { GEMS } from './data/gems.js';
 import { MONSTERS } from './data/monsters.js';

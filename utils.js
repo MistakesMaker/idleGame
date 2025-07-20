@@ -255,3 +255,32 @@ export function getRandomInt(min, max) {
     max = Math.floor(max);
     return Math.floor(Math.random() * (max - min + 1)) + min;
 }
+
+/**
+ * Formats a duration in seconds into a d:h:mm:ss string.
+ * Hides larger units if they are zero.
+ * @param {number} totalSeconds - The duration to format.
+ * @returns {string} The formatted time string.
+ */
+export function formatTime(totalSeconds) {
+    if (totalSeconds < 0) totalSeconds = 0;
+
+    const days = Math.floor(totalSeconds / 86400);
+    totalSeconds %= 86400;
+    const hours = Math.floor(totalSeconds / 3600);
+    totalSeconds %= 3600;
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = Math.floor(totalSeconds % 60);
+
+    const mm = String(minutes).padStart(2, '0');
+    const ss = String(seconds).padStart(2, '0');
+
+    let result = `${mm}:${ss}`;
+    if (hours > 0) {
+        result = `${hours}:${result}`;
+    }
+    if (days > 0) {
+        result = `${days}d ${result}`;
+    }
+    return result;
+}

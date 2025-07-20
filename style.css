@@ -1879,73 +1879,6 @@ h5 .legendary { color: #f39c12; }
     border-bottom-color: #f1c40f; /* Highlight line */
 }
 
-.sub-view-container {
-    flex-grow: 1;
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    min-height: 0;
-}
-
-.sub-view {
-    display: none; /* Hide all sub-views by default */
-    flex-grow: 1;
-    flex-direction: column;
-    min-height: 0;
-}
-
-.sub-view.active {
-    display: flex; /* Show only the active one */
-}
-
-/* Make sure headers inside the sub-views look correct */
-.sub-view h3 {
-    margin-top: 0;
-    text-align: center;
-}
-
-/* Ensure the grid scroll containers fill the space correctly */
-#inventory-gear-view .grid-scroll-container,
-#inventory-gems-view .grid-scroll-container,
-#inventory-consumables-view .grid-scroll-container {
-    margin-top: 0;
-}
-
-/* Hide the main tab buttons for the views we moved */
-.tab-button[data-view="gems-view"],
-.tab-button[data-view="consumables-view"] {
-    display: none;
-}
-/* --- START: Inventory Sub-Tab Styles --- */
-.sub-tabs {
-    display: flex;
-    border-bottom: 2px solid #34495e;
-    margin-bottom: 15px;
-    flex-shrink: 0;
-}
-
-.sub-tab-button {
-    flex-grow: 1;
-    padding: 8px; /* Slightly smaller than main tabs */
-    margin: 0;
-    border-radius: 5px 5px 0 0;
-    border-bottom: none;
-    background: #2c3e50; /* Darker than main tabs */
-    font-size: 0.9em;
-    box-shadow: none;
-    border-bottom: 2px solid transparent; /* For the active state */
-}
-
-.sub-tab-button:hover {
-    background: #34495e;
-}
-
-.sub-tab-button.active {
-    background: #34495e;
-    color: #f1c40f;
-    border-bottom-color: #f1c40f; /* Highlight line */
-}
-
 /* New style for disabled sub-tabs */
 .sub-tab-button.disabled-tab {
     color: #7f8c8d;
@@ -2066,10 +1999,7 @@ h5 .legendary { color: #f39c12; }
     border-radius: 8px;
     background-color: rgba(0,0,0,0.2);
 }
-#active-hunt-section h4 {
-    margin-top: 0;
-    color: #2ecc71;
-}
+
 .available-hunts-header {
     display: flex;
     justify-content: space-between;
@@ -2115,16 +2045,25 @@ h5 .legendary { color: #f39c12; }
 }
 .hunt-reward {
     display: flex;
+    flex-direction: column; /* --- MODIFICATION: Stack icon and text vertically --- */
     align-items: center;
     gap: 8px;
     font-size: 0.9em;
+    text-align: center; /* --- MODIFICATION: Center the text --- */
+    width: 100px; /* --- MODIFICATION: Give it a fixed width --- */
+    flex-shrink: 0; /* --- MODIFICATION: Prevent it from shrinking --- */
 }
 .hunt-reward img {
-    width: 32px;
-    height: 32px;
+    width: 48px; /* --- MODIFICATION: Make icon a bit bigger --- */
+    height: 48px;
     border-radius: 4px;
     background: rgba(0,0,0,0.5);
     padding: 2px;
+}
+/* --- NEW RULE --- */
+.hunt-reward-name {
+    color: #ecf0f1;
+    font-weight: bold;
 }
 .hunt-actions {
     display: flex;
@@ -2164,28 +2103,7 @@ h5 .legendary { color: #f39c12; }
     transform: none;
     box-shadow: none;
 }
-.hunt-reward {
-    display: flex;
-    flex-direction: column; /* --- MODIFICATION: Stack icon and text vertically --- */
-    align-items: center;
-    gap: 8px;
-    font-size: 0.9em;
-    text-align: center; /* --- MODIFICATION: Center the text --- */
-    width: 100px; /* --- MODIFICATION: Give it a fixed width --- */
-    flex-shrink: 0; /* --- MODIFICATION: Prevent it from shrinking --- */
-}
-.hunt-reward img {
-    width: 48px; /* --- MODIFICATION: Make icon a bit bigger --- */
-    height: 48px;
-    border-radius: 4px;
-    background: rgba(0,0,0,0.5);
-    padding: 2px;
-}
-/* --- NEW RULE --- */
-.hunt-reward-name {
-    color: #ecf0f1;
-    font-weight: bold;
-}
+
 /* --- NEW: Hunts Button Glow Effect --- */
 #hunts-btn.hunt-ready-glow {
     /* When a hunt is ready, the button turns orange and pulses */
@@ -2204,4 +2122,47 @@ h5 .legendary { color: #f39c12; }
     100% {
         box-shadow: 0 0 0 0 rgba(230, 126, 34, 0);
     }
+}
+
+/* --- START: Active Buffs Display --- */
+#active-buffs-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 15px; /* Space between buffs and log */
+    padding: 10px;
+    background-color: rgba(0,0,0,0.2);
+    border: 1px solid #4a637e;
+    border-radius: 8px;
+    flex-shrink: 0;
+}
+
+.active-buff {
+    position: relative;
+    width: 50px;
+    height: 50px;
+    cursor: help;
+}
+
+.active-buff img {
+    width: 100%;
+    height: 100%;
+    border-radius: 5px;
+    border: 1px solid #7f8c8d;
+}
+
+.buff-timer {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background-color: rgba(0, 0, 0, 0.8);
+    color: #ecf0f1;
+    font-size: 0.8em;
+    text-align: center;
+    padding: 2px 0;
+    border-bottom-left-radius: 5px;
+    border-bottom-right-radius: 5px;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    text-shadow: 1px 1px 1px #000;
 }

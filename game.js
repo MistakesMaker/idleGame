@@ -579,22 +579,29 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function updateActiveBuffs() {
-        if (!gameState.activeBuffs || gameState.activeBuffs.length === 0) return;
-
-        const now = Date.now();
-        const expiredBuffs = gameState.activeBuffs.filter(buff => now >= buff.expiresAt);
-        
-        if (expiredBuffs.length > 0) {
-            gameState.activeBuffs = gameState.activeBuffs.filter(buff => now < buff.expiresAt);
-            expiredBuffs.forEach(buff => {
-                logMessage(elements.gameLogEl, `Your <b>${buff.name}</b> buff has worn off.`, 'rare', isAutoScrollingLog);
-            });
-            
-            recalculateStats();
-            ui.updateStatsPanel(elements, playerStats);
-            ui.updateActiveBuffsUI(elements, gameState.activeBuffs); // Update buff display
-        }
+    if (!gameState.activeBuffs || gameState.activeBuffs.length === 0) {
+        // If there are no buffs, ensure the UI is hidden.
+        ui.updateActiveBuffsUI(elements, gameState.activeBuffs);
+        return;
     }
+
+    const now = Date.now();
+    const expiredBuffs = gameState.activeBuffs.filter(buff => now >= buff.expiresAt);
+    
+    if (expiredBuffs.length > 0) {
+        gameState.activeBuffs = gameState.activeBuffs.filter(buff => now < buff.expiresAt);
+        expiredBuffs.forEach(buff => {
+            logMessage(elements.gameLogEl, `Your <b>${buff.name}</b> buff has worn off.`, 'rare', isAutoScrollingLog);
+        });
+        
+        recalculateStats();
+        ui.updateStatsPanel(elements, playerStats);
+        // The UI update for expiration is now handled by the line below
+    }
+
+    // Always update the UI to show the ticking timer
+    ui.updateActiveBuffsUI(elements, gameState.activeBuffs);
+}
 
     function gameLoop() {
         if (playerStats.totalDps > 0 && gameState.monster.hp > 0) {
@@ -1244,6 +1251,12 @@ function showItemTooltip(item, element) {
             }
             ui.renderHuntsView(elements, gameState);
             ui.updateHuntsButtonGlow(gameState);
+            const consumablesView = document.getElementById('inventory-consumables-view');
+            if (consumablesView && consumablesView.classList.contains('active')) {
+            // The player.completeHunt function already compacts the inventory, so we need to
+            // re-render the grid to reflect the new item and any position changes.
+                ui.renderGrid(elements.consumablesSlotsEl, gameState.consumables, { calculatePositions: true, showLockIcon: false });
+        }
             autoSave();
         }
     }
@@ -2010,6 +2023,43 @@ function showItemTooltip(item, element) {
                 }
             });
         });
+
+            const buffsContainer = document.getElementById('active-buffs-container');
+            if (buffsContainer) {
+                buffsContainer.addEventListener('mouseover', (e) => {
+                    if (!(e.target instanceof Element)) return;
+                    const buffEl = e.target.closest('.active-buff');
+                    if (!(buffEl instanceof HTMLElement)) return;
+
+                    const imgEl = buffEl.querySelector('img');
+                    if (!imgEl) return;
+
+                    const buffName = imgEl.alt;
+                    const consumableBase = Object.values(CONSUMABLES).find(c => c.effect && c.effect.name === buffName);
+
+                    if (consumableBase) {
+                        elements.tooltipEl.className = 'hidden'; // Reset
+                        elements.tooltipEl.classList.add('legendary'); // All buffs are from legendary consumables
+                        elements.tooltipEl.innerHTML = `
+                            <div class="item-header"><span class="legendary">${consumableBase.name}</span></div>
+                            <ul><li>${consumableBase.description}</li></ul>
+                        `;
+
+                        const rect = buffEl.getBoundingClientRect();
+                        elements.tooltipEl.style.left = `${rect.right + 10}px`;
+                        elements.tooltipEl.style.top = `${rect.top}px`;
+                        elements.tooltipEl.classList.remove('hidden');
+                    }
+                });
+
+                buffsContainer.addEventListener('mouseout', (e) => {
+                    if (!(e.target instanceof Element)) return;
+                    const buffEl = e.target.closest('.active-buff');
+                    if (buffEl) {
+                        elements.tooltipEl.classList.add('hidden');
+                    }
+                });
+            }
         
         document.querySelectorAll('.tabs').forEach(tabContainer => {
             const tabs = tabContainer.querySelectorAll('.tab-button');
