@@ -391,6 +391,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // --- START: handleMonsterDefeated function from game.js ---
+
     function handleMonsterDefeated() {
         player.checkHuntProgress(gameState, currentMonster);
         const huntsModal = document.getElementById('hunts-modal-backdrop');
@@ -423,6 +425,17 @@ document.addEventListener('DOMContentLoaded', () => {
                         ui.updateTabVisibility(gameState);
                         ui.flashTab('inventory-view');
                         gameState.pendingSubTabViewFlash = 'inventory-consumables-view';
+
+                        // If the player is already on the inventory screen, switch to the new sub-view immediately.
+                        if (document.getElementById('inventory-view')?.classList.contains('active')) {
+                            ui.switchInventorySubView('inventory-consumables-view');
+                            const subTabButton = document.querySelector(`.sub-tab-button[data-subview="inventory-consumables-view"]`);
+                            if (subTabButton) {
+                                subTabButton.classList.add('newly-unlocked-flash');
+                                setTimeout(() => subTabButton.classList.remove('newly-unlocked-flash'), 5000);
+                            }
+                            gameState.pendingSubTabViewFlash = null; // Clear the flag as the action is done
+                        }
                     }
                 } else {
                     ui.addItemToGrid(elements.inventorySlotsEl, item);
@@ -449,6 +462,17 @@ document.addEventListener('DOMContentLoaded', () => {
                     ui.updateTabVisibility(gameState);
                     ui.flashTab('inventory-view');
                     gameState.pendingSubTabViewFlash = 'inventory-gems-view';
+                    
+                    // If the player is already on the inventory screen, switch to the new sub-view immediately.
+                    if (document.getElementById('inventory-view')?.classList.contains('active')) {
+                        ui.switchInventorySubView('inventory-gems-view');
+                        const subTabButton = document.querySelector(`.sub-tab-button[data-subview="inventory-gems-view"]`);
+                        if (subTabButton) {
+                            subTabButton.classList.add('newly-unlocked-flash');
+                            setTimeout(() => subTabButton.classList.remove('newly-unlocked-flash'), 5000);
+                        }
+                        gameState.pendingSubTabViewFlash = null; // Clear the flag as the action is done
+                    }
                 }
             });
             refreshGemViewIfActive();
