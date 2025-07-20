@@ -41,7 +41,7 @@ export const HUNT_POOLS = [
         // Tier 2: Orc Volcano Hunts
         requiredLevel: 101,
         hunts: [
-            { id: 'hunt_kill_orcs', title: 'For the Horde!', description: 'Defeat {quantity} Orcs of any kind.', type: 'kill_specific', target: 'ORC', quantityMin: 30, quantityMax: 50, rewardIds: ['XP_ELIXIR_MINOR', 'SCRAP_CACHE_MEDIUM'] },
+            { id: 'hunt_kill_orcs', title: 'For the Horde!', description: 'Defeat {quantity} Orcs of any kind.', type: 'kill_category', target: { nameContains: 'Orc' }, quantityMin: 30, quantityMax: 50, rewardIds: ['XP_ELIXIR_MINOR', 'SCRAP_CACHE_MEDIUM'] },
             { id: 'hunt_kill_salamanders', title: 'Fiery Lizards', description: 'Defeat {quantity} Salamanders.', type: 'kill_specific', target: 'SALAMANDER', quantityMin: 25, quantityMax: 45, rewardIds: ['GOLD_BOOSTER_MINOR', 'MAGIC_FIND_POTION_MINOR'] },
             { id: 'hunt_kill_volcano_any', title: 'Volcanic Eradication', description: 'Defeat {quantity} monsters within the Orc Volcano.', type: 'kill_category', target: { zoneId: 'orc_volcano', realm: 'The Overworld' }, quantityMin: 40, quantityMax: 60, rewardIds: ['SCRAP_CACHE_MEDIUM', 'GOLD_BOOSTER_MAJOR'] },
             { id: 'hunt_kill_volcano_bosses', title: 'Masters of Magma', description: 'Vanquish {quantity} bosses in the Orc Volcano.', type: 'kill_category', target: { isBoss: true, zoneId: 'orc_volcano', realm: 'The Overworld' }, quantityMin: 1, quantityMax: 3, rewardIds: ['GEM_SEEKER_DRAFT_MINOR', 'XP_ELIXIR_MAJOR', 'SCRAP_CACHE_LARGE'] }
