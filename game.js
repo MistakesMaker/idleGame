@@ -391,6 +391,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // --- START: handleMonsterDefeated function from game.js ---
+
     function handleMonsterDefeated() {
         player.checkHuntProgress(gameState, currentMonster);
         const huntsModal = document.getElementById('hunts-modal-backdrop');
@@ -423,6 +425,17 @@ document.addEventListener('DOMContentLoaded', () => {
                         ui.updateTabVisibility(gameState);
                         ui.flashTab('inventory-view');
                         gameState.pendingSubTabViewFlash = 'inventory-consumables-view';
+
+                        // If the player is already on the inventory screen, switch to the new sub-view immediately.
+                        if (document.getElementById('inventory-view')?.classList.contains('active')) {
+                            ui.switchInventorySubView('inventory-consumables-view');
+                            const subTabButton = document.querySelector(`.sub-tab-button[data-subview="inventory-consumables-view"]`);
+                            if (subTabButton) {
+                                subTabButton.classList.add('newly-unlocked-flash');
+                                setTimeout(() => subTabButton.classList.remove('newly-unlocked-flash'), 5000);
+                            }
+                            gameState.pendingSubTabViewFlash = null; // Clear the flag as the action is done
+                        }
                     }
                 } else {
                     ui.addItemToGrid(elements.inventorySlotsEl, item);
@@ -449,6 +462,17 @@ document.addEventListener('DOMContentLoaded', () => {
                     ui.updateTabVisibility(gameState);
                     ui.flashTab('inventory-view');
                     gameState.pendingSubTabViewFlash = 'inventory-gems-view';
+                    
+                    // If the player is already on the inventory screen, switch to the new sub-view immediately.
+                    if (document.getElementById('inventory-view')?.classList.contains('active')) {
+                        ui.switchInventorySubView('inventory-gems-view');
+                        const subTabButton = document.querySelector(`.sub-tab-button[data-subview="inventory-gems-view"]`);
+                        if (subTabButton) {
+                            subTabButton.classList.add('newly-unlocked-flash');
+                            setTimeout(() => subTabButton.classList.remove('newly-unlocked-flash'), 5000);
+                        }
+                        gameState.pendingSubTabViewFlash = null; // Clear the flag as the action is done
+                    }
                 }
             });
             refreshGemViewIfActive();
@@ -2559,21 +2583,34 @@ function showItemTooltip(item, element) {
             const itemBase = currentMonster.data.lootTable[lootIndex]?.item;
             if (!itemBase) return;
             elements.tooltipEl.className = 'hidden';
-            
-            if (itemBase.tier >= 1) {
-                elements.tooltipEl.innerHTML = ui.createGemTooltipHTML(itemBase);
-                elements.tooltipEl.classList.add('gem-quality');
-            }
-            else if (isShiftPressed) {
-                if (itemBase.type === 'ring') {
-                    elements.tooltipEl.innerHTML = ui.createLootComparisonTooltipHTML(itemBase, gameState.equipment.ring1, gameState.equipment.ring2);
-                } else {
-                    const equippedItem = gameState.equipment[itemBase.type];
-                    elements.tooltipEl.innerHTML = ui.createLootComparisonTooltipHTML(itemBase, equippedItem);
-                }
+
+            // --- START OF MODIFICATION ---
+            if (itemBase.type === 'consumable') {
+                // Handle consumables specifically
+                elements.tooltipEl.classList.add('legendary'); // Consumables are treated as legendary rarity for tooltips
+                elements.tooltipEl.innerHTML = `
+                    <div class="item-header"><span class="legendary">${itemBase.name}</span></div>
+                    <ul><li>${itemBase.description}</li></ul>
+                `;
             } else {
-                elements.tooltipEl.innerHTML = ui.createLootTableTooltipHTML(itemBase);
+                // Existing logic for items and gems
+                if (itemBase.tier >= 1) {
+                    elements.tooltipEl.innerHTML = ui.createGemTooltipHTML(itemBase);
+                    elements.tooltipEl.classList.add('gem-quality');
+                }
+                else if (isShiftPressed) {
+                    if (itemBase.type === 'ring') {
+                        elements.tooltipEl.innerHTML = ui.createLootComparisonTooltipHTML(itemBase, gameState.equipment.ring1, gameState.equipment.ring2);
+                    } else {
+                        const equippedItem = gameState.equipment[itemBase.type];
+                        elements.tooltipEl.innerHTML = ui.createLootComparisonTooltipHTML(itemBase, equippedItem);
+                    }
+                } else {
+                    elements.tooltipEl.innerHTML = ui.createLootTableTooltipHTML(itemBase);
+                }
             }
+            // --- END OF MODIFICATION ---
+
             const rect = entryEl.getBoundingClientRect();
             elements.tooltipEl.style.left = `${rect.right + 10}px`;
             elements.tooltipEl.style.top = `${rect.top}px`;

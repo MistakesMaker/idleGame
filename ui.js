@@ -2085,7 +2085,7 @@ export function renderWikiResults(containerEl, filteredData, wikiFavorites, show
 function createWikiItemCardHTML(itemData, isFavorited) {
     const itemBase = ITEMS[itemData.id] || GEMS[itemData.id] || CONSUMABLES[itemData.id];
     const isUnique = itemBase.isUnique ? 'unique-item-name' : '';
-    const rarity = itemBase.type === 'consumable' ? 'legendary' : (itemBase.rarity || 'common');
+    const rarity = itemBase.type === 'consumable' ? '' : (itemBase.rarity || 'common');
 
     const starClass = isFavorited ? 'fas fa-star favorited' : 'far fa-star';
 
@@ -2106,8 +2106,10 @@ function createWikiItemCardHTML(itemData, isFavorited) {
     }
 
     itemBase.possibleStats?.forEach(stat => {
-        const statName = Object.values(STATS).find(s => s.key === stat.key)?.name || stat.key;
-        statsHtml += `<li>+ ${formatNumber(stat.min)} to ${formatNumber(stat.max)} ${statName}</li>`;
+        const statDefinition = Object.values(STATS).find(s => s.key === stat.key);
+        const statName = statDefinition?.name || stat.key;
+        const valueSuffix = (statDefinition && statDefinition.type === 'percent') ? '%' : '';
+        statsHtml += `<li>+ ${formatNumber(stat.min)}${valueSuffix} - ${formatNumber(stat.max)}${valueSuffix} ${statName}</li>`;
     });
     
     if (itemBase.canHaveSockets && itemBase.maxSockets > 0) {
@@ -2132,12 +2134,10 @@ function createWikiItemCardHTML(itemData, isFavorited) {
             if (source.isHunt) {
                 dropsHtml += `
                     <li class="wiki-drop-source">
-                        <img src="images/icons/hunts_icon.png" alt="Hunter's Board">
                         <div class="wiki-drop-source-details">
                              <span class="wiki-monster-name">${source.monster.name}</span>
                              <span class="wiki-monster-location">${source.location}</span>
                         </div>
-                        <span class="drop-chance">Reward</span>
                     </li>
                 `;
             } else {
@@ -2793,8 +2793,7 @@ export function updateActiveBuffsUI(elements, activeBuffs) {
         
         const consumableBase = Object.values(CONSUMABLES).find(c => c.effect && c.effect.name === buff.name);
         if (consumableBase) {
-            buffEl.title = consumableBase.description;
-            buffEl.innerHTML = `<img src="${consumableBase.icon}" alt="${buff.name}"><span class="buff-timer">${timeStr}</span>`;
+          buffEl.innerHTML = `<img src="${consumableBase.icon}" alt="${buff.name}"><span class="buff-timer">${timeStr}</span>`;
             container.appendChild(buffEl);
         }
     });
