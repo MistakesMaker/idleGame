@@ -2132,12 +2132,10 @@ function createWikiItemCardHTML(itemData, isFavorited) {
             if (source.isHunt) {
                 dropsHtml += `
                     <li class="wiki-drop-source">
-                        <img src="images/icons/hunts_icon.png" alt="Hunter's Board">
                         <div class="wiki-drop-source-details">
                              <span class="wiki-monster-name">${source.monster.name}</span>
                              <span class="wiki-monster-location">${source.location}</span>
                         </div>
-                        <span class="drop-chance">Reward</span>
                     </li>
                 `;
             } else {
