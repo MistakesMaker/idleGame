@@ -550,7 +550,7 @@ const finalDungeonMonsters = {
             { item: ITEMS.EYE_OF_THE_DRAGON, weight: 10 },
             { item: ITEMS.DRAGONFIRE_LOOP, weight: 10 },
             { item: ITEMS.DRAGONSCALE_BELT, weight: 10 },
-            { item: CONSUMABLES.ARTISAN_CHISEL, weight: 1 }
+            { item: CONSUMABLES.WISDOM_OF_THE_OVERWORLD, weight: 1 }
         ]
     },
 };
