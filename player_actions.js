@@ -427,7 +427,7 @@ export function combineGems(gameState, craftingGemIds) {
     gameState.gems = gameState.gems.filter(g => g.id !== gem1.id && g.id !== gem2.id);
 
     let successChance = 0.5;
-    if (gem1.tier === 1 && gameState.artisanChiselUsed) {
+    if (gem1.tier === 1 && gameState.wisdomOfTheOverworldUsed) {
         successChance = 0.6;
     }
 
@@ -509,7 +509,7 @@ export function bulkCombineGems(gameState, tier, selectionKey, excludedIds) {
     const usedGemIds = new Set();
     
     let successChance = 0.5;
-    if (tier === 1 && gameState.artisanChiselUsed) {
+    if (tier === 1 && gameState.wisdomOfTheOverworldUsed) {
         successChance = 0.6;
     }
 

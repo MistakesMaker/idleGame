@@ -1,5 +1,3 @@
-// --- START OF FILE game.js ---
-
 import { REALMS } from './data/realms.js';
 import { MONSTERS } from './data/monsters.js';
 import { ITEMS } from './data/items.js';
@@ -166,8 +164,8 @@ document.addEventListener('DOMContentLoaded', () => {
             absorbedStats: {},
             absorbedSynergies: {},
             absorbedUniqueEffects: {},
-            artisanChiselDropped: false,
-            artisanChiselUsed: false,
+            wisdomOfTheOverworldDropped: false,
+            wisdomOfTheOverworldUsed: false,
             prestigeCount: 0,
             nextPrestigeLevel: 100,
             specialEncounter: null,
@@ -1345,8 +1343,8 @@ function showItemTooltip(item, element) {
                 wikiFavorites: loadedState.wikiFavorites || [],
                 goldenSlimeStreak: loadedState.goldenSlimeStreak && typeof loadedState.goldenSlimeStreak === 'object' ? loadedState.goldenSlimeStreak : baseState.goldenSlimeStreak,
                 tutorialCompleted: loadedState.tutorialCompleted || false,
-                artisanChiselDropped: loadedState.artisanChiselDropped || false,
-                artisanChiselUsed: loadedState.artisanChiselUsed || false,
+                wisdomOfTheOverworldDropped: loadedState.wisdomOfTheOverworldDropped || false,
+                wisdomOfTheOverworldUsed: loadedState.wisdomOfTheOverworldUsed || false,
                 pendingSubTabViewFlash: loadedState.pendingSubTabViewFlash || null,
                 hunts: {
                     ...baseState.hunts,
@@ -1355,6 +1353,15 @@ function showItemTooltip(item, element) {
                 }
             };
             
+            // --- START: Save Game Migration for Chisel -> Wisdom Scroll ---
+            if (loadedState.artisanChiselDropped) {
+                gameState.wisdomOfTheOverworldDropped = true;
+            }
+            if (loadedState.artisanChiselUsed) {
+                gameState.wisdomOfTheOverworldUsed = true;
+            }
+            // --- END: Save Game Migration ---
+
             if (!gameState.presetSystemMigrated) {
                 gameState = migrateToPresetInventories(gameState);
             }
@@ -2744,8 +2751,8 @@ function showItemTooltip(item, element) {
     
             gameState = {
                 ...baseState,
-                artisanChiselDropped: gameState.artisanChiselDropped,
-                artisanChiselUsed: gameState.artisanChiselUsed,
+                wisdomOfTheOverworldDropped: gameState.wisdomOfTheOverworldDropped,
+                wisdomOfTheOverworldUsed: gameState.wisdomOfTheOverworldUsed,
                 unlockedFeatures: {
                     ...gameState.unlockedFeatures,
                     hunts: true, // Unlock hunts after first prestige
@@ -3136,4 +3143,4 @@ function showItemTooltip(item, element) {
     }
 
     main();
-});
+})

@@ -171,10 +171,10 @@ export function dropLoot(currentMonster, gameState, playerStats) {
         roll -= entry.weight;
     }
 
-    // Check if the rolled item is the Chisel and if it should be re-rolled.
-    if (itemBaseToDrop && itemBaseToDrop.id === 'ARTISAN_CHISEL' && gameState.artisanChiselDropped) {
-        // The player already has the chisel, so we must re-roll from the remaining loot pool.
-        effectiveLootTable = effectiveLootTable.filter(entry => entry.item.id !== 'ARTISAN_CHISEL');
+    // Check if the rolled item is the Wisdom scroll and if it should be re-rolled.
+    if (itemBaseToDrop && itemBaseToDrop.id === 'WISDOM_OF_THE_OVERWORLD' && gameState.wisdomOfTheOverworldDropped) {
+        // The player has already had the scroll drop, so we must re-roll from the remaining loot pool.
+        effectiveLootTable = effectiveLootTable.filter(entry => entry.item.id !== 'WISDOM_OF_THE_OVERWORLD');
         totalWeight = effectiveLootTable.reduce((sum, entry) => sum + entry.weight, 0);
         
         if (totalWeight > 0) {
@@ -188,7 +188,7 @@ export function dropLoot(currentMonster, gameState, playerStats) {
                 roll -= entry.weight;
             }
         } else {
-            // This case occurs if the chisel was the only item in the loot table.
+            // This case occurs if the scroll was the only item in the loot table.
             itemBaseToDrop = null;
         }
     }
@@ -197,8 +197,8 @@ export function dropLoot(currentMonster, gameState, playerStats) {
 
     // START OF MODIFICATION
     const isConsumable = itemBaseToDrop.type === 'consumable';
-    if (isConsumable && itemBaseToDrop.id === 'ARTISAN_CHISEL' && !gameState.artisanChiselDropped) {
-        gameState.artisanChiselDropped = true;
+    if (isConsumable && itemBaseToDrop.id === 'WISDOM_OF_THE_OVERWORLD' && !gameState.wisdomOfTheOverworldDropped) {
+        gameState.wisdomOfTheOverworldDropped = true;
     }
     // END OF MODIFICATION
 

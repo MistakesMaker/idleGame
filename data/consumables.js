@@ -25,7 +25,7 @@ export const CONSUMABLES = {
         description: "A one-time use scroll from ancient times. When consumed, permanently increases your T1 gems combining success rate from 50% to 60%.",
         effect: {
             type: 'permanentFlag',
-            key: 'artisanChiselUsed'
+            key: 'wisdomOfTheOverworldUsed'
         }
     },
 
