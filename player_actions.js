@@ -10,6 +10,86 @@ import { CONSUMABLES } from './data/consumables.js';
 import { HUNT_POOLS } from './data/hunts.js';
 import { MONSTERS } from './data/monsters.js';
 
+
+/**
+ * Helper function to deeply compare two gems to see if they can be stacked.
+ * @param {object} gemA - The first gem object.
+ * @param {object} gemB - The second gem object.
+ * @returns {boolean} True if the gems are identical enough to stack.
+ */
+function areGemsStackable(gemA, gemB) {
+    if (gemA.tier !== gemB.tier) return false;
+
+    // Handle base T1 gems that just use baseId
+    if (gemA.tier === 1 && gemA.baseId === gemB.baseId) {
+        return true;
+    }
+
+    // Handle fused gems by comparing stats and synergy
+    const statsA = gemA.stats || {};
+    const statsB = gemB.stats || {};
+    const keysA = Object.keys(statsA);
+    const keysB = Object.keys(statsB);
+
+    if (keysA.length !== keysB.length) return false;
+    for (const key of keysA) {
+        if (statsA[key] !== statsB[key]) return false;
+    }
+
+    const synergyA = gemA.synergy;
+    const synergyB = gemB.synergy;
+
+    if (!synergyA && !synergyB) return true; // Both have no synergy
+    if (synergyA && synergyB) {
+        return synergyA.source === synergyB.source &&
+               synergyA.target === synergyB.target &&
+               synergyA.value === synergyB.value;
+    }
+    
+    return false; // One has synergy and the other doesn't
+}
+
+
+/**
+ * Adds an item (consumable or gem) to the correct inventory, handling stacking.
+ * @param {object} gameState The main game state object.
+ * @param {object} itemBase The base definition of the item to add.
+ * @param {'consumables' | 'gems'} inventoryType The key for the inventory array in gameState.
+ * @returns {object} The stack that was added to or created.
+ */
+export function addToPlayerStacks(gameState, itemBase, inventoryType) {
+    const inventory = gameState[inventoryType];
+    let targetStack = null;
+
+    if (inventoryType === 'gems') {
+        // Use the advanced comparison for gems
+        targetStack = inventory.find(stack => 
+            (stack.quantity || 1) < 99 && areGemsStackable(stack, itemBase)
+        );
+    } else {
+        // Use simple baseId check for consumables
+        targetStack = inventory.find(stack => 
+            stack.baseId === itemBase.id && (stack.quantity || 1) < 99
+        );
+    }
+
+    if (targetStack) {
+        // Add to the existing stack
+        targetStack.quantity = (targetStack.quantity || 1) + 1;
+    } else {
+        // Create a new stack
+        targetStack = {
+            ...itemBase,
+            id: Date.now() + Math.random(), // Unique ID for the stack itself
+            baseId: itemBase.id || itemBase.baseId, // Fused gems won't have an ID, but will have a baseId
+            quantity: 1,
+        };
+        inventory.push(targetStack);
+    }
+    return targetStack;
+}
+
+
 /**
  * Finds an item by its ID from all possible sources (main inventory and all preset inventories).
  * @param {object} gameState - The main game state object.
@@ -406,25 +486,27 @@ export function activatePreset(gameState, presetIndex) {
 /**
  * Attempts to combine two identical-tier gems into a new, higher-tier gem.
  * @param {object} gameState The main game state object.
- * @param {Array<string|number>} craftingGemIds An array of the two gem IDs being combined.
+ * @param {object} gem1 A temporary instance of the first gem.
+ * @param {object} gem2 A temporary instance of the second gem.
  * @returns {{success: boolean, message: string, newGem: object|null}}
  */
-export function combineGems(gameState, craftingGemIds) {
+export function combineGems(gameState, gem1, gem2) {
     const cost = 100;
     if (gameState.scrap < cost) {
+        // Since the gems were already removed from the inventory, we must return them on failure.
+        addToPlayerStacks(gameState, gem1, 'gems');
+        addToPlayerStacks(gameState, gem2, 'gems');
         return { success: false, message: "Not enough Scrap to combine.", newGem: null };
     }
 
-    const gem1 = gameState.gems.find(g => g.id === craftingGemIds[0]);
-    const gem2 = gameState.gems.find(g => g.id === craftingGemIds[1]);
-    
     if (!gem1 || !gem2 || gem1.tier !== gem2.tier) {
+        // This is a failsafe; the UI should prevent this. Return gems to inventory.
+        addToPlayerStacks(gameState, gem1, 'gems');
+        addToPlayerStacks(gameState, gem2, 'gems');
         return { success: false, message: "You must combine two gems of the same tier.", newGem: null };
     }
     
     gameState.scrap -= cost;
-    // Remove the two source gems from the main state AFTER the attempt.
-    gameState.gems = gameState.gems.filter(g => g.id !== gem1.id && g.id !== gem2.id);
 
     let successChance = 0.5;
     if (gem1.tier === 1 && gameState.wisdomOfTheOverworldUsed) {
@@ -452,8 +534,7 @@ export function combineGems(gameState, craftingGemIds) {
             }
         });
 
-        const newGem = {
-            id: Date.now() + Math.random(),
+        const newGemBase = {
             baseId: `FUSED_T${newTier}`,
             name: `T${newTier} Fused Gem`,
             tier: newTier,
@@ -463,9 +544,9 @@ export function combineGems(gameState, craftingGemIds) {
             synergy: newSynergy
         };
         
-        gameState.gems.push(newGem);
+        const newGemStack = addToPlayerStacks(gameState, newGemBase, 'gems');
 
-        return { success: true, message: `Success! You fused a ${newGem.name}!`, newGem: newGem };
+        return { success: true, message: `Success! You fused a ${newGemStack.name}!`, newGem: newGemStack };
     } else {
         // FAILURE
         return { success: true, message: "The gems shattered... you lost everything.", newGem: null };
@@ -485,6 +566,7 @@ export function bulkCombineGems(gameState, tier, selectionKey, excludedIds) {
     const costPerCombine = 100;
     const isSynergyCombine = selectionKey.startsWith('synergy_');
     
+    // --- THIS IS THE CORRECTED FILTER LOGIC ---
     const matchingGems = gameState.gems.filter(gem => {
         if (gem.tier !== tier || excludedIds.has(gem.id)) {
             return false;
@@ -493,42 +575,55 @@ export function bulkCombineGems(gameState, tier, selectionKey, excludedIds) {
             const synergyKey = selectionKey.replace('synergy_', '');
             return gem.synergy && `${gem.synergy.source}_to_${gem.synergy.target}` === synergyKey;
         } else {
+            // This now correctly checks if the gem HAS the stat, which is what's needed.
+            // It will correctly find your stack of 96 T1 Emeralds when 'goldGain' is selected.
             return gem.stats && gem.stats[selectionKey];
         }
     });
 
     if (matchingGems.length < 2) {
-        return { success: false, message: "Not enough matching gems to combine.", successes: 0, failures: 0, cost: 0 };
+        let totalQuantity = 0;
+        matchingGems.forEach(stack => totalQuantity += stack.quantity);
+        if (totalQuantity < 2) {
+            return { success: false, message: "Not enough matching gems to combine.", successes: 0, failures: 0, cost: 0 };
+        }
     }
 
     let successes = 0;
     let failures = 0;
     let totalCost = 0;
-    const gemsToCombine = [...matchingGems];
-    const newGems = [];
-    const usedGemIds = new Set();
     
     let successChance = 0.5;
     if (tier === 1 && gameState.wisdomOfTheOverworldUsed) {
         successChance = 0.6;
     }
 
-    while (gemsToCombine.length >= 2) {
+    // Create a mutable list of individual gems to process
+    let individualGems = [];
+    matchingGems.forEach(stack => {
+        for (let i = 0; i < stack.quantity; i++) {
+            individualGems.push({ ...stack, quantity: 1 });
+        }
+    });
+
+    // Remove all original stacks from the main game state
+    const idsToRemove = new Set(matchingGems.map(s => s.id));
+    gameState.gems = gameState.gems.filter(g => !idsToRemove.has(g.id));
+
+    while (individualGems.length >= 2) {
         if (gameState.scrap < costPerCombine) {
             break; // Stop if we can't afford the next one
         }
 
-        const gem1 = gemsToCombine.shift();
-        const gem2 = gemsToCombine.shift();
+        const gem1 = individualGems.pop();
+        const gem2 = individualGems.pop();
         
         gameState.scrap -= costPerCombine;
         totalCost += costPerCombine;
-        usedGemIds.add(gem1.id);
-        usedGemIds.add(gem2.id);
 
         if (Math.random() < successChance) {
             successes++;
-            const newTier = gem1.tier + 1;
+            const newTier = tier + 1;
             const newStats = {};
             let newSynergy = null;
 
@@ -544,8 +639,7 @@ export function bulkCombineGems(gameState, tier, selectionKey, excludedIds) {
                 }
             });
 
-            newGems.push({
-                id: Date.now() + Math.random() + successes,
+            const newGemBase = {
                 baseId: `FUSED_T${newTier}`,
                 name: `T${newTier} Fused Gem`,
                 tier: newTier,
@@ -553,15 +647,15 @@ export function bulkCombineGems(gameState, tier, selectionKey, excludedIds) {
                 width: 1, height: 1,
                 stats: newStats,
                 synergy: newSynergy
-            });
-        } else { // Failure
+            };
+            addToPlayerStacks(gameState, newGemBase, 'gems');
+        } else {
             failures++;
         }
     }
 
-    // Update the main gem list
-    gameState.gems = gameState.gems.filter(g => !usedGemIds.has(g.id));
-    gameState.gems.push(...newGems);
+    // Add back any leftover individual gems
+    individualGems.forEach(gem => addToPlayerStacks(gameState, gem, 'gems'));
 
     const message = `Bulk combine finished. Successes: ${successes}, Failures: ${failures}. Total cost: ${totalCost} Scrap.`;
     return { success: true, message, successes, failures, cost: totalCost };
@@ -658,23 +752,23 @@ export function buyPermanentUpgrade(gameState, upgradeId) {
 /**
  * Consumes an item, applying its effect and removing it from the player's possession.
  * @param {object} gameState - The main game state object.
- * @param {string|number} itemId - The ID of the consumable item to use.
+ * @param {string|number} stackId - The ID of the consumable stack to use.
  * @returns {{success: boolean, message: string}}
  */
-export function consumeItem(gameState, itemId) {
-    const itemIndex = gameState.consumables.findIndex(c => c.id === itemId);
-    if (itemIndex === -1) {
+export function consumeItem(gameState, stackId) {
+    const stackIndex = gameState.consumables.findIndex(c => c.id === stackId);
+    if (stackIndex === -1) {
         return { success: false, message: "Consumable item not found." };
     }
 
-    const item = gameState.consumables[itemIndex];
-    const itemBase = CONSUMABLES[item.baseId];
+    const stack = gameState.consumables[stackIndex];
+    const itemBase = CONSUMABLES[stack.baseId];
     if (!itemBase || !itemBase.effect) {
         return { success: false, message: "Item has no defined effect." };
     }
 
     const effect = itemBase.effect;
-    let message = `You consumed the ${item.name}!`;
+    let message = `You consumed the ${stack.name}!`;
 
     // Dispatcher for different effect types
     switch (effect.type) {
@@ -685,21 +779,20 @@ export function consumeItem(gameState, itemId) {
             gameState[effect.key] = true;
             break;
 
-    case 'timedBuff':
-        const existingBuff = gameState.activeBuffs.find(b => b.name === effect.name);
-        const newExpiresAt = Date.now() + (effect.duration * 1000);
+        case 'timedBuff':
+            const existingBuff = gameState.activeBuffs.find(b => b.name === effect.name);
+            const newExpiresAt = Date.now() + (effect.duration * 1000);
 
-        if (existingBuff) {
-            // If the buff already exists, just refresh its timer.
-            existingBuff.expiresAt = newExpiresAt;
-            message = `You refreshed the duration of <b>${effect.name}</b>!`;
-        } else {
-            // Otherwise, add the new buff.
-            gameState.activeBuffs.push({ ...effect, expiresAt: newExpiresAt });
-            message = `You feel the effects of <b>${effect.name}</b>!`;
-        }
-    break;   
-
+            if (existingBuff) {
+                // If the buff already exists, just refresh its timer.
+                existingBuff.expiresAt = newExpiresAt;
+                message = `You refreshed the duration of <b>${effect.name}</b>!`;
+            } else {
+                // Otherwise, add the new buff.
+                gameState.activeBuffs.push({ ...effect, expiresAt: newExpiresAt });
+                message = `You feel the effects of <b>${effect.name}</b>!`;
+            }
+            break;   
 
         case 'resource':
             gameState[effect.resource] = (gameState[effect.resource] || 0) + effect.amount;
@@ -710,20 +803,18 @@ export function consumeItem(gameState, itemId) {
             return { success: false, message: "Unknown consumable effect type." };
     }
 
-    // --- START OF MODIFICATION ---
     // Handle stacking logic
-    if (item.quantity && item.quantity > 1) {
-        item.quantity--;
+    if (stack.quantity && stack.quantity > 1) {
+        stack.quantity--;
     } else {
         // Remove the item from the consumables array if it's the last one
-        gameState.consumables.splice(itemIndex, 1);
-        // Compact the consumables grid
-        gameState.consumables = compactInventory(gameState.consumables);
+        gameState.consumables.splice(stackIndex, 1);
     }
-    // --- END OF MODIFICATION ---
-
+    
+    // The calling function will handle grid updates
     return { success: true, message };
 }
+
 
 // ===================================
 // --- HUNTS SYSTEM LOGIC ---
@@ -876,30 +967,13 @@ export function completeHunt(gameState) {
         return null;
     }
 
-    // Grant reward
+    // Grant reward by adding to stacks
     const rewardBase = CONSUMABLES[activeHunt.rewardId];
-    
-    // --- START OF MODIFICATION ---
-    // Check for an existing stack
-    const existingStack = gameState.consumables.find(c => c.baseId === rewardBase.id);
-
-    if (existingStack) {
-        existingStack.quantity = (existingStack.quantity || 1) + 1;
-    } else {
-        const rewardItem = {
-            ...rewardBase,
-            id: Date.now() + Math.random(),
-            baseId: rewardBase.id,
-            quantity: 1, // Start the stack
-        };
-        gameState.consumables.push(rewardItem);
-        gameState.consumables = compactInventory(gameState.consumables);
-    }
-    // --- END OF MODIFICATION ---
+    addToPlayerStacks(gameState, rewardBase, 'consumables');
     
     if (!gameState.unlockedFeatures.consumables) {
         gameState.unlockedFeatures.consumables = true;
-        gameState.pendingSubTabViewFlash = 'inventory-consumables-view'; // Flag for the UI to flash the correct sub-tab
+        gameState.pendingSubTabViewFlash = 'inventory-consumables-view';
     }
 
     // Update completion count
@@ -910,7 +984,6 @@ export function completeHunt(gameState) {
     gameState.hunts.active = null;
     gameState.hunts.progress = 0;
     
-    // --- MODIFICATION: Return the base definition for the log message, since we might not have created a new item ---
     return rewardBase;
 }
 

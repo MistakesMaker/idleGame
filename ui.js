@@ -315,17 +315,15 @@ export function renderGrid(containerEl, items, options = {}) {
     let maxRow = 0;
 
     for (const item of items) {
-        // --- START OF MODIFICATION ---
-        // Don't render gems that are currently in a crafting slot.
-        if (type === 'gem' && craftingGemIds.includes(item.id)) {
+        const isTemporaryCraftingGem = craftingGemIds.some(g => g.sourceStackId === item.id);
+        if (type === 'gem' && isTemporaryCraftingGem) {
             continue;
         }
-        // --- END OF MODIFICATION ---
 
         const wrapper = document.createElement('div');
         wrapper.className = type === 'gem' ? 'gem-wrapper' : 'item-wrapper';
         
-        const id = type === 'gem' ? item.id : item.id;
+        const id = item.id;
         wrapper.dataset.id = String(id);
         
         let pos;
@@ -818,7 +816,7 @@ export function updateUI(elements, gameState, playerStats, currentMonster, salva
                     break;
                 case 'inventory-gems-view':
                     if (gameState.unlockedFeatures.gems) {
-                        renderGrid(gemSlotsEl, gameState.gems, { type: 'gem', calculatePositions: false, bulkCombineSelection, bulkCombineDeselectedIds, craftingGemIds: craftingGems });
+                        renderGrid(gemSlotsEl, gameState.gems, { type: 'gem', calculatePositions: true, bulkCombineSelection, bulkCombineDeselectedIds, craftingGemIds: craftingGems });
                         updateGemCraftingUI(elements, craftingGems, gameState);
                     }
                     break;
@@ -970,7 +968,7 @@ function createDetailedItemStatBlockHTML(item) {
  */
 export function createTooltipHTML(item) {
     if (!item) return '';
-    const itemBase = ITEMS[item.baseId] || CONSUMABLES[item.baseId];
+    const itemBase = ITEMS[item.baseId] || CONSUMABLES[item.baseId] || GEMS[item.baseId];
     if (!itemBase) return ''; // Safeguard
     
     const isUnique = itemBase && itemBase.isUnique;
@@ -1308,21 +1306,32 @@ export function createItemHTML(item, showLock = true) {
     
     const lockHTML = showLock && item.locked !== undefined ? `<i class="fas ${item.locked ? 'fa-lock' : 'fa-lock-open'} lock-icon"></i>` : '';
 
-    // --- START OF NEW CODE ---
-    const quantityHTML = item.quantity && item.quantity > 1 ? `<div class="item-quantity-display">${item.quantity}</div>` : '';
-    // --- END OF NEW CODE ---
+    const isStackable = item.type === 'consumable' || item.tier >= 1;
+    const quantityHTML = isStackable && item.quantity && item.quantity > 1 ? `<div class="item-quantity-display">${item.quantity}</div>` : '';
 
-    return `<div class="item ${item.rarity}">
+    const rarityClass = item.rarity || (isStackable ? 'gem-quality' : 'common');
+
+    return `<div class="item ${rarityClass}">
                 <img src="${iconSrc}" class="item-icon" alt="${item.name}">
                 ${socketsHTML}
                 ${lockHTML}
                 ${quantityHTML}
             </div>`;
 }
+
+/**
+ * Creates the HTML for a gem's icon-centric view.
+ * @param {object} gem - The gem object.
+ * @returns {string} The generated HTML string.
+ */
 export function createGemHTML(gem) {
     if (!gem) return '';
-    return `<div class="gem gem-quality" data-gem-id="${String(gem.id)}">
+    const quantityHTML = gem.quantity && gem.quantity > 1 ? `<div class="item-quantity-display">${gem.quantity}</div>` : '';
+    // Only add data-gem-id if the gem has a persistent ID (i.e., it's a stack, not a temporary crafting gem)
+    const idAttribute = gem.id ? `data-gem-id="${String(gem.id)}"` : '';
+    return `<div class="gem gem-quality" ${idAttribute}>
                 <img src="${gem.icon}" alt="${gem.name}">
+                ${quantityHTML}
             </div>`;
 }
 
@@ -2339,20 +2348,18 @@ export function updateAutoProgressToggle(elements, isAutoProgressing) {
     }
 }
 
-export function updateGemCraftingUI(elements, craftingGemIds, gameState) {
+export function updateGemCraftingUI(elements, craftingGems, gameState) {
     const { gemCraftingSlotsContainer, gemCraftBtn } = elements;
     const craftingSlots = gemCraftingSlotsContainer.querySelectorAll('.gem-crafting-slot');
     craftingSlots.forEach((slot, index) => {
         slot.innerHTML = '';
-        const gemId = craftingGemIds[index];
-        if (gemId) {
-            const gemObject = gameState.gems.find(g => g.id === gemId);
-            if (gemObject) {
-                slot.innerHTML = createGemHTML(gemObject);
-            }
+        const gem = craftingGems[index];
+        if (gem) {
+            // craftingGems now holds full objects, not just IDs
+            slot.innerHTML = createGemHTML(gem);
         }
     });
-    (/** @type {HTMLButtonElement} */ (gemCraftBtn)).disabled = craftingGemIds.length !== 2 || gameState.scrap < 100;
+    (/** @type {HTMLButtonElement} */ (gemCraftBtn)).disabled = craftingGems.length !== 2 || gameState.scrap < 100;
 }
 
 export function updateForge(elements, selectedItem, selectedStatKey, currentScrap) {

@@ -195,12 +195,10 @@ export function dropLoot(currentMonster, gameState, playerStats) {
 
     if (!itemBaseToDrop) return { droppedItems: [], droppedGems: [], logMessages: [], events: [] };
 
-    // START OF MODIFICATION
     const isConsumable = itemBaseToDrop.type === 'consumable';
     if (isConsumable && itemBaseToDrop.id === 'WISDOM_OF_THE_OVERWORLD' && !gameState.wisdomOfTheOverworldDropped) {
         gameState.wisdomOfTheOverworldDropped = true;
     }
-    // END OF MODIFICATION
 
     const logMessages = [];
     const droppedItems = [];
@@ -210,52 +208,33 @@ export function dropLoot(currentMonster, gameState, playerStats) {
     const isGem = itemBaseToDrop.tier >= 1;
 
     if (isGem) {
-        const gem = {
-            ...itemBaseToDrop,
-            id: Date.now() + Math.random(),
-            baseId: itemBaseToDrop.id,
-            width: itemBaseToDrop.width || 1, // Default to 1x1 if not defined
-            height: itemBaseToDrop.height || 1
+        const handleGemDrop = (baseGem) => {
+            if (gameState.salvageFilter.autoSalvageGems) {
+                const scrapGained = 100;
+                gameState.scrap += scrapGained;
+                logMessages.push({ message: `Auto-salvaged <span class="epic">${baseGem.name}</span> for ${scrapGained} scrap.`, class: '' });
+                return null; // Return null to indicate it was salvaged
+            }
+            // Use the new stacking function
+            const updatedStack = player.addToPlayerStacks(gameState, baseGem, 'gems');
+            return updatedStack;
         };
-
-        if (gameState.salvageFilter.autoSalvageGems) {
-            const scrapGained = 100;
-            gameState.scrap += scrapGained;
-            logMessages.push({ message: `Auto-salvaged <span class="epic">${gem.name}</span> for ${scrapGained} scrap.`, class: '' });
-            return { droppedItems: [], droppedGems: [], logMessages, events };
+        
+        const initialDrop = handleGemDrop(itemBaseToDrop);
+        if (initialDrop) {
+             droppedGems.push(initialDrop); // We animate the stack
         }
 
-        if (!gameState.gems) gameState.gems = [];
-        const gemsToPlace = [gem];
-        
         // Check for the Gem Find (duplication) bonus
         if (playerStats.gemFindChance > 0 && Math.random() * 100 < playerStats.gemFindChance) {
-            const duplicateGem = {
-                ...itemBaseToDrop,
-                id: Date.now() + Math.random() + 1,
-                baseId: itemBaseToDrop.id,
-                width: itemBaseToDrop.width || 1,
-                height: itemBaseToDrop.height || 1
-            };
-            gemsToPlace.push(duplicateGem);
-            logMessages.push({ message: `Gem Find! You found a duplicate <span class="epic">${duplicateGem.name}</span>!`, class: '' });
-            events.push('gemFind');
+            const duplicateDrop = handleGemDrop(itemBaseToDrop);
+            if (duplicateDrop) {
+                logMessages.push({ message: `Gem Find! You found a duplicate <span class="epic">${duplicateDrop.name}</span>!`, class: '' });
+                events.push('gemFind');
+            }
         }
         
-        const placedGems = gameState.gems.filter(g => g.x !== undefined && g.x !== -1);
-        gemsToPlace.forEach(newGem => {
-            const spot = findNextAvailableSpot(newGem.width, newGem.height, placedGems);
-            if (spot) {
-                newGem.x = spot.x;
-                newGem.y = spot.y;
-                gameState.gems.push(newGem); // Add to state
-                droppedGems.push(newGem); // Add to result for animation
-                placedGems.push(newGem); // Add to temp list for this loop's collision check
-            } else {
-                 logMessages.push({ message: `Your gem pouch is full! A ${newGem.name} was lost.`, class: 'rare' });
-            }
-        });
-        
+        gameState.gems = player.compactInventory(gameState.gems); // Compact after all drops are processed
         return { droppedItems, droppedGems, logMessages, events };
     }
     
@@ -278,7 +257,7 @@ export function dropLoot(currentMonster, gameState, playerStats) {
     }
 
     const item = isConsumable 
-        ? { ...itemBaseToDrop, id: Date.now() + Math.random(), baseId: itemBaseToDrop.id, rarity: 'legendary' } // Consumables are simple objects
+        ? itemBaseToDrop
         : generateItem(rarity, gameState.currentFightingLevel, itemBaseToDrop);
 
     if (!isConsumable && !shouldKeepItem(item, gameState.salvageFilter)) {
@@ -289,17 +268,11 @@ export function dropLoot(currentMonster, gameState, playerStats) {
         return { droppedItems: [], droppedGems: [], logMessages, events };
     }
 
-    // --- START OF MODIFICATION: Route item to correct inventory ---
+    // Route item to correct inventory
     if (isConsumable) {
-        const spot = findNextAvailableSpot(item.width, item.height, gameState.consumables);
-        if (spot) {
-            item.x = spot.x;
-            item.y = spot.y;
-            gameState.consumables.push(item);
-            droppedItems.push(item); // Keep using droppedItems for animation
-        } else {
-            logMessages.push({ message: `The ${currentMonster.name} dropped a consumable, but your pouch is full!`, class: 'rare' });
-        }
+        const updatedStack = player.addToPlayerStacks(gameState, item, 'consumables');
+        droppedItems.push(updatedStack); // Animate the stack
+        gameState.consumables = player.compactInventory(gameState.consumables);
     } else {
         const spot = findNextAvailableSpot(item.width, item.height, gameState.inventory);
         if (spot) {
@@ -311,7 +284,6 @@ export function dropLoot(currentMonster, gameState, playerStats) {
             logMessages.push({ message: `The ${currentMonster.name} dropped an item, but your inventory is full!`, class: 'rare' });
         }
     }
-    // --- END OF MODIFICATION ---
 
     return { droppedItems, droppedGems, logMessages, events };
 }

@@ -103,7 +103,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let lastMousePosition = { x: 0, y: 0 };
     let pendingRingEquip = null;
     let selectedGemForSocketing = null;
-    let craftingGems = [];
+    let craftingGems = []; // Will hold temporary, full gem objects, NOT IDs.
     let selectedItemForForge = null;
     let selectedStatToForgeKey = null;
     let isResetting = false; 
@@ -391,8 +391,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // --- START: handleMonsterDefeated function from game.js ---
-
     function handleMonsterDefeated() {
         player.checkHuntProgress(gameState, currentMonster);
         const huntsModal = document.getElementById('hunts-modal-backdrop');
@@ -418,7 +416,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 ui.showItemDropAnimation(elements.popupContainerEl, item, index);
                 
                 if (item.type === 'consumable') {
-                    ui.addItemToGrid(elements.consumablesSlotsEl, item);
+                    ui.renderGrid(elements.consumablesSlotsEl, gameState.consumables, { calculatePositions: true, showLockIcon: false });
                     if (!gameState.unlockedFeatures.consumables) {
                         gameState.unlockedFeatures.consumables = true;
                         logMessage(elements.gameLogEl, '<b>Consumables Unlocked!</b> You can now use special one-time-use items from a new tab in your inventory.', 'legendary', isAutoScrollingLog);
@@ -426,7 +424,6 @@ document.addEventListener('DOMContentLoaded', () => {
                         ui.flashTab('inventory-view');
                         gameState.pendingSubTabViewFlash = 'inventory-consumables-view';
 
-                        // If the player is already on the inventory screen, switch to the new sub-view immediately.
                         if (document.getElementById('inventory-view')?.classList.contains('active')) {
                             ui.switchInventorySubView('inventory-consumables-view');
                             const subTabButton = document.querySelector(`.sub-tab-button[data-subview="inventory-consumables-view"]`);
@@ -434,7 +431,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                 subTabButton.classList.add('newly-unlocked-flash');
                                 setTimeout(() => subTabButton.classList.remove('newly-unlocked-flash'), 5000);
                             }
-                            gameState.pendingSubTabViewFlash = null; // Clear the flag as the action is done
+                            gameState.pendingSubTabViewFlash = null;
                         }
                     }
                 } else {
@@ -454,8 +451,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         
         if (result.droppedGems && result.droppedGems.length > 0) {
-            result.droppedGems.forEach((gemToPlace, index) => {
-                ui.showItemDropAnimation(elements.popupContainerEl, gemToPlace, index);
+            result.droppedGems.forEach((gemStack, index) => {
+                ui.showItemDropAnimation(elements.popupContainerEl, gemStack, index);
                  if (!gameState.unlockedFeatures.gems) {
                     gameState.unlockedFeatures.gems = true;
                     logMessage(elements.gameLogEl, '<b>Gems Unlocked!</b> You can now view and socket powerful gems from a new tab in your inventory.', 'legendary', isAutoScrollingLog);
@@ -463,7 +460,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     ui.flashTab('inventory-view');
                     gameState.pendingSubTabViewFlash = 'inventory-gems-view';
                     
-                    // If the player is already on the inventory screen, switch to the new sub-view immediately.
                     if (document.getElementById('inventory-view')?.classList.contains('active')) {
                         ui.switchInventorySubView('inventory-gems-view');
                         const subTabButton = document.querySelector(`.sub-tab-button[data-subview="inventory-gems-view"]`);
@@ -471,7 +467,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             subTabButton.classList.add('newly-unlocked-flash');
                             setTimeout(() => subTabButton.classList.remove('newly-unlocked-flash'), 5000);
                         }
-                        gameState.pendingSubTabViewFlash = null; // Clear the flag as the action is done
+                        gameState.pendingSubTabViewFlash = null;
                     }
                 }
             });
@@ -548,7 +544,6 @@ document.addEventListener('DOMContentLoaded', () => {
         gameState.monster = newMonsterState;
         ui.updateMonsterUI(elements, gameState, newMonster);
 
-        // Check if the wiki isn't unlocked yet and if the player is encountering the Level 25 Mini-Boss
         if (!gameState.unlockedFeatures.wiki && gameState.currentFightingLevel === 25) {
             gameState.unlockedFeatures.wiki = true;
             logMessage(elements.gameLogEl, '<b>Item Wiki Unlocked!</b> You can now research items and their drop locations.', 'legendary', isAutoScrollingLog);
@@ -604,7 +599,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function updateActiveBuffs() {
     if (!gameState.activeBuffs || gameState.activeBuffs.length === 0) {
-        // If there are no buffs, ensure the UI is hidden.
         ui.updateActiveBuffsUI(elements, gameState.activeBuffs);
         return;
     }
@@ -620,10 +614,8 @@ document.addEventListener('DOMContentLoaded', () => {
         
         recalculateStats();
         ui.updateStatsPanel(elements, playerStats);
-        // The UI update for expiration is now handled by the line below
     }
 
-    // Always update the UI to show the ticking timer
     ui.updateActiveBuffsUI(elements, gameState.activeBuffs);
 }
 
@@ -872,33 +864,37 @@ document.addEventListener('DOMContentLoaded', () => {
     /**
      * Handles the core logic of placing a selected gem into an item's socket.
      * @param {object} itemToSocketInto The item receiving the gem.
-     * @param {object} gemToSocket The gem being placed.
+     * @param {object} gemStackToSocket The gem stack being placed.
      */
-    function performSocketing(itemToSocketInto, gemToSocket) {
-        if (!itemToSocketInto || !gemToSocket || !itemToSocketInto.sockets || !itemToSocketInto.sockets.includes(null)) {
+    function performSocketing(itemToSocketInto, gemStackToSocket) {
+        if (!itemToSocketInto || !gemStackToSocket || !itemToSocketInto.sockets || !itemToSocketInto.sockets.includes(null)) {
             logMessage(elements.gameLogEl, "Socketing action failed. Please try again.", "rare", isAutoScrollingLog);
             return; 
         }
 
         const firstEmptySocketIndex = itemToSocketInto.sockets.indexOf(null);
         if (firstEmptySocketIndex > -1) {
-            itemToSocketInto.sockets[firstEmptySocketIndex] = gemToSocket;
-            gameState.gems = gameState.gems.filter(g => g.id !== gemToSocket.id);
+            const singleGemToSocket = { ...gemStackToSocket, quantity: 1 };
+            
+            itemToSocketInto.sockets[firstEmptySocketIndex] = singleGemToSocket;
+            
+            gemStackToSocket.quantity--;
+            if (gemStackToSocket.quantity <= 0) {
+                gameState.gems = gameState.gems.filter(g => g.id !== gemStackToSocket.id);
+            }
             
             recalculateStats();
-
-            logMessage(elements.gameLogEl, `Socketed <b>${gemToSocket.name}</b> into <b>${itemToSocketInto.name}</b>.`, 'epic', isAutoScrollingLog);
+            logMessage(elements.gameLogEl, `Socketed <b>${singleGemToSocket.name}</b> into <b>${itemToSocketInto.name}</b>.`, 'epic', isAutoScrollingLog);
             
             refreshGemViewIfActive();
 
-            // Check if the item is in the main inventory grid to update it
             const inventoryGridItem = elements.inventorySlotsEl.querySelector(`.item-wrapper[data-id="${itemToSocketInto.id}"]`);
             if (inventoryGridItem) {
                 ui.updateItemInGrid(elements.inventorySlotsEl, itemToSocketInto, { forceRedraw: true });
             }
             
             ui.updateStatsPanel(elements, playerStats);
-            ui.renderPaperdoll(elements, gameState); // This will redraw equipped items correctly
+            ui.renderPaperdoll(elements, gameState);
             autoSave();
         }
     }
@@ -988,33 +984,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
         elements.offlineProgressModalBackdrop.classList.remove('hidden');
     }
+    
+    function showItemTooltip(item, element) {
+        if (!item) return;
 
-    /**
-     * Shows a dynamic tooltip for an item.
-     * @param {object | null} item The item to display.
-     * @param {HTMLElement} element The element to anchor the tooltip to.
-     */
-    /**
- * Shows a dynamic tooltip for an item.
- * @param {object | null} item The item to display.
- * @param {HTMLElement} element The element to anchor the tooltip to.
- */
-function showItemTooltip(item, element) {
-    if (!item) return;
-
-    elements.tooltipEl.className = 'hidden';
-    elements.tooltipEl.classList.add(item.rarity);
-
-    if (isShiftPressed && item.baseId) {
-        const itemBase = ITEMS[item.baseId] || CONSUMABLES[item.baseId];
-        if (itemBase) {
+        elements.tooltipEl.className = 'hidden';
+        const rarity = item.rarity || (item.tier >= 1 ? 'gem-quality' : 'common');
+        elements.tooltipEl.classList.add(rarity);
+    
+        if (isShiftPressed && item.baseId && ITEMS[item.baseId]) {
+            const itemBase = ITEMS[item.baseId];
             elements.tooltipEl.innerHTML = ui.createLootTableTooltipHTML(itemBase);
-        } else {
-            elements.tooltipEl.innerHTML = ui.createTooltipHTML(item);
-        }
-    } else {
-        // --- START OF MODIFICATION ---
-        if (item.type === 'consumable') {
+        } else if (item.tier >= 1) { // It's a gem stack
+            elements.tooltipEl.innerHTML = ui.createGemTooltipHTML(item);
+        } else if (item.type === 'consumable') {
             const consumableBase = CONSUMABLES[item.baseId];
             if (consumableBase) {
                 elements.tooltipEl.innerHTML = `
@@ -1022,27 +1005,19 @@ function showItemTooltip(item, element) {
                     <ul><li>${consumableBase.description}</li></ul>
                 `;
             }
-        } 
-        // --- END OF MODIFICATION ---
-        else if (item.type === 'ring') {
+        } else if (item.type === 'ring') {
             elements.tooltipEl.innerHTML = ui.createItemComparisonTooltipHTML(item, gameState.equipment.ring1, gameState.equipment.ring2);
         } else {
             const equippedItem = gameState.equipment[item.type];
             elements.tooltipEl.innerHTML = ui.createItemComparisonTooltipHTML(item, equippedItem);
         }
+    
+        const rect = element.getBoundingClientRect();
+        elements.tooltipEl.style.left = `${rect.right + 10}px`;
+        elements.tooltipEl.style.top = `${rect.top}px`;
+        elements.tooltipEl.classList.remove('hidden');
     }
-
-    const rect = element.getBoundingClientRect();
-    elements.tooltipEl.style.left = `${rect.right + 10}px`;
-    elements.tooltipEl.style.top = `${rect.top}px`;
-    elements.tooltipEl.classList.remove('hidden');
-}    
-    /**
-     * Shows a focused comparison tooltip for a pending ring vs one equipped ring.
-     * @param {object} pendingItem The new ring to be equipped.
-     * @param {object | null} equippedItem The specific equipped ring to compare against.
-     * @param {HTMLElement} element The element to anchor the tooltip to.
-     */
+    
     function showRingComparisonTooltip(pendingItem, equippedItem, element) {
         if (!pendingItem) return;
         elements.tooltipEl.className = 'hidden';
@@ -1101,42 +1076,33 @@ function showItemTooltip(item, element) {
                     }
                 }
             }
-            // Check for Hunt Rewards
             for (const tier of HUNT_POOLS) {
                 for (const hunt of tier.hunts) {
                     if (hunt.rewardIds.includes(itemBase.id)) {
                         itemEntry.dropSources.push({
-                            monster: { name: "Hunter's Board" }, // Special identifier
-                            chance: 100, // Placeholder, as it's a guaranteed reward
+                            monster: { name: "Hunter's Board" },
+                            chance: 100,
                             location: `Tier ${tier.requiredLevel}+ Hunts`,
                             level: tier.requiredLevel,
-                            realmIndex: 0, // Hunts are cross-realm
-                            isHunt: true, // Special flag for the UI
+                            realmIndex: 0,
+                            isHunt: true,
                         });
-                        // We can break here since we only need to know it's a hunt reward once per tier
                         break; 
                     }
                 }
             }
-            // --- END OF NEW CODE ---
             wikiState.data.push(itemEntry);
         }
     }
 
-    /**
-     * Calculates the potential upgrade comparison between two item bases.
-     * @param {object} potentialItemBase - The new item's base definition.
-     * @param {object|null} equippedItem - The currently equipped item object.
-     * @returns {{isUpgrade: boolean, diffs: object}|null} A comparison object or null if not an upgrade.
-     */
     function getUpgradeComparison(potentialItemBase, equippedItem) {
         if (!equippedItem) {
-            return { isUpgrade: true, diffs: {} }; // Any item is an upgrade over an empty slot
+            return { isUpgrade: true, diffs: {} };
         }
     
         const equippedItemBase = ITEMS[equippedItem.baseId];
         if (!equippedItemBase || potentialItemBase.id === equippedItemBase.id) {
-            return null; // Don't compare against self or invalid items
+            return null;
         }
     
         const potentialStats = new Map(potentialItemBase.possibleStats.map(s => [s.key, s.max]));
@@ -1307,6 +1273,7 @@ function showItemTooltip(item, element) {
             return valB - valA;
         });
 
+        // Re-calculate grid positions after sorting
         const placedGems = [];
         sortedGems.forEach(gem => {
             const spot = findNextAvailableSpot(gem.width, gem.height, placedGems);
@@ -1324,11 +1291,11 @@ function showItemTooltip(item, element) {
         
         ui.renderGrid(elements.gemSlotsEl, gameState.gems, {
             type: 'gem',
-            calculatePositions: false,
+            calculatePositions: false, // Positions are now pre-calculated
             bulkCombineSelection,
             bulkCombineDeselectedIds,
             selectedGemId: selectedGemForSocketing ? selectedGemForSocketing.id : null,
-            craftingGemIds: craftingGems
+            craftingGemIds: craftingGems.map(g => g.sourceStackId)
         });
     }
 
@@ -1366,10 +1333,8 @@ function showItemTooltip(item, element) {
             ui.updateHuntsButtonGlow(gameState);
             const consumablesView = document.getElementById('inventory-consumables-view');
             if (consumablesView && consumablesView.classList.contains('active')) {
-            // The player.completeHunt function already compacts the inventory, so we need to
-            // re-render the grid to reflect the new item and any position changes.
                 ui.renderGrid(elements.consumablesSlotsEl, gameState.consumables, { calculatePositions: true, showLockIcon: false });
-        }
+            }
             autoSave();
         }
     }
@@ -1443,14 +1408,12 @@ function showItemTooltip(item, element) {
                 }
             };
             
-            // --- START: Save Game Migration for Chisel -> Wisdom Scroll ---
             if (loadedState.artisanChiselDropped) {
                 gameState.wisdomOfTheOverworldDropped = true;
             }
             if (loadedState.artisanChiselUsed) {
                 gameState.wisdomOfTheOverworldUsed = true;
             }
-            // --- END: Save Game Migration ---
 
             if (!gameState.presetSystemMigrated) {
                 gameState = migrateToPresetInventories(gameState);
@@ -1528,7 +1491,7 @@ function showItemTooltip(item, element) {
         if (gameState.unlockedFeatures.hunts) {
             populateInitialHunts();
         }
-        ui.updateHuntsButtonGlow(gameState); // Check glow status on load
+        ui.updateHuntsButtonGlow(gameState);
         setupEventListeners();
         recalculateStats();
         startNewMonster();
@@ -1539,10 +1502,12 @@ function showItemTooltip(item, element) {
         autoSave(); 
         setInterval(autoSave, 30000);
         setInterval(gameLoop, 1000);
-        setInterval(checkDailyResets, 60000); // Check for daily resets every minute
-    }    
+        setInterval(checkDailyResets, 60000);
+    }
     
-        function setupEventListeners() {
+    // ... This is where the file resumes from the previous response ...
+    
+    function setupEventListeners() {
         window.addEventListener('beforeunload', saveOnExit);
         window.addEventListener('keydown', (e) => {
             const key = e.key.toLowerCase();
@@ -1592,7 +1557,6 @@ function showItemTooltip(item, element) {
         document.body.addEventListener('mouseover', (e) => {
             if (!(e.target instanceof HTMLElement)) return;
     
-            // Tooltip for the disabled Hunts button
             const huntsBtn = e.target.closest('#hunts-btn');
             if (huntsBtn && (/** @type {HTMLButtonElement} */ (huntsBtn)).disabled) {
                 elements.tooltipEl.className = 'hidden';
@@ -1604,7 +1568,7 @@ function showItemTooltip(item, element) {
                 elements.tooltipEl.style.left = `${rect.left}px`;
                 elements.tooltipEl.style.top = `${rect.bottom + 5}px`;
                 elements.tooltipEl.classList.remove('hidden');
-                return; // Stop here to prevent other tooltips from showing
+                return;
             }
         });
     
@@ -1750,52 +1714,75 @@ function showItemTooltip(item, element) {
             if (!(event.target instanceof Element)) return;
             const wrapper = event.target.closest('.item-wrapper, .gem-wrapper');
             if (!(wrapper instanceof HTMLElement)) return;
-
+        
             const id = wrapper.dataset.id;
             if (!id) return;
-            
+        
             const isGem = wrapper.classList.contains('gem-wrapper');
-            const item = isGem ? gameState.gems.find(i => String(i.id) === id) : player.findItemFromAllSources(gameState, id);
-
-            if (!item) return;
-
+            const itemOrStack = isGem ? gameState.gems.find(i => String(i.id) === id) : player.findItemFromAllSources(gameState, id);
+        
+            if (!itemOrStack) return;
+        
             if (isGem) {
-                // Prevent interaction with gems in crafting slots via main grid
-                if (craftingGems.includes(item.id)) return;
+                const gemStack = itemOrStack;
+        
+                if (isShiftPressed) {
+                    if (bulkCombineSelection.tier || bulkCombineSelection.selectionKey) {
+                        bulkCombineSelection.tier = null;
+                        bulkCombineSelection.selectionKey = null;
+                        bulkCombineDeselectedIds.clear();
+                        
+                        // --- FIX: Add type casts here ---
+                        (/** @type {HTMLSelectElement} */ (elements.bulkCombineTierSelect)).value = "";
+                        elements.bulkCombineStatSelect.innerHTML = '<option value="">Select Stat</option>';
+                        (/** @type {HTMLSelectElement} */ (elements.bulkCombineStatSelect)).disabled = true;
 
-                const isBulkSelected = bulkCombineSelection.tier && bulkCombineSelection.selectionKey && item.tier === bulkCombineSelection.tier;
+                        ui.updateBulkCombineHighlights(elements, gameState, bulkCombineSelection, bulkCombineDeselectedIds);
+                    }
+
+                    if (craftingGems.length < 2) {
+                        const firstCraftingGem = craftingGems[0];
+                        if (firstCraftingGem && firstCraftingGem.tier !== gemStack.tier) {
+                            logMessage(elements.gameLogEl, "You can only combine gems of the same tier.", "rare", isAutoScrollingLog);
+                            return;
+                        }
+        
+                        const tempGem = { ...gemStack, quantity: 1, sourceStackId: gemStack.id };
+                        delete tempGem.id;
+                        craftingGems.push(tempGem);
+        
+                        gemStack.quantity--;
+                        if (gemStack.quantity <= 0) {
+                            gameState.gems = gameState.gems.filter(g => g.id !== gemStack.id);
+                        }
+        
+                        ui.updateGemCraftingUI(elements, craftingGems, gameState);
+                        refreshGemViewIfActive();
+                    }
+                    return;
+                }
+        
+                const isBulkSelected = bulkCombineSelection.tier && bulkCombineSelection.selectionKey && gemStack.tier === bulkCombineSelection.tier;
                 if (isBulkSelected) {
-                    if (bulkCombineDeselectedIds.has(item.id)) {
-                        bulkCombineDeselectedIds.delete(item.id);
+                    if (bulkCombineDeselectedIds.has(gemStack.id)) {
+                        bulkCombineDeselectedIds.delete(gemStack.id);
                     } else {
-                        bulkCombineDeselectedIds.add(item.id);
+                        bulkCombineDeselectedIds.add(gemStack.id);
                     }
                     ui.updateBulkCombineHighlights(elements, gameState, bulkCombineSelection, bulkCombineDeselectedIds);
                     return;
                 }
-
-                if (isShiftPressed) {
-                    if (craftingGems.length < 2) {
-                        const firstCraftingGem = craftingGems.length > 0 ? gameState.gems.find(g => g.id === craftingGems[0]) : null;
-                         if (firstCraftingGem && firstCraftingGem.tier !== item.tier) {
-                            logMessage(elements.gameLogEl, "You can only combine gems of the same tier.", "rare", isAutoScrollingLog);
-                            return;
-                        }
-                        craftingGems.push(item.id); // Store ID
-                        ui.updateGemCraftingUI(elements, craftingGems, gameState);
-                        refreshGemViewIfActive(); // Re-render to hide gem from main grid
-                    }
+        
+                if (selectedGemForSocketing && selectedGemForSocketing.id === gemStack.id) {
+                    selectedGemForSocketing = null;
+                    logMessage(elements.gameLogEl, "Deselected gem.", '', isAutoScrollingLog);
                 } else {
-                    if (selectedGemForSocketing && selectedGemForSocketing.id === item.id) {
-                        selectedGemForSocketing = null;
-                        logMessage(elements.gameLogEl, "Deselected gem.", '', isAutoScrollingLog);
-                    } else {
-                        selectedGemForSocketing = item;
-                        logMessage(elements.gameLogEl, `Selected <b>${item.name}</b>. Click an item with an empty socket to place it.`, 'uncommon', isAutoScrollingLog);
-                    }
-                    ui.updateSocketingHighlights(elements, selectedGemForSocketing, gameState);
+                    selectedGemForSocketing = gemStack;
+                    logMessage(elements.gameLogEl, `Selected <b>${gemStack.name}</b>. Click an item with an empty socket to place it.`, 'uncommon', isAutoScrollingLog);
                 }
+                ui.updateSocketingHighlights(elements, selectedGemForSocketing, gameState);
             } else {
+                const item = itemOrStack;
                 if (item.type === 'consumable') {
                     ui.showConfirmationModal(
                         elements,
@@ -1813,12 +1800,11 @@ function showItemTooltip(item, element) {
                     );
                     return;
                 }
-
+        
                 if (selectedGemForSocketing) {
                     if (item.sockets && item.sockets.includes(null)) {
-                        const gemToSocket = selectedGemForSocketing; // Keep a reference
+                        const gemToSocket = selectedGemForSocketing;
                         
-                        // Show confirmation modal
                         ui.showConfirmationModal(
                             elements,
                             'Confirm Socket',
@@ -1827,7 +1813,6 @@ function showItemTooltip(item, element) {
                              <p>into</p>
                              <p><span class="${item.rarity}">${item.name}</span>?</p>`,
                             () => {
-                                // This code runs only if the user clicks "Confirm"
                                 performSocketing(item, gemToSocket);
                             }
                         );
@@ -1836,12 +1821,11 @@ function showItemTooltip(item, element) {
                         logMessage(elements.gameLogEl, `The item <b>${item.name}</b> has no available sockets.`, 'rare', isAutoScrollingLog);
                     }
                     
-                    // Deselect the gem immediately after showing the modal or error
                     selectedGemForSocketing = null; 
                     ui.updateSocketingHighlights(elements, null, gameState);
-                    return; // Stop further execution in the click handler
+                    return;
                 }
-    
+        
                 if (event.target.closest('.lock-icon')) {
                     const message = player.toggleItemLock(gameState, item);
                     if (message) logMessage(elements.gameLogEl, message, '', isAutoScrollingLog);
@@ -1905,7 +1889,7 @@ function showItemTooltip(item, element) {
             if (selectedGemForSocketing) {
                 const item = gameState.equipment[slotName];
                 if (item && item.sockets && item.sockets.includes(null)) {
-                    const gemToSocket = selectedGemForSocketing; // Keep reference
+                    const gemToSocket = selectedGemForSocketing;
                     
                     ui.showConfirmationModal(
                         elements,
@@ -1923,10 +1907,9 @@ function showItemTooltip(item, element) {
                     logMessage(elements.gameLogEl, `The item <b>${item.name}</b> has no available sockets.`, 'rare', isAutoScrollingLog);
                 }
                 
-                // Deselect gem immediately regardless of outcome
                 selectedGemForSocketing = null;
                 ui.updateSocketingHighlights(elements, null, gameState);
-                return; // Stop further execution
+                return;
             }
 
             const unequippedItem = gameState.equipment[slotName];
@@ -1948,38 +1931,24 @@ function showItemTooltip(item, element) {
             if (slotIndexStr === null || slotIndexStr === undefined) return;
             const slotIndex = parseInt(slotIndexStr, 10);
 
-            const gemIdInSlot = craftingGems[slotIndex];
+            const gemInSlot = craftingGems[slotIndex];
         
-            if (gemIdInSlot) {
-                // Gem is being removed from a crafting slot
+            if (gemInSlot) {
                 craftingGems.splice(slotIndex, 1);
-                refreshGemViewIfActive(); // Re-render main grid to show the gem again
+                player.addToPlayerStacks(gameState, gemInSlot, 'gems');
+                refreshGemViewIfActive();
             } 
-            else if (selectedGemForSocketing) {
-                // A selected gem is being placed into an empty crafting slot
-                if (craftingGems.length < 2) {
-                    const firstCraftingGem = craftingGems.length > 0 ? gameState.gems.find(g => g.id === craftingGems[0]) : null;
-                    if (firstCraftingGem && firstCraftingGem.tier !== selectedGemForSocketing.tier) {
-                        logMessage(elements.gameLogEl, "You can only combine gems of the same tier.", "rare", isAutoScrollingLog);
-                        return;
-                    }
-        
-                    craftingGems.push(selectedGemForSocketing.id); // Store ID
-                    refreshGemViewIfActive(); // Re-render main grid to hide the gem
-                    selectedGemForSocketing = null;
-                }
-            }
+            
             ui.updateGemCraftingUI(elements, craftingGems, gameState);
-            ui.updateSocketingHighlights(elements, null, gameState);
         });
 
-                addTapListener(elements.gemCraftBtn, () => {
+        addTapListener(elements.gemCraftBtn, () => {
             if (craftingGems.length !== 2) return;
             
-            const result = player.combineGems(gameState, craftingGems);
+            const result = player.combineGems(gameState, craftingGems[0], craftingGems[1]);
             logMessage(elements.gameLogEl, result.message, result.success && result.newGem ? 'legendary' : 'rare', isAutoScrollingLog);
             
-            craftingGems = []; // Clear the IDs
+            craftingGems = [];
             ui.updateGemCraftingUI(elements, craftingGems, gameState);
             refreshGemViewIfActive();
 
@@ -2198,6 +2167,13 @@ function showItemTooltip(item, element) {
                         logMessage(elements.gameLogEl, "You must confirm or cancel prestige first.", "rare", isAutoScrollingLog);
                         return;
                     }
+
+                    const currentView = document.querySelector('.view.active')?.id;
+                    if (currentView === 'inventory-view' && viewId !== 'inventory-view' && craftingGems.length > 0) {
+                        craftingGems.forEach(gem => player.addToPlayerStacks(gameState, gem, 'gems'));
+                        craftingGems = [];
+                        logMessage(elements.gameLogEl, "Returned gems from crafting slots to inventory.", "uncommon", isAutoScrollingLog);
+                    }
                     
                     ui.switchView(elements, viewId, gameState);
 
@@ -2222,7 +2198,7 @@ function showItemTooltip(item, element) {
                                     subTabButton.classList.add('newly-unlocked-flash');
                                     setTimeout(() => subTabButton.classList.remove('newly-unlocked-flash'), 5000);
                                 }
-                                gameState.pendingSubTabViewFlash = null; // Clear the flag
+                                gameState.pendingSubTabViewFlash = null;
                             } else {
                                 ui.switchInventorySubView('inventory-gear-view');
                             }
@@ -2252,6 +2228,13 @@ function showItemTooltip(item, element) {
         
             const subViewId = e.target.dataset.subview;
             if (!subViewId) return;
+
+            const currentSubView = document.querySelector('.sub-view.active')?.id;
+            if (currentSubView === 'inventory-gems-view' && subViewId !== 'inventory-gems-view' && craftingGems.length > 0) {
+                craftingGems.forEach(gem => player.addToPlayerStacks(gameState, gem, 'gems'));
+                craftingGems = [];
+                logMessage(elements.gameLogEl, "Returned gems from crafting slots to inventory.", "uncommon", isAutoScrollingLog);
+            }
         
             const featureMap = {
                 'inventory-gems-view': { flag: gameState.unlockedFeatures.gems, title: 'Gems Locked', message: 'Find a Gem to unlock the Gemcutting bench.', icon: 'fa-gem' },
@@ -2502,12 +2485,12 @@ function showItemTooltip(item, element) {
     function setupItemTooltipListeners() {
         const onGridMouseOver = (event) => {
             if (!(event.target instanceof Element)) return;
-            const wrapper = event.target.closest('.item-wrapper');
+            const wrapper = event.target.closest('.item-wrapper, .gem-wrapper');
             if (!(wrapper instanceof HTMLElement)) return;
             const id = wrapper.dataset.id;
             if (!id) return;
 
-            const item = player.findItemFromAllSources(gameState, id) || gameState.consumables.find(c => String(c.id) === id);
+            const item = player.findItemFromAllSources(gameState, id) || gameState.consumables.find(c => String(c.id) === id) || gameState.gems.find(g => String(g.id) === id);
             if(item) {
                 showItemTooltip(item, wrapper);
             }
@@ -2546,7 +2529,6 @@ function showItemTooltip(item, element) {
         });
         elements.prestigeEquipmentPaperdoll.addEventListener('mouseout', onGridMouseOut);
 
-        // Special listener for the forge item slot
         elements.forgeSelectedItemEl.addEventListener('mouseover', (event) => {
             if (selectedItemForForge && event.currentTarget instanceof HTMLElement) {
                 showItemTooltip(selectedItemForForge, event.currentTarget);
@@ -2556,48 +2538,48 @@ function showItemTooltip(item, element) {
     }
     
     function setupGemTooltipListeners(){
-        const showGemTooltip = (e) => {
-             if (!(e.target instanceof Element)) return;
-            const gemWrapper = e.target.closest('div.gem-wrapper');
-            if (!(gemWrapper instanceof HTMLElement)) return;
-
-            const gemId = gemWrapper.dataset.id;
-            if (!gemId) return;
-
-            const gem = gameState.gems.find(g => String(g.id) === gemId) || craftingGems.find(g => String(g.id) === gemId);
-            if (!gem) return;
+        const showGemTooltip = (e, gem, gemWrapper) => { // Add gemWrapper as an argument
+            if (!gemWrapper || !gem) return;
             
             elements.tooltipEl.className = 'hidden';
             elements.tooltipEl.classList.add('gem-quality');
             elements.tooltipEl.innerHTML = ui.createGemTooltipHTML(gem);
-
-            const rect = gemWrapper.getBoundingClientRect();
+    
+            const rect = gemWrapper.getBoundingClientRect(); // Use the wrapper's coordinates
             elements.tooltipEl.style.left = `${rect.right + 5}px`;
             elements.tooltipEl.style.top = `${rect.top}px`;
             elements.tooltipEl.classList.remove('hidden');
         };
-
-        elements.gemSlotsEl.addEventListener('mouseover', showGemTooltip);
-        elements.gemSlotsEl.addEventListener('mouseout', () => elements.tooltipEl.classList.add('hidden'));
+    
+        const hideGemTooltip = () => elements.tooltipEl.classList.add('hidden');
+    
+        // Listener for the main gem grid
+        elements.gemSlotsEl.addEventListener('mouseover', (e) => {
+            if (!(e.target instanceof Element)) return;
+            const gemWrapper = e.target.closest('div.gem-wrapper');
+            if (!(gemWrapper instanceof HTMLElement)) return;
+    
+            const gemId = gemWrapper.dataset.id;
+            if (!gemId) return;
+    
+            const gem = gameState.gems.find(g => String(g.id) === gemId);
+            showGemTooltip(e, gem, gemWrapper); // Pass the wrapper to the function
+        });
+        elements.gemSlotsEl.addEventListener('mouseout', hideGemTooltip);
         
+        // Listener for the crafting slots
         elements.gemCraftingSlotsContainer.addEventListener('mouseover', (e) => {
             if (!(e.target instanceof Element)) return;
-            const gemWrapper = e.target.closest('.gem');
-            if (!(gemWrapper instanceof HTMLElement)) return; 
-            const id = gemWrapper.dataset.gemId;
-            const gem = craftingGems.find(g => String(g.id) === id);
-            if (!gem) return;
-
-            elements.tooltipEl.className = 'hidden';
-            elements.tooltipEl.classList.add('gem-quality');
-            elements.tooltipEl.innerHTML = ui.createGemTooltipHTML(gem);
-
-            const rect = gemWrapper.getBoundingClientRect();
-            elements.tooltipEl.style.left = `${rect.right + 5}px`;
-            elements.tooltipEl.style.top = `${rect.top}px`;
-            elements.tooltipEl.classList.remove('hidden');
+            const craftingSlot = e.target.closest('.gem-crafting-slot');
+            if (!(craftingSlot instanceof HTMLElement) || !craftingSlot.hasChildNodes()) return;
+    
+            const slotIndexStr = craftingSlot.dataset.slot;
+            if (!slotIndexStr) return;
+            
+            const gem = craftingGems[parseInt(slotIndexStr, 10)];
+            showGemTooltip(e, gem, craftingSlot); // Pass the crafting slot itself as the wrapper
         });
-        elements.gemCraftingSlotsContainer.addEventListener('mouseout', () => elements.tooltipEl.classList.add('hidden'));
+        elements.gemCraftingSlotsContainer.addEventListener('mouseout', hideGemTooltip);
     }
     
     function setupStatTooltipListeners() {
@@ -2680,16 +2662,13 @@ function showItemTooltip(item, element) {
             if (!itemBase) return;
             elements.tooltipEl.className = 'hidden';
 
-            // --- START OF MODIFICATION ---
             if (itemBase.type === 'consumable') {
-                // Handle consumables specifically
-                elements.tooltipEl.classList.add('legendary'); // Consumables are treated as legendary rarity for tooltips
+                elements.tooltipEl.classList.add('legendary');
                 elements.tooltipEl.innerHTML = `
                     <div class="item-header"><span class="legendary">${itemBase.name}</span></div>
                     <ul><li>${itemBase.description}</li></ul>
                 `;
             } else {
-                // Existing logic for items and gems
                 if (itemBase.tier >= 1) {
                     elements.tooltipEl.innerHTML = ui.createGemTooltipHTML(itemBase);
                     elements.tooltipEl.classList.add('gem-quality');
@@ -2705,7 +2684,6 @@ function showItemTooltip(item, element) {
                     elements.tooltipEl.innerHTML = ui.createLootTableTooltipHTML(itemBase);
                 }
             }
-            // --- END OF MODIFICATION ---
 
             const rect = entryEl.getBoundingClientRect();
             elements.tooltipEl.style.left = `${rect.right + 10}px`;
@@ -2845,7 +2823,7 @@ function showItemTooltip(item, element) {
                 wisdomOfTheOverworldUsed: gameState.wisdomOfTheOverworldUsed,
                 unlockedFeatures: {
                     ...gameState.unlockedFeatures,
-                    hunts: true, // Unlock hunts after first prestige
+                    hunts: true,
                 },
                 tutorialCompleted: gameState.tutorialCompleted,
                 permanentUpgrades: gameState.permanentUpgrades,
@@ -2862,7 +2840,7 @@ function showItemTooltip(item, element) {
                 hero: prestgedHeroState,
                 currentFightingLevel: 1,
                 currentRunCompletedLevels: [],
-                hunts: { // Carry over hunt progress
+                hunts: {
                     ...baseState.hunts,
                     completionCounts: gameState.hunts.completionCounts || {},
                 },
@@ -3079,7 +3057,7 @@ function showItemTooltip(item, element) {
 
             const star = e.target.closest('.wiki-favorite-star');
             if (star instanceof HTMLElement && star.dataset.itemId) {
-                e.stopPropagation(); // Prevent the travel modal from opening
+                e.stopPropagation();
                 const itemId = star.dataset.itemId;
                 const favIndex = gameState.wikiFavorites.indexOf(itemId);
 
@@ -3094,7 +3072,7 @@ function showItemTooltip(item, element) {
                 }
                 
                 if (wikiShowFavorites) {
-                    applyWikiFilters(); // Re-render if we are in favorites view
+                    applyWikiFilters();
                 }
 
                 autoSave();
@@ -3160,7 +3138,6 @@ function showItemTooltip(item, element) {
             }
         });
 
-        // --- START OF MODIFICATION ---
         huntsModalBackdrop.addEventListener('mouseover', (e) => {
             if (!(e.target instanceof HTMLElement)) return;
         
@@ -3169,8 +3146,8 @@ function showItemTooltip(item, element) {
                 const rewardId = rewardEl.dataset.rewardId;
                 const consumableBase = CONSUMABLES[rewardId];
                 if (consumableBase) {
-                    elements.tooltipEl.className = 'hidden'; // Reset classes
-                    elements.tooltipEl.classList.add('legendary'); // Consumables are legendary rarity
+                    elements.tooltipEl.className = 'hidden';
+                    elements.tooltipEl.classList.add('legendary');
                     elements.tooltipEl.innerHTML = `
                         <div class="item-header"><span class="legendary">${consumableBase.name}</span></div>
                         <ul><li>${consumableBase.description}</li></ul>
@@ -3191,7 +3168,6 @@ function showItemTooltip(item, element) {
                 elements.tooltipEl.classList.add('hidden');
             }
         });
-        // --- END OF MODIFICATION ---
     }
 
     function migrateToPresetInventories(loadedState) {
