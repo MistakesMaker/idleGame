@@ -1,3 +1,5 @@
+// --- START OF FILE game.js ---
+
 import { REALMS } from './data/realms.js';
 import { MONSTERS } from './data/monsters.js';
 import { ITEMS } from './data/items.js';
@@ -1034,8 +1036,7 @@ function showItemTooltip(item, element) {
     elements.tooltipEl.style.left = `${rect.right + 10}px`;
     elements.tooltipEl.style.top = `${rect.top}px`;
     elements.tooltipEl.classList.remove('hidden');
-}
-    
+}    
     /**
      * Shows a focused comparison tooltip for a pending ring vs one equipped ring.
      * @param {object} pendingItem The new ring to be equipped.
@@ -1122,78 +1123,167 @@ function showItemTooltip(item, element) {
         }
     }
 
+    /**
+     * Calculates the potential upgrade comparison between two item bases.
+     * @param {object} potentialItemBase - The new item's base definition.
+     * @param {object|null} equippedItem - The currently equipped item object.
+     * @returns {{isUpgrade: boolean, diffs: object}|null} A comparison object or null if not an upgrade.
+     */
+    function getUpgradeComparison(potentialItemBase, equippedItem) {
+        if (!equippedItem) {
+            return { isUpgrade: true, diffs: {} }; // Any item is an upgrade over an empty slot
+        }
+    
+        const equippedItemBase = ITEMS[equippedItem.baseId];
+        if (!equippedItemBase || potentialItemBase.id === equippedItemBase.id) {
+            return null; // Don't compare against self or invalid items
+        }
+    
+        const potentialStats = new Map(potentialItemBase.possibleStats.map(s => [s.key, s.max]));
+        const equippedStats = new Map(equippedItemBase.possibleStats.map(s => [s.key, s.max]));
+        
+        const diffs = {};
+        let hasImprovement = false;
+        
+        const allStatKeys = new Set([...potentialStats.keys(), ...equippedStats.keys()]);
+
+        for (const statKey of allStatKeys) {
+            const potentialMax = potentialStats.get(statKey) || 0;
+            const equippedMax = equippedStats.get(statKey) || 0;
+            const diff = potentialMax - equippedMax;
+    
+            if (Math.abs(diff) > 0.001) {
+                diffs[statKey] = diff;
+            }
+            if (diff > 0.001) {
+                hasImprovement = true;
+            }
+        }
+        
+        const potentialSockets = potentialItemBase.maxSockets || 0;
+        const equippedSockets = equippedItemBase.maxSockets || 0;
+        const socketDiff = potentialSockets - equippedSockets;
+        if (socketDiff !== 0) {
+            diffs['sockets'] = socketDiff;
+        }
+        if (socketDiff > 0) {
+            hasImprovement = true;
+        }
+        
+        if (hasImprovement) {
+            return { isUpgrade: true, diffs };
+        }
+    
+        return null;
+    }
+
+
     function applyWikiFilters() {
         const highestLevelEverReached = gameState.completedLevels.length > 0 ? Math.max(...gameState.completedLevels) : 0;
         const highestUnlockedRealm = REALMS.slice().reverse().find(realm => highestLevelEverReached >= realm.requiredLevel);
         const maxRealmIndex = highestUnlockedRealm ? REALMS.indexOf(highestUnlockedRealm) : -1;
     
-        let filtered = wikiState.data.filter(itemData => {
+        let results = [];
+    
+        if (wikiShowUpgradesOnly) {
+            const potentialUpgrades = [];
+            
+            const slotsToCheck = new Set();
+            if (wikiState.filters.type) {
+                if (wikiState.filters.type === 'ring') {
+                    slotsToCheck.add('ring1');
+                    slotsToCheck.add('ring2');
+                } else {
+                    slotsToCheck.add(wikiState.filters.type);
+                }
+            } else {
+                Object.keys(gameState.equipment).forEach(slot => {
+                    if (gameState.equipment[slot]) {
+                        slotsToCheck.add(slot);
+                    }
+                });
+            }
+
+            wikiState.data.forEach(itemData => {
+                const potentialItemBase = itemData.base;
+                if (potentialItemBase.type === 'consumable' || GEMS[potentialItemBase.id]) return;
+
+                const itemType = potentialItemBase.type;
+
+                const checkItem = (equippedItem) => {
+                    if (!equippedItem || itemType !== equippedItem.type.replace(/\d/g, '')) return null;
+                    return getUpgradeComparison(potentialItemBase, equippedItem);
+                };
+
+                let comparison = null;
+                if (itemType === 'ring') {
+                    if (!slotsToCheck.has('ring1') && !slotsToCheck.has('ring2')) return;
+                    const comp1 = slotsToCheck.has('ring1') ? checkItem(gameState.equipment.ring1) : null;
+                    const comp2 = slotsToCheck.has('ring2') ? checkItem(gameState.equipment.ring2) : null;
+                    
+                    let bestComp = null;
+                    if (comp1?.isUpgrade) bestComp = comp1;
+                    if (comp2?.isUpgrade) {
+                        const sumDiff1 = bestComp ? Object.values(bestComp.diffs).reduce((a, b) => a + b, 0) : -Infinity;
+                        const sumDiff2 = Object.values(comp2.diffs).reduce((a, b) => a + b, 0);
+                        if (sumDiff2 > sumDiff1) bestComp = comp2;
+                    }
+                    comparison = bestComp;
+                } else {
+                    if (!slotsToCheck.has(itemType)) return;
+                    comparison = checkItem(gameState.equipment[itemType]);
+                }
+
+                if (comparison?.isUpgrade) {
+                    const hasActiveStatFilters = wikiState.filters.stats.size > 0;
+                    if (hasActiveStatFilters) {
+                        let hasFilteredStatUpgrade = false;
+                        for (const [statKey] of wikiState.filters.stats.entries()) {
+                            if (comparison.diffs[statKey] > 0) {
+                                hasFilteredStatUpgrade = true;
+                                break;
+                            }
+                        }
+                        if (hasFilteredStatUpgrade) {
+                            potentialUpgrades.push({ itemData, comparison });
+                        }
+                    } else {
+                        potentialUpgrades.push({ itemData, comparison });
+                    }
+                }
+            });
+            results = potentialUpgrades;
+        } else {
+            results = wikiState.data.map(itemData => ({ itemData, comparison: null }));
+        }
+    
+        const finalFiltered = results.filter(data => {
+            const { itemData } = data;
             const isAccessible = itemData.dropSources.length === 0 || itemData.dropSources.some(source => source.realmIndex <= maxRealmIndex);
             if (!isAccessible) return false;
     
+            if (wikiShowFavorites && !gameState.wikiFavorites.includes(itemData.id)) {
+                return false;
+            }
             if (wikiState.filters.searchText && !itemData.base.name.toLowerCase().includes(wikiState.filters.searchText)) {
                 return false;
             }
-            if (wikiState.filters.type && itemData.base.type !== wikiState.filters.type) {
+             if (wikiState.filters.type && itemData.base.type !== wikiState.filters.type) {
                 return false;
             }
             if (wikiState.filters.sockets !== null && (itemData.base.maxSockets || 0) < wikiState.filters.sockets) {
                 return false;
             }
-            for (const [statKey, minValue] of wikiState.filters.stats.entries()) {
-                const hasStat = itemData.base.possibleStats?.some(stat => stat.key === statKey && stat.max >= minValue);
+            for (const [statKey] of wikiState.filters.stats.entries()) {
+                const hasStat = itemData.base.possibleStats?.some(stat => stat.key === statKey);
                 if (!hasStat) {
                     return false;
                 }
             }
             return true;
         });
-
-        if (wikiShowFavorites) {
-            filtered = filtered.filter(itemData => gameState.wikiFavorites.includes(itemData.id));
-        } else if (wikiShowUpgradesOnly) {
-            filtered = filtered.filter(itemData => {
-                if (GEMS[itemData.id]) return false; // Exclude gems from upgrade check
-
-                const potentialItemBase = itemData.base;
-                const itemType = potentialItemBase.type;
-                
-                const isUpgradeOver = (equippedItem) => {
-                    if (!equippedItem) return true; // Any item is an upgrade over an empty slot
-
-                    const equippedStats = getCombinedItemStats(equippedItem);
-                    
-                    let isStrictStatUpgrade = false;
-                    for (const potentialStat of potentialItemBase.possibleStats) {
-                        if (equippedStats.hasOwnProperty(potentialStat.key)) {
-                            if (potentialStat.max > equippedStats[potentialStat.key]) {
-                                isStrictStatUpgrade = true;
-                                break;
-                            }
-                        }
-                    }
-                    if (isStrictStatUpgrade) return true;
-
-                    if (wikiState.filters.sockets !== null && wikiState.filters.sockets > 0) {
-                        const potentialMaxSockets = potentialItemBase.maxSockets || 0;
-                        const equippedSockets = equippedItem.sockets ? equippedItem.sockets.length : 0;
-                        if (potentialMaxSockets > equippedSockets) {
-                            return true;
-                        }
-                    }
-
-                    return false;
-                };
-
-                if (itemType === 'ring') {
-                    return isUpgradeOver(gameState.equipment.ring1) || isUpgradeOver(gameState.equipment.ring2);
-                } else {
-                    return isUpgradeOver(gameState.equipment[itemType]);
-                }
-            });
-        }
     
-        ui.renderWikiResults(elements.wikiResultsContainer, filtered, gameState.wikiFavorites, wikiShowFavorites, wikiShowUpgradesOnly);
+        ui.renderWikiResults(elements.wikiResultsContainer, finalFiltered, gameState.wikiFavorites, wikiShowFavorites, wikiShowUpgradesOnly);
     }
     
     function sortAndRenderGems() {
@@ -3143,4 +3233,4 @@ function showItemTooltip(item, element) {
     }
 
     main();
-})
+});

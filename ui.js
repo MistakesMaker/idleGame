@@ -1083,7 +1083,6 @@ export function createItemComparisonTooltipHTML(hoveredItem, equippedItem, equip
 
     return html;
 }
-
 /**
  * Helper function to create the dual-ring comparison HTML block.
  * @param {object} hoveredItem - The full hovered ring item object.
@@ -2051,11 +2050,11 @@ export function renderWikiResults(containerEl, filteredData, wikiFavorites, show
     }
 
     dataToRender.sort((a, b) => {
-        const getMinLevel = (itemData) => {
-            if (!itemData.dropSources || itemData.dropSources.length === 0) {
+        const getMinLevel = (result) => {
+            if (!result.itemData.dropSources || result.itemData.dropSources.length === 0) {
                 return Infinity;
             }
-            return Math.min(...itemData.dropSources.map(source => source.level));
+            return Math.min(...result.itemData.dropSources.map(source => source.level));
         };
 
         const minLevelA = getMinLevel(a);
@@ -2064,12 +2063,12 @@ export function renderWikiResults(containerEl, filteredData, wikiFavorites, show
         return minLevelA - minLevelB;
     });
 
-    dataToRender.forEach(itemData => {
-        const isFavorited = wikiFavorites.includes(itemData.id);
+    dataToRender.forEach(result => {
+        const isFavorited = wikiFavorites.includes(result.itemData.id);
         const card = document.createElement('div');
         card.className = 'wiki-item-card';
-        card.dataset.itemId = itemData.id;
-        card.innerHTML = createWikiItemCardHTML(itemData, isFavorited);
+        card.dataset.itemId = result.itemData.id;
+        card.innerHTML = createWikiItemCardHTML(result.itemData, isFavorited, result.comparison);
         containerEl.appendChild(card);
     });
 }
@@ -2080,9 +2079,10 @@ export function renderWikiResults(containerEl, filteredData, wikiFavorites, show
  * Creates the HTML for a single item card in the wiki.
  * @param {object} itemData - The processed data for a single item.
  * @param {boolean} isFavorited - Whether the item is currently favorited.
+ * @param {object|null} comparison - Optional comparison data for the "Show Upgrades" view.
  * @returns {string} The HTML string for the card.
  */
-function createWikiItemCardHTML(itemData, isFavorited) {
+function createWikiItemCardHTML(itemData, isFavorited, comparison) {
     const itemBase = ITEMS[itemData.id] || GEMS[itemData.id] || CONSUMABLES[itemData.id];
     const isUnique = itemBase.isUnique ? 'unique-item-name' : '';
     const rarity = itemBase.type === 'consumable' ? '' : (itemBase.rarity || 'common');
@@ -2090,40 +2090,67 @@ function createWikiItemCardHTML(itemData, isFavorited) {
     const starClass = isFavorited ? 'fas fa-star favorited' : 'far fa-star';
 
     let statsHtml = '<ul>';
+    
+    // --- START: Reworked Stat Display Logic ---
+    if (comparison) { // "Show Upgrades" view
+        const allStatKeys = new Set(Object.keys(comparison.diffs));
+        itemBase.possibleStats?.forEach(s => allStatKeys.add(s.key));
 
-    if (itemBase.type === 'consumable' && itemBase.description) {
-        statsHtml += `<li>${itemBase.description}</li>`;
-    }
+        const sortedStatKeys = Array.from(allStatKeys).sort((a, b) => STAT_DISPLAY_ORDER.indexOf(a) - STAT_DISPLAY_ORDER.indexOf(b));
+        
+        sortedStatKeys.forEach(statKey => {
+            if (statKey === 'sockets') return; // Handle sockets separately
+            const statDefinition = Object.values(STATS).find(s => s.key === statKey);
+            if (!statDefinition) return;
 
-    if (itemBase.stats) {
-        for (const statKey in itemBase.stats) {
-            const statInfo = Object.values(STATS).find(s => s.key === statKey) || { name: statKey, type: 'flat' };
-            const statName = statInfo.name;
-            const value = itemBase.stats[statKey];
-            const statValue = statInfo.type === 'percent' ? `${value.toFixed(2)}%` : formatNumber(value);
-            statsHtml += `<li>+ ${statValue} ${statName}</li>`;
+            const statName = statDefinition.name;
+            const valueSuffix = statDefinition.type === 'percent' ? '%' : '';
+            const potentialStat = itemBase.possibleStats?.find(s => s.key === statKey);
+            const diff = comparison.diffs[statKey];
+
+            let text = '';
+            let cssClass = '';
+
+            if (potentialStat) {
+                text = `+ ${formatNumber(potentialStat.min)}${valueSuffix} - ${formatNumber(potentialStat.max)}${valueSuffix} ${statName}`;
+            } else {
+                // Stat exists on equipped item but not this one, so it's a downgrade
+                text = `(Loses ${statName})`;
+            }
+            
+            if (diff > 0) cssClass = 'stat-better';
+            else if (diff < 0) cssClass = 'stat-worse';
+
+            statsHtml += `<li class="${cssClass}">${text}</li>`;
+        });
+
+    } else { // Normal view
+        if (itemBase.type === 'consumable' && itemBase.description) {
+            statsHtml += `<li>${itemBase.description}</li>`;
         }
+        itemBase.possibleStats?.forEach(stat => {
+            const statDefinition = Object.values(STATS).find(s => s.key === stat.key);
+            const statName = statDefinition?.name || stat.key;
+            const valueSuffix = (statDefinition && statDefinition.type === 'percent') ? '%' : '';
+            statsHtml += `<li>+ ${formatNumber(stat.min)}${valueSuffix} - ${formatNumber(stat.max)}${valueSuffix} ${statName}</li>`;
+        });
     }
 
-    itemBase.possibleStats?.forEach(stat => {
-        const statDefinition = Object.values(STATS).find(s => s.key === stat.key);
-        const statName = statDefinition?.name || stat.key;
-        const valueSuffix = (statDefinition && statDefinition.type === 'percent') ? '%' : '';
-        statsHtml += `<li>+ ${formatNumber(stat.min)}${valueSuffix} - ${formatNumber(stat.max)}${valueSuffix} ${statName}</li>`;
-    });
-    
     if (itemBase.canHaveSockets && itemBase.maxSockets > 0) {
-        statsHtml += `<li>Sockets: 0 - ${itemBase.maxSockets}</li>`;
-    }
-    
-    if (itemBase.synergy) {
-        statsHtml += `<li class="stat-special">Special: + ${(itemBase.synergy.value * 100).toFixed(2)}% of total DPS to Click Dmg</li>`;
+        let text = `Sockets: 0 - ${itemBase.maxSockets}`;
+        let cssClass = '';
+        if (comparison && comparison.diffs['sockets']) {
+            if (comparison.diffs['sockets'] > 0) cssClass = 'stat-better';
+            else if (comparison.diffs['sockets'] < 0) cssClass = 'stat-worse';
+        }
+        statsHtml += `<li class="${cssClass}">${text}</li>`;
     }
     
     if (itemBase.uniqueEffect) {
         const effect = UNIQUE_EFFECTS[itemBase.uniqueEffect];
         statsHtml += `<li style="margin-top: 8px;"><b>${effect.name}:</b> ${effect.description}</li>`;
     }
+    // --- END: Reworked Stat Display Logic ---
 
     statsHtml += '</ul>';
 
