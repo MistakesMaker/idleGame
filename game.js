@@ -155,6 +155,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return {
             gold: 0, scrap: 0, upgrades: { clickDamage: 0, dps: 0 }, maxLevel: 1, currentFightingLevel: 1,
             monster: { hp: 10, maxHp: 10 },
+            firstKillCompleted: false,
             equipment: { ...defaultEquipmentState }, // This will be a REFERENCE to the active preset's equipment
             inventory: [],
             consumables: [],
@@ -1420,6 +1421,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 tutorialCompleted: loadedState.tutorialCompleted || false,
                 wisdomOfTheOverworldDropped: loadedState.wisdomOfTheOverworldDropped || false,
                 wisdomOfTheOverworldUsed: loadedState.wisdomOfTheOverworldUsed || false,
+                firstKillCompleted: loadedState.firstKillCompleted || false,
                 pendingSubTabViewFlash: loadedState.pendingSubTabViewFlash || null,
                 hunts: {
                     ...baseState.hunts,

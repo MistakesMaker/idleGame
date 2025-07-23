@@ -383,7 +383,18 @@ export function monsterDefeated(gameState, playerStats, currentMonster) {
 
     gameState.gold += finalGoldGained;
 
-    const lootResult = (Math.random() * 100 < currentMonster.data.dropChance) ? dropLoot(currentMonster, gameState, playerStats) : { droppedItems: [], droppedGems: [], logMessages: [], events: [] };
+    // --- START OF MODIFICATION: Guarantee drop on first kill ---
+    let dropOccurs = false;
+    if (!gameState.firstKillCompleted && gameState.currentFightingLevel === 1) {
+        dropOccurs = true;
+        gameState.firstKillCompleted = true; // Set flag immediately to prevent re-triggering
+    } else {
+        dropOccurs = Math.random() * 100 < currentMonster.data.dropChance;
+    }
+
+    const lootResult = dropOccurs ? dropLoot(currentMonster, gameState, playerStats) : { droppedItems: [], droppedGems: [], logMessages: [], events: [] };
+    // --- END OF MODIFICATION ---
+    
     logMessages.push({ message: `You defeated the ${currentMonster.name} and gained ${formatNumber(xpGained)} XP.`, class: '' });
     
     logMessages.push({ message: `You gained ${formatNumber(finalGoldGained)} gold.`, class: '' });
