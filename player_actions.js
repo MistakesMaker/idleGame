@@ -689,8 +689,14 @@ export function bulkCombineGems(gameState, tier, selectionKey, excludedIds) {
         }
     }
 
-    if (successes > 0) playSound('gem_success');
-    if (failures > 0) playSound('gem_fail');
+// Play a summary sound based on the overall outcome
+if (successes > 0 || failures > 0) { // Only play a sound if any combinations happened
+    if (successes > failures) {
+        playSound('gem_success');
+    } else { // This covers failures > successes AND failures === successes
+        playSound('gem_fail');
+    }
+}
 
     // Add back any leftover individual gems
     individualGems.forEach(gem => addToPlayerStacks(gameState, gem, 'gems'));

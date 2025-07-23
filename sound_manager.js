@@ -77,7 +77,7 @@ export function playSound(name) {
 export function toggleMute() {
     if (!isInitialized) return;
     isMuted = !isMuted;
-    localStorage.setItem('idleRPG_isMuted', isMuted);
+    localStorage.setItem('idleRPG_isMuted', String(isMuted));
     console.log("Sound muted:", isMuted);
     return isMuted;
 }
