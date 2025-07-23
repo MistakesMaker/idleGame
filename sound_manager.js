@@ -64,19 +64,20 @@ export function initSounds() {
  * Handles the global mute state and allows for rapid re-playing of sounds.
  * @param {string} name The key of the sound to play (e.g., 'monster_hit').
  */
+// AFTER
 export function playSound(name) {
     if (isMuted || !isInitialized) {
         return;
     }
 
-    const sound = sounds[name];
-    if (sound) {
-        // By setting currentTime to 0, we can play the sound again even if it's already playing.
-        // This is crucial for rapid-fire sounds like monster hits.
-        sound.currentTime = 0;
-        sound.play().catch(error => {
-            // The play() request was interrupted or failed. This is common if the user
-            // clicks very fast. We can safely ignore this specific error.
+    const masterSound = sounds[name];
+    if (masterSound) {
+        // Create a clone of the audio element. This allows for overlapping sounds.
+        const soundClone = masterSound.cloneNode();
+        soundClone.volume = masterSound.volume; // Ensure the clone has the same volume
+        
+        soundClone.play().catch(error => {
+            // The play() request was interrupted or failed.
             if (error.name !== 'AbortError') {
                 console.error(`Error playing sound "${name}":`, error);
             }
