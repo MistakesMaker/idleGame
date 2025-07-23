@@ -154,12 +154,31 @@ select option {
     box-shadow: none;
     object-fit: contain;
     filter: drop-shadow(2px 2px 3px rgba(0, 0, 0, 0.7));
+    /* ADD THESE LINES TO PREVENT SELECTION */
+    -webkit-user-select: none; /* Safari */
+    -ms-user-select: none;     /* IE 10+ */
+    user-select: none;         /* Standard syntax */
 }
 .map-node-icon.locked { border-color: transparent; box-shadow: none; }
 .map-node-icon.completed { border-color: transparent; box-shadow: none; }
 .map-node-lock-icon, .map-node-completed-icon { position: absolute; top: -3px; right: -3px; font-size: 12px; color: white; text-shadow: 0 0 3px black; background-color: rgba(0,0,0,0.5); border-radius: 50%; padding: 3px; }
 .map-node-completed-icon { color: #2ecc71; }
-.map-node-label { background-color: rgba(0,0,0,0.7); padding: 1px 5px; border-radius: 4px; margin-top: 2px; color: white; font-weight: bold; font-family: 'Cinzel', serif; font-size: 9px; white-space: nowrap; text-align: center; }
+.map-node-label {
+    background-color: rgba(0,0,0,0.7);
+    padding: 1px 5px;
+    border-radius: 4px;
+    margin-top: 2px;
+    color: white;
+    font-weight: bold;
+    font-family: 'Cinzel', serif;
+    font-size: 9px;
+    white-space: nowrap;
+    text-align: center;
+    /* ADD THESE LINES */
+    -webkit-user-select: none; /* Safari */
+    -ms-user-select: none;     /* IE 10+ */
+    user-select: none;         /* Standard syntax */
+}
 .map-node.active-zone .map-node-icon { animation: pulse-red 2s infinite; }
 .map-node.active-fighting-zone .map-node-icon { animation: pulse-green-border 2s infinite; }
 .map-node.boss-node .map-node-icon {
@@ -185,7 +204,15 @@ select option {
   100% { filter: drop-shadow(2px 2px 3px rgba(0, 0, 0, 0.7)) drop-shadow(0 0 2px rgba(46, 204, 113, 0.7)); }
 }
 
-.map-path-svg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; }
+.map-path-svg { 
+    position: absolute; 
+    top: 0; 
+    left: 0; 
+    width: 100%; 
+    height: 100%; 
+    pointer-events: none; 
+    z-index: 0; /* CHANGE THIS FROM z-index: 0; to ensure it's behind the nodes */
+}
 .map-path-line { fill: none; stroke: rgba(241, 196, 15, 0.7); stroke-width: 6px; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 15, 10; animation: dash-flow 60s linear infinite; }
 @keyframes dash-flow { to { stroke-dashoffset: -1000; } }
 
@@ -211,18 +238,69 @@ select option {
     text-align: center;
     font-size: 1.2em;
     margin-bottom: 5px;
+    /* ADD THESE LINES */
+    -webkit-user-select: none; /* Safari */
+    -ms-user-select: none;     /* IE 10+ */
+    user-select: none;         /* Standard syntax */
 }
 
-#monster-display { position: relative; width: 200px; height: 200px; margin: 10px auto; /* Reduced margin */ }
-#monster-image { width: 100%; height: 100%; cursor: pointer; transition: transform 0.2s ease, filter 0.2s ease; -webkit-user-drag: none; }
+#monster-display { 
+    position: relative; 
+    width: 200px; 
+    height: 200px; 
+    margin: 10px auto;
+    z-index: 1; /* ADD THIS LINE: Puts the monster on a layer above the background */
+}
+#monster-image {
+    width: 100%;
+    height: 100%;
+    cursor: pointer;
+    transition: transform 0.2s ease, filter 0.2s ease;
+    -webkit-user-drag: none;
+    /* ADD THESE LINES TO PREVENT SELECTION */
+    -webkit-user-select: none; /* Safari */
+    -ms-user-select: none;     /* IE 10+ */
+    user-select: none;         /* Standard syntax */
+}
 .monster-hit { animation: monster-hit-anim 0.2s ease; }
 @keyframes monster-hit-anim { 0% { transform: scale(1); } 50% { transform: scale(0.9); filter: brightness(1.5); } 100% { transform: scale(1); } }
 #monster-image.boss-image { transform: scale(1.3); }
 #monster-image.boss-image.monster-hit { animation: boss-hit-anim 0.2s ease; }
 @keyframes boss-hit-anim { 0% { transform: scale(1.3); } 50% { transform: scale(1.2); filter: brightness(1.5); } 100% { transform: scale(1.3); } }
-#monster-health-bar-container { background-color: #1a1a1a; border-radius: 5px; overflow: hidden; height: 25px; border: 2px solid #4a637e; box-shadow: inset 0 0 5px rgba(0,0,0,0.5); }
+#monster-health-bar-container {
+    background-color: #1a1a1a;
+    border-radius: 5px;
+    overflow: hidden;
+    height: 25px;
+    border: 2px solid #4a637e;
+    box-shadow: inset 0 0 5px rgba(0,0,0,0.5);
+    position: relative; /* ADD THIS LINE */
+}
 #monster-health-bar { height: 100%; width: 100%; background: linear-gradient(to right, #2ecc71, #27ae60); transition: width 0.2s linear, background 0.5s linear; }
-#popup-container { position: absolute; top: 0; left: 0; right: 0; bottom: 0; pointer-events: none; }
+#monster-health-text {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    line-height: 25px; /* Matches the container height */
+    font-size: 14px;
+    color: white;
+    text-shadow: 1px 1px 2px #000;
+    text-align: center;
+    pointer-events: none; /* Ensures clicks pass through to the bar/monster */
+    -webkit-user-select: none; /* Safari */
+    -ms-user-select: none;     /* IE 10+ */
+    user-select: none;         /* Standard syntax */
+}
+#popup-container { 
+    position: absolute; 
+    top: 0; 
+    left: 0; 
+    right: 0; 
+    bottom: 0; 
+    pointer-events: none; 
+    z-index: 10; /* ADD THIS LINE: Puts popups on a high layer, above the monster */
+}
 .damage-popup { position: absolute; font-size: 24px; font-weight: bold; color: #f1c40f; text-shadow: 2px 2px 2px #000; animation: float-up 1s ease-out forwards; user-select: none; }
 .gold-popup { position: absolute; font-size: 20px; font-weight: bold; color: #ffd700; animation: float-up 1.5s ease-out forwards; user-select: none; }
 .dps-popup { position: absolute; font-size: 20px; font-weight: bold; color: #ffffff; text-shadow: 2px 2px 2px #000; animation: float-up 0.8s ease-out forwards; user-select: none; }
