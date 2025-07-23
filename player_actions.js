@@ -705,15 +705,29 @@ export function rerollItemStats(gameState, itemToReroll, statToRerollKey) {
         return { success: true, improvement: 0 };
     }
 
+    // --- START OF NEW, CORRECTED LOGIC ---
     const gap = max_for_tier - currentValue;
-    const improvementFactor = Math.random();
+    const improvementFactor = Math.random() * 0.5;
     const improvementAmount = gap * improvementFactor;
     
-    const newValue = currentValue + improvementAmount;
+    let newValue = currentValue + improvementAmount;
     
-    itemToReroll.stats[statToRerollKey] = parseFloat(newValue.toFixed(2));
+    // Check if the improvement was too small and got lost during rounding.
+    if (parseFloat(newValue.toFixed(2)) <= currentValue) {
+        // If so, force a minimum increase of 0.01 to ensure progress.
+        newValue = currentValue + 0.01;
+    }
 
-    return { success: true, improvement: parseFloat(improvementAmount.toFixed(2)) };
+    // Always cap the new value at the tier's maximum.
+    const finalValue = Math.min(newValue, max_for_tier);
+    
+    // The actual improvement is the difference between the final value and the starting value.
+    const actualImprovement = finalValue - currentValue;
+
+    itemToReroll.stats[statToRerollKey] = parseFloat(finalValue.toFixed(2));
+
+    return { success: true, improvement: parseFloat(actualImprovement.toFixed(2)) };
+    // --- END OF NEW, CORRECTED LOGIC ---
 }
 
 /**
