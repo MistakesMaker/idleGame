@@ -12,6 +12,7 @@ import * as ui from './ui.js';
 import * as player from './player_actions.js';
 import * as logic from './game_logic.js';
 import { HUNT_POOLS } from './data/hunts.js';
+import { initSounds, playSound, toggleMute, getMuteState } from './sound_manager.js';
 
 export const rarities = ['common', 'uncommon', 'rare', 'epic', 'legendary'];
 
@@ -392,6 +393,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function handleMonsterDefeated() {
+        playSound('monster_defeat');
         player.checkHuntProgress(gameState, currentMonster);
         const huntsModal = document.getElementById('hunts-modal-backdrop');
         if (huntsModal && !huntsModal.classList.contains('hidden')) {
@@ -566,6 +568,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const isCrit = Math.random() * 100 < playerStats.critChance;
         if (isCrit) {
             finalDamage *= playerStats.critDamage;
+            if (isClick) {
+                playSound('crit_hit');
+            }
         }
         
         gameState.monster.hp -= finalDamage;
@@ -588,6 +593,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function clickMonster() {
         if (gameState.monster.hp <= 0) return;
+        playSound('monster_hit');
         attack(playerStats.totalClickDamage, true);
         elements.monsterImageEl.classList.add('monster-hit');
         setTimeout(() => elements.monsterImageEl.classList.remove('monster-hit'), 200);
@@ -661,6 +667,7 @@ document.addEventListener('DOMContentLoaded', () => {
             isResetting = true;
             window.removeEventListener('beforeunload', saveOnExit);
             localStorage.removeItem('idleRPGSaveData');
+            localStorage.removeItem('idleRPG_isMuted'); // Also clear mute preference
             window.location.reload();
         }
     }
@@ -883,6 +890,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 gameState.gems = gameState.gems.filter(g => g.id !== gemStackToSocket.id);
             }
             
+            playSound('socket_gem');
             recalculateStats();
             logMessage(elements.gameLogEl, `Socketed <b>${singleGemToSocket.name}</b> into <b>${itemToSocketInto.name}</b>.`, 'epic', isAutoScrollingLog);
             
@@ -1323,6 +1331,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function completeHunt() {
         const reward = player.completeHunt(gameState);
         if (reward) {
+            playSound('hunt_reward');
             logMessage(elements.gameLogEl, `Hunt complete! You received a <span class="legendary">${reward.name}</span>!`, '', isAutoScrollingLog);
             
             const indexToReplace = gameState.hunts.available.findIndex(h => h === null);
@@ -1352,6 +1361,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
      function main() {
         elements = ui.initDOMElements();
+        initSounds(); // Initialize the sound manager
         
         const savedData = localStorage.getItem('idleRPGSaveData');
         if (savedData) {
@@ -1508,6 +1518,21 @@ document.addEventListener('DOMContentLoaded', () => {
     // ... This is where the file resumes from the previous response ...
     
     function setupEventListeners() {
+        const muteBtn = document.getElementById('mute-btn');
+        if (muteBtn) {
+            const updateMuteIcon = () => {
+                const icon = muteBtn.querySelector('i');
+                if (icon) {
+                    icon.className = getMuteState() ? 'fas fa-volume-mute' : 'fas fa-volume-up';
+                }
+            };
+            addTapListener(muteBtn, () => {
+                toggleMute();
+                updateMuteIcon();
+            });
+            updateMuteIcon(); // Set initial state
+        }
+        
         window.addEventListener('beforeunload', saveOnExit);
         window.addEventListener('keydown', (e) => {
             const key = e.key.toLowerCase();
@@ -1670,6 +1695,7 @@ document.addEventListener('DOMContentLoaded', () => {
         addTapListener(document.getElementById('confirm-salvage-btn'), () => {
             const result = player.salvageSelectedItems(gameState, salvageMode, playerStats);
             if (result.count > 0) {
+                playSound('salvage');
                 logMessage(elements.gameLogEl, `Salvaged ${result.count} items for a total of ${formatNumber(result.scrapGained)} Scrap.`, 'uncommon', isAutoScrollingLog);
                  if (!gameState.unlockedFeatures.forge) {
                     gameState.unlockedFeatures.forge = true;
@@ -1695,6 +1721,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const rarity = e.target.dataset.rarity;
             const result = player.salvageByRarity(gameState, rarity, playerStats);
             if (result.count > 0) {
+                playSound('salvage');
                 logMessage(elements.gameLogEl, `Salvaged ${result.count} ${rarity} items for ${formatNumber(result.scrapGained)} Scrap.`, 'uncommon', isAutoScrollingLog);
                 if (!gameState.unlockedFeatures.forge) {
                     gameState.unlockedFeatures.forge = true;
@@ -1732,7 +1759,6 @@ document.addEventListener('DOMContentLoaded', () => {
                         bulkCombineSelection.selectionKey = null;
                         bulkCombineDeselectedIds.clear();
                         
-                        // --- FIX: Add type casts here ---
                         (/** @type {HTMLSelectElement} */ (elements.bulkCombineTierSelect)).value = "";
                         elements.bulkCombineStatSelect.innerHTML = '<option value="">Select Stat</option>';
                         (/** @type {HTMLSelectElement} */ (elements.bulkCombineStatSelect)).disabled = true;
@@ -1879,8 +1905,7 @@ document.addEventListener('DOMContentLoaded', () => {
         addTapListener(elements.inventorySlotsEl, gridClickHandler);
         addTapListener(elements.gemSlotsEl, gridClickHandler);
         addTapListener(elements.consumablesSlotsEl, gridClickHandler);
-        
-        addTapListener(document.getElementById('equipment-paperdoll'), (event) => {
+                addTapListener(document.getElementById('equipment-paperdoll'), (event) => {
             if (!(event.target instanceof Element)) return;
             const slotElement = event.target.closest('.equipment-slot');
             if (!(slotElement instanceof HTMLElement)) return;
