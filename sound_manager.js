@@ -90,16 +90,17 @@ export function playSound(name) {
 
     // Check if this sound has a dedicated pool
     if (soundPool[name]) {
-        // Use the pool for high-frequency sounds
-        const pool = soundPool[name];
-        let index = poolIndexes[name];
+    // Use the pool for high-frequency sounds
+    const pool = soundPool[name];
+    let index = poolIndexes[name];
 
-        const soundToPlay = pool[index];
-        soundToPlay.currentTime = 0; // Ensure it starts from the beginning
-        soundToPlay.play().catch(e => { if (e.name !== 'AbortError') console.error(e) });
+    const soundToPlay = pool[index];
+    soundToPlay.currentTime = 0; // Ensure it starts from the beginning
+    soundToPlay.playbackRate = 1 + (Math.random() - 0.5) * 0.3; // Random pitch between 0.95 and 1.05
+    soundToPlay.play().catch(e => { if (e.name !== 'AbortError') console.error(e) });
 
-        // Move to the next sound in the pool for the next call
-        poolIndexes[name] = (index + 1) % POOL_SIZE;
+    // Move to the next sound in the pool for the next call
+    poolIndexes[name] = (index + 1) % POOL_SIZE;
     } else {
         // For less frequent sounds, a single clone is fine and saves memory.
         const soundClone = masterSound.cloneNode();
