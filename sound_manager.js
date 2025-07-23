@@ -13,8 +13,15 @@ const sounds = {
     socket_gem: new Audio('sounds/socket_gem.wav'),
     gem_success: new Audio('sounds/gem_success.wav'),
     gem_fail: new Audio('sounds/gem_fail.wav'),
+    
 };
-
+const POOL_SIZE = 10; // Number of clones for high-frequency sounds
+const soundPool = {
+    monster_hit: [],
+};
+let poolIndexes = {
+    monster_hit: 0,
+};
 const musicTracks = {
     'The Overworld': new Audio('sounds/music/overworld.mp3'),
     'The Underdark': new Audio('sounds/music/underdark.mp3'),
@@ -54,7 +61,12 @@ export function initSounds() {
     sounds.gem_success.volume = 0.8;
     sounds.gem_fail.volume = 0.8;
     sounds.salvage.volume = 0.6;
-
+    for (const soundName in soundPool) {
+        for (let i = 0; i < POOL_SIZE; i++) {
+            const clone = sounds[soundName].cloneNode();
+            soundPool[soundName].push(clone);
+        }
+    }
     isInitialized = true;
     console.log("Sound manager initialized. Muted:", isMuted);
 }
@@ -71,19 +83,28 @@ export function playSound(name) {
     }
 
     const masterSound = sounds[name];
-    if (masterSound) {
-        // Create a clone of the audio element. This allows for overlapping sounds.
-        const soundClone = masterSound.cloneNode();
-        soundClone.volume = masterSound.volume; // Ensure the clone has the same volume
-        
-        soundClone.play().catch(error => {
-            // The play() request was interrupted or failed.
-            if (error.name !== 'AbortError') {
-                console.error(`Error playing sound "${name}":`, error);
-            }
-        });
-    } else {
+    if (!masterSound) {
         console.warn(`Sound not found: ${name}`);
+        return;
+    }
+
+    // Check if this sound has a dedicated pool
+    if (soundPool[name]) {
+        // Use the pool for high-frequency sounds
+        const pool = soundPool[name];
+        let index = poolIndexes[name];
+
+        const soundToPlay = pool[index];
+        soundToPlay.currentTime = 0; // Ensure it starts from the beginning
+        soundToPlay.play().catch(e => { if (e.name !== 'AbortError') console.error(e) });
+
+        // Move to the next sound in the pool for the next call
+        poolIndexes[name] = (index + 1) % POOL_SIZE;
+    } else {
+        // For less frequent sounds, a single clone is fine and saves memory.
+        const soundClone = masterSound.cloneNode();
+        soundClone.volume = masterSound.volume;
+        soundClone.play().catch(e => { if (e.name !== 'AbortError') console.error(e) });
     }
 }
 
