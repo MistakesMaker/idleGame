@@ -210,7 +210,7 @@ export function dropLoot(currentMonster, gameState, playerStats) {
     if (isGem) {
         const handleGemDrop = (baseGem) => {
             if (gameState.salvageFilter.autoSalvageGems) {
-                const scrapGained = 100;
+                const scrapGained = Math.floor(100 * playerStats.scrapBonus);
                 gameState.scrap += scrapGained;
                 logMessages.push({ message: `Auto-salvaged <span class="epic">${baseGem.name}</span> for ${scrapGained} scrap.`, class: '' });
                 return null; // Return null to indicate it was salvaged
@@ -225,16 +225,6 @@ export function dropLoot(currentMonster, gameState, playerStats) {
              droppedGems.push(initialDrop); // We animate the stack
         }
 
-        // Check for the Gem Find (duplication) bonus
-        if (playerStats.gemFindChance > 0 && Math.random() * 100 < playerStats.gemFindChance) {
-            const duplicateDrop = handleGemDrop(itemBaseToDrop);
-            if (duplicateDrop) {
-                logMessages.push({ message: `Gem Find! You found a duplicate <span class="epic">${duplicateDrop.name}</span>!`, class: '' });
-                events.push('gemFind');
-            }
-        }
-        
-        gameState.gems = player.compactInventory(gameState.gems); // Compact after all drops are processed
         return { droppedItems, droppedGems, logMessages, events };
     }
     
