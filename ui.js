@@ -11,6 +11,7 @@ import { REALMS } from './data/realms.js';
 import { PERMANENT_UPGRADES } from './data/upgrades.js';
 import { rarities } from './game.js';
 import { CONSUMABLES } from './data/consumables.js';
+import { playSound } from './sound_manager.js';
 
 /** @typedef {Object<string, HTMLElement|HTMLButtonElement|HTMLInputElement|HTMLImageElement|HTMLSelectElement>} DOMElements */
 
@@ -1004,7 +1005,6 @@ export function createTooltipHTML(item) {
 
     return headerHTML + detailedBlock + socketsHTML;
 }
-
 /**
  * Creates the HTML for an item comparison tooltip, now with embedded differences.
  * @param {object} hoveredItem The item being hovered over.
@@ -1399,6 +1399,7 @@ export function showItemDropAnimation(popupContainerEl, item, animationIndex = 0
     itemImg.className = 'item-drop-animation';
 
     if (isBossUnique(item.baseId)) {
+        playSound('unique_drop');
         wrapper.classList.add('boss-unique-drop');
         itemImg.classList.add('sparkle-animation');
     }

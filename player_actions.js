@@ -9,6 +9,7 @@ import { PERMANENT_UPGRADES } from './data/upgrades.js';
 import { CONSUMABLES } from './data/consumables.js';
 import { HUNT_POOLS } from './data/hunts.js';
 import { MONSTERS } from './data/monsters.js';
+import { playSound } from './sound_manager.js';
 
 
 /**
@@ -187,6 +188,34 @@ export function compactInventory(inventory) {
 }
 
 /**
+ * Plays the appropriate equipment sound based on item type.
+ * @param {string} itemType The `type` property of the item.
+ */
+function playEquipSound(itemType) {
+    const type = itemType.replace(/\d/g, ''); // Removes numbers from 'ring1', 'ring2'
+    switch (type) {
+        case 'sword':
+            playSound('equip_weapon');
+            break;
+        case 'ring':
+        case 'necklace':
+            playSound('equip_jewelry');
+            break;
+        case 'helmet':
+        case 'platebody':
+        case 'platelegs':
+        case 'shield':
+        case 'belt':
+            playSound('equip_armor');
+            break;
+        default:
+            // Fallback for any new types
+            playSound('equip_armor');
+            break;
+    }
+}
+
+/**
  * Equips an item from the loose inventory.
  * @param {object} gameState - The main game state object.
  * @param {object} itemToEquip - The item object from the inventory to equip.
@@ -232,6 +261,7 @@ export function equipItem(gameState, itemToEquip) {
     activePreset.equipment[targetSlot] = equippedItem;
     gameState.inventory = compactInventory(gameState.inventory);
     
+    playEquipSound(equippedItem.type);
     return { isPendingRing: false, item: null, success: true, message: `Equipped ${equippedItem.name}.` };
 }
 
@@ -262,6 +292,7 @@ export function equipRing(gameState, pendingRing, targetSlot) {
     }
     activePreset.equipment[targetSlot] = equippedItem;
     gameState.inventory = compactInventory(gameState.inventory);
+    playEquipSound('ring');
 }
 
 
@@ -279,6 +310,7 @@ export function unequipItem(gameState, slotName) {
         item.y = spot.y;
         gameState.inventory.push(item);
         activePreset.equipment[slotName] = null;
+        playEquipSound(item.type);
     } else {
         alert("Cannot unequip item, inventory is full!");
     }
@@ -442,6 +474,7 @@ export function salvageByRarity(gameState, rarityToSalvage, playerStats) {
     gameState.inventory = itemsToKeepInInventory;
     
     if (itemsSalvagedCount > 0) {
+        playSound('salvage');
         scrapGained = Math.floor(scrapGained * playerStats.scrapBonus);
         gameState.scrap += scrapGained;
         // Compact the loose inventory after salvaging
@@ -515,6 +548,7 @@ export function combineGems(gameState, gem1, gem2) {
 
     if (Math.random() < successChance) {
         // SUCCESS
+        playSound('gem_success');
         const newTier = gem1.tier + 1;
         const newStats = {};
         let newSynergy = null;
@@ -549,6 +583,7 @@ export function combineGems(gameState, gem1, gem2) {
         return { success: true, message: `Success! You fused a ${newGemStack.name}!`, newGem: newGemStack };
     } else {
         // FAILURE
+        playSound('gem_fail');
         return { success: true, message: "The gems shattered... you lost everything.", newGem: null };
     }
 }
@@ -653,6 +688,15 @@ export function bulkCombineGems(gameState, tier, selectionKey, excludedIds) {
             failures++;
         }
     }
+
+// Play a summary sound based on the overall outcome
+if (successes > 0 || failures > 0) { // Only play a sound if any combinations happened
+    if (successes > failures) {
+        playSound('gem_success');
+    } else { // This covers failures > successes AND failures === successes
+        playSound('gem_fail');
+    }
+}
 
     // Add back any leftover individual gems
     individualGems.forEach(gem => addToPlayerStacks(gameState, gem, 'gems'));

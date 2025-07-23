@@ -25,7 +25,6 @@ body {
 }
 
 h2, h3, h4 { font-family: 'Cinzel', serif; color: #f1c40f; text-shadow: 1px 1px 2px #000; }
-/* START OF MODIFICATION: New styles for sub-text */
 .panel p, .panel small {
     margin-top: 0;
     margin-bottom: 10px;
@@ -51,7 +50,6 @@ h2, h3, h4 { font-family: 'Cinzel', serif; color: #f1c40f; text-shadow: 1px 1px 
     font-style: italic;
     color: #95a5a6; /* Make hint text grey */
 }
-/* END OF MODIFICATION */
 
 .game-container { 
     display: flex; 
@@ -2050,22 +2048,21 @@ h5 .legendary { color: #f39c12; }
 }
 .hunt-reward {
     display: flex;
-    flex-direction: column; /* --- MODIFICATION: Stack icon and text vertically --- */
+    flex-direction: column;
     align-items: center;
     gap: 8px;
     font-size: 0.9em;
-    text-align: center; /* --- MODIFICATION: Center the text --- */
-    width: 100px; /* --- MODIFICATION: Give it a fixed width --- */
-    flex-shrink: 0; /* --- MODIFICATION: Prevent it from shrinking --- */
+    text-align: center;
+    width: 100px;
+    flex-shrink: 0;
 }
 .hunt-reward img {
-    width: 48px; /* --- MODIFICATION: Make icon a bit bigger --- */
+    width: 48px;
     height: 48px;
     border-radius: 4px;
     background: rgba(0,0,0,0.5);
     padding: 2px;
 }
-/* --- NEW RULE --- */
 .hunt-reward-name {
     color: #ecf0f1;
     font-weight: bold;
@@ -2129,7 +2126,7 @@ h5 .legendary { color: #f39c12; }
     }
 }
 
-/* --- START: Active Buffs Display --- */
+/* --- Active Buffs Display --- */
 #active-buffs-container {
     display: flex;
     flex-wrap: wrap;
@@ -2171,3 +2168,27 @@ h5 .legendary { color: #f39c12; }
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     text-shadow: 1px 1px 1px #000;
 }
+
+/* START OF MODIFICATION: Styles for Mute Button */
+.global-control-btn {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 1000;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: #34495e;
+    border-bottom-color: #2c3e50;
+    font-size: 1.5em;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.global-control-btn:hover {
+    background: #4a637e;
+}
+/* END OF MODIFICATION */
