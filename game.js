@@ -7,7 +7,7 @@ import { GEMS } from './data/gems.js';
 import { CONSUMABLES } from './data/consumables.js';
 import { STATS } from './data/stat_pools.js';
 import { PERMANENT_UPGRADES } from './data/upgrades.js';
-import { logMessage, formatNumber, getUpgradeCost, findSubZoneByLevel, findFirstLevelOfZone, isBossLevel, isBigBossLevel, getCombinedItemStats, isMiniBossLevel, findNextAvailableSpot, getRandomInt } from './utils.js';
+import { logMessage, formatNumber, getUpgradeCost, findSubZoneByLevel, findFirstLevelOfZone, isBossLevel, isBigBossLevel, getCombinedItemStats, isMiniBossLevel, findNextAvailableSpot, getRandomInt, getTravelOptionsForHunt } from './utils.js';
 import * as ui from './ui.js';
 import * as player from './player_actions.js';
 import * as logic from './game_logic.js';
@@ -217,6 +217,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 wiki: false,
                 consumables: false,
                 hunts: false,
+                huntTravel: false,
             },
             pendingSubTabViewFlash: null,
             hunts: {
@@ -1391,14 +1392,18 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    function handleHuntCompletion() { // <<< RENAME THIS
-        const result = player.completeHunt(gameState); // <<< CHANGE THIS
-        if (result.reward) { // <<< CHANGE THIS
+     function handleHuntCompletion() {
+        const result = player.completeHunt(gameState);
+        if (result.reward) {
             playSound('hunt_reward');
-            // --- NEW LOG MESSAGE ---
             let logText = `Hunt complete! You received a <span class="legendary">${result.reward.name}</span> and <span style="color: #f1c40f;">${result.tokens} Hunt Tokens</span>!`;
             logMessage(elements.gameLogEl, logText, '', isAutoScrollingLog);
-            // --- END NEW LOG MESSAGE ---
+
+            // --- START MODIFICATION ---
+            if (result.justUnlockedTravel) {
+                logMessage(elements.gameLogEl, `<b>Fast Travel Unlocked!</b> You can now use the 'Travel' button on active bounties.`, 'legendary', isAutoScrollingLog);
+            }
+            // --- END MODIFICATION ---
             
             const indexToReplace = gameState.hunts.available.findIndex(h => h === null);
             if (indexToReplace !== -1) {
@@ -1411,6 +1416,43 @@ document.addEventListener('DOMContentLoaded', () => {
                 ui.renderGrid(elements.consumablesSlotsEl, gameState.consumables, { calculatePositions: true, showLockIcon: false });
             }
             autoSave();
+        }
+    }
+
+    function handleHuntTravel() {
+        if (!gameState.hunts.active) return;
+        
+        const travelOptions = getTravelOptionsForHunt(gameState.hunts.active);
+        
+        const travelCallback = (level) => {
+            // This is the action performed when a travel button is clicked
+            gameState.isAutoProgressing = false; // Disable auto-progress when traveling
+            elements.modalBackdropEl.classList.add('hidden'); // Close the travel modal
+            const { huntsModalBackdrop } = ui.initHuntsDOMElements();
+            huntsModalBackdrop.classList.add('hidden'); // Also close the hunts modal
+            
+            logMessage(elements.gameLogEl, `Traveling to level ${level} for your hunt.`, 'uncommon', isAutoScrollingLog);
+            
+            gameState.currentFightingLevel = level;
+            startNewMonster();
+            
+            recalculateStats();
+            ui.updateMonsterUI(elements, gameState, currentMonster);
+            ui.updateAutoProgressToggle(elements, gameState.isAutoProgressing);
+            ui.updateLootPanel(elements, currentMonster, gameState);
+            updateRealmMusic();
+            autoSave();
+        };
+        
+        if (travelOptions && travelOptions.length === 1) {
+            // If there's only one option, just go there directly.
+            travelCallback(travelOptions[0].level);
+        } else if (travelOptions && travelOptions.length > 1) {
+            // If there are multiple options, show the selection modal.
+            ui.showHuntTravelModal(elements, travelOptions, gameState.maxLevel, travelCallback);
+        } else {
+            // If no options are found.
+            logMessage(elements.gameLogEl, "Could not determine a specific travel location for this hunt.", "rare", isAutoScrollingLog);
         }
     }
 
@@ -3292,11 +3334,39 @@ document.addEventListener('DOMContentLoaded', () => {
         addTapListener(activeHuntSection, e => {
             if (!(e.target instanceof HTMLElement)) return;
             const button = e.target.closest('button');
-            if (button && button.id === 'complete-hunt-btn') {
-                handleHuntCompletion(); // <<< CHANGE THIS
+            if (!button) return; // Exit if no button was clicked
+
+            // --- START MODIFICATION ---
+            if (button.id === 'complete-hunt-btn') {
+                handleHuntCompletion();
+            } else if (button.id === 'travel-to-hunt-btn') {
+                handleHuntTravel();
+            }
+            // --- END MODIFICATION ---
+        });
+                activeHuntSection.addEventListener('mouseover', (e) => {
+            if (!(e.target instanceof HTMLElement)) return;
+            const lockedButton = e.target.closest('button.hunt-travel-locked');
+            if (lockedButton) {
+                elements.tooltipEl.className = 'hidden';
+                elements.tooltipEl.innerHTML = `
+                    <div class="item-header" style="color: #f1c40f;">Unlock Fast Travel</div>
+                    <p style="margin: 5px 0 0 0; font-size: 0.9em;">Complete 5 total bounties to unlock fast travel.</p>
+                `;
+                const rect = lockedButton.getBoundingClientRect();
+                elements.tooltipEl.style.left = `${rect.left}px`;
+                elements.tooltipEl.style.top = `${rect.bottom + 5}px`;
+                elements.tooltipEl.classList.remove('hidden');
             }
         });
-        
+        activeHuntSection.addEventListener('mouseout', (e) => {
+            if (!(e.target instanceof HTMLElement)) return;
+            const lockedButton = e.target.closest('button.hunt-travel-locked');
+            if (lockedButton) {
+                elements.tooltipEl.classList.add('hidden');
+            }
+        });
+
         const huntsTabs = document.getElementById('hunts-tabs');
         if (huntsTabs) {
             addTapListener(huntsTabs, (e) => {

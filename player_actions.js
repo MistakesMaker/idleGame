@@ -1063,12 +1063,12 @@ export function checkHuntProgress(gameState, defeatedMonster) {
 /**
  * Completes the active hunt, grants the reward, and clears the active slot.
  * @param {object} gameState
- * @returns {{reward: object|null, tokens: number}} The reward consumable object and tokens gained if successful.
+ * @returns {{reward: object|null, tokens: number, justUnlockedTravel: boolean}} The reward, tokens, and if the travel feature was just unlocked.
  */
 export function completeHunt(gameState) {
     const activeHunt = gameState.hunts.active;
     if (!activeHunt || gameState.hunts.progress < activeHunt.quantity) {
-        return { reward: null, tokens: 0 };
+        return { reward: null, tokens: 0, justUnlockedTravel: false };
     }
 
     const rewardBase = CONSUMABLES[activeHunt.rewardId];
@@ -1083,15 +1083,21 @@ export function completeHunt(gameState) {
     gameState.hunts.completionCounts[activeHunt.id] = count + 1;
     gameState.hunts.totalCompleted++;
     
-    // --- START MODIFICATION ---
-    const tokensGained = activeHunt.tokenReward || getRandomInt(1, 3); // Use pre-set reward, with fallback
-    gameState.hunts.tokens += tokensGained;
+    // --- START MODIFICATION: Unlock Hunt Travel ---
+    let justUnlockedTravel = false;
+    if (gameState.hunts.totalCompleted >= 5 && !gameState.unlockedFeatures.huntTravel) {
+        gameState.unlockedFeatures.huntTravel = true;
+        justUnlockedTravel = true;
+    }
     // --- END MODIFICATION ---
+
+    const tokensGained = activeHunt.tokenReward || getRandomInt(1, 3);
+    gameState.hunts.tokens += tokensGained;
     
     gameState.hunts.active = null;
     gameState.hunts.progress = 0;
     
-    return { reward: rewardBase, tokens: tokensGained };
+    return { reward: rewardBase, tokens: tokensGained, justUnlockedTravel: justUnlockedTravel };
 }
 
 /**

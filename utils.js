@@ -1,6 +1,7 @@
 // --- START OF FILE utils.js ---
 
 import { REALMS } from './data/realms.js';
+import { MONSTERS } from './data/monsters.js';
 
 export const INVENTORY_GRID = {
     WIDTH: 8,
@@ -283,4 +284,88 @@ export function formatTime(totalSeconds) {
         result = `${days}d ${result}`;
     }
     return result;
+}
+
+/**
+ * Determines all possible travel locations for a given hunt objective.
+ * @param {object} hunt The hunt object from gameState.
+ * @returns {Array<{level: number, monster: object, location: string}>|null} An array of possible travel locations, or null.
+ */
+export function getTravelOptionsForHunt(hunt) {
+    if (!hunt || !hunt.type || !hunt.target) {
+        return null;
+    }
+
+    let options = [];
+
+    switch (hunt.type) {
+        case 'kill_specific': {
+            const monsterId = hunt.target;
+            const targetMonster = MONSTERS[monsterId];
+            if (!targetMonster) return null;
+
+            for (const realm of REALMS) {
+                for (const zoneId in realm.zones) {
+                    const zone = realm.zones[zoneId];
+                    for (const subZoneId in zone.subZones) {
+                        const subZone = zone.subZones[subZoneId];
+                        if (subZone.monsterPool.some(m => m.name === targetMonster.name)) {
+                            options.push({
+                                level: subZone.levelRange[0],
+                                monster: targetMonster,
+                                location: `${subZone.name} (Lvl ${subZone.levelRange[0]})`
+                            });
+                        }
+                    }
+                }
+            }
+            break;
+        }
+
+        case 'kill_category': {
+            const target = hunt.target;
+            for (const realm of REALMS) {
+                for (const zoneId in realm.zones) {
+                    const zone = realm.zones[zoneId];
+                    // Filter by realm or zone if specified
+                    if (target.realm && realm.name !== target.realm) continue;
+                    if (target.zoneId && zoneId !== target.zoneId) continue;
+
+                    for (const subZoneId in zone.subZones) {
+                        const subZone = zone.subZones[subZoneId];
+                        let isValidSubZone = true;
+                        let representativeMonster = subZone.monsterPool[0]; // Default monster for display
+
+                        if (target.isBoss && !subZone.isBoss) {
+                            isValidSubZone = false;
+                        }
+                        if (target.nameContains) {
+                            const matchingMonster = subZone.monsterPool.find(m => m.name.includes(target.nameContains));
+                            if (matchingMonster) {
+                                representativeMonster = matchingMonster;
+                            } else {
+                                isValidSubZone = false;
+                            }
+                        }
+                        
+                        if (isValidSubZone) {
+                             options.push({
+                                level: subZone.levelRange[0],
+                                monster: representativeMonster,
+                                location: `${subZone.name} (Lvl ${subZone.levelRange[0]})`
+                            });
+                        }
+                    }
+                }
+            }
+            break;
+        }
+
+        default:
+            return null;
+    }
+    
+    // Remove duplicate levels before returning
+    const uniqueOptions = Array.from(new Map(options.map(item => [item.level, item])).values());
+    return uniqueOptions.sort((a,b) => a.level - b.level);
 }
