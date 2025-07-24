@@ -923,6 +923,7 @@ export function applyTargetedConsumable(gameState, targetItem) {
 
 /**
  * Generates a new hunt to fill an empty slot on the board.
+ * Uses a weighted system based on the player's current progress.
  * @param {object} gameState
  * @param {number} indexToReplace The index in the `available` array to fill.
  * @param {object[]} huntPools The full definition of all possible hunts.
@@ -930,56 +931,56 @@ export function applyTargetedConsumable(gameState, targetItem) {
 export function generateNewHunt(gameState, indexToReplace, huntPools) {
     const currentHighPoint = gameState.currentRunCompletedLevels.length > 0 ? Math.max(...gameState.currentRunCompletedLevels) : 1;
 
+    // --- START OF FIX ---
+    // 1. Strictly filter for ONLY the tiers the player has unlocked in this run.
     const availableTiers = huntPools.filter(tier => currentHighPoint >= tier.requiredLevel);
-    if (availableTiers.length === 0) return;
+    if (availableTiers.length === 0) {
+        console.error("No available hunt tiers for the current player level.");
+        return;
+    }
 
-    const currentTierIndex = availableTiers.length - 1;
-    const tierWeights = [
-        { tierIndex: currentTierIndex, weight: 50 },
-        { tierIndex: currentTierIndex - 1, weight: 35 },
-        { tierIndex: currentTierIndex - 2, weight: 15 }, 
-    ];
+    // 2. Create a dynamic weighted list from the available tiers.
+    const weightedTiers = availableTiers.map((tier, index) => {
+        // This gives the highest tier the most weight, the next one less, and so on.
+        // Example with 4 unlocked tiers: weights will be roughly 50, 25, 12.5, 6.25
+        const weight = 100 / Math.pow(2, availableTiers.length - index);
+        return { tier: tier, weight: weight };
+    });
 
-    const validWeightedTiers = tierWeights.filter(t => t.tierIndex >= 0);
-
-    const roll = Math.random() * 100;
-    let selectedTierIndex;
-    let cumulativeWeight = 0;
-
-    for (const tier of validWeightedTiers) {
-        cumulativeWeight += tier.weight;
-        if (roll <= cumulativeWeight) {
-            if (tier.tierIndex === currentTierIndex - 2) {
-                selectedTierIndex = getRandomInt(0, Math.max(0, currentTierIndex - 2));
-            } else {
-                selectedTierIndex = tier.tierIndex;
-            }
+    // 3. Perform a weighted roll to select a tier.
+    const totalWeight = weightedTiers.reduce((sum, wt) => sum + wt.weight, 0);
+    let roll = Math.random() * totalWeight;
+    
+    let chosenTier;
+    for (const weightedTier of weightedTiers) {
+        roll -= weightedTier.weight;
+        if (roll <= 0) {
+            chosenTier = weightedTier.tier;
             break;
         }
     }
-    
-    if (selectedTierIndex === undefined) {
-        selectedTierIndex = currentTierIndex;
+    // Failsafe in case of floating point inaccuracies
+    if (!chosenTier) {
+        chosenTier = weightedTiers[weightedTiers.length - 1].tier;
     }
 
-    const chosenTierPool = availableTiers[selectedTierIndex].hunts;
+    const chosenTierPool = chosenTier.hunts;
+    // --- END OF FIX ---
     
     const availableHuntIds = gameState.hunts.available.map(h => h ? h.id : null);
     let potentialHunts = chosenTierPool.filter(hunt => !availableHuntIds.includes(hunt.id));
     
-    // --- START OF FIX: Handle exhausted hunt pool ---
     if (potentialHunts.length === 0) {
         // Fallback: search ALL available tiers for any possible hunt
-        console.warn(`Hunt pool exhausted for tier ${selectedTierIndex}. Searching all available tiers.`);
-        const allAvailableHunts = availableTiers.flatMap(t => t.hunts);
-        potentialHunts = allAvailableHunts.filter(hunt => !availableHuntIds.includes(hunt.id));
-        // If still no hunts, we can't generate a new one, so we exit to prevent a crash.
+        console.warn(`Hunt pool exhausted for the selected tier. Searching all available tiers.`);
+        const allAvailableHuntsFromAllTiers = availableTiers.flatMap(t => t.hunts);
+        potentialHunts = allAvailableHuntsFromAllTiers.filter(hunt => !availableHuntIds.includes(hunt.id));
+        
         if (potentialHunts.length === 0) {
-             console.error("No available unique hunts to generate across all tiers. Aborting hunt generation for this slot.");
+             console.error("No available unique hunts to generate across all tiers. Aborting hunt generation.");
              return; 
         }
     }
-    // --- END OF FIX ---
 
     const huntTemplate = { ...potentialHunts[Math.floor(Math.random() * potentialHunts.length)] };
 

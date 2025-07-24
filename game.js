@@ -1592,6 +1592,21 @@ document.addEventListener('DOMContentLoaded', () => {
         setInterval(gameLoop, 1000);
         setInterval(checkDailyResets, 60000);
         updateRealmMusic();
+
+        (/** @type {any} */ (window)).resetHunts = function() {
+            if (gameState && gameState.hunts) {
+                console.log("Resetting hunts...");
+                gameState.hunts.available = [null, null, null];
+                gameState.hunts.active = null;
+                // Use the game's own save function to ensure consistency
+                autoSave();
+                console.log("Hunts reset and game saved. Reloading now...");
+                // Reload the page to apply changes
+                location.reload();
+            } else {
+                console.error("GameState not ready. Cannot reset hunts.");
+            }
+        }
     }
     
     // ... This is where the file resumes from the previous response ...
