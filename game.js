@@ -12,6 +12,7 @@ import * as ui from './ui.js';
 import * as player from './player_actions.js';
 import * as logic from './game_logic.js';
 import { HUNT_POOLS } from './data/hunts.js';
+import { HUNT_SHOP_INVENTORY } from './data/hunt_shop.js'; 
 import { initSounds, playSound, toggleMute, getMuteState, setRealmMusic } from './sound_manager.js';
 
 export const rarities = ['common', 'uncommon', 'rare', 'epic', 'legendary'];
@@ -119,6 +120,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let wikiShowUpgradesOnly = false;
     let gemSortPreference = 'tier_desc';
     let heldKeys = new Set();
+    let activeTargetedConsumable = null; 
     const MODIFIER_KEYS = ['q', 'w', 'e', 'r'];
 
     /** @type {DOMElements} */
@@ -169,6 +171,11 @@ document.addEventListener('DOMContentLoaded', () => {
             absorbedStats: {},
             absorbedSynergies: {},
             absorbedUniqueEffects: {},
+            // --- NEW PROPERTIES START HERE ---
+            permanentStatBonuses: { totalClickDamage: 0, totalDps: 0 }, // For Tomes
+            purchasedOneTimeShopItems: [], // For tracking one-time shop buys
+            activeTargetedConsumable: null, // For tracking items like the Artisan's Drill
+            // --- NEW PROPERTIES END HERE ---
             wisdomOfTheOverworldDropped: false,
             wisdomOfTheOverworldUsed: false,
             prestigeCount: 0,
@@ -219,6 +226,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 active: null,
                 progress: 0,
                 completionCounts: {},
+                tokens: 0,
+                totalCompleted: 0,
             },
         };
     }
@@ -247,6 +256,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const absorbed = gameState.absorbedStats || {};
         const permUpgrades = gameState.permanentUpgrades || {};
         const permUpgradeDefs = PERMANENT_UPGRADES;
+        const permStatBonuses = gameState.permanentStatBonuses || { totalClickDamage: 0, totalDps: 0, magicFind: 0 };
 
         const permanentUpgradeBonuses = {
             magicFind: (permUpgrades.LOOT_HOARDER || 0) * (permUpgradeDefs.LOOT_HOARDER?.bonusPerLevel || 0),
@@ -369,9 +379,14 @@ document.addEventListener('DOMContentLoaded', () => {
     magicFind += luckBonusMagicFind;
     statBreakdown.magicFind.sources.push({ label: 'From Luck', value: luckBonusMagicFind, isPercent: true });
 
-    // --- Permanent Upgrades ---
+    // --- Permanent Upgrades & Bonuses ---
     magicFind += permanentUpgradeBonuses.magicFind;
     statBreakdown.magicFind.sources.push({ label: 'From Upgrades', value: permanentUpgradeBonuses.magicFind, isPercent: true });
+
+    if (permStatBonuses.magicFind > 0) {
+        magicFind += permStatBonuses.magicFind;
+        statBreakdown.magicFind.sources.push({ label: 'From Tomes', value: permStatBonuses.magicFind, isPercent: true });
+    }
     
     // --- Multipliers ---
     let finalClickDamage = baseClickDamage * (1 + (strengthBonusClickPercent / 100));
@@ -393,6 +408,19 @@ document.addEventListener('DOMContentLoaded', () => {
         finalClickDamage += synergyBonus;
         statBreakdown.clickDamage.synergy = synergyBonus;
     }
+
+    // --- FINAL MULTIPLIERS FROM TOMES ---
+    if (permStatBonuses.totalClickDamage > 0) {
+        const tomeMultiplier = 1 + (permStatBonuses.totalClickDamage / 100);
+        finalClickDamage *= tomeMultiplier;
+        statBreakdown.clickDamage.multipliers.push({ label: 'From Tomes', value: permStatBonuses.totalClickDamage });
+    }
+    if (permStatBonuses.totalDps > 0) {
+        const tomeMultiplier = 1 + (permStatBonuses.totalDps / 100);
+        finalDps *= tomeMultiplier;
+        statBreakdown.dps.multipliers.push({ label: 'From Tomes', value: permStatBonuses.totalDps });
+    }
+
 
     playerStats = {
         baseClickDamage: baseClickDamage,
@@ -1363,11 +1391,14 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    function completeHunt() {
-        const reward = player.completeHunt(gameState);
-        if (reward) {
+    function handleHuntCompletion() { // <<< RENAME THIS
+        const result = player.completeHunt(gameState); // <<< CHANGE THIS
+        if (result.reward) { // <<< CHANGE THIS
             playSound('hunt_reward');
-            logMessage(elements.gameLogEl, `Hunt complete! You received a <span class="legendary">${reward.name}</span>!`, '', isAutoScrollingLog);
+            // --- NEW LOG MESSAGE ---
+            let logText = `Hunt complete! You received a <span class="legendary">${result.reward.name}</span> and <span style="color: #f1c40f;">${result.tokens} Hunt Tokens</span>!`;
+            logMessage(elements.gameLogEl, logText, '', isAutoScrollingLog);
+            // --- END NEW LOG MESSAGE ---
             
             const indexToReplace = gameState.hunts.available.findIndex(h => h === null);
             if (indexToReplace !== -1) {
@@ -1394,7 +1425,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function checkDailyResets() {
         player.checkDailyResets(gameState);
     }
-     function main() {
+    function main() {
         elements = ui.initDOMElements();
         initSounds(); // Initialize the sound manager
         
@@ -1420,6 +1451,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     ...baseState.permanentUpgrades,
                     ...(loadedState.permanentUpgrades || {})
                 },
+                // --- NEW PROPERTIES TO LOAD SAFELY ---
+                permanentStatBonuses: {
+                    ...baseState.permanentStatBonuses,
+                    ...(loadedState.permanentStatBonuses || {})
+                },
+                purchasedOneTimeShopItems: loadedState.purchasedOneTimeShopItems || [],
+                activeTargetedConsumable: loadedState.activeTargetedConsumable || null,
+                // --- END NEW PROPERTIES ---
                 salvageFilter: {
                     ...baseState.salvageFilter,
                     ...(loadedState.salvageFilter || {}),
@@ -1451,6 +1490,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     ...baseState.hunts,
                     ...(loadedState.hunts || {}),
                     completionCounts: (loadedState.hunts && loadedState.hunts.completionCounts) ? loadedState.hunts.completionCounts : {},
+                    // --- NEW HUNT PROPERTIES TO LOAD ---
+                    tokens: loadedState.hunts?.tokens || 0,
+                    totalCompleted: loadedState.hunts?.totalCompleted || 0,
                 }
             };
             
@@ -1846,7 +1888,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 ui.updateSocketingHighlights(elements, selectedGemForSocketing, gameState);
             } else {
                 const item = itemOrStack;
+                // --- START MODIFICATION for Targeted Consumables ---
                 if (item.type === 'consumable') {
+                    if (gameState.activeTargetedConsumable) {
+                        logMessage(elements.gameLogEl, "You cannot use another item while targeting.", "rare", isAutoScrollingLog);
+                        return;
+                    }
                     ui.showConfirmationModal(
                         elements,
                         `Use ${item.name}?`,
@@ -1855,6 +1902,10 @@ document.addEventListener('DOMContentLoaded', () => {
                             const result = player.consumeItem(gameState, item.id);
                             logMessage(elements.gameLogEl, result.message, 'legendary', isAutoScrollingLog);
                             if (result.success) {
+                                // If the item puts us in targeting mode, update highlights
+                                if (gameState.activeTargetedConsumable) {
+                                    ui.updateTargetingHighlights(elements, gameState);
+                                }
                                 fullUIRender();
                                 recalculateStats();
                                 autoSave();
@@ -1863,6 +1914,19 @@ document.addEventListener('DOMContentLoaded', () => {
                     );
                     return;
                 }
+
+                if (gameState.activeTargetedConsumable) {
+                    const result = player.applyTargetedConsumable(gameState, item);
+                    logMessage(elements.gameLogEl, result.message, result.success ? 'epic' : 'rare', isAutoScrollingLog);
+                    if(result.success) {
+                        recalculateStats();
+                        fullUIRender(); // Full render to update all views
+                        autoSave();
+                    }
+                    ui.updateTargetingHighlights(elements, gameState); // Clear highlights after use
+                    return; // Exit after attempting to apply
+                }
+                // --- END MODIFICATION ---
         
                 if (selectedGemForSocketing) {
                     if (item.sockets && item.sockets.includes(null)) {
@@ -1948,8 +2012,24 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!(slotElement instanceof HTMLElement)) return;
             const slotName = slotElement.id.replace('slot-', '');
             
+            const item = gameState.equipment[slotName];
+            if (!item) return;
+
+            // --- START MODIFICATION for Targeted Consumables ---
+            if (gameState.activeTargetedConsumable) {
+                const result = player.applyTargetedConsumable(gameState, item);
+                logMessage(elements.gameLogEl, result.message, result.success ? 'epic' : 'rare', isAutoScrollingLog);
+                if(result.success) {
+                    recalculateStats();
+                    fullUIRender();
+                    autoSave();
+                }
+                ui.updateTargetingHighlights(elements, gameState); // Clear highlights
+                return;
+            }
+            // --- END MODIFICATION ---
+
             if (selectedGemForSocketing) {
-                const item = gameState.equipment[slotName];
                 if (item && item.sockets && item.sockets.includes(null)) {
                     const gemToSocket = selectedGemForSocketing;
                     
@@ -1974,12 +2054,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            const unequippedItem = gameState.equipment[slotName];
-            if (!unequippedItem) return;
             player.unequipItem(gameState, slotName);
             recalculateStats();
             ui.renderPaperdoll(elements, gameState);
-            ui.addItemToGrid(elements.inventorySlotsEl, unequippedItem);
+            ui.addItemToGrid(elements.inventorySlotsEl, item);
             ui.updateStatsPanel(elements, playerStats);
             autoSave();
         });
@@ -2829,7 +2907,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     for (const gem of item.sockets) {
                         if (gem && gem.synergy) {
                             const key = `${gem.synergy.source}_to_${gem.synergy.target}`;
-                            newAbsorbedSynergies[key] = (newAbsorbedSynergies[key] || 0) + gem.synergy.value;
+                            newAbsorbedSynergies[key] = (newAbsorbedSynergies[key] || 0) + newAbsorbedSynergies[key];
                         }
                     }
                 }
@@ -2889,6 +2967,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 },
                 tutorialCompleted: gameState.tutorialCompleted,
                 permanentUpgrades: gameState.permanentUpgrades,
+                permanentStatBonuses: gameState.permanentStatBonuses, // Keep Tome bonuses
+                purchasedOneTimeShopItems: gameState.purchasedOneTimeShopItems, // Keep one-time purchases
                 salvageFilter: gameState.salvageFilter,
                 wikiFavorites: gameState.wikiFavorites, 
                 unlockedPrestigeSlots: gameState.unlockedPrestigeSlots,
@@ -2903,8 +2983,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 currentFightingLevel: 1,
                 currentRunCompletedLevels: [],
                 hunts: {
-                    ...baseState.hunts,
-                    completionCounts: gameState.hunts.completionCounts || {},
+                    ...baseState.hunts, // Resets daily rerolls, active, available
+                    completionCounts: gameState.hunts.completionCounts || {}, // Keep permanent counts
+                    totalCompleted: gameState.hunts.totalCompleted || 0, // Keep permanent total
+                    tokens: 0, // <-- RESET TOKENS
                 },
             };
             gameState.equipment = gameState.presets[gameState.activePresetIndex].equipment;
@@ -3196,14 +3278,38 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!(e.target instanceof HTMLElement)) return;
             const button = e.target.closest('button');
             if (button && button.id === 'complete-hunt-btn') {
-                completeHunt();
+                handleHuntCompletion(); // <<< CHANGE THIS
             }
         });
+        
+        const huntsTabs = document.getElementById('hunts-tabs');
+        if (huntsTabs) {
+            addTapListener(huntsTabs, (e) => {
+                if (!(e.target instanceof HTMLElement) || !e.target.matches('.sub-tab-button')) return;
+                const subViewId = e.target.dataset.subview;
+                if (subViewId) {
+                    ui.switchHuntsSubView(subViewId);
+                }
+            });
+        }
+        
+        const shopContainer = document.getElementById('hunt-shop-container');
+        if (shopContainer) {
+            addTapListener(shopContainer, (e) => {
+                if (!(e.target instanceof HTMLElement)) return;
+                const buyButton = e.target.closest('.shop-item-buy-btn');
+                if (buyButton instanceof HTMLButtonElement && !buyButton.disabled && buyButton.dataset.itemId) {
+                    purchaseHuntShopItem(buyButton.dataset.itemId);
+                }
+            });
+        }
 
+        // --- MODIFIED: Tooltip logic now targets the whole modal ---
+        // This allows it to work on the bounties tab but not the shop tab (as the shop has no data-reward-id)
         huntsModalBackdrop.addEventListener('mouseover', (e) => {
             if (!(e.target instanceof HTMLElement)) return;
         
-            const rewardEl = e.target.closest('.hunt-reward');
+            const rewardEl = e.target.closest('.hunt-reward'); // This class is only on bounty rewards
             if (rewardEl instanceof HTMLElement && rewardEl.dataset.rewardId) {
                 const rewardId = rewardEl.dataset.rewardId;
                 const consumableBase = CONSUMABLES[rewardId];
@@ -3230,6 +3336,39 @@ document.addEventListener('DOMContentLoaded', () => {
                 elements.tooltipEl.classList.add('hidden');
             }
         });
+    }
+
+    function purchaseHuntShopItem(itemId) {
+        const result = player.purchaseHuntShopItem(gameState, itemId);
+        logMessage(elements.gameLogEl, result.message, result.success ? 'legendary' : 'rare', isAutoScrollingLog);
+
+        if (result.success) {
+            // Rerender the shop to update button states (e.g., for one-time purchases)
+            const huntsModal = document.getElementById('hunts-modal-backdrop');
+            if (huntsModal && !huntsModal.classList.contains('hidden')) {
+                ui.renderHuntsView(elements, gameState);
+            }
+            // If the reward was a consumable, refresh that view if it's open
+            const consumablesView = document.getElementById('inventory-consumables-view');
+            if (result.itemType === 'consumable' && consumablesView && consumablesView.classList.contains('active')) {
+                ui.renderGrid(elements.consumablesSlotsEl, gameState.consumables, { calculatePositions: true, showLockIcon: false });
+            }
+            recalculateStats();
+            ui.updateStatsPanel(elements, playerStats);
+            autoSave();
+        }
+    }
+
+    function cancelActiveHunt() {
+        const result = player.cancelActiveHunt(gameState);
+        logMessage(elements.gameLogEl, result.message, result.success ? 'uncommon' : 'rare', isAutoScrollingLog);
+        if (result.success) {
+            const huntsModal = document.getElementById('hunts-modal-backdrop');
+            if (huntsModal && !huntsModal.classList.contains('hidden')) {
+                ui.renderHuntsView(elements, gameState);
+            }
+            autoSave();
+        }
     }
 
     function migrateToPresetInventories(loadedState) {

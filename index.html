@@ -356,12 +356,10 @@
              </div>
         </div>
         
-        <!-- START OF MODIFICATION: Added Mute Button -->
         <button id="mute-btn" class="global-control-btn"><i class="fas fa-volume-up"></i></button>
-        <!-- END OF MODIFICATION -->
     </div>
     
-    <div id="save-indicator" class="hidden">Game Saved!</div>
+    <div id="save-indicator" class="hidden"></div>
     <div id="item-tooltip" class="hidden"></div>
     <div id="stat-tooltip" class="hidden"></div>
 
@@ -501,34 +499,51 @@
         </div>
     </div>
 
-    <!-- NEW HUNTS MODAL -->
+    <!-- MODIFIED HUNTS MODAL -->
     <div id="hunts-modal-backdrop" class="hidden">
         <div id="hunts-modal">
-            <h3 id="hunts-modal-title">Hunter's Board</h3>
+            <div id="hunts-modal-header">
+                <h3 id="hunts-modal-title">Hunter's Board</h3>
+                <div id="hunt-stats-display">
+                    <div id="total-hunts-display">
+                        <i class="fas fa-trophy"></i>
+                        <span id="total-hunts-completed">0</span>
+                    </div>
+                    <div id="hunt-tokens-display">
+                        <img src="images/icons/hunt_token.png" alt="Hunt Token">
+                        <span id="hunt-tokens-amount">0</span>
+                    </div>
+                </div>
+            </div>
+            <div class="sub-tabs" id="hunts-tabs">
+                <button class="sub-tab-button active" data-subview="bounties-view">Bounties</button>
+                <button class="sub-tab-button" data-subview="shop-view">Shop</button>
+            </div>
             <div id="hunts-modal-body">
-                <div class="available-hunts-header">
-                    <h4>Active Hunt</h4>
-                </div>
-                <div id="active-hunt-section">
-                    <div id="active-hunt-card" class="hidden">
-                        <!-- Active Hunt content will be injected by JS -->
+                <div id="bounties-view" class="hunts-sub-view active">
+                    <div id="active-hunt-section">
+                        <h4>Active Hunt</h4>
+                        <div id="active-hunt-card" class="hidden"></div>
+                        <p id="no-active-hunt-text">Accept a bounty below.</p>
                     </div>
-                    <p id="no-active-hunt-text">Accept a hunt from the available bounties below.</p>
-                </div>
-                <div id="available-hunts-section">
-                    <div class="available-hunts-header">
-                        <h4>Available Bounties</h4>
-                        <button id="reroll-hunts-btn">Reroll All (5)</button>
+                    <div id="available-hunts-section">
+                        <div class="available-hunts-header">
+                            <h4>Available Bounties</h4>
+                            <button id="reroll-hunts-btn">Reroll All (5)</button>
+                        </div>
+                        <div id="available-hunts-container"></div>
                     </div>
-                    <div id="available-hunts-container">
-                        <!-- Available Hunt cards will be injected by JS -->
+                </div>
+                <div id="shop-view" class="hunts-sub-view">
+                    <p class="small-text-hint">Spend your Hunt Tokens on powerful rewards. Your total completed hunts will unlock more items over time.</p>
+                    <div id="hunt-shop-container">
+                        <!-- Shop items will be injected here by JS -->
                     </div>
                 </div>
             </div>
             <button id="hunts-close-btn">Close</button>
         </div>
     </div>
-
 
     <!-- Scripts -->
     <script type="module" src="game.js"></script>

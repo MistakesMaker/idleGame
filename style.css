@@ -2054,7 +2054,7 @@ h5 .legendary { color: #f39c12; }
     font-size: 1.2em;
     max-width: 25rem; /* 400px */
 }
-/* --- HUNTS MODAL & UI --- */
+/* --- HUNTS MODAL & SHOP (NEW & MODIFIED) --- */
 #hunts-btn {
     width: 100%;
     margin: 0.625rem 0; /* 10px */
@@ -2066,29 +2066,85 @@ h5 .legendary { color: #f39c12; }
     z-index: 10002; 
     display: flex; justify-content: center; align-items: center;
 }
+
 #hunts-modal {
     background-color: #2c3e50; 
     padding: 1.5625rem; /* 25px */
     border-radius: 0.75rem; /* 12px */
     border: 0.125rem solid #e67e22; /* 2px */
     box-shadow: 0 0 1.25rem rgba(230, 126, 34, 0.5); /* 20px */
-    width: 90%; max-width: 50rem; /* 800px */
+    width: 90%; max-width: 56.25rem; /* 900px */
     max-height: 90vh;
     display: flex;
     flex-direction: column;
 }
-#hunts-modal-body {
-    margin: 1.25rem 0; /* 20px */
-    overflow-y: auto;
+
+#hunts-modal-header {
     display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.9375rem; /* 15px */
+    padding-bottom: 0.9375rem; /* 15px */
+    border-bottom: 1px solid #4a637e;
+}
+
+#hunts-modal-title {
+    margin: 0;
+}
+
+#hunt-tokens-display {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem; /* 10px */
+    background-color: rgba(0,0,0,0.3);
+    padding: 0.5rem 0.75rem; /* 8px, 12px */
+    border-radius: 0.5rem; /* 8px */
+    border: 1px solid #4a637e;
+}
+
+#hunt-tokens-display img {
+    height: 1.5rem; /* 24px */
+}
+
+#hunt-tokens-amount {
+    font-size: 1.2em;
+    font-weight: bold;
+    color: #f1c40f;
+    font-family: 'Cinzel', serif;
+}
+
+#hunts-tabs {
+    margin-bottom: 0.625rem; /* 10px */
+}
+
+#hunts-modal-body {
+    overflow-y: auto;
+    flex-grow: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.hunts-sub-view {
+    display: none;
     flex-direction: column;
     gap: 1.5625rem; /* 25px */
 }
+
+.hunts-sub-view.active {
+    display: flex;
+}
+
 #active-hunt-section {
     padding: 0.9375rem; /* 15px */
     border: 0.0625rem solid #34495e; /* 1px */
     border-radius: 0.5rem; /* 8px */
     background-color: rgba(0,0,0,0.2);
+}
+
+#active-hunt-section h4, #available-hunts-section h4 {
+    margin-top: 0;
+    margin-bottom: 0.625rem; /* 10px */
 }
 
 .available-hunts-header {
@@ -2097,14 +2153,13 @@ h5 .legendary { color: #f39c12; }
     align-items: center;
     margin-bottom: 0.625rem; /* 10px */
 }
-.available-hunts-header h4 {
-    margin: 0;
-}
+
 #reroll-hunts-btn {
     margin: 0;
     font-size: 0.875rem; /* 14px */
     padding: 0.5rem 0.75rem; /* 8px, 12px */
 }
+
 #available-hunts-container {
     display: flex;
     flex-direction: column;
@@ -2120,78 +2175,19 @@ h5 .legendary { color: #f39c12; }
     align-items: center;
     gap: 0.9375rem; /* 15px */
 }
-.hunt-details {
-    flex-grow: 1;
-}
-.hunt-title {
-    font-family: 'Cinzel', serif;
-    font-size: 1.1em;
-    font-weight: bold;
-    color: #f1c40f;
-    margin: 0 0 0.3125rem 0; /* 5px */
-}
-.hunt-description {
-    margin: 0 0 0.625rem 0; /* 10px */
-    color: #bdc3c7;
-}
-.hunt-reward {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 0.5rem; /* 8px */
-    font-size: 0.9em;
-    text-align: center;
-    width: 6.25rem; /* 100px */
-    flex-shrink: 0;
-}
-.hunt-reward img {
-    width: 3rem; /* 48px */
-    height: 3rem; /* 48px */
-    border-radius: 0.25rem; /* 4px */
-    background: rgba(0,0,0,0.5);
-    padding: 0.125rem; /* 2px */
-}
-.hunt-reward-name {
-    color: #ecf0f1;
-    font-weight: bold;
-}
-.hunt-actions {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 0.3125rem; /* 5px */
-}
-.hunt-progress-bar-container {
-    width: 6.25rem; /* 100px */
-    height: 0.625rem; /* 10px */
-    background-color: #1a1a1a;
-    border-radius: 0.3125rem; /* 5px */
-    overflow: hidden;
-}
-.hunt-progress-bar {
-    width: 0%;
-    height: 100%;
-    background: linear-gradient(to right, #2ecc71, #27ae60);
-    transition: width 0.3s ease;
-}
-.hunt-progress-text {
-    font-size: 0.8em;
-    color: #95a5a6;
-}
-#hunts-close-btn {
-    margin-top: 1.25rem; /* 20px */
-    background: #c0392b;
-    border-bottom-color: #922b21;
-    align-self: center;
-}
-#hunts-btn:disabled {
-    background: #566573;
-    color: #95a5a6;
-    cursor: help;
-    border-bottom-color: #43515c;
-    transform: none;
-    box-shadow: none;
-}
+
+.hunt-details { flex-grow: 1; }
+.hunt-title { font-family: 'Cinzel', serif; font-size: 1.1em; font-weight: bold; color: #f1c40f; margin: 0 0 0.3125rem 0; }
+.hunt-description { margin: 0 0 0.625rem 0; color: #bdc3c7; }
+.hunt-reward { display: flex; flex-direction: column; align-items: center; gap: 0.5rem; font-size: 0.9em; text-align: center; width: 6.25rem; flex-shrink: 0; }
+.hunt-reward img { width: 3rem; height: 3rem; border-radius: 0.25rem; background: rgba(0,0,0,0.5); padding: 0.125rem; }
+.hunt-reward-name { color: #ecf0f1; font-weight: bold; }
+.hunt-actions { display: flex; flex-direction: column; align-items: center; gap: 0.3125rem; }
+.hunt-progress-bar-container { width: 6.25rem; height: 0.625rem; background-color: #1a1a1a; border-radius: 0.3125rem; overflow: hidden; }
+.hunt-progress-bar { width: 0%; height: 100%; background: linear-gradient(to right, #2ecc71, #27ae60); transition: width 0.3s ease; }
+.hunt-progress-text { font-size: 0.8em; color: #95a5a6; }
+#hunts-close-btn { margin-top: 1.25rem; background: #c0392b; border-bottom-color: #922b21; align-self: center; }
+#hunts-btn:disabled { background: #566573; color: #95a5a6; cursor: help; border-bottom-color: #43515c; transform: none; box-shadow: none; }
 
 #hunts-btn.hunt-ready-glow {
     background: linear-gradient(145deg, #e67e22, #f39c12);
@@ -2199,16 +2195,166 @@ h5 .legendary { color: #f39c12; }
     animation: pulse-orange 2s infinite;
 }
 
+#hunt-stats-display {
+    display: flex;
+    align-items: center;
+    gap: 1rem; /* 16px */
+}
+
+#total-hunts-display {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem; /* 8px */
+    background-color: rgba(0,0,0,0.3);
+    padding: 0.5rem 0.75rem; /* 8px, 12px */
+    border-radius: 0.5rem; /* 8px */
+    border: 1px solid #4a637e;
+}
+
+#total-hunts-display i {
+    color: #bdc3c7;
+    font-size: 1.1em;
+}
+
+#total-hunts-completed {
+    font-size: 1.2em;
+    font-weight: bold;
+    color: #ecf0f1;
+    font-family: 'Cinzel', serif;
+}
+
+.hunt-shop-item.locked {
+    cursor: not-allowed;
+}
+
+.hunt-token-reward {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem; /* 4px */
+    background-color: rgba(0,0,0,0.5);
+    padding: 0.125rem 0.375rem; /* 2px 6px */
+    border-radius: 0.25rem; /* 4px */
+    margin-top: 0.3125rem; /* 5px */
+    font-size: 0.9em;
+    color: #f1c40f;
+    border: 1px solid #4a637e;
+}
+
+.hunt-token-reward img {
+    height: 1em;
+    width: 1em;
+}
+
 @keyframes pulse-orange {
-    0% {
-        box-shadow: 0 0 0 0 rgba(230, 126, 34, 0.7);
-    }
-    70% {
-        box-shadow: 0 0 0 0.625rem rgba(230, 126, 34, 0); /* 10px */
-    }
-    100% {
-        box-shadow: 0 0 0 0 rgba(230, 126, 34, 0);
-    }
+    0% { box-shadow: 0 0 0 0 rgba(230, 126, 34, 0.7); }
+    70% { box-shadow: 0 0 0 0.625rem rgba(230, 126, 34, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(230, 126, 34, 0); }
+}
+
+/* Shop specific styles */
+#shop-view {
+    padding: 0.3125rem; /* 5px */
+}
+
+#hunt-shop-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(17.5rem, 1fr)); /* 280px */
+    gap: 0.9375rem; /* 15px */
+}
+
+.hunt-shop-item {
+    background-color: rgba(30, 40, 50, 0.8);
+    border: 1px solid #4a637e;
+    border-radius: 0.5rem; /* 8px */
+    padding: 0.9375rem; /* 15px */
+    display: flex;
+    gap: 0.9375rem; /* 15px */
+    align-items: center;
+    position: relative;
+    transition: background-color 0.2s, border-color 0.2s;
+}
+
+.shop-item-icon-container {
+    flex-shrink: 0;
+    width: 4.375rem; /* 70px */
+    height: 4.375rem; /* 70px */
+    background-color: rgba(0,0,0,0.4);
+    border: 1px solid #34495e;
+    border-radius: 0.5rem; /* 8px */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.shop-item-icon {
+    width: 3.75rem; /* 60px */
+    height: 3.75rem; /* 60px */
+}
+
+.shop-item-details {
+    flex-grow: 1;
+}
+
+.shop-item-name {
+    font-family: 'Cinzel', serif;
+    font-weight: bold;
+    font-size: 1.1em;
+    color: #ecf0f1;
+    margin-bottom: 0.3125rem; /* 5px */
+}
+
+.shop-item-desc {
+    font-size: 0.85em;
+    color: #bdc3c7;
+    line-height: 1.4;
+}
+
+.shop-item-action {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem; /* 8px */
+    min-width: 6.25rem; /* 100px */
+}
+
+.shop-item-cost {
+    display: flex;
+    align-items: center;
+    gap: 0.3125rem; /* 5px */
+    font-size: 1.1em;
+    font-weight: bold;
+    color: #f1c40f;
+}
+
+.shop-item-cost img {
+    height: 1.25rem; /* 20px */
+}
+
+.shop-item-buy-btn {
+    width: 100%;
+    margin: 0;
+    padding: 0.5rem; /* 8px */
+}
+
+/* Locked & Purchased States */
+.hunt-shop-item.locked, .hunt-shop-item.purchased {
+    filter: grayscale(1);
+    opacity: 0.7;
+    cursor: help;
+}
+
+.hunt-shop-item.locked .shop-item-buy-btn,
+.hunt-shop-item.purchased .shop-item-buy-btn {
+    background: #566573;
+    cursor: not-allowed;
+    border-bottom-color: #43515c;
+}
+
+.shop-item-unlock-req {
+    font-size: 0.8em;
+    color: #e74c3c;
+    text-align: center;
+    font-weight: bold;
 }
 
 /* --- Active Buffs Display --- */

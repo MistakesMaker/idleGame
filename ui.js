@@ -11,6 +11,7 @@ import { REALMS } from './data/realms.js';
 import { PERMANENT_UPGRADES } from './data/upgrades.js';
 import { rarities } from './game.js';
 import { CONSUMABLES } from './data/consumables.js';
+import { HUNT_SHOP_INVENTORY } from './data/hunt_shop.js';
 import { playSound } from './sound_manager.js';
 
 /** @typedef {Object<string, HTMLElement|HTMLButtonElement|HTMLInputElement|HTMLImageElement|HTMLSelectElement>} DOMElements */
@@ -194,13 +195,17 @@ export function initHuntsDOMElements() {
         huntsBtn: document.getElementById('hunts-btn'),
         huntsModalBackdrop: document.getElementById('hunts-modal-backdrop'),
         huntsCloseBtn: document.getElementById('hunts-close-btn'),
+        huntTokensAmount: document.getElementById('hunt-tokens-amount'),
+        totalHuntsCompleted: document.getElementById('total-hunts-completed'), // <<< ADD THIS LINE
         activeHuntSection: document.getElementById('active-hunt-section'),
         activeHuntCard: document.getElementById('active-hunt-card'),
         noActiveHuntText: document.getElementById('no-active-hunt-text'),
         rerollHuntsBtn: document.getElementById('reroll-hunts-btn'),
         availableHuntsContainer: document.getElementById('available-hunts-container'),
+        huntShopContainer: document.getElementById('hunt-shop-container'),
     };
 }
+
 
 /**
  * Populates the salvage filter controls with the correct options and sets their initial values.
@@ -843,6 +848,12 @@ export function updateUI(elements, gameState, playerStats, currentMonster, salva
     // Forge
     if(gameState.unlockedFeatures.forge) {
         updateForge(elements, selectedItemForForge, null, gameState.scrap);
+    }
+
+    // Hunts
+    const huntsModal = document.getElementById('hunts-modal-backdrop');
+    if (huntsModal && !huntsModal.classList.contains('hidden')) {
+        renderHuntsView(elements, gameState);
     }
     
     // Presets
@@ -2729,7 +2740,10 @@ export function showStatBreakdownTooltip(elements, statKey, statBreakdown, gameS
  * @param {object} gameState
  */
 export function renderHuntsView(elements, gameState) {
-    const { activeHuntCard, noActiveHuntText, availableHuntsContainer, rerollHuntsBtn } = initHuntsDOMElements();
+    const { activeHuntCard, noActiveHuntText, availableHuntsContainer, rerollHuntsBtn, huntTokensAmount, huntShopContainer, totalHuntsCompleted } = initHuntsDOMElements();
+
+    huntTokensAmount.textContent = gameState.hunts.tokens.toString();
+    totalHuntsCompleted.textContent = gameState.hunts.totalCompleted.toString(); // <<< ADD THIS LINE
 
     // Render Active Hunt
     if (gameState.hunts.active) {
@@ -2755,6 +2769,14 @@ export function renderHuntsView(elements, gameState) {
     const rerollButton = /** @type {HTMLButtonElement} */ (rerollHuntsBtn);
     rerollButton.textContent = `Reroll All (${gameState.hunts.dailyRerollsLeft})`;
     rerollButton.disabled = gameState.hunts.dailyRerollsLeft <= 0;
+
+    // Render Shop
+    huntShopContainer.innerHTML = '';
+    HUNT_SHOP_INVENTORY.forEach(item => {
+        const card = document.createElement('div');
+        card.innerHTML = createHuntShopItemHTML(item, gameState);
+        huntShopContainer.appendChild(card.firstElementChild);
+    });
 }
 
 /**
@@ -2766,8 +2788,27 @@ export function renderHuntsView(elements, gameState) {
  * @returns {string}
  */
 function createHuntCardHTML(hunt, index, isActive, progress = 0) {
+    // --- START OF FIX: Add a safety check for invalid hunt data ---
+    if (!hunt || !hunt.rewardId) {
+        console.error("Attempted to render an invalid hunt object:", hunt);
+        return ''; // Return an empty string to prevent a crash
+    }
     const reward = CONSUMABLES[hunt.rewardId];
+    if (!reward) {
+        console.error(`Could not find consumable with ID "${hunt.rewardId}" for a hunt.`, hunt);
+        return ''; // Return an empty string to prevent a crash
+    }
+    // --- END OF FIX ---
+
     const description = hunt.description.replace('{quantity}', formatNumber(hunt.quantity));
+
+    const tokenRewardText = hunt.tokenReward ? `+${hunt.tokenReward}` : `1-3`;
+    const tokenRewardHTML = `
+        <div class="hunt-token-reward">
+            <span>${tokenRewardText}</span>
+            <img src="images/icons/hunt_token.png" alt="Token">
+        </div>
+    `;
 
     let actionButtonHTML;
     if (isActive) {
@@ -2789,6 +2830,7 @@ function createHuntCardHTML(hunt, index, isActive, progress = 0) {
             <div class="hunt-reward" data-reward-id="${reward.id}">
                 <img src="${reward.icon}" alt="${reward.name}">
                 <span class="hunt-reward-name">${reward.name}</span>
+                ${tokenRewardHTML} 
             </div>
             <div class="hunt-details">
                 <p class="hunt-title">${hunt.title}</p>
@@ -2842,4 +2884,171 @@ export function updateHuntsButtonGlow(gameState) {
     if (!huntsBtn) return;
     const isComplete = gameState.hunts.active && gameState.hunts.progress >= gameState.hunts.active.quantity;
     huntsBtn.classList.toggle('hunt-ready-glow', isComplete);
+}
+
+/**
+ * Switches the active sub-view within the Hunts modal.
+ * @param {string} subViewIdToShow - The ID of the sub-view to make active.
+ */
+export function switchHuntsSubView(subViewIdToShow) {
+    const parentPanel = document.getElementById('hunts-modal');
+    if (!parentPanel) return;
+
+    const allSubViews = parentPanel.querySelectorAll('.hunts-sub-view');
+    const allSubTabs = parentPanel.querySelectorAll('.sub-tab-button');
+
+    allSubViews.forEach(v => v.classList.remove('active'));
+    allSubTabs.forEach(t => t.classList.remove('active'));
+
+    const subViewElement = document.getElementById(subViewIdToShow);
+    const subTabElement = parentPanel.querySelector(`.sub-tab-button[data-subview="${subViewIdToShow}"]`);
+
+    if (subViewElement) subViewElement.classList.add('active');
+    if (subTabElement) subTabElement.classList.add('active');
+}
+
+/**
+ * Creates the HTML for a single Hunt Shop item.
+ * @param {object} shopItem
+ * @param {object} gameState
+ * @returns {string}
+ */
+function createHuntShopItemHTML(shopItem, gameState) {
+    const isUnlocked = !shopItem.unlock || gameState.hunts.totalCompleted >= shopItem.unlock;
+    const isPurchased = shopItem.oneTimePurchase && gameState.purchasedOneTimeShopItems.includes(shopItem.id);
+    const canAfford = gameState.hunts.tokens >= shopItem.cost;
+
+    let itemData, name, description, icon;
+
+    // Handle special, non-consumable items
+    if (shopItem.id === 'HUNT_CANCEL') {
+        name = "Cancel Active Hunt";
+        description = "Abandon your current hunt and return it to the bounty board. Does not refund the cost of rerolls.";
+        icon = 'images/icons/cancel_hunt.png';
+    } else if (shopItem.id === 'HUNT_REROLL') {
+        name = "Purchase Reroll";
+        description = "Gain one extra bounty reroll for the day.";
+        icon = 'images/icons/reroll_charge.png';
+    } else {
+        itemData = CONSUMABLES[shopItem.id];
+        name = itemData.name;
+        description = itemData.description;
+        icon = itemData.icon;
+    }
+
+    let buttonHTML;
+    if (isPurchased) {
+        buttonHTML = `<button class="shop-item-buy-btn" disabled>Purchased</button>`;
+    } else if (!isUnlocked) {
+        buttonHTML = `<button class="shop-item-buy-btn" disabled>Buy</button><div class="shop-item-unlock-req">Requires ${shopItem.unlock} Hunts</div>`;
+    } else {
+        buttonHTML = `<button class="shop-item-buy-btn" data-item-id="${shopItem.id}" ${!canAfford ? 'disabled' : ''}>Buy</button>`;
+    }
+
+    const classes = ['hunt-shop-item'];
+    if (!isUnlocked) classes.push('locked');
+    if (isPurchased) classes.push('purchased');
+
+    return `
+        <div class="${classes.join(' ')}" data-item-id="${shopItem.id}">
+            <div class="shop-item-icon-container">
+                <img src="${icon}" alt="${name}" class="shop-item-icon">
+            </div>
+            <div class="shop-item-details">
+                <div class="shop-item-name">${name}</div>
+                <div class="shop-item-desc">${description}</div>
+            </div>
+            <div class="shop-item-action">
+                <div class="shop-item-cost">
+                    <span>${shopItem.cost}</span>
+                    <img src="images/icons/hunt_token.png" alt="Token">
+                </div>
+                ${buttonHTML}
+            </div>
+        </div>
+    `;
+}
+
+/**
+ * Shows a tooltip for a Hunt Shop item.
+ * @param {DOMElements} elements
+ * @param {HTMLElement} targetEl
+ * @param {string} itemId
+ */
+export function showHuntShopTooltip(elements, targetEl, itemId) {
+    // --- START MODIFICATION: Do not show tooltip for locked items ---
+    if (targetEl.classList.contains('locked')) {
+        return;
+    }
+    // --- END MODIFICATION ---
+
+    let name, description;
+    
+    if (itemId === 'HUNT_CANCEL') {
+        name = "Cancel Active Hunt";
+        description = "Abandon your current hunt and return it to the bounty board. Does not refund the cost of rerolls.";
+    } else if (itemId === 'HUNT_REROLL') {
+        name = "Purchase Reroll";
+        description = "Gain one extra bounty reroll for the day.";
+    } else {
+        const itemBase = CONSUMABLES[itemId];
+        if (!itemBase) return;
+        name = itemBase.name;
+        description = itemBase.description;
+    }
+    
+    elements.tooltipEl.className = 'hidden';
+    elements.tooltipEl.classList.add('legendary');
+    elements.tooltipEl.innerHTML = `
+        <div class="item-header"><span class="legendary">${name}</span></div>
+        <ul><li>${description}</li></ul>
+    `;
+
+    const rect = targetEl.getBoundingClientRect();
+    elements.tooltipEl.style.left = `${rect.left}px`;
+    elements.tooltipEl.style.top = `${rect.bottom + 5}px`;
+    elements.tooltipEl.classList.remove('hidden');
+}
+
+/**
+ * Adds/removes targeting highlights for targeted consumables.
+ * @param {DOMElements} elements
+ * @param {object} gameState
+ */
+export function updateTargetingHighlights(elements, gameState) {
+    const { inventorySlotsEl } = elements;
+    const paperdoll = document.getElementById('equipment-paperdoll');
+
+    // Clear all previous highlights
+    document.querySelectorAll('.item-is-target').forEach(el => el.classList.remove('item-is-target'));
+
+    if (!gameState.activeTargetedConsumable) {
+        document.body.classList.remove('item-targeting-active');
+        return;
+    }
+
+    document.body.classList.add('item-targeting-active');
+    
+    const allItems = [...gameState.inventory, ...Object.values(gameState.equipment).filter(Boolean)];
+    
+    allItems.forEach(item => {
+        let isTarget = false;
+        const itemBase = ITEMS[item.baseId];
+
+        switch(gameState.activeTargetedConsumable.effect) {
+            case 'addSocket':
+                const currentSockets = item.sockets ? item.sockets.length : 0;
+                if (itemBase && itemBase.canHaveSockets && itemBase.maxSockets > currentSockets) {
+                    isTarget = true;
+                }
+                break;
+        }
+
+        if (isTarget) {
+            const itemEl = inventorySlotsEl.querySelector(`.item-wrapper[data-id="${item.id}"]`) || paperdoll.querySelector(`[data-id="${item.id}"]`);
+            if (itemEl) {
+                itemEl.classList.add('item-is-target');
+            }
+        }
+    });
 }

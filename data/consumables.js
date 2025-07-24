@@ -13,6 +13,8 @@
 *   - type: 'permanentFlag' -> Sets a boolean flag in gameState to true.
 *   - type: 'resource' -> Instantly grants a specified amount of a resource.
 *   - type: 'timedBuff' -> Applies a temporary buff to a player stat.
+*   - type: 'permanentStat' -> Permanently adds a value to a stat in gameState.
+*   - type: 'targetedItemModifier' -> Puts the player in a state to select an item to modify.
 */
 export const CONSUMABLES = {
     // --- PERMANENT UPGRADES ---
@@ -26,6 +28,44 @@ export const CONSUMABLES = {
         effect: {
             type: 'permanentFlag',
             key: 'wisdomOfTheOverworldUsed'
+        }
+    },
+    ARTISAN_DRILL: {
+        id: 'ARTISAN_DRILL',
+        name: "Artisan's Drill",
+        type: 'consumable',
+        icon: 'images/consumables/artisan_drill.png',
+        width: 1, height: 1,
+        description: "A master craftsman's tool. Use on an item to carve a new socket, up to the item's maximum potential. Requires selecting an item after use.",
+        effect: {
+            type: 'targetedItemModifier',
+            key: 'addSocket'
+        }
+    },
+    TOME_OF_STRENGTH: {
+        id: 'TOME_OF_STRENGTH',
+        name: "Tome of Strength",
+        type: 'consumable',
+        icon: 'images/consumables/tome_of_strength.png',
+        width: 1, height: 1,
+        description: "A book of forgotten power. Consuming it permanently increases your total Click Damage by 1%.",
+        effect: {
+            type: 'permanentStat',
+            key: 'totalClickDamage',
+            value: 1, // Represents +1%
+        }
+    },
+    TOME_OF_AGILITY: {
+        id: 'TOME_OF_AGILITY',
+        name: "Tome of Agility",
+        type: 'consumable',
+        icon: 'images/consumables/tome_of_agility.png',
+        width: 1, height: 1,
+        description: "A book of forgotten techniques. Consuming it permanently increases your total DPS by 1%.",
+        effect: {
+            type: 'permanentStat',
+            key: 'totalDps',
+            value: 1, // Represents +1%
         }
     },
 
@@ -111,7 +151,7 @@ export const CONSUMABLES = {
         effect: {
             type: 'timedBuff',
             name: 'Minor XP Boost',
-            statKey: 'bonusXp', // We will need to add logic to handle this stat
+            statKey: 'bonusXp',
             value: 50,
             duration: 900 // 15 minutes
         }
@@ -158,21 +198,6 @@ export const CONSUMABLES = {
             name: 'Minor Gem Seeker',
             statKey: 'gemFindChance',
             value: 5,
-            duration: 600
-        }
-    },
-    GEM_SEEKER_DRAFT_MAJOR: {
-        id: 'GEM_SEEKER_DRAFT_MAJOR',
-        name: 'Major Gem Seeker\'s Draft',
-        type: 'consumable',
-        icon: 'images/consumables/gem_seeker_draft_major.png',
-        width: 1, height: 1,
-        description: "Makes your eyes exceptionally sharp. Increases Gem Find chance by 20% for 10 minutes.",
-        effect: {
-            type: 'timedBuff',
-            name: 'Major Gem Seeker',
-            statKey: 'gemFindChance',
-            value: 20,
             duration: 600
         }
     },

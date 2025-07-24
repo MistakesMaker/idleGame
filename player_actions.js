@@ -8,6 +8,7 @@ import { ITEMS } from './data/items.js';
 import { PERMANENT_UPGRADES } from './data/upgrades.js';
 import { CONSUMABLES } from './data/consumables.js';
 import { HUNT_POOLS } from './data/hunts.js';
+import { HUNT_SHOP_INVENTORY } from './data/hunt_shop.js';
 import { MONSTERS } from './data/monsters.js';
 import { playSound } from './sound_manager.js';
 
@@ -601,7 +602,6 @@ export function bulkCombineGems(gameState, tier, selectionKey, excludedIds) {
     const costPerCombine = 100;
     const isSynergyCombine = selectionKey.startsWith('synergy_');
     
-    // --- THIS IS THE CORRECTED FILTER LOGIC ---
     const matchingGems = gameState.gems.filter(gem => {
         if (gem.tier !== tier || excludedIds.has(gem.id)) {
             return false;
@@ -610,8 +610,6 @@ export function bulkCombineGems(gameState, tier, selectionKey, excludedIds) {
             const synergyKey = selectionKey.replace('synergy_', '');
             return gem.synergy && `${gem.synergy.source}_to_${gem.synergy.target}` === synergyKey;
         } else {
-            // This now correctly checks if the gem HAS the stat, which is what's needed.
-            // It will correctly find your stack of 96 T1 Emeralds when 'goldGain' is selected.
             return gem.stats && gem.stats[selectionKey];
         }
     });
@@ -633,7 +631,6 @@ export function bulkCombineGems(gameState, tier, selectionKey, excludedIds) {
         successChance = 0.6;
     }
 
-    // Create a mutable list of individual gems to process
     let individualGems = [];
     matchingGems.forEach(stack => {
         for (let i = 0; i < stack.quantity; i++) {
@@ -641,13 +638,12 @@ export function bulkCombineGems(gameState, tier, selectionKey, excludedIds) {
         }
     });
 
-    // Remove all original stacks from the main game state
     const idsToRemove = new Set(matchingGems.map(s => s.id));
     gameState.gems = gameState.gems.filter(g => !idsToRemove.has(g.id));
 
     while (individualGems.length >= 2) {
         if (gameState.scrap < costPerCombine) {
-            break; // Stop if we can't afford the next one
+            break; 
         }
 
         const gem1 = individualGems.pop();
@@ -689,16 +685,14 @@ export function bulkCombineGems(gameState, tier, selectionKey, excludedIds) {
         }
     }
 
-// Play a summary sound based on the overall outcome
-if (successes > 0 || failures > 0) { // Only play a sound if any combinations happened
+if (successes > 0 || failures > 0) { 
     if (successes > failures) {
         playSound('gem_success');
-    } else { // This covers failures > successes AND failures === successes
+    } else { 
         playSound('gem_fail');
     }
 }
 
-    // Add back any leftover individual gems
     individualGems.forEach(gem => addToPlayerStacks(gameState, gem, 'gems'));
 
     const message = `Bulk combine finished. Successes: ${successes}, Failures: ${failures}. Total cost: ${totalCost} Scrap.`;
@@ -749,29 +743,23 @@ export function rerollItemStats(gameState, itemToReroll, statToRerollKey) {
         return { success: true, improvement: 0 };
     }
 
-    // --- START OF NEW, CORRECTED LOGIC ---
     const gap = max_for_tier - currentValue;
     const improvementFactor = Math.random() * 0.5;
     const improvementAmount = gap * improvementFactor;
     
     let newValue = currentValue + improvementAmount;
     
-    // Check if the improvement was too small and got lost during rounding.
     if (parseFloat(newValue.toFixed(2)) <= currentValue) {
-        // If so, force a minimum increase of 0.01 to ensure progress.
         newValue = currentValue + 0.01;
     }
 
-    // Always cap the new value at the tier's maximum.
     const finalValue = Math.min(newValue, max_for_tier);
     
-    // The actual improvement is the difference between the final value and the starting value.
     const actualImprovement = finalValue - currentValue;
 
     itemToReroll.stats[statToRerollKey] = parseFloat(finalValue.toFixed(2));
 
     return { success: true, improvement: parseFloat(actualImprovement.toFixed(2)) };
-    // --- END OF NEW, CORRECTED LOGIC ---
 }
 
 /**
@@ -828,7 +816,6 @@ export function consumeItem(gameState, stackId) {
     const effect = itemBase.effect;
     let message = `You consumed the ${stack.name}!`;
 
-    // Dispatcher for different effect types
     switch (effect.type) {
         case 'permanentFlag':
             if (gameState[effect.key]) {
@@ -842,11 +829,9 @@ export function consumeItem(gameState, stackId) {
             const newExpiresAt = Date.now() + (effect.duration * 1000);
 
             if (existingBuff) {
-                // If the buff already exists, just refresh its timer.
                 existingBuff.expiresAt = newExpiresAt;
                 message = `You refreshed the duration of <b>${effect.name}</b>!`;
             } else {
-                // Otherwise, add the new buff.
                 gameState.activeBuffs.push({ ...effect, expiresAt: newExpiresAt });
                 message = `You feel the effects of <b>${effect.name}</b>!`;
             }
@@ -856,21 +841,79 @@ export function consumeItem(gameState, stackId) {
             gameState[effect.resource] = (gameState[effect.resource] || 0) + effect.amount;
             message = `You gained <b>${formatNumber(effect.amount)} ${effect.resource.charAt(0).toUpperCase() + effect.resource.slice(1)}</b>!`;
             break;
+        
+        case 'permanentStat':
+            gameState.permanentStatBonuses[effect.key] = (gameState.permanentStatBonuses[effect.key] || 0) + effect.value;
+            message += ` Your power grows permanently!`;
+            break;
+
+        case 'targetedItemModifier':
+            gameState.activeTargetedConsumable = {
+                sourceStackId: stack.id,
+                effect: effect.key,
+                name: stack.name
+            };
+            message = `Select an item to use your <b>${stack.name}</b> on.`;
+            break;
 
         default:
             return { success: false, message: "Unknown consumable effect type." };
     }
 
-    // Handle stacking logic
     if (stack.quantity && stack.quantity > 1) {
         stack.quantity--;
     } else {
-        // Remove the item from the consumables array if it's the last one
         gameState.consumables.splice(stackIndex, 1);
     }
     
-    // The calling function will handle grid updates
     return { success: true, message };
+}
+
+/**
+ * Applies the effect of an active targeted consumable to a target item.
+ * @param {object} gameState The main game state object.
+ * @param {object} targetItem The item being clicked on.
+ * @returns {{success: boolean, message: string}}
+ */
+export function applyTargetedConsumable(gameState, targetItem) {
+    const consumableInfo = gameState.activeTargetedConsumable;
+    if (!consumableInfo) {
+        return { success: false, message: "" }; // Should not happen
+    }
+
+    let result = { success: false, message: "" };
+
+    switch (consumableInfo.effect) {
+        case 'addSocket':
+            const itemBase = ITEMS[targetItem.baseId];
+            if (!itemBase || !itemBase.canHaveSockets || itemBase.maxSockets <= 0) {
+                result.message = `The <b>${targetItem.name}</b> cannot have sockets.`;
+                break;
+            }
+
+            const currentSockets = targetItem.sockets ? targetItem.sockets.length : 0;
+            if (currentSockets >= itemBase.maxSockets) {
+                result.message = `The <b>${targetItem.name}</b> already has the maximum number of sockets.`;
+                break;
+            }
+
+            if (!targetItem.sockets) {
+                targetItem.sockets = [];
+            }
+            targetItem.sockets.push(null);
+            playSound('socket_gem');
+            result.success = true;
+            result.message = `Successfully added a socket to <b>${targetItem.name}</b>!`;
+            break;
+
+        default:
+            result.message = "Unknown targeted effect.";
+            break;
+    }
+
+    // Always clear the targeting state after an attempt
+    gameState.activeTargetedConsumable = null;
+    return result;
 }
 
 
@@ -880,7 +923,6 @@ export function consumeItem(gameState, stackId) {
 
 /**
  * Generates a new hunt to fill an empty slot on the board.
- * Uses a weighted system based on the player's current progress.
  * @param {object} gameState
  * @param {number} indexToReplace The index in the `available` array to fill.
  * @param {object[]} huntPools The full definition of all possible hunts.
@@ -888,11 +930,9 @@ export function consumeItem(gameState, stackId) {
 export function generateNewHunt(gameState, indexToReplace, huntPools) {
     const currentHighPoint = gameState.currentRunCompletedLevels.length > 0 ? Math.max(...gameState.currentRunCompletedLevels) : 1;
 
-    // 1. Find all tiers the player has unlocked in this run
     const availableTiers = huntPools.filter(tier => currentHighPoint >= tier.requiredLevel);
     if (availableTiers.length === 0) return;
 
-    // 2. Assign weights based on proximity to the player's current tier
     const currentTierIndex = availableTiers.length - 1;
     const tierWeights = [
         { tierIndex: currentTierIndex, weight: 50 },
@@ -902,7 +942,6 @@ export function generateNewHunt(gameState, indexToReplace, huntPools) {
 
     const validWeightedTiers = tierWeights.filter(t => t.tierIndex >= 0);
 
-    // 3. Roll to select a tier
     const roll = Math.random() * 100;
     let selectedTierIndex;
     let cumulativeWeight = 0;
@@ -911,7 +950,6 @@ export function generateNewHunt(gameState, indexToReplace, huntPools) {
         cumulativeWeight += tier.weight;
         if (roll <= cumulativeWeight) {
             if (tier.tierIndex === currentTierIndex - 2) {
-                // If we landed in the "all older tiers" bucket, pick one of them randomly
                 selectedTierIndex = getRandomInt(0, Math.max(0, currentTierIndex - 2));
             } else {
                 selectedTierIndex = tier.tierIndex;
@@ -926,35 +964,42 @@ export function generateNewHunt(gameState, indexToReplace, huntPools) {
 
     const chosenTierPool = availableTiers[selectedTierIndex].hunts;
     
-    // 4. Select a random hunt from the chosen tier, avoiding duplicates
     const availableHuntIds = gameState.hunts.available.map(h => h ? h.id : null);
     let potentialHunts = chosenTierPool.filter(hunt => !availableHuntIds.includes(hunt.id));
     
+    // --- START OF FIX: Handle exhausted hunt pool ---
     if (potentialHunts.length === 0) {
+        // Fallback: search ALL available tiers for any possible hunt
+        console.warn(`Hunt pool exhausted for tier ${selectedTierIndex}. Searching all available tiers.`);
         const allAvailableHunts = availableTiers.flatMap(t => t.hunts);
         potentialHunts = allAvailableHunts.filter(hunt => !availableHuntIds.includes(hunt.id));
-        if (potentialHunts.length === 0) return; 
+        // If still no hunts, we can't generate a new one, so we exit to prevent a crash.
+        if (potentialHunts.length === 0) {
+             console.error("No available unique hunts to generate across all tiers. Aborting hunt generation for this slot.");
+             return; 
+        }
     }
+    // --- END OF FIX ---
 
     const huntTemplate = { ...potentialHunts[Math.floor(Math.random() * potentialHunts.length)] };
 
-    // 5. Calculate dynamic quantity
     const completionCount = gameState.hunts.completionCounts[huntTemplate.id] || 0;
     const completionBonus = completionCount * 10;
     const quantity = getRandomInt(huntTemplate.quantityMin + completionBonus, huntTemplate.quantityMax + completionBonus);
 
-    // 6. Create the final hunt object for the game state
     const chosenRewardId = huntTemplate.rewardIds[Math.floor(Math.random() * huntTemplate.rewardIds.length)];
 
     const newHunt = {
         ...huntTemplate,
         quantity: quantity,
-        rewardId: chosenRewardId, // Set the specific, chosen reward for this instance
+        rewardId: chosenRewardId,
+        tokenReward: getRandomInt(1, 3),
         instanceId: Date.now() + Math.random(),
     };
 
     gameState.hunts.available[indexToReplace] = newHunt;
 }
+
 
 /**
  * Sets an available hunt as the player's active hunt.
@@ -1017,15 +1062,14 @@ export function checkHuntProgress(gameState, defeatedMonster) {
 /**
  * Completes the active hunt, grants the reward, and clears the active slot.
  * @param {object} gameState
- * @returns {object|null} The reward consumable object if successful.
+ * @returns {{reward: object|null, tokens: number}} The reward consumable object and tokens gained if successful.
  */
 export function completeHunt(gameState) {
     const activeHunt = gameState.hunts.active;
     if (!activeHunt || gameState.hunts.progress < activeHunt.quantity) {
-        return null;
+        return { reward: null, tokens: 0 };
     }
 
-    // Grant reward by adding to stacks
     const rewardBase = CONSUMABLES[activeHunt.rewardId];
     addToPlayerStacks(gameState, rewardBase, 'consumables');
     
@@ -1034,15 +1078,19 @@ export function completeHunt(gameState) {
         gameState.pendingSubTabViewFlash = 'inventory-consumables-view';
     }
 
-    // Update completion count
     const count = gameState.hunts.completionCounts[activeHunt.id] || 0;
     gameState.hunts.completionCounts[activeHunt.id] = count + 1;
-
-    // Clear active hunt
+    gameState.hunts.totalCompleted++;
+    
+    // --- START MODIFICATION ---
+    const tokensGained = activeHunt.tokenReward || getRandomInt(1, 3); // Use pre-set reward, with fallback
+    gameState.hunts.tokens += tokensGained;
+    // --- END MODIFICATION ---
+    
     gameState.hunts.active = null;
     gameState.hunts.progress = 0;
     
-    return rewardBase;
+    return { reward: rewardBase, tokens: tokensGained };
 }
 
 /**
@@ -1056,7 +1104,6 @@ export function rerollHunts(gameState) {
     }
     gameState.hunts.dailyRerollsLeft--;
     for (let i = 0; i < gameState.hunts.available.length; i++) {
-        // Only replace unaccepted hunts
         if (gameState.hunts.available[i]) {
             generateNewHunt(gameState, i, HUNT_POOLS);
         }
@@ -1076,4 +1123,76 @@ export function checkDailyResets(gameState) {
         gameState.hunts.dailyRerollsLeft = 5;
         gameState.hunts.lastRerollTimestamp = now.getTime();
     }
+}
+
+/**
+ * Cancels the player's active hunt at a cost.
+ * @param {object} gameState
+ * @returns {{success: boolean, message: string}}
+ */
+export function cancelActiveHunt(gameState) {
+    const shopItem = HUNT_SHOP_INVENTORY.find(item => item.id === 'HUNT_CANCEL');
+    if (!shopItem) return { success: false, message: "Cancel item not found in shop data." };
+    const cost = shopItem.cost;
+
+    if (!gameState.hunts.active) {
+        return { success: false, message: "You don't have an active hunt to cancel." };
+    }
+    if (gameState.hunts.tokens < cost) {
+        return { success: false, message: `Not enough tokens. Requires ${cost}.` };
+    }
+
+    gameState.hunts.tokens -= cost;
+    gameState.hunts.active = null;
+    gameState.hunts.progress = 0;
+
+    return { success: true, message: `Active hunt cancelled for ${cost} tokens.` };
+}
+
+/**
+ * Handles the logic of purchasing an item from the hunt shop.
+ * @param {object} gameState
+ * @param {string} itemId
+ * @returns {{success: boolean, message: string, itemType: string|null}}
+ */
+export function purchaseHuntShopItem(gameState, itemId) {
+    const shopItem = HUNT_SHOP_INVENTORY.find(item => item.id === itemId);
+    if (!shopItem) {
+        return { success: false, message: "Item not found in shop.", itemType: null };
+    }
+
+    if (shopItem.unlock && gameState.hunts.totalCompleted < shopItem.unlock) {
+        return { success: false, message: "You have not completed enough hunts to purchase this.", itemType: null };
+    }
+    if (shopItem.oneTimePurchase && gameState.purchasedOneTimeShopItems.includes(itemId)) {
+        return { success: false, message: "You have already purchased this unique item.", itemType: null };
+    }
+    if (gameState.hunts.tokens < shopItem.cost) {
+        return { success: false, message: `You need ${shopItem.cost} tokens to buy this.`, itemType: null };
+    }
+
+    // Special handlers for non-consumable shop items
+    if (itemId === 'HUNT_REROLL') {
+        gameState.hunts.tokens -= shopItem.cost;
+        gameState.hunts.dailyRerollsLeft++;
+        return { success: true, message: "Purchased 1 Bounty Reroll charge.", itemType: 'utility' };
+    }
+    if (itemId === 'HUNT_CANCEL') {
+        const cancelResult = cancelActiveHunt(gameState);
+        return { ...cancelResult, itemType: 'utility' };
+    }
+    
+
+    const consumableBase = CONSUMABLES[itemId];
+    if (!consumableBase) {
+        return { success: false, message: "Consumable data not found for this item.", itemType: null };
+    }
+
+    gameState.hunts.tokens -= shopItem.cost;
+    addToPlayerStacks(gameState, consumableBase, 'consumables');
+    if (shopItem.oneTimePurchase) {
+        gameState.purchasedOneTimeShopItems.push(itemId);
+    }
+
+    return { success: true, message: `Purchased ${consumableBase.name}!`, itemType: 'consumable' };
 }
