@@ -94,7 +94,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Separate state for UI/View concerns ---
     let currentViewingRealmIndex = 0;
     let currentViewingZoneId = 'world';
-    let isMapRenderPending = true; // Flag to control map re-rendering
+    let isMapRenderPending = false; // Flag to control map re-rendering
 
     let currentMonster = { name: "Slime", data: MONSTERS.SLIME };
     let playerStats = { baseClickDamage: 1, baseDps: 0, totalClickDamage: 1, totalDps: 0, bonusGold: 0, magicFind: 0, bonusXp: 0 };
@@ -735,7 +735,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    function renderMapAccordion() {
+    function renderMapAccordion(animate = false) { // Add animate parameter, default to false
         const fightingSubZone = findSubZoneByLevel(gameState.currentFightingLevel);
         const fightingRealmIndex = fightingSubZone ? REALMS.findIndex(r => Object.values(r.zones).some(z => z === fightingSubZone.parentZone)) : -1;
         const fightingZoneId = fightingSubZone && fightingRealmIndex !== -1 ? Object.keys(REALMS[fightingRealmIndex].zones).find(id => REALMS[fightingRealmIndex].zones[id] === fightingSubZone.parentZone) : null;
@@ -746,7 +746,8 @@ document.addEventListener('DOMContentLoaded', () => {
             onSubZoneNodeClick: handleSubZoneNodeClick,
             onBackToWorldClick: handleBackToWorldClick,
         };
-        ui.renderMapAccordion(elements, gameState, currentViewingRealmIndex, currentViewingZoneId, fightingRealmIndex, fightingZoneId, callbacks);
+    // Pass the animate flag down to the UI function
+        ui.renderMapAccordion(elements, gameState, currentViewingRealmIndex, currentViewingZoneId, fightingRealmIndex, fightingZoneId, callbacks, animate);
     }
     
     function handleRealmHeaderClick(realmIndex) {
@@ -756,15 +757,12 @@ document.addEventListener('DOMContentLoaded', () => {
             currentViewingRealmIndex = realmIndex;
         }
         currentViewingZoneId = 'world';
-        isMapRenderPending = true;
-        renderMapAccordion();
+        renderMapAccordion(true); // Animate this change
     }
-    
-    function handleZoneNodeClick(realmIndex, zoneId) {
+     function handleZoneNodeClick(realmIndex, zoneId) {
         currentViewingRealmIndex = realmIndex;
         currentViewingZoneId = zoneId;
-        isMapRenderPending = true;
-        renderMapAccordion();
+        renderMapAccordion(false); // Do NOT animate this change
     }
     
     function handleSubZoneNodeClick(subZone) {
@@ -774,8 +772,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function handleBackToWorldClick(realmIndex) {
         currentViewingRealmIndex = realmIndex;
         currentViewingZoneId = 'world';
-        isMapRenderPending = true;
-        renderMapAccordion();
+        renderMapAccordion(false); // Do NOT animate this change
     }
     
     function populateBulkCombineControls() {

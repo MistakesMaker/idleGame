@@ -1802,7 +1802,7 @@ export function flashTab(viewId) {
  * @param {string | null} fightingZoneId - The ID of the zone the player is in.
  * @param {object} callbacks - An object containing the callback functions.
  */
-export function renderMapAccordion(elements, gameState, viewingRealmIndex, viewingZoneId, fightingRealmIndex, fightingZoneId, callbacks) {
+export function renderMapAccordion(elements, gameState, viewingRealmIndex, viewingZoneId, fightingRealmIndex, fightingZoneId, callbacks, animate = true) {
     const { onRealmHeaderClick } = callbacks;
     const container = elements.mapAccordionContainerEl;
     container.innerHTML = '';
@@ -1829,15 +1829,18 @@ export function renderMapAccordion(elements, gameState, viewingRealmIndex, viewi
         if (isViewing) {
             renderMap(/** @type {HTMLElement} */(content), realm, viewingZoneId, gameState, fightingZoneId, callbacks);
             const contentEl = /** @type {HTMLElement} */ (content);
+            
+            // This logic ensures the panel opens correctly, with or without CSS animation.
             setTimeout(() => {
+                if (!animate) contentEl.style.transition = 'none'; // Instantly open if not animating
                 contentEl.style.maxHeight = contentEl.scrollHeight + 'px';
-                contentEl.addEventListener('transitionend', function onTransitionEnd() {
-                    const mapContainerEl = contentEl.querySelector('.map-container-instance');
-                    if(mapContainerEl) {
-                        drawMapPaths(/** @type {HTMLElement} */(mapContainerEl), realm, viewingZoneId, gameState);
-                    }
-                    contentEl.removeEventListener('transitionend', onTransitionEnd);
-                });
+                const mapContainerEl = contentEl.querySelector('.map-container-instance');
+                if(mapContainerEl) {
+                    drawMapPaths(/** @type {HTMLElement} */(mapContainerEl), realm, viewingZoneId, gameState);
+                }
+                if (!animate) {
+                    setTimeout(() => { contentEl.style.transition = ''; }, 0); // Restore transition for user clicks
+                }
             }, 0);
         }
 
@@ -1847,6 +1850,38 @@ export function renderMapAccordion(elements, gameState, viewingRealmIndex, viewi
     });
 }
 
+/**
+ * Updates only the content of the currently active map accordion panel without rebuilding the entire structure.
+ * @param {DOMElements} elements The DOM elements object.
+ * @param {object} realm The realm object for the currently open accordion.
+ * @param {string} viewingZoneId The ID of the zone to view ('world' or a zone ID).
+ * @param {object} gameState The current game state.
+ * @param {string | null} fightingZoneId The ID of the zone the player is fighting in.
+ * @param {object} callbacks Click handler callbacks.
+ */
+export function updateMapAccordionContent(elements, realm, viewingZoneId, gameState, fightingZoneId, callbacks) {
+    const activeAccordionContent = elements.mapAccordionContainerEl.querySelector('.accordion-header.active + .accordion-content');
+    if (!activeAccordionContent) {
+        // Fallback to a full render if we can't find the active panel
+        renderMapAccordion(elements, gameState, REALMS.indexOf(realm), viewingZoneId, REALMS.indexOf(realm), fightingZoneId, callbacks, false);
+        return;
+    }
+
+    const contentEl = /** @type {HTMLElement} */ (activeAccordionContent);
+    renderMap(contentEl, realm, viewingZoneId, gameState, fightingZoneId, callbacks);
+
+    // After rendering the new content, instantly adjust the panel height
+    contentEl.style.transition = 'none';
+    contentEl.style.maxHeight = contentEl.scrollHeight + 'px';
+    const mapContainerEl = contentEl.querySelector('.map-container-instance');
+    if (mapContainerEl) {
+        drawMapPaths(/** @type {HTMLElement} */(mapContainerEl), realm, viewingZoneId, gameState);
+    }
+    // Restore transitions for the next user action
+    setTimeout(() => {
+        contentEl.style.transition = '';
+    }, 50); // A tiny delay is sometimes needed
+}
 
 /**
  * Renders a specific map (world or zone) into a given container.
@@ -1898,14 +1933,12 @@ function renderMap(contentEl, realm, viewingZoneId, gameState, fightingZoneId, {
         for (const subZone of subZonesArray) {
             const isUnlocked = gameState.maxLevel >= subZone.levelRange[0];
             const isCompleted = gameState.completedLevels.includes(subZone.levelRange[1]);
-            
             let iconSrc;
             if (subZone.isBoss && subZone.monsterPool && subZone.monsterPool.length === 1) {
                 iconSrc = subZone.monsterPool[0].image;
             } else {
                 iconSrc = subZone.icon;
             }
-            
             const node = createMapNode(subZone.name, iconSrc, subZone.coords, isUnlocked, isCompleted, gameState.currentFightingLevel, subZone.levelRange, subZone.isBoss, false);
             if (isUnlocked) {
                 node.addEventListener('click', () => onSubZoneNodeClick(subZone));
