@@ -157,6 +157,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return {
             gold: 0, scrap: 0, upgrades: { clickDamage: 0, dps: 0 }, maxLevel: 1, currentFightingLevel: 1,
             monster: { hp: 10, maxHp: 10 },
+            firstKillCompleted: false,
             equipment: { ...defaultEquipmentState }, // This will be a REFERENCE to the active preset's equipment
             inventory: [],
             consumables: [],
@@ -269,128 +270,147 @@ document.addEventListener('DOMContentLoaded', () => {
 
         statBreakdown.clickDamage.sources.push({ label: 'Base', value: 1 });
         
-        // --- Prestige Stats ---
-        if (absorbed.clickDamage) {
-            const val = absorbed.clickDamage * prestigeMultiplier;
-            baseClickDamage += val;
-            statBreakdown.clickDamage.sources.push({ label: 'From Prestige', value: val });
+    // --- Prestige Stats (separated for clarity) ---
+    if (absorbed.clickDamage) {
+        const rawValue = absorbed.clickDamage;
+        const totalValue = rawValue * prestigeMultiplier;
+        const powerBonus = totalValue - rawValue;
+        baseClickDamage += totalValue;
+        statBreakdown.clickDamage.sources.push({ label: 'From Prestige', value: rawValue });
+        if (powerBonus > 0) {
+            statBreakdown.clickDamage.sources.push({ label: 'From Prestige Power', value: powerBonus });
         }
-        if (absorbed.dps) {
-            const val = absorbed.dps * prestigeMultiplier;
-            baseDps += val;
-            statBreakdown.dps.sources.push({ label: 'From Prestige', value: val });
+    }
+    if (absorbed.dps) {
+        const rawValue = absorbed.dps;
+        const totalValue = rawValue * prestigeMultiplier;
+        const powerBonus = totalValue - rawValue;
+        baseDps += totalValue;
+        statBreakdown.dps.sources.push({ label: 'From Prestige', value: rawValue });
+        if (powerBonus > 0) {
+            statBreakdown.dps.sources.push({ label: 'From Prestige Power', value: powerBonus });
         }
-        if (absorbed.goldGain) {
-            const val = absorbed.goldGain * prestigeMultiplier;
-            bonusGold += val;
-            statBreakdown.goldGain.sources.push({ label: 'From Prestige', value: val, isPercent: true });
+    }
+    if (absorbed.goldGain) {
+        const rawValue = absorbed.goldGain;
+        const totalValue = rawValue * prestigeMultiplier;
+        const powerBonus = totalValue - rawValue;
+        bonusGold += totalValue;
+        statBreakdown.goldGain.sources.push({ label: 'From Prestige', value: rawValue, isPercent: true });
+        if (powerBonus > 0) {
+            statBreakdown.goldGain.sources.push({ label: 'From Prestige Power', value: powerBonus, isPercent: true });
         }
-        if (absorbed.magicFind) {
-            const val = absorbed.magicFind * prestigeMultiplier;
-            magicFind += val;
-            statBreakdown.magicFind.sources.push({ label: 'From Prestige', value: val, isPercent: true });
+    }
+    if (absorbed.magicFind) {
+        const rawValue = absorbed.magicFind;
+        const totalValue = rawValue * prestigeMultiplier;
+        const powerBonus = totalValue - rawValue;
+        magicFind += totalValue;
+        statBreakdown.magicFind.sources.push({ label: 'From Prestige', value: rawValue, isPercent: true });
+        if (powerBonus > 0) {
+            statBreakdown.magicFind.sources.push({ label: 'From Prestige Power', value: powerBonus, isPercent: true });
         }
+    }
 
-        // --- Active Buffs ---
-        if (gameState.activeBuffs) {
-            gameState.activeBuffs.forEach(buff => {
-                if(buff.statKey === 'bonusGold') bonusGold += buff.value;
-                if(buff.statKey === 'magicFind') magicFind += buff.value;
-                if(buff.statKey === 'bonusXp') bonusXp += buff.value;
-            });
-        }
-        
-        // --- Gear Stats ---
-        let clickFromGear = 0, dpsFromGear = 0, goldFromGear = 0, magicFromGear = 0;
-        let synergyFromGems = 0;
-        for (const item of Object.values(gameState.equipment)) {
-            if (item) {
-                const combinedStats = getCombinedItemStats(item);
-                clickFromGear += combinedStats.clickDamage || 0;
-                dpsFromGear += combinedStats.dps || 0;
-                goldFromGear += combinedStats.goldGain || 0;
-                magicFromGear += combinedStats.magicFind || 0;
-                
-                if (item.sockets) {
-                    for (const gem of item.sockets) {
-                        if (gem && gem.synergy) synergyFromGems += gem.synergy.value;
-                    }
+    // --- Active Buffs ---
+    if (gameState.activeBuffs) {
+        gameState.activeBuffs.forEach(buff => {
+            if(buff.statKey === 'bonusGold') bonusGold += buff.value;
+            if(buff.statKey === 'magicFind') magicFind += buff.value;
+            if(buff.statKey === 'bonusXp') bonusXp += buff.value;
+        });
+    }
+    
+    // --- Gear Stats ---
+    let clickFromGear = 0, dpsFromGear = 0, goldFromGear = 0, magicFromGear = 0;
+    let synergyFromGems = 0;
+    for (const item of Object.values(gameState.equipment)) {
+        if (item) {
+            const combinedStats = getCombinedItemStats(item);
+            clickFromGear += combinedStats.clickDamage || 0;
+            dpsFromGear += combinedStats.dps || 0;
+            goldFromGear += combinedStats.goldGain || 0;
+            magicFromGear += combinedStats.magicFind || 0;
+            
+            if (item.sockets) {
+                for (const gem of item.sockets) {
+                    if (gem && gem.synergy) synergyFromGems += gem.synergy.value;
                 }
             }
         }
-        baseClickDamage += clickFromGear;
-        baseDps += dpsFromGear;
-        bonusGold += goldFromGear;
-        magicFind += magicFromGear;
-        statBreakdown.clickDamage.sources.push({ label: 'From Gear', value: clickFromGear });
-        statBreakdown.dps.sources.push({ label: 'From Gear', value: dpsFromGear });
-        statBreakdown.goldGain.sources.push({ label: 'From Gear', value: goldFromGear, isPercent: true });
-        statBreakdown.magicFind.sources.push({ label: 'From Gear', value: magicFromGear, isPercent: true });
-        
-        // --- Attribute Bonuses ---
-        const strengthBonusClickFlat = hero.attributes.strength * 5;
-        const strengthBonusClickPercent = hero.attributes.strength * 0.2;
-        baseClickDamage += strengthBonusClickFlat;
-        statBreakdown.clickDamage.sources.push({ label: 'From Strength', value: strengthBonusClickFlat });
-        statBreakdown.clickDamage.multipliers.push({ label: 'From Strength', value: strengthBonusClickPercent });
+    }
+    baseClickDamage += clickFromGear;
+    baseDps += dpsFromGear;
+    bonusGold += goldFromGear;
+    magicFind += magicFromGear;
+    statBreakdown.clickDamage.sources.push({ label: 'From Gear', value: clickFromGear });
+    statBreakdown.dps.sources.push({ label: 'From Gear', value: dpsFromGear });
+    statBreakdown.goldGain.sources.push({ label: 'From Gear', value: goldFromGear, isPercent: true });
+    statBreakdown.magicFind.sources.push({ label: 'From Gear', value: magicFromGear, isPercent: true });
+    
+    // --- Attribute Bonuses ---
+    const strengthBonusClickFlat = hero.attributes.strength * 5;
+    const strengthBonusClickPercent = hero.attributes.strength * 0.2;
+    baseClickDamage += strengthBonusClickFlat;
+    statBreakdown.clickDamage.sources.push({ label: 'From Strength', value: strengthBonusClickFlat });
+    statBreakdown.clickDamage.multipliers.push({ label: 'From Strength', value: strengthBonusClickPercent });
 
-        const agilityBonusDpsFlat = hero.attributes.agility * 10;
-        const agilityBonusDpsPercent = hero.attributes.agility * 0.8;
-        baseDps += agilityBonusDpsFlat;
-        statBreakdown.dps.sources.push({ label: 'From Agility', value: agilityBonusDpsFlat });
-        statBreakdown.dps.multipliers.push({ label: 'From Agility', value: agilityBonusDpsPercent });
-        
-        const luckBonusGold = hero.attributes.luck * 1;
-        bonusGold += luckBonusGold;
-        statBreakdown.goldGain.sources.push({ label: 'From Luck', value: luckBonusGold, isPercent: true });
-        
-        const luckBonusMagicFind = hero.attributes.luck * 0.1;
-        magicFind += luckBonusMagicFind;
-        statBreakdown.magicFind.sources.push({ label: 'From Luck', value: luckBonusMagicFind, isPercent: true });
+    const agilityBonusDpsFlat = hero.attributes.agility * 10;
+    const agilityBonusDpsPercent = hero.attributes.agility * 0.8;
+    baseDps += agilityBonusDpsFlat;
+    statBreakdown.dps.sources.push({ label: 'From Agility', value: agilityBonusDpsFlat });
+    statBreakdown.dps.multipliers.push({ label: 'From Agility', value: agilityBonusDpsPercent });
+    
+    const luckBonusGold = hero.attributes.luck * 1;
+    bonusGold += luckBonusGold;
+    statBreakdown.goldGain.sources.push({ label: 'From Luck', value: luckBonusGold, isPercent: true });
+    
+    const luckBonusMagicFind = hero.attributes.luck * 0.1;
+    magicFind += luckBonusMagicFind;
+    statBreakdown.magicFind.sources.push({ label: 'From Luck', value: luckBonusMagicFind, isPercent: true });
 
-        // --- Permanent Upgrades ---
-        magicFind += permanentUpgradeBonuses.magicFind;
-        statBreakdown.magicFind.sources.push({ label: 'From Upgrades', value: permanentUpgradeBonuses.magicFind, isPercent: true });
-        
-        // --- Multipliers ---
-        let finalClickDamage = baseClickDamage * (1 + (strengthBonusClickPercent / 100));
-        let finalDps = baseDps * (1 + (agilityBonusDpsPercent / 100));
+    // --- Permanent Upgrades ---
+    magicFind += permanentUpgradeBonuses.magicFind;
+    statBreakdown.magicFind.sources.push({ label: 'From Upgrades', value: permanentUpgradeBonuses.magicFind, isPercent: true });
+    
+    // --- Multipliers ---
+    let finalClickDamage = baseClickDamage * (1 + (strengthBonusClickPercent / 100));
+    let finalDps = baseDps * (1 + (agilityBonusDpsPercent / 100));
 
-        const clickUpgradeBonusPercent = gameState.upgrades.clickDamage * 1;
-        finalClickDamage *= (1 + (clickUpgradeBonusPercent / 100));
-        statBreakdown.clickDamage.multipliers.push({ label: 'From Upgrades', value: clickUpgradeBonusPercent });
-        
-        const dpsUpgradeBonusPercent = gameState.upgrades.dps * 1;
-        finalDps *= (1 + (dpsUpgradeBonusPercent / 100));
-        statBreakdown.dps.multipliers.push({ label: 'From Upgrades', value: dpsUpgradeBonusPercent });
-        
-        // --- Synergy ---
-        const dpsToClickSynergyValue = (gameState.absorbedSynergies && gameState.absorbedSynergies['dps_to_clickDamage']) || 0;
-        const totalSynergy = synergyFromGems + (dpsToClickSynergyValue * prestigeMultiplier);
-        if (totalSynergy > 0) {
-            const synergyBonus = finalDps * totalSynergy;
-            finalClickDamage += synergyBonus;
-            statBreakdown.clickDamage.synergy = synergyBonus;
-        }
-
-        playerStats = {
-            baseClickDamage: baseClickDamage,
-            baseDps: baseDps,
-            totalClickDamage: finalClickDamage,
-            totalDps: finalDps,
-            bonusGold: bonusGold,
-            magicFind: magicFind,
-            bonusXp: bonusXp,
-            critChance: permanentUpgradeBonuses.critChance,
-            critDamage: 1.5 + (permanentUpgradeBonuses.critDamage / 100),
-            multiStrikeChance: permanentUpgradeBonuses.multiStrike,
-            bossDamageBonus: 1 + (permanentUpgradeBonuses.bossDamage / 100),
-            scrapBonus: 1 + (permanentUpgradeBonuses.scrap / 100),
-            gemFindChance: permanentUpgradeBonuses.gemFind,
-            legacyKeeperBonus: permanentUpgradeBonuses.legacyKeeper,
-        };
+    const clickUpgradeBonusPercent = gameState.upgrades.clickDamage * 1;
+    finalClickDamage *= (1 + (clickUpgradeBonusPercent / 100));
+    statBreakdown.clickDamage.multipliers.push({ label: 'From Gold Upgrades', value: clickUpgradeBonusPercent });
+    
+    const dpsUpgradeBonusPercent = gameState.upgrades.dps * 1;
+    finalDps *= (1 + (dpsUpgradeBonusPercent / 100));
+    statBreakdown.dps.multipliers.push({ label: 'From Gold Upgrades', value: dpsUpgradeBonusPercent });
+    
+    // --- Synergy ---
+    const dpsToClickSynergyValue = (gameState.absorbedSynergies && gameState.absorbedSynergies['dps_to_clickDamage']) || 0;
+    const totalSynergy = synergyFromGems + (dpsToClickSynergyValue * prestigeMultiplier);
+    if (totalSynergy > 0) {
+        const synergyBonus = finalDps * totalSynergy;
+        finalClickDamage += synergyBonus;
+        statBreakdown.clickDamage.synergy = synergyBonus;
     }
 
+    playerStats = {
+        baseClickDamage: baseClickDamage,
+        baseDps: baseDps,
+        totalClickDamage: finalClickDamage,
+        totalDps: finalDps,
+        bonusGold: bonusGold,
+        magicFind: magicFind,
+        bonusXp: bonusXp,
+        critChance: permanentUpgradeBonuses.critChance,
+        critDamage: 1.5 + (permanentUpgradeBonuses.critDamage / 100),
+        multiStrikeChance: permanentUpgradeBonuses.multiStrike,
+        bossDamageBonus: 1 + (permanentUpgradeBonuses.bossDamage / 100),
+        scrapBonus: 1 + (permanentUpgradeBonuses.scrap / 100),
+        gemFindChance: permanentUpgradeBonuses.gemFind,
+        legacyKeeperBonus: permanentUpgradeBonuses.legacyKeeper,
+    };
+}
     /**
      * Helper function to refresh the gem view if it's currently active.
      */
@@ -1425,6 +1445,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 tutorialCompleted: loadedState.tutorialCompleted || false,
                 wisdomOfTheOverworldDropped: loadedState.wisdomOfTheOverworldDropped || false,
                 wisdomOfTheOverworldUsed: loadedState.wisdomOfTheOverworldUsed || false,
+                firstKillCompleted: loadedState.firstKillCompleted || false,
                 pendingSubTabViewFlash: loadedState.pendingSubTabViewFlash || null,
                 hunts: {
                     ...baseState.hunts,
