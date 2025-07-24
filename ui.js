@@ -1851,36 +1851,68 @@ export function renderMapAccordion(elements, gameState, viewingRealmIndex, viewi
 }
 
 /**
- * Updates only the content of the currently active map accordion panel without rebuilding the entire structure.
- * @param {DOMElements} elements The DOM elements object.
- * @param {object} realm The realm object for the currently open accordion.
- * @param {string} viewingZoneId The ID of the zone to view ('world' or a zone ID).
+ * Surgically updates an existing map's content (title, background, nodes) without rebuilding the container.
+ * This prevents any flicker or resizing animation.
+ * @param {HTMLElement} contentEl The .accordion-content element that is already open.
+ * @param {object} realm The realm object being viewed.
+ * @param {string} viewingZoneId The new zone ID to display.
  * @param {object} gameState The current game state.
  * @param {string | null} fightingZoneId The ID of the zone the player is fighting in.
  * @param {object} callbacks Click handler callbacks.
  */
-export function updateMapAccordionContent(elements, realm, viewingZoneId, gameState, fightingZoneId, callbacks) {
-    const activeAccordionContent = elements.mapAccordionContainerEl.querySelector('.accordion-header.active + .accordion-content');
-    if (!activeAccordionContent) {
-        // Fallback to a full render if we can't find the active panel
-        renderMapAccordion(elements, gameState, REALMS.indexOf(realm), viewingZoneId, REALMS.indexOf(realm), fightingZoneId, callbacks, false);
-        return;
+export function updateMapContentSurgically(contentEl, realm, viewingZoneId, gameState, fightingZoneId, callbacks) {
+    const mapTitleEl = /** @type {HTMLHeadingElement} */ (contentEl.querySelector('#map-title'));
+    const mapContainerEl = /** @type {HTMLElement} */ (contentEl.querySelector('.map-container-instance'));
+    const backBtn = /** @type {HTMLButtonElement} */ (contentEl.querySelector('#back-to-world-map-btn'));
+
+    if (!mapTitleEl || !mapContainerEl || !backBtn) return; // Safety check
+
+    // IMPORTANT: Clear only the nodes, not the whole container.
+    mapContainerEl.innerHTML = ''; 
+
+    // Instantly set the new background image.
+    const newBgImage = viewingZoneId === 'world' ? realm.mapImage : realm.zones[viewingZoneId]?.mapImage;
+    mapContainerEl.style.backgroundImage = `url('${newBgImage}')`;
+
+    // Update title, button visibility, and render the new nodes.
+    if (viewingZoneId === 'world') {
+        mapTitleEl.textContent = realm.name;
+        backBtn.classList.add('hidden');
+        for (const zoneId in realm.zones) {
+            const zone = realm.zones[zoneId];
+            const isUnlocked = gameState.maxLevel >= findFirstLevelOfZone(zone);
+            const isFightingInThisZone = zoneId === fightingZoneId;
+            const node = createMapNode(zone.name, zone.icon, zone.coords, isUnlocked, false, gameState.currentFightingLevel, null, false, isFightingInThisZone);
+            if (isUnlocked) {
+                node.addEventListener('click', () => callbacks.onZoneNodeClick(REALMS.indexOf(realm), zoneId));
+            }
+            mapContainerEl.appendChild(node);
+        }
+    } else {
+        const zone = realm.zones[viewingZoneId];
+        if (!zone) return;
+        mapTitleEl.textContent = zone.name;
+        backBtn.classList.remove('hidden');
+        const subZonesArray = Object.values(zone.subZones).sort((a, b) => a.levelRange[0] - b.levelRange[0]);
+        for (const subZone of subZonesArray) {
+            const isUnlocked = gameState.maxLevel >= subZone.levelRange[0];
+            const isCompleted = gameState.completedLevels.includes(subZone.levelRange[1]);
+            let iconSrc = (subZone.isBoss && subZone.monsterPool?.length === 1) ? subZone.monsterPool[0].image : subZone.icon;
+            const node = createMapNode(subZone.name, iconSrc, subZone.coords, isUnlocked, isCompleted, gameState.currentFightingLevel, subZone.levelRange, subZone.isBoss, false);
+            if (isUnlocked) {
+                node.addEventListener('click', () => callbacks.onSubZoneNodeClick(subZone));
+            }
+            mapContainerEl.appendChild(node);
+        }
     }
+    
+    // Draw paths for the new nodes.
+    drawMapPaths(mapContainerEl, realm, viewingZoneId, gameState);
 
-    const contentEl = /** @type {HTMLElement} */ (activeAccordionContent);
-    renderMap(contentEl, realm, viewingZoneId, gameState, fightingZoneId, callbacks);
-
-    // After rendering the new content, instantly adjust the panel height
+    // After rendering, we MUST update the panel's height to fit the new content, but do it instantly.
     contentEl.style.transition = 'none';
     contentEl.style.maxHeight = contentEl.scrollHeight + 'px';
-    const mapContainerEl = contentEl.querySelector('.map-container-instance');
-    if (mapContainerEl) {
-        drawMapPaths(/** @type {HTMLElement} */(mapContainerEl), realm, viewingZoneId, gameState);
-    }
-    // Restore transitions for the next user action
-    setTimeout(() => {
-        contentEl.style.transition = '';
-    }, 50); // A tiny delay is sometimes needed
+    setTimeout(() => { contentEl.style.transition = ''; }, 50); // Restore transition for next time
 }
 
 /**

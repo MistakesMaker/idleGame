@@ -762,7 +762,16 @@ document.addEventListener('DOMContentLoaded', () => {
      function handleZoneNodeClick(realmIndex, zoneId) {
         currentViewingRealmIndex = realmIndex;
         currentViewingZoneId = zoneId;
-        renderMapAccordion(false); // Do NOT animate this change
+
+        const activeContentPanel = elements.mapAccordionContainerEl.querySelector('.accordion-header.active + .accordion-content');
+        if (activeContentPanel) {
+            const fightingSubZone = findSubZoneByLevel(gameState.currentFightingLevel);
+            const fightingRealmIndex = fightingSubZone ? REALMS.findIndex(r => Object.values(r.zones).some(z => z === fightingSubZone.parentZone)) : -1;
+            const fightingZoneId = fightingSubZone && fightingRealmIndex !== -1 ? Object.keys(REALMS[fightingRealmIndex].zones).find(id => REALMS[fightingRealmIndex].zones[id] === fightingSubZone.parentZone) : null;
+            const callbacks = { onZoneNodeClick: handleZoneNodeClick, onSubZoneNodeClick: handleSubZoneNodeClick, onBackToWorldClick: handleBackToWorldClick };
+            
+            ui.updateMapContentSurgically(/** @type {HTMLElement} */ (activeContentPanel), REALMS[realmIndex], zoneId, gameState, fightingZoneId, callbacks);
+        }
     }
     
     function handleSubZoneNodeClick(subZone) {
@@ -772,7 +781,16 @@ document.addEventListener('DOMContentLoaded', () => {
     function handleBackToWorldClick(realmIndex) {
         currentViewingRealmIndex = realmIndex;
         currentViewingZoneId = 'world';
-        renderMapAccordion(false); // Do NOT animate this change
+        
+        const activeContentPanel = elements.mapAccordionContainerEl.querySelector('.accordion-header.active + .accordion-content');
+        if (activeContentPanel) {
+            const fightingSubZone = findSubZoneByLevel(gameState.currentFightingLevel);
+            const fightingRealmIndex = fightingSubZone ? REALMS.findIndex(r => Object.values(r.zones).some(z => z === fightingSubZone.parentZone)) : -1;
+            const fightingZoneId = fightingSubZone && fightingRealmIndex !== -1 ? Object.keys(REALMS[fightingRealmIndex].zones).find(id => REALMS[fightingRealmIndex].zones[id] === fightingSubZone.parentZone) : null;
+            const callbacks = { onZoneNodeClick: handleZoneNodeClick, onSubZoneNodeClick: handleSubZoneNodeClick, onBackToWorldClick: handleBackToWorldClick };
+            
+            ui.updateMapContentSurgically(/** @type {HTMLElement} */ (activeContentPanel), REALMS[realmIndex], 'world', gameState, fightingZoneId, callbacks);
+        }
     }
     
     function populateBulkCombineControls() {
