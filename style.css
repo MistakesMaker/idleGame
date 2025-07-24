@@ -2451,3 +2451,28 @@ h5 .legendary { color: #f39c12; }
     background: #7f8c8d;
     border-bottom-color: #6c7a7b;
 }
+/* --- Reset Attributes Button (Updated) --- */
+.attributes-header-container {
+    display: flex;
+    justify-content: space-between; /* Pushes items to opposite ends */
+    align-items: center;        /* Vertically aligns them */
+    margin-bottom: 0.625rem;      /* 10px, creates space below */
+}
+
+.attributes-header-container h4 {
+    margin: 0; /* Remove default margin for better flex alignment */
+}
+
+.reset-attributes-container {
+    /* No special layout styles needed here anymore */
+}
+
+#reset-attributes-btn {
+    background: #c0392b;
+    border-bottom-color: #922b21;
+    margin: 0; /* Remove default button margin */
+}
+
+#reset-attributes-btn:hover {
+    background: #e74c3c;
+}

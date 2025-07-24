@@ -1203,3 +1203,35 @@ export function purchaseHuntShopItem(gameState, itemId) {
 
     return { success: true, message: `Purchased ${consumableBase.name}!`, itemType: 'consumable' };
 }
+
+/**
+ * Resets all spent hero attributes in exchange for Scrap.
+ * @param {object} gameState The main game state object.
+ * @returns {{success: boolean, message: string}}
+ */
+export function resetAttributes(gameState) {
+    const { strength, agility, luck } = gameState.hero.attributes;
+    const totalSpentPoints = strength + agility + luck;
+
+    if (totalSpentPoints === 0) {
+        return { success: false, message: "You have no attribute points to reset." };
+    }
+
+    const costPerPoint = 100;
+    const totalCost = totalSpentPoints * costPerPoint;
+
+    if (gameState.scrap < totalCost) {
+        return { success: false, message: `You need ${formatNumber(totalCost)} Scrap to reset, but you only have ${formatNumber(gameState.scrap)}.` };
+    }
+
+    // Deduct cost and refund points
+    gameState.scrap -= totalCost;
+    gameState.hero.attributePoints += totalSpentPoints;
+
+    // Reset attributes to zero
+    gameState.hero.attributes.strength = 0;
+    gameState.hero.attributes.agility = 0;
+    gameState.hero.attributes.luck = 0;
+
+    return { success: true, message: `Successfully reset ${totalSpentPoints} attribute points for ${formatNumber(totalCost)} Scrap!` };
+}

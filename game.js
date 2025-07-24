@@ -2834,6 +2834,37 @@ document.addEventListener('DOMContentLoaded', () => {
                 elements.statTooltipEl.classList.add('hidden');
             }
         });
+        addTapListener(elements.resetAttributesBtn, () => {
+            const { strength, agility, luck } = gameState.hero.attributes;
+            const totalSpentPoints = strength + agility + luck;
+
+            if (totalSpentPoints === 0) {
+                logMessage(elements.gameLogEl, "You have no attribute points to reset.", 'uncommon', isAutoScrollingLog);
+                return;
+            }
+
+            const cost = totalSpentPoints * 100;
+
+            ui.showConfirmationModal(
+                elements,
+                'Reset Attributes?',
+                `<p>This will refund <b>${totalSpentPoints}</b> attribute points.</p>
+                 <p>Cost: <span style="color: #ffd700;">${formatNumber(cost)}</span> Scrap.</p>
+                 <p>Are you sure?</p>`,
+                () => {
+                    const result = player.resetAttributes(gameState);
+                    logMessage(elements.gameLogEl, result.message, result.success ? 'epic' : 'rare', isAutoScrollingLog);
+                    if (result.success) {
+                        recalculateStats();
+                        ui.updateHeroPanel(elements, gameState, heldKeys);
+                        ui.updateStatsPanel(elements, playerStats);
+                        ui.updateCurrency(elements, gameState);
+                        autoSave();
+                    }
+                }
+            );
+        });
+
 
         const derivedStatsArea = document.getElementById('derived-stats-area');
         derivedStatsArea.addEventListener('mouseover', (event) => {

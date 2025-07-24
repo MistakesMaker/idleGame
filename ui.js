@@ -169,6 +169,7 @@ export function initDOMElements() {
         inventoryLockedSubViewTitle: document.getElementById('inventory-locked-sub-view-title'),
         inventoryLockedSubViewMessage: document.getElementById('inventory-locked-sub-view-message'),
         activeBuffsContainer: document.getElementById('active-buffs-container'),
+        resetAttributesBtn: document.getElementById('reset-attributes-btn'),
     };
 }
 
