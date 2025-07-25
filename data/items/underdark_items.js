@@ -155,7 +155,7 @@ export const underdarkItems = {
         width: 2, height: 3,
         canHaveSockets: true,
         maxSockets: 3,
-        possibleStats: [ { key: STATS.DPS.key, min: 1, max: 40000 } ]
+        possibleStats: [ { key: STATS.DPS.key, min: 1, max: 75000 } ]
     },
     DEEP_GNOME_PICKAXE: {
         id: 'DEEP_GNOME_PICKAXE',
@@ -418,7 +418,7 @@ export const underdarkItems = {
         width: 2, height: 3,
         canHaveSockets: true,
         maxSockets: 1,
-        possibleStats: [ { key: STATS.DPS.key, min: 70000, max: 70000 } ]
+        possibleStats: [ { key: STATS.DPS.key, min: 100000, max: 100000 } ]
     },
     MANDRAGORA_ROOT: {
         id: 'MANDRAGORA_ROOT',
@@ -555,9 +555,9 @@ export const underdarkItems = {
         width: 2, height: 3,
         isUnique: true,
         canHaveSockets: true,
-        maxSockets: 3,
+        maxSockets: 4,
         possibleStats: [ 
-            { key: STATS.DPS.key, min: 1, max: 100000 },
+            { key: STATS.DPS.key, min: 1, max: 125000 },
             { key: STATS.CLICK_DAMAGE.key, min: 1, max: 6000 },
          ]
     },
@@ -608,6 +608,7 @@ export const underdarkItems = {
         canHaveSockets: true,
         maxSockets: 3,
         possibleStats: [
+            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 20000 },
             { key: STATS.DPS.key, min: 1, max: 110000 },
             { key: STATS.GOLD_GAIN.key, min: 1, max: 1100 },
         ]
@@ -635,7 +636,7 @@ export const underdarkItems = {
         width: 2, height: 3,
         canHaveSockets: true,
         maxSockets: 3,
-        possibleStats: [ { key: STATS.GOLD_GAIN.key, min: 1, max: 1400 } ]
+        possibleStats: [ { key: STATS.GOLD_GAIN.key, min: 1, max: 2000 } ]
     },
 
     // --- Sub-Zone: Spider Queen's Lair (Boss Lvl 700) ---
