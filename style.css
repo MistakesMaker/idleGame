@@ -2067,7 +2067,10 @@ h5 .legendary { color: #f39c12; }
     position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
     background-color: rgba(0,0,0,0.8); 
     z-index: 10002; 
-    display: flex; justify-content: center; align-items: center;
+    display: flex; 
+    justify-content: center; 
+    align-items: flex-start; /* Aligns modal to the top */
+    padding-top: 12.5vh; /* Pushes the modal down from the top edge */
 }
 
 #hunts-modal {
@@ -2077,10 +2080,11 @@ h5 .legendary { color: #f39c12; }
     border: 0.125rem solid #e67e22; /* 2px */
     box-shadow: 0 0 1.25rem rgba(230, 126, 34, 0.5); /* 20px */
     width: 90%; max-width: 56.25rem; /* 900px */
-    max-height: 90vh;
+    max-height: 75vh; /* Adjusted to leave a bottom margin */
     display: flex;
     flex-direction: column;
 }
+
 
 #hunts-modal-header {
     display: flex;
