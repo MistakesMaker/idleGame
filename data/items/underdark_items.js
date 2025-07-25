@@ -303,7 +303,7 @@ export const underdarkItems = {
         maxSockets: 3,
         possibleStats: [ 
             { key: STATS.DPS.key, min: 1, max: 75000 },
-            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 7000 },
+            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 15000 },
             { key: STATS.GOLD_GAIN.key, min: 1, max: 500 } ]
     },
 
@@ -387,9 +387,9 @@ export const underdarkItems = {
         icon: 'images/icons/mind_flayer_circlet.png',
         width: 2, height: 2,
         possibleStats: [ 
-            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 6500 },
-            { key: STATS.DPS.key, min: 10000, max: 60000 },
-            { key: STATS.GOLD_GAIN.key, min: 100, max: 400 }
+            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 12000 },
+            { key: STATS.DPS.key, min: 1, max: 60000 },
+            { key: STATS.GOLD_GAIN.key, min: 1, max: 400 }
          ]
     },
 
@@ -550,7 +550,7 @@ export const underdarkItems = {
         possibleStats: [ 
             { key: STATS.GOLD_GAIN.key, min: 1, max: 1500 },
             { key: STATS.DPS.key, min: 1, max: 88888 },
-            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 8000 }
+            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 25000 }
          ]
     },
 
@@ -671,10 +671,10 @@ export const underdarkItems = {
         icon: 'images/icons/voidforged_helm.png',
         width: 2, height: 2,
         canHaveSockets: true,
-        maxSockets: 2,
+        maxSockets: 3,
         possibleStats: [ 
             { key: STATS.DPS.key, min: 1, max: 111000 },
-            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 8500 } 
+            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 35000 } 
          ]
     },
     VOIDFORGED_GREAVES: {
