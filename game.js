@@ -456,7 +456,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function handleMonsterDefeated() {
         playSound('monster_defeat');
-        player.checkHuntProgress(gameState, currentMonster);
         const huntsModal = document.getElementById('hunts-modal-backdrop');
         if (huntsModal && !huntsModal.classList.contains('hidden')) {
             ui.renderHuntsView(elements, gameState);
