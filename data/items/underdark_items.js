@@ -84,9 +84,9 @@ export const underdarkItems = {
         icon: 'images/icons/lurkers_hide_shield.png',
         width: 2, height: 3,
         canHaveSockets: true,
-        maxSockets: 3,
+        maxSockets: 1,
         possibleStats: [ 
-            { key: STATS.DPS.key, min: 1, max: 45000 },
+            { key: STATS.DPS.key, min: 1, max: 70000 },
             { key: STATS.CLICK_DAMAGE.key, min: 1, max: 16000 } ,
          ]
     },
@@ -182,7 +182,7 @@ export const underdarkItems = {
         canHaveSockets: true,
         maxSockets: 3,
         possibleStats: [ 
-            { key: STATS.DPS.key, min: 1, max: 50000 },
+            { key: STATS.DPS.key, min: 1, max: 90000 },
             { key: STATS.CLICK_DAMAGE.key, min: 1, max: 15000 },
             { key: STATS.GOLD_GAIN.key, min: 1, max: 300 }
          ]
@@ -624,7 +624,7 @@ export const underdarkItems = {
         canHaveSockets: true,
         maxSockets: 3,
         possibleStats: [ 
-            { key: STATS.DPS.key, min: 1, max: 65000 },
+            { key: STATS.DPS.key, min: 1, max: 90000 },
             { key: STATS.CLICK_DAMAGE.key, min: 1, max: 14000 }
          ]
     },
@@ -726,7 +726,7 @@ export const underdarkItems = {
         canHaveSockets: true,
         maxSockets: 3,
         possibleStats: [ 
-            { key: STATS.DPS.key, min: 1, max: 78000 },
+            { key: STATS.DPS.key, min: 1, max: 125000 },
             { key: STATS.CLICK_DAMAGE.key, min: 1, max: 17500 },
             { key: STATS.GOLD_GAIN.key, min: 1, max: 600 }
          ]
