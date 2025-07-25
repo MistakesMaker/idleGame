@@ -116,7 +116,6 @@ export const underdarkItems = {
             { key: STATS.DPS.key, min: 1, max: 40000 },
             { key: STATS.CLICK_DAMAGE.key, min: 1, max: 16000 },
             { key: STATS.GOLD_GAIN.key, min: 1, max: 200 },
-
          ]
     },
 
@@ -229,7 +228,7 @@ export const underdarkItems = {
         maxSockets: 1,
         possibleStats: [
             { key: STATS.DPS.key, min: 1, max: 60000 },
-            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 7000 },
+            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 22000 },
             { key: STATS.GOLD_GAIN.key, min: 1, max: 250 }
         ]
     },
@@ -317,7 +316,7 @@ export const underdarkItems = {
         canHaveSockets: true,
         maxSockets: 3,
         possibleStats: [ 
-            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 6000 }
+            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 28000 }
          ]
     },
     FUNGAL_BARRIER: {
@@ -447,7 +446,7 @@ export const underdarkItems = {
         maxSockets: 3,
         possibleStats: [ 
             { key: STATS.DPS.key, min: 1000, max: 90000 },
-            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 8500 },
+            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 30000 },
             { key: STATS.GOLD_GAIN.key, min: 1, max: 450 }
          ]
     },
@@ -535,7 +534,7 @@ export const underdarkItems = {
         canHaveSockets: true,
         maxSockets: 1,
         possibleStats: [ 
-            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 8500 },
+            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 40000 },
             { key: STATS.GOLD_GAIN.key, min: 1, max: 450 }
          ]
     },
