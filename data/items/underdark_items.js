@@ -443,7 +443,7 @@ export const underdarkItems = {
         canHaveSockets: true,
         maxSockets: 3,
         possibleStats: [ 
-            { key: STATS.DPS.key, min: 1000, max: 75000 },
+            { key: STATS.DPS.key, min: 1000, max: 90000 },
             { key: STATS.CLICK_DAMAGE.key, min: 1, max: 8500 },
             { key: STATS.GOLD_GAIN.key, min: 1, max: 450 }
          ]
@@ -757,7 +757,7 @@ export const underdarkItems = {
         width: 2, height: 2,
         canHaveSockets: true,
         maxSockets: 1,
-        possibleStats: [ { key: STATS.GOLD_GAIN.key, min: 1, max: 900 } ]
+        possibleStats: [ { key: STATS.GOLD_GAIN.key, min: 1, max: 900 }, ]
     },
     FLESH_GOLEM_HEART: {
         id: 'FLESH_GOLEM_HEART',
@@ -794,7 +794,7 @@ export const underdarkItems = {
         canHaveSockets: true,
         maxSockets: 1,
         possibleStats: [
-            { key: STATS.DPS.key, min: 1, max: 105000 },
+            { key: STATS.DPS.key, min: 1, max: 150000 },
             { key: STATS.GOLD_GAIN.key, min: 1, max: 900 }
         ]
     },
