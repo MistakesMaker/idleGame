@@ -51,7 +51,7 @@ export const HUNT_POOLS = [
         // Tier 3: Undead Desert Hunts (Levels 201-300)
         requiredLevel: 201,
         hunts: [
-            { id: 'hunt_kill_skeletons', title: 'Bone Collector', description: 'Defeat {quantity} Skeletons of any kind.', type: 'kill_category', target: { nameContains: 'Skeleton' }, quantityMin: 35, quantityMax: 50, rewardIds: ['MAGIC_FIND_POTION_MINOR', 'XP_ELIXIR_MAJOR'] },
+            { id: 'hunt_kill_skeletons', title: 'Bone Collector', description: 'Defeat {quantity} Skeletons of any kind.', type: 'kill_category', target: { nameContains: 'Skele' }, quantityMin: 35, quantityMax: 50, rewardIds: ['MAGIC_FIND_POTION_MINOR', 'XP_ELIXIR_MAJOR'] },
             { id: 'hunt_kill_scorpions', title: 'Stinger Season', description: 'Defeat {quantity} Giant Scorpions.', type: 'kill_specific', target: 'GIANT_SCORPION', quantityMin: 25, quantityMax: 40, rewardIds: ['XP_ELIXIR_MAJOR', 'GOLD_BOOSTER_MAJOR'] },
             { id: 'hunt_kill_desert_any', title: 'Cleansing the Desert', description: 'Defeat {quantity} monsters within the Undead Desert.', type: 'kill_category', target: { zoneId: 'undead_desert' }, quantityMin: 40, quantityMax: 60, rewardIds: ['GOLD_BOOSTER_MAJOR', 'SCRAP_CACHE_LARGE'] },
             { id: 'hunt_kill_desert_bosses', title: 'Pharaoh\'s Fall', description: 'Vanquish {quantity} bosses in the Undead Desert.', type: 'kill_category', target: { isBoss: true, zoneId: 'undead_desert' }, quantityMin: 1, quantityMax: 3, rewardIds: ['SCRAP_CACHE_LARGE', 'GEM_SEEKER_DRAFT_MINOR'] }
