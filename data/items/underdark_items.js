@@ -145,7 +145,7 @@ export const underdarkItems = {
         width: 2, height: 2,
         canHaveSockets: true,
         maxSockets: 2,
-        possibleStats: [ { key: STATS.GOLD_GAIN.key, min: 600, max: 600 } ]
+        possibleStats: [ { key: STATS.GOLD_GAIN.key, min: 1000, max: 1000 } ]
     },
     CAVE_STALKER_TUNIC: {
         id: 'CAVE_STALKER_TUNIC',
@@ -539,7 +539,11 @@ export const underdarkItems = {
         width: 2, height: 2,
         canHaveSockets: true,
         maxSockets: 2,
-        possibleStats: [ { key: STATS.GOLD_GAIN.key, min: 1000, max: 1000 } ]
+        possibleStats: [ 
+            { key: STATS.GOLD_GAIN.key, min: 1, max: 1500 },
+            { key: STATS.DPS.key, min: 1, max: 88888 },
+            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 8000 }
+         ]
     },
 
     // --- Sub-Zone: Drow Barracks (Boss Lvl 650) ---
@@ -660,7 +664,7 @@ export const underdarkItems = {
         canHaveSockets: true,
         maxSockets: 2,
         possibleStats: [ 
-            { key: STATS.DPS.key, min: 1, max: 85000 },
+            { key: STATS.DPS.key, min: 1, max: 111000 },
             { key: STATS.CLICK_DAMAGE.key, min: 1, max: 8500 } 
          ]
     },
