@@ -43,8 +43,8 @@ export const underdarkItems = {
         icon: 'images/icons/focal_gem_ring.png',
         width: 1, height: 1,
         canHaveSockets: true,
-        maxSockets: 1,
-        possibleStats: [ { key: STATS.CLICK_DAMAGE.key, min: 1, max: 12000 } ]
+        maxSockets: 3,
+        possibleStats: [ { key: STATS.CLICK_DAMAGE.key, min: 1, max: 15000 } ]
     },
     CRYSTAL_TIPPED_SPEAR: {
         id: 'CRYSTAL_TIPPED_SPEAR',
@@ -506,7 +506,7 @@ export const underdarkItems = {
         maxSockets: 3,
         possibleStats: [
             { key: STATS.DPS.key, min: 1, max: 100000 },
-            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 12500 },
+            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 40000 },
         ]
     },
 
@@ -578,7 +578,7 @@ export const underdarkItems = {
         width: 1, height: 1,
         canHaveSockets: true,
         maxSockets: 3,
-        possibleStats: [ { key: STATS.GOLD_GAIN.key, min: 750, max: 750 } ]
+        possibleStats: [ { key: STATS.GOLD_GAIN.key, min: 2000, max: 2000 } ]
     },
     OBSIDIAN_PLATEBODY: {
         id: 'OBSIDIAN_PLATEBODY',
@@ -747,7 +747,7 @@ export const underdarkItems = {
         canHaveSockets: true,
         maxSockets: 3,
         possibleStats: [ 
-            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 15000 },
+            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 55000 },
             { key: STATS.GOLD_GAIN.key, min: 1, max: 900 }
          ]
     },
