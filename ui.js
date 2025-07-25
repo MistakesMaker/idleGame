@@ -198,7 +198,9 @@ export function initHuntsDOMElements() {
         huntsCloseBtn: document.getElementById('hunts-close-btn'),
         huntTokensAmount: document.getElementById('hunt-tokens-amount'),
         totalHuntsCompleted: document.getElementById('total-hunts-completed'), 
-        totalHuntsIcon: document.getElementById('total-hunts-icon'), // <-- ADD THIS LINE
+        totalHuntsIcon: document.getElementById('total-hunts-icon'),
+        totalHuntsDisplay: document.getElementById('total-hunts-display'), // <-- ADD THIS
+        huntTokensDisplay: document.getElementById('hunt-tokens-display'), // <-- AND THIS
         activeHuntSection: document.getElementById('active-hunt-section'),
         activeHuntCard: document.getElementById('active-hunt-card'),
         noActiveHuntText: document.getElementById('no-active-hunt-text'),
@@ -3385,4 +3387,30 @@ export function renderForgeInventory(containerEl, itemsToRender, selectedItemFor
         }
     }
     containerEl.style.gridTemplateRows = `repeat(${Math.max(10, maxRow)}, var(--grid-cell-size))`;
+}
+
+/**
+ * Shows a simple, generic tooltip with custom text positioned below a target element.
+ * @param {DOMElements} elements The DOM elements object.
+ * @param {HTMLElement} targetEl The element to position the tooltip relative to.
+ * @param {string} text The text content to display in the tooltip.
+ */
+export function showSimpleTooltip(elements, targetEl, text) {
+    const { tooltipEl } = elements;
+    if (!targetEl || !text) return;
+
+    // Use a neutral style for the tooltip border and add our new class
+    tooltipEl.className = 'hidden simple-tooltip'; // <-- MODIFIED THIS LINE
+    tooltipEl.classList.add('rare'); // A simple blue border works well
+
+    // Set the content to a simple paragraph
+    tooltipEl.innerHTML = `<p style="margin: 0;">${text}</p>`;
+
+    // Position the tooltip below the target element
+    const rect = targetEl.getBoundingClientRect();
+    
+    // Recalculate position after content is set to get the correct width
+    tooltipEl.classList.remove('hidden'); 
+    tooltipEl.style.left = `${rect.left + (rect.width / 2) - (tooltipEl.offsetWidth / 2)}px`;
+    tooltipEl.style.top = `${rect.bottom + 5}px`;
 }

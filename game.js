@@ -9,6 +9,7 @@ import { STATS } from './data/stat_pools.js';
 import { PERMANENT_UPGRADES } from './data/upgrades.js';
 import { logMessage, formatNumber, getUpgradeCost, findSubZoneByLevel, findFirstLevelOfZone, isBossLevel, isBigBossLevel, getCombinedItemStats, isMiniBossLevel, findNextAvailableSpot, getRandomInt, getTravelOptionsForHunt } from './utils.js';
 import * as ui from './ui.js';
+import { showSimpleTooltip } from './ui.js'; 
 import * as player from './player_actions.js';
 import * as logic from './game_logic.js';
 import { HUNT_POOLS } from './data/hunts.js';
@@ -3439,7 +3440,7 @@ function startNewMonster() {
     }
 
     function setupHuntsListeners() {
-    const { huntsBtn, huntsModalBackdrop, huntsCloseBtn, rerollHuntsBtn, availableHuntsContainer, activeHuntSection } = ui.initHuntsDOMElements();
+    const { huntsBtn, huntsModalBackdrop, huntsCloseBtn, rerollHuntsBtn, availableHuntsContainer, activeHuntSection, totalHuntsDisplay, huntTokensDisplay } = ui.initHuntsDOMElements();
 
     addTapListener(huntsBtn, () => {
         ui.renderHuntsView(elements, gameState);
@@ -3497,47 +3498,23 @@ function startNewMonster() {
         }
     });
 
-    // --- NEW TAB LOGIC ---
-    const huntsModal = document.getElementById('hunts-modal');
-    if (huntsModal) {
-        addTapListener(huntsModal, (e) => {
-            if (!(e.target instanceof HTMLElement)) return;
-
-            // Handle Main Tab (Bounties vs Shop)
-            if (e.target.matches('.tab-button') && e.target.dataset.huntsView) {
-                huntsModal.querySelectorAll('.tab-button').forEach(t => t.classList.remove('active'));
-                huntsModal.querySelectorAll('.hunts-main-view').forEach(v => v.classList.remove('active'));
-                e.target.classList.add('active');
-                const viewId = e.target.dataset.huntsView;
-                const viewToShow = document.getElementById(viewId);
-                if (viewToShow) viewToShow.classList.add('active');
-                ui.renderHuntsView(elements, gameState); // Re-render to populate content
-            }
-
-            // Handle Shop Sub-Tabs (Utility, Potions, etc.)
-            if (e.target.matches('.sub-tab-button') && e.target.dataset.shopCategory) {
-                huntsModal.querySelectorAll('#shop-sub-tabs .sub-tab-button').forEach(t => t.classList.remove('active'));
-                e.target.classList.add('active');
-                ui.renderHuntsView(elements, gameState); // Re-render to show correct category
-            }
-        });
-    }
-
-    const shopContainer = document.getElementById('hunt-shop-container');
-    if (shopContainer) {
-        addTapListener(shopContainer, (e) => {
-            if (!(e.target instanceof HTMLElement)) return;
-            const buyButton = e.target.closest('.shop-item-buy-btn');
-            if (buyButton instanceof HTMLButtonElement && !buyButton.disabled && buyButton.dataset.itemId) {
-                purchaseHuntShopItem(buyButton.dataset.itemId);
-            }
-        });
-
-        // --- TOOLTIP LISTENERS FOR SHOP REMOVED ---
-    }
-
     huntsModalBackdrop.addEventListener('mouseover', (e) => {
         if (!(e.target instanceof HTMLElement)) return;
+        
+        // Handle currency tooltips
+        const totalHuntsEl = e.target.closest('#total-hunts-display');
+        if (totalHuntsEl instanceof HTMLElement) { // <-- THIS IS THE FIX
+            showSimpleTooltip(elements, totalHuntsEl, "Total Hunts Completed");
+            return; 
+        }
+        
+        const huntTokensEl = e.target.closest('#hunt-tokens-display');
+        if (huntTokensEl instanceof HTMLElement) { // <-- THIS IS THE FIX
+            showSimpleTooltip(elements, huntTokensEl, "Hunt Tokens");
+            return;
+        }
+
+        // Handle reward tooltips (existing logic)
         const rewardEl = e.target.closest('.hunt-reward');
         if (rewardEl instanceof HTMLElement && rewardEl.dataset.rewardId) {
             const rewardId = rewardEl.dataset.rewardId;
@@ -3559,11 +3536,45 @@ function startNewMonster() {
 
     huntsModalBackdrop.addEventListener('mouseout', (e) => {
         if (!(e.target instanceof HTMLElement)) return;
-        const rewardEl = e.target.closest('.hunt-reward');
-        if (rewardEl) {
+
+        if (e.target.closest('#total-hunts-display, #hunt-tokens-display, .hunt-reward')) {
             elements.tooltipEl.classList.add('hidden');
         }
     });
+    
+    const huntsModal = document.getElementById('hunts-modal');
+    if (huntsModal) {
+        addTapListener(huntsModal, (e) => {
+            if (!(e.target instanceof HTMLElement)) return;
+
+            if (e.target.matches('.tab-button') && e.target.dataset.huntsView) {
+                huntsModal.querySelectorAll('.tab-button').forEach(t => t.classList.remove('active'));
+                huntsModal.querySelectorAll('.hunts-main-view').forEach(v => v.classList.remove('active'));
+                e.target.classList.add('active');
+                const viewId = e.target.dataset.huntsView;
+                const viewToShow = document.getElementById(viewId);
+                if (viewToShow) viewToShow.classList.add('active');
+                ui.renderHuntsView(elements, gameState);
+            }
+
+            if (e.target.matches('.sub-tab-button') && e.target.dataset.shopCategory) {
+                huntsModal.querySelectorAll('#shop-sub-tabs .sub-tab-button').forEach(t => t.classList.remove('active'));
+                e.target.classList.add('active');
+                ui.renderHuntsView(elements, gameState);
+            }
+        });
+    }
+
+    const shopContainer = document.getElementById('hunt-shop-container');
+    if (shopContainer) {
+        addTapListener(shopContainer, (e) => {
+            if (!(e.target instanceof HTMLElement)) return;
+            const buyButton = e.target.closest('.shop-item-buy-btn');
+            if (buyButton instanceof HTMLButtonElement && !buyButton.disabled && buyButton.dataset.itemId) {
+                purchaseHuntShopItem(buyButton.dataset.itemId);
+            }
+        });
+    }
 }
 
     function purchaseHuntShopItem(itemId) {
