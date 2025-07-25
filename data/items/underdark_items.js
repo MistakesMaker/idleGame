@@ -17,7 +17,7 @@ export const underdarkItems = {
         canHaveSockets: true,
         maxSockets: 1,
         possibleStats: [ 
-            { key: STATS.DPS.key, min: 1, max: 25000 },
+            { key: STATS.DPS.key, min: 1, max: 40000 },
             { key: STATS.CLICK_DAMAGE.key, min: 1, max: 2000 },
             { key: STATS.GOLD_GAIN.key, min: 1, max: 100 } 
          ]
@@ -32,7 +32,8 @@ export const underdarkItems = {
         maxSockets: 2,
         possibleStats: [ 
             { key: STATS.GOLD_GAIN.key, min: 1, max: 175 },
-            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 3500 }
+            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 3500 },
+            { key: STATS.DPS.key, min: 1, max: 50000 }
          ]
     },
     FOCAL_GEM_RING: {
@@ -53,7 +54,10 @@ export const underdarkItems = {
         width: 2, height: 3,
         canHaveSockets: true,
         maxSockets: 2,
-        possibleStats: [ { key: STATS.CLICK_DAMAGE.key, min: 1, max: 20000 } ]
+        possibleStats: [ 
+            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 20000 },
+            { key: STATS.DPS.key, min: 1, max: 80000 },
+         ]
     },
 
     // --- Sub-Zone: Crystal Golem (Boss Lvl 425) ---
@@ -81,9 +85,9 @@ export const underdarkItems = {
         icon: 'images/icons/lurkers_hide_shield.png',
         width: 2, height: 3,
         canHaveSockets: true,
-        maxSockets: 3,
+        maxSockets: 1,
         possibleStats: [ 
-            { key: STATS.DPS.key, min: 1, max: 45000 },
+            { key: STATS.DPS.key, min: 1, max: 70000 },
             { key: STATS.CLICK_DAMAGE.key, min: 1, max: 16000 } ,
          ]
     },
@@ -125,10 +129,10 @@ export const underdarkItems = {
         width: 2, height: 3,
         isUnique: true,
         canHaveSockets: true,
-        maxSockets: 3,
+        maxSockets: 4,
         possibleStats: [
             { key: STATS.CLICK_DAMAGE.key, min: 1, max: 30000 },
-            { key: STATS.DPS.key, min: 1, max: 50000 },
+            { key: STATS.DPS.key, min: 1, max: 95000 },
             { key: STATS.GOLD_GAIN.key, min: 500, max: 500 }
         ]
     },
@@ -142,7 +146,7 @@ export const underdarkItems = {
         width: 2, height: 2,
         canHaveSockets: true,
         maxSockets: 2,
-        possibleStats: [ { key: STATS.GOLD_GAIN.key, min: 600, max: 600 } ]
+        possibleStats: [ { key: STATS.GOLD_GAIN.key, min: 1000, max: 1000 } ]
     },
     CAVE_STALKER_TUNIC: {
         id: 'CAVE_STALKER_TUNIC',
@@ -152,7 +156,7 @@ export const underdarkItems = {
         width: 2, height: 3,
         canHaveSockets: true,
         maxSockets: 3,
-        possibleStats: [ { key: STATS.DPS.key, min: 1, max: 40000 } ]
+        possibleStats: [ { key: STATS.DPS.key, min: 1, max: 75000 } ]
     },
     DEEP_GNOME_PICKAXE: {
         id: 'DEEP_GNOME_PICKAXE',
@@ -179,7 +183,7 @@ export const underdarkItems = {
         canHaveSockets: true,
         maxSockets: 3,
         possibleStats: [ 
-            { key: STATS.DPS.key, min: 1, max: 50000 },
+            { key: STATS.DPS.key, min: 1, max: 90000 },
             { key: STATS.CLICK_DAMAGE.key, min: 1, max: 15000 },
             { key: STATS.GOLD_GAIN.key, min: 1, max: 300 }
          ]
@@ -196,7 +200,7 @@ export const underdarkItems = {
         maxSockets: 2,
         possibleStats: [ 
             { key: STATS.GOLD_GAIN.key, min: 1, max: 350 },
-            { key: STATS.DPS.key, min: 1, max: 35000 }
+            { key: STATS.DPS.key, min: 1, max: 50000 }
          ]
     },
     LIVING_CRYSTAL_LEGGINGS: {
@@ -208,7 +212,7 @@ export const underdarkItems = {
         canHaveSockets: true,
         maxSockets: 3,
         possibleStats: [ 
-            { key: STATS.DPS.key, min: 1, max: 35000 },
+            { key: STATS.DPS.key, min: 1, max: 65000 },
             { key: STATS.CLICK_DAMAGE.key, min: 1, max: 4000 },
          ]
     },
@@ -244,7 +248,7 @@ export const underdarkItems = {
         canHaveSockets: true,
         maxSockets: 1,
         possibleStats: [ 
-            { key: STATS.DPS.key, min: 1, max: 30000 },
+            { key: STATS.DPS.key, min: 1, max: 55000 },
             { key: STATS.GOLD_GAIN.key, min: 1, max: 200 }
          ]
     },
@@ -258,7 +262,7 @@ export const underdarkItems = {
         maxSockets: 2,
         possibleStats: [ 
             { key: STATS.GOLD_GAIN.key, min: 1, max: 275 },
-            { key: STATS.DPS.key, min: 1, max: 42500 }
+            { key: STATS.DPS.key, min: 1, max: 89000 }
          ]
     },
     GLOWCAP_RING: {
@@ -270,7 +274,7 @@ export const underdarkItems = {
         canHaveSockets: true,
         maxSockets: 1,
         possibleStats: [ 
-            { key: STATS.DPS.key, min: 1, max: 40000 },
+            { key: STATS.DPS.key, min: 1, max: 60000 },
             { key: STATS.CLICK_DAMAGE.key, min: 1, max: 10000 },
          ]
     },
@@ -282,7 +286,9 @@ export const underdarkItems = {
         width: 2, height: 3,
         canHaveSockets: true,
         maxSockets: 1,
-        possibleStats: [ { key: STATS.CLICK_DAMAGE.key, min: 1, max: 33000 } ]
+        possibleStats: [ 
+            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 33000 },
+            { key: STATS.DPS.key, min: 1, max: 100000 }]
     },
 
     // --- Sub-Zone: Fungal Guardian (Boss Lvl 525) ---
@@ -341,8 +347,9 @@ export const underdarkItems = {
         canHaveSockets: true,
         maxSockets: 3,
         possibleStats: [
-            { key: STATS.DPS.key, min: 1, max: 66666 },
+            { key: STATS.DPS.key, min: 1, max: 130000 },
             { key: STATS.GOLD_GAIN.key, min: 888, max: 888 },
+            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 15000 }
         ]
     },
 
@@ -369,7 +376,7 @@ export const underdarkItems = {
         canHaveSockets: true,
         maxSockets: 2,
         possibleStats: [
-            { key: STATS.DPS.key, min: 1, max: 50000 },
+            { key: STATS.DPS.key, min: 1, max: 66000 },
             { key: STATS.GOLD_GAIN.key, min: 1, max: 450 }
         ]
     },
@@ -397,7 +404,7 @@ export const underdarkItems = {
         canHaveSockets: true,
         maxSockets: 1,
         possibleStats: [
-            { key: STATS.DPS.key, min: 1, max: 50000 },
+            { key: STATS.DPS.key, min: 1, max: 80000 },
             { key: STATS.CLICK_DAMAGE.key, min: 1, max: 6000 },
             { key: STATS.GOLD_GAIN.key, min: 1, max: 400 },
         ]
@@ -412,7 +419,7 @@ export const underdarkItems = {
         width: 2, height: 3,
         canHaveSockets: true,
         maxSockets: 1,
-        possibleStats: [ { key: STATS.DPS.key, min: 70000, max: 70000 } ]
+        possibleStats: [ { key: STATS.DPS.key, min: 100000, max: 100000 } ]
     },
     MANDRAGORA_ROOT: {
         id: 'MANDRAGORA_ROOT',
@@ -421,7 +428,7 @@ export const underdarkItems = {
         icon: 'images/icons/mandragora_root.png',
         width: 2, height: 3,
         canHaveSockets: true,
-        maxSockets: 3,
+        maxSockets: 4,
         possibleStats: [ { key: STATS.CLICK_DAMAGE.key, min: 1, max: 40000 } ]
     },
     
@@ -436,7 +443,7 @@ export const underdarkItems = {
         canHaveSockets: true,
         maxSockets: 3,
         possibleStats: [ 
-            { key: STATS.DPS.key, min: 1000, max: 75000 },
+            { key: STATS.DPS.key, min: 1000, max: 90000 },
             { key: STATS.CLICK_DAMAGE.key, min: 1, max: 8500 },
             { key: STATS.GOLD_GAIN.key, min: 1, max: 450 }
          ]
@@ -465,7 +472,11 @@ export const underdarkItems = {
         width: 2, height: 1,
         canHaveSockets: true,
         maxSockets: 1,
-        possibleStats: [ { key: STATS.GOLD_GAIN.key, min: 750, max: 750 } ]
+        possibleStats: [ 
+            { key: STATS.GOLD_GAIN.key, min: 750, max: 750 },
+            { key: STATS.DPS.key, min: 1, max: 60000 },
+            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 5000 }
+         ]
     },
     DROW_CHAINMAIL: {
         id: 'DROW_CHAINMAIL',
@@ -492,7 +503,7 @@ export const underdarkItems = {
         canHaveSockets: true,
         maxSockets: 2,
         possibleStats: [
-            { key: STATS.DPS.key, min: 1, max: 66666 },
+            { key: STATS.DPS.key, min: 1, max: 100000 },
             { key: STATS.CLICK_DAMAGE.key, min: 1, max: 12500 },
         ]
     },
@@ -507,7 +518,7 @@ export const underdarkItems = {
         canHaveSockets: true,
         maxSockets: 3,
         possibleStats: [ 
-            { key: STATS.DPS.key, min: 1, max: 57500 },
+            { key: STATS.DPS.key, min: 1, max: 111000 },
             { key: STATS.CLICK_DAMAGE.key, min: 1, max: 6500 },
             { key: STATS.GOLD_GAIN.key, min: 1, max: 350 }
          ]
@@ -533,7 +544,11 @@ export const underdarkItems = {
         width: 2, height: 2,
         canHaveSockets: true,
         maxSockets: 2,
-        possibleStats: [ { key: STATS.GOLD_GAIN.key, min: 1000, max: 1000 } ]
+        possibleStats: [ 
+            { key: STATS.GOLD_GAIN.key, min: 1, max: 1500 },
+            { key: STATS.DPS.key, min: 1, max: 88888 },
+            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 8000 }
+         ]
     },
 
     // --- Sub-Zone: Drow Barracks (Boss Lvl 650) ---
@@ -545,9 +560,9 @@ export const underdarkItems = {
         width: 2, height: 3,
         isUnique: true,
         canHaveSockets: true,
-        maxSockets: 3,
+        maxSockets: 4,
         possibleStats: [ 
-            { key: STATS.DPS.key, min: 1, max: 100000 },
+            { key: STATS.DPS.key, min: 1, max: 125000 },
             { key: STATS.CLICK_DAMAGE.key, min: 1, max: 6000 },
          ]
     },
@@ -581,7 +596,10 @@ export const underdarkItems = {
         width: 2, height: 3,
         canHaveSockets: true,
         maxSockets: 3,
-        possibleStats: [ { key: STATS.CLICK_DAMAGE.key, min: 1, max: 50000 } ]
+        possibleStats: [ 
+            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 50000 },
+            { key: STATS.DPS.key, min: 1, max: 150000 },
+         ]
     },
 
     // --- Sub-Zone: House of Shadows (Boss Lvl 675) ---
@@ -595,6 +613,7 @@ export const underdarkItems = {
         canHaveSockets: true,
         maxSockets: 3,
         possibleStats: [
+            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 20000 },
             { key: STATS.DPS.key, min: 1, max: 110000 },
             { key: STATS.GOLD_GAIN.key, min: 1, max: 1100 },
         ]
@@ -610,7 +629,7 @@ export const underdarkItems = {
         canHaveSockets: true,
         maxSockets: 3,
         possibleStats: [ 
-            { key: STATS.DPS.key, min: 1, max: 65000 },
+            { key: STATS.DPS.key, min: 1, max: 90000 },
             { key: STATS.CLICK_DAMAGE.key, min: 1, max: 14000 }
          ]
     },
@@ -622,7 +641,7 @@ export const underdarkItems = {
         width: 2, height: 3,
         canHaveSockets: true,
         maxSockets: 3,
-        possibleStats: [ { key: STATS.GOLD_GAIN.key, min: 1, max: 1400 } ]
+        possibleStats: [ { key: STATS.GOLD_GAIN.key, min: 1, max: 2000 } ]
     },
 
     // --- Sub-Zone: Spider Queen's Lair (Boss Lvl 700) ---
@@ -636,7 +655,7 @@ export const underdarkItems = {
         uniqueEffect: 'weaversEnvy',
         canHaveSockets: true,
         maxSockets: 3,
-        possibleStats: [ { key: STATS.DPS.key, min: 1, max: 100000 } ]
+        possibleStats: [ { key: STATS.DPS.key, min: 1, max: 200000 } ]
     },
 
     // ====================================================================================
@@ -651,7 +670,7 @@ export const underdarkItems = {
         canHaveSockets: true,
         maxSockets: 2,
         possibleStats: [ 
-            { key: STATS.DPS.key, min: 1, max: 85000 },
+            { key: STATS.DPS.key, min: 1, max: 111000 },
             { key: STATS.CLICK_DAMAGE.key, min: 1, max: 8500 } 
          ]
     },
@@ -664,7 +683,7 @@ export const underdarkItems = {
         canHaveSockets: true,
         maxSockets: 3,
         possibleStats: [ 
-            { key: STATS.DPS.key, min: 1, max: 80000 },
+            { key: STATS.DPS.key, min: 1, max: 130000 },
             { key: STATS.CLICK_DAMAGE.key, min: 1, max: 9999 },
             { key: STATS.GOLD_GAIN.key, min: 1, max: 500 }
          ]
@@ -689,7 +708,7 @@ export const underdarkItems = {
         maxSockets: 1,
         possibleStats: [ 
             { key: STATS.GOLD_GAIN.key, min: 1, max: 700 },
-            { key: STATS.DPS.key, min: 1, max: 66000 },
+            { key: STATS.DPS.key, min: 1, max: 99999 },
             { key: STATS.CLICK_DAMAGE.key, min: 1, max: 6500 }
          ]
     },
@@ -712,7 +731,7 @@ export const underdarkItems = {
         canHaveSockets: true,
         maxSockets: 3,
         possibleStats: [ 
-            { key: STATS.DPS.key, min: 1, max: 78000 },
+            { key: STATS.DPS.key, min: 1, max: 125000 },
             { key: STATS.CLICK_DAMAGE.key, min: 1, max: 17500 },
             { key: STATS.GOLD_GAIN.key, min: 1, max: 600 }
          ]
@@ -738,7 +757,7 @@ export const underdarkItems = {
         width: 2, height: 2,
         canHaveSockets: true,
         maxSockets: 1,
-        possibleStats: [ { key: STATS.GOLD_GAIN.key, min: 1, max: 900 } ]
+        possibleStats: [ { key: STATS.GOLD_GAIN.key, min: 1, max: 900 }, ]
     },
     FLESH_GOLEM_HEART: {
         id: 'FLESH_GOLEM_HEART',
@@ -775,7 +794,7 @@ export const underdarkItems = {
         canHaveSockets: true,
         maxSockets: 1,
         possibleStats: [
-            { key: STATS.DPS.key, min: 1, max: 105000 },
+            { key: STATS.DPS.key, min: 1, max: 150000 },
             { key: STATS.GOLD_GAIN.key, min: 1, max: 900 }
         ]
     },
@@ -786,9 +805,12 @@ export const underdarkItems = {
         icon: 'images/icons/ring_of_despair.png',
         isUnique: true,
         canHaveSockets: true,
-        maxSockets: 2,
+        maxSockets: 5,
         width: 1, height: 1,
-        possibleStats: [ { key: STATS.GOLD_GAIN.key, min: 1, max: 1000 } ]
+        possibleStats: [ 
+            { key: STATS.GOLD_GAIN.key, min: 1, max: 1000 },
+            { key: STATS.DPS.key, min: 1, max: 140000 },
+         ]
     },
     BALORS_WHIP: {
         id: 'BALORS_WHIP',
@@ -801,7 +823,7 @@ export const underdarkItems = {
         maxSockets: 3,
         possibleStats: [
             { key: STATS.CLICK_DAMAGE.key, min: 1, max: 70000 },
-            { key: STATS.DPS.key, min: 1, max: 120000 }
+            { key: STATS.DPS.key, min: 1, max: 250000 }
         ]
     },
     CHAOS_CORE: {
@@ -816,7 +838,7 @@ export const underdarkItems = {
         possibleStats: [
             { key: STATS.GOLD_GAIN.key, min: 1, max: 1100 },
             { key: STATS.CLICK_DAMAGE.key, min: 1, max: 9999 },
-            { key: STATS.DPS.key, min: 1, max: 75000 },
+            { key: STATS.DPS.key, min: 1, max: 110000 },
         ]
     }
 };
