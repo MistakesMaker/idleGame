@@ -12,29 +12,30 @@ export const underdarkMonsters = {
     CRYSTAL_SPIDER: {
         name: 'Crystal Spider',
         image: 'images/monsters/crystal_spider.png',
-        dropChance: 30,
+        dropChance: 100, // Changed from 30
         lootTable: [
-            { item: ITEMS.SHIMMERING_LEGGINGS, weight: 1 },
-            { item: GEMS.BASE_RUBY, weight: 0.2 },
-            { item: ITEMS.FOCAL_GEM_RING, weight: 1 }, // Rare cross-drop
+            { item: ITEMS.SHIMMERING_LEGGINGS, weight: 15  },
+            { item: ITEMS.FOCAL_GEM_RING, weight: 5 },
+            { item: GEMS.BASE_RUBY, weight: 80 }, // Increased weight
         ]
     },
     SHARD_SLIME: {
         name: 'Shard Slime',
         image: 'images/monsters/shard_slime.png',
-        dropChance: 15,
+        dropChance: 100, // Changed from 15
         lootTable: [
-            { item: ITEMS.FOCAL_GEM_RING, weight: 1 },
-            { item: ITEMS.CRYSTAL_TIPPED_SPEAR, weight: 0.5 },
+            { item: ITEMS.FOCAL_GEM_RING, weight: 10 },
+            { item: ITEMS.CRYSTAL_TIPPED_SPEAR, weight: 10 },
+            { item: GEMS.BASE_SAPPHIRE, weight: 80 }, // Added gem, total weight is 100
         ]
     },
     CRYSTAL_SCUTTLER: {
         name: 'Crystal Scuttler',
         image: 'images/monsters/crystal_scuttler.png',
-        dropChance: 15,
+        dropChance: 100, // Changed from 15
         lootTable: [
-            { item: ITEMS.CRYSTALVEIN_GAUNTLETS, weight: 1 },
-            { item: GEMS.BASE_SAPPHIRE, weight: 0.2 },
+            { item: ITEMS.CRYSTALVEIN_GAUNTLETS, weight: 15 },
+            { item: GEMS.BASE_SAPPHIRE, weight: 85 }, // Adjusted weight, total is 100
         ]
     },
 
@@ -43,11 +44,11 @@ export const underdarkMonsters = {
         name: 'Crystal Golem',
         image: 'images/monsters/crystal_golem.png',
         isBoss: true,
-        dropChance: 50,
+        dropChance: 100, // Changed from 50
         lootTable: [
-            { item: ITEMS.CROWN_OF_WISDOM, weight: 2 },
-            { item: ITEMS.CRYSTAL_TIPPED_SPEAR, weight: 3 },
-            { item: GEMS.BASE_RUBY_T2, weight: 10 },
+            { item: ITEMS.CROWN_OF_WISDOM, weight: 10 },
+            { item: ITEMS.CRYSTAL_TIPPED_SPEAR, weight: 25 },
+            { item: GEMS.BASE_RUBY_T2, weight: 65 }, // Adjusted weights, total is 100
         ]
     },
 
@@ -55,29 +56,30 @@ export const underdarkMonsters = {
     DEEP_GNOME_MINER: {
         name: 'Deep Gnome Miner',
         image: 'images/monsters/deep_gnome_miner.png',
-        dropChance: 30,
+        dropChance: 100, // Changed from 30
         lootTable: [
-            { item: ITEMS.GNOMISH_MINING_HELM, weight: 1 },
-            { item: GEMS.BASE_EMERALD, weight: 0.2 },
-            { item: ITEMS.DEEP_GNOME_PICKAXE, weight: 1 }, // Rare cross-drop
+            { item: ITEMS.GNOMISH_MINING_HELM, weight: 10 },
+            { item: ITEMS.DEEP_GNOME_PICKAXE, weight: 5 },
+            { item: GEMS.BASE_EMERALD, weight: 85 }, // Adjusted weights, total is 100
         ]
     },
     CAVE_LURKER: {
         name: 'Cave Lurker',
         image: 'images/monsters/cave_lurker.png',
-        dropChance: 15,
+        dropChance: 100, // Changed from 15
         lootTable: [
-            { item: ITEMS.LURKERS_HIDE_SHIELD, weight: 1 },
-            { item: ITEMS.ACOLYTES_ROBE, weight: 0.1 },
+            { item: ITEMS.LURKERS_HIDE_SHIELD, weight: 8 },
+            { item: ITEMS.ACOLYTES_ROBE, weight: 5 },
+            { item: GEMS.BASE_TOPAZ, weight: 87 }, // Added gem, total weight is 100
         ]
     },
     ECHO_WISP: {
         name: 'Echo Wisp',
         image: 'images/monsters/echo_wisp.png',
-        dropChance: 15,
+        dropChance: 100, // Changed from 15
         lootTable: [
-            { item: ITEMS.RESONANT_AMULET, weight: 1 },
-            { item: GEMS.BASE_TOPAZ, weight: 0.2 },
+            { item: ITEMS.RESONANT_AMULET, weight: 12.5 },
+            { item: GEMS.BASE_TOPAZ, weight: 87.5 }, // Adjusted weights, total is 100
         ]
     },
 
@@ -86,31 +88,32 @@ export const underdarkMonsters = {
         name: 'Crystalline Elemental',
         image: 'images/monsters/crystalline_elemental.png',
         isBoss: true,
-        dropChance: 50,
+        dropChance: 100, // Changed from 50
         lootTable: [
-            { item: ITEMS.GEODE_CRUSHER, weight: 5 },
-            { item: ITEMS.ACOLYTES_ROBE, weight: 9 },
-            { item: GEMS.BASE_SAPPHIRE_T2, weight: 10 },
+            { item: ITEMS.GEODE_CRUSHER, weight: 9 },
+            { item: ITEMS.ACOLYTES_ROBE, weight: 17 },
+            { item: GEMS.BASE_SAPPHIRE_T2, weight: 74 }, // Adjusted weights, total is 100
         ]
-    },
+},
 
     // --- Sub-Zone: Deep Caverns (Levels 451-474) ---
     ROCKWORM: {
         name: 'Rockworm',
         image: 'images/monsters/rockworm.png',
-        dropChance: 15,
+        dropChance: 100,
         lootTable: [
-            { item: ITEMS.DEEP_GNOME_PICKAXE, weight: 1 },
-            { item: GEMS.BASE_RUBY, weight: 0.25 },
+            { item: ITEMS.DEEP_GNOME_PICKAXE, weight: 13 },
+            { item: GEMS.BASE_RUBY, weight: 87},
         ]
     },
     CAVERN_PROWLER: {
         name: 'Cavern Prowler',
         image: 'images/monsters/cavern_prowler.png',
-        dropChance: 15,
+        dropChance: 100, // Changed from 15
         lootTable: [
-            { item: ITEMS.CAVE_STALKER_TUNIC, weight: 1 },
-            { item: ITEMS.LURKERS_HIDE_SHIELD, weight: 0.2 },
+            { item: ITEMS.CAVE_STALKER_TUNIC, weight: 5 },
+            { item: ITEMS.LURKERS_HIDE_SHIELD, weight: 15 },
+            { item: GEMS.BASE_TOPAZ, weight: 80 }, // Added gem, total weight is 100
         ]
     },
     
@@ -119,10 +122,10 @@ export const underdarkMonsters = {
         name: 'Gemstone Hydra',
         image: 'images/monsters/gemstone_hydra.png',
         isBoss: true,
-        dropChance: 50,
+        dropChance: 100, // Changed from 50
         lootTable: [
-            { item: ITEMS.HYDRA_SCALE_SHIELD, weight: 1 },
-            { item: GEMS.BASE_EMERALD_T2, weight: 24 },
+            { item: ITEMS.HYDRA_SCALE_SHIELD, weight: 3.333 },
+            { item: GEMS.BASE_EMERALD_T2, weight: 96.666 }, // Adjusted weights, total is 100
         ]
     },
 
@@ -130,20 +133,21 @@ export const underdarkMonsters = {
     QUARTZ_BEAST: {
         name: 'Quartz Beast',
         image: 'images/monsters/quartz_beast.png',
-        dropChance: 15,
+        dropChance: 100, // Changed from 15
         lootTable: [
-            { item: ITEMS.QUARTZ_RING, weight: 1 },
-            { item: GEMS.BASE_TOPAZ, weight: 0.25 },
+            { item: ITEMS.QUARTZ_RING, weight: 10 },
+            { item: GEMS.BASE_TOPAZ, weight: 90 }, // Adjusted weights, total is 100
         ]
     },
+
     LIVING_CRYSTAL: {
         name: 'Living Crystal',
         image: 'images/monsters/living_crystal.png',
-        dropChance: 15,
+        dropChance: 100,
         lootTable: [
-            { item: ITEMS.LIVING_CRYSTAL_LEGGINGS, weight: 1 },
-            { item: GEMS.BASE_SAPPHIRE, weight: 0.25 },
-            { item: ITEMS.CAVE_STALKER_TUNIC, weight: 0.15 }, // Rare cross-drop
+            { item: ITEMS.LIVING_CRYSTAL_LEGGINGS, weight: 10 },
+            { item: GEMS.BASE_SAPPHIRE, weight: 80 },
+            { item: ITEMS.CAVE_STALKER_TUNIC, weight: 10 }, // Rare cross-drop
         ]
     },
 
@@ -152,10 +156,10 @@ export const underdarkMonsters = {
         name: 'The Crystal King',
         image: 'images/monsters/crystal_king.png',
         isBoss: true,
-        dropChance: 50,
+        dropChance: 100,
         lootTable: [
-            { item: ITEMS.HEARTSTONE_AMULET, weight: 1 },
-            { item: GEMS.BASE_TOPAZ_T2, weight: 24 },
+            { item: ITEMS.HEARTSTONE_AMULET, weight: 7.777 },
+            { item: GEMS.BASE_TOPAZ_T2, weight: 92.2229 },
         ]
     },
 
