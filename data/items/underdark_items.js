@@ -17,7 +17,7 @@ export const underdarkItems = {
         canHaveSockets: true,
         maxSockets: 1,
         possibleStats: [ 
-            { key: STATS.DPS.key, min: 1, max: 25000 },
+            { key: STATS.DPS.key, min: 1, max: 40000 },
             { key: STATS.CLICK_DAMAGE.key, min: 1, max: 2000 },
             { key: STATS.GOLD_GAIN.key, min: 1, max: 100 } 
          ]
@@ -247,7 +247,7 @@ export const underdarkItems = {
         canHaveSockets: true,
         maxSockets: 1,
         possibleStats: [ 
-            { key: STATS.DPS.key, min: 1, max: 30000 },
+            { key: STATS.DPS.key, min: 1, max: 55000 },
             { key: STATS.GOLD_GAIN.key, min: 1, max: 200 }
          ]
     },
@@ -403,7 +403,7 @@ export const underdarkItems = {
         canHaveSockets: true,
         maxSockets: 1,
         possibleStats: [
-            { key: STATS.DPS.key, min: 1, max: 50000 },
+            { key: STATS.DPS.key, min: 1, max: 80000 },
             { key: STATS.CLICK_DAMAGE.key, min: 1, max: 6000 },
             { key: STATS.GOLD_GAIN.key, min: 1, max: 400 },
         ]
@@ -471,7 +471,11 @@ export const underdarkItems = {
         width: 2, height: 1,
         canHaveSockets: true,
         maxSockets: 1,
-        possibleStats: [ { key: STATS.GOLD_GAIN.key, min: 750, max: 750 } ]
+        possibleStats: [ 
+            { key: STATS.GOLD_GAIN.key, min: 750, max: 750 },
+            { key: STATS.DPS.key, min: 1, max: 60000 },
+            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 5000 }
+         ]
     },
     DROW_CHAINMAIL: {
         id: 'DROW_CHAINMAIL',
@@ -703,7 +707,7 @@ export const underdarkItems = {
         maxSockets: 1,
         possibleStats: [ 
             { key: STATS.GOLD_GAIN.key, min: 1, max: 700 },
-            { key: STATS.DPS.key, min: 1, max: 66000 },
+            { key: STATS.DPS.key, min: 1, max: 99999 },
             { key: STATS.CLICK_DAMAGE.key, min: 1, max: 6500 }
          ]
     },
@@ -830,7 +834,7 @@ export const underdarkItems = {
         possibleStats: [
             { key: STATS.GOLD_GAIN.key, min: 1, max: 1100 },
             { key: STATS.CLICK_DAMAGE.key, min: 1, max: 9999 },
-            { key: STATS.DPS.key, min: 1, max: 75000 },
+            { key: STATS.DPS.key, min: 1, max: 110000 },
         ]
     }
 };
