@@ -2480,6 +2480,17 @@ h5 .legendary { color: #f39c12; }
 }
 .hunt-details {
     flex-grow: 1;
+    flex-direction: column; /* Stack its children (title, description) vertically */
+    justify-content: center; /* Vertically center the stacked children */
+}
+.hunt-details p {
+    margin: 0;
+    padding: 0;
+}
+.hunt-main-content {
+    flex-grow: 1; /* Allows this section to fill the available space */
     display: flex;
-    flex-direction: column;
+    justify-content: space-between; /* Pushes text left and button right */
+    align-items: center; /* Vertically centers the text and button against each other */
+    gap: 0.9375rem; /* 15px, adds space between text and button */
 }

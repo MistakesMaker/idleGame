@@ -2914,11 +2914,13 @@ function createHuntCardHTML(hunt, index, isActive, gameState, progress = 0) {
                 <span class="hunt-reward-name">${reward.name}</span>
                 ${tokenRewardHTML}
             </div>
-            <div class="hunt-details">
-                <p class="hunt-title">${hunt.title}</p>
-                <p class="hunt-description">${description}</p>
+            <div class="hunt-main-content">
+                <div class="hunt-details">
+                    <p class="hunt-title">${hunt.title}</p>
+                    <p class="hunt-description">${description}</p>
+                </div>
+                ${actionButtonHTML}
             </div>
-            ${actionButtonHTML}
         </div>
     `;
 }
