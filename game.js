@@ -3369,120 +3369,145 @@ function startNewMonster() {
     }
 
     function setupHuntsListeners() {
-        const { huntsBtn, huntsModalBackdrop, huntsCloseBtn, rerollHuntsBtn, availableHuntsContainer, activeHuntSection } = ui.initHuntsDOMElements();
+    const { huntsBtn, huntsModalBackdrop, huntsCloseBtn, rerollHuntsBtn, availableHuntsContainer, activeHuntSection } = ui.initHuntsDOMElements();
 
-        addTapListener(huntsBtn, () => {
-            ui.renderHuntsView(elements, gameState);
-            huntsModalBackdrop.classList.remove('hidden');
-        });
+    addTapListener(huntsBtn, () => {
+        ui.renderHuntsView(elements, gameState);
+        huntsModalBackdrop.classList.remove('hidden');
+    });
 
-        const close = () => huntsModalBackdrop.classList.add('hidden');
-        addTapListener(huntsCloseBtn, close);
-        addTapListener(huntsModalBackdrop, e => {
-            if (e.target === huntsModalBackdrop) close();
-        });
+    const close = () => huntsModalBackdrop.classList.add('hidden');
+    addTapListener(huntsCloseBtn, close);
+    addTapListener(huntsModalBackdrop, e => {
+        if (e.target === huntsModalBackdrop) close();
+    });
 
-        addTapListener(rerollHuntsBtn, rerollHunts);
+    addTapListener(rerollHuntsBtn, rerollHunts);
 
-        addTapListener(availableHuntsContainer, e => {
-            if (!(e.target instanceof HTMLElement)) return;
-            const button = e.target.closest('button');
-            if (button && button.dataset.index) {
-                acceptHunt(parseInt(button.dataset.index, 10));
-            }
-        });
-
-        addTapListener(activeHuntSection, e => {
-            if (!(e.target instanceof HTMLElement)) return;
-            const button = e.target.closest('button');
-            if (!button) return; // Exit if no button was clicked
-
-            // --- START MODIFICATION ---
-            if (button.id === 'complete-hunt-btn') {
-                handleHuntCompletion();
-            } else if (button.id === 'travel-to-hunt-btn') {
-                handleHuntTravel();
-            }
-            // --- END MODIFICATION ---
-        });
-                activeHuntSection.addEventListener('mouseover', (e) => {
-            if (!(e.target instanceof HTMLElement)) return;
-            const lockedButton = e.target.closest('button.hunt-travel-locked');
-            if (lockedButton) {
-                elements.tooltipEl.className = 'hidden';
-                elements.tooltipEl.innerHTML = `
-                    <div class="item-header" style="color: #f1c40f;">Unlock Fast Travel</div>
-                    <p style="margin: 5px 0 0 0; font-size: 0.9em;">Complete 5 total bounties to unlock fast travel.</p>
-                `;
-                const rect = lockedButton.getBoundingClientRect();
-                elements.tooltipEl.style.left = `${rect.left}px`;
-                elements.tooltipEl.style.top = `${rect.bottom + 5}px`;
-                elements.tooltipEl.classList.remove('hidden');
-            }
-        });
-        activeHuntSection.addEventListener('mouseout', (e) => {
-            if (!(e.target instanceof HTMLElement)) return;
-            const lockedButton = e.target.closest('button.hunt-travel-locked');
-            if (lockedButton) {
-                elements.tooltipEl.classList.add('hidden');
-            }
-        });
-
-        const huntsTabs = document.getElementById('hunts-tabs');
-        if (huntsTabs) {
-            addTapListener(huntsTabs, (e) => {
-                if (!(e.target instanceof HTMLElement) || !e.target.matches('.sub-tab-button')) return;
-                const subViewId = e.target.dataset.subview;
-                if (subViewId) {
-                    ui.switchHuntsSubView(subViewId);
-                }
-            });
+    addTapListener(availableHuntsContainer, e => {
+        if (!(e.target instanceof HTMLElement)) return;
+        const button = e.target.closest('button');
+        if (button && button.dataset.index) {
+            acceptHunt(parseInt(button.dataset.index, 10));
         }
-        
-        const shopContainer = document.getElementById('hunt-shop-container');
-        if (shopContainer) {
-            addTapListener(shopContainer, (e) => {
-                if (!(e.target instanceof HTMLElement)) return;
-                const buyButton = e.target.closest('.shop-item-buy-btn');
-                if (buyButton instanceof HTMLButtonElement && !buyButton.disabled && buyButton.dataset.itemId) {
-                    purchaseHuntShopItem(buyButton.dataset.itemId);
-                }
-            });
-        }
+    });
 
-        // --- MODIFIED: Tooltip logic now targets the whole modal ---
-        // This allows it to work on the bounties tab but not the shop tab (as the shop has no data-reward-id)
-        huntsModalBackdrop.addEventListener('mouseover', (e) => {
+    addTapListener(activeHuntSection, e => {
+        if (!(e.target instanceof HTMLElement)) return;
+        const button = e.target.closest('button');
+        if (!button) return;
+
+        if (button.id === 'complete-hunt-btn') {
+            handleHuntCompletion();
+        } else if (button.id === 'travel-to-hunt-btn') {
+            handleHuntTravel();
+        }
+    });
+
+    activeHuntSection.addEventListener('mouseover', (e) => {
+        if (!(e.target instanceof HTMLElement)) return;
+        const lockedButton = e.target.closest('button.hunt-travel-locked');
+        if (lockedButton) {
+            elements.tooltipEl.className = 'hidden';
+            elements.tooltipEl.innerHTML = `
+                <div class="item-header" style="color: #f1c40f;">Unlock Fast Travel</div>
+                <p style="margin: 5px 0 0 0; font-size: 0.9em;">Complete 5 total bounties to unlock fast travel.</p>
+            `;
+            const rect = lockedButton.getBoundingClientRect();
+            elements.tooltipEl.style.left = `${rect.left}px`;
+            elements.tooltipEl.style.top = `${rect.bottom + 5}px`;
+            elements.tooltipEl.classList.remove('hidden');
+        }
+    });
+    activeHuntSection.addEventListener('mouseout', (e) => {
+        if (!(e.target instanceof HTMLElement)) return;
+        const lockedButton = e.target.closest('button.hunt-travel-locked');
+        if (lockedButton) {
+            elements.tooltipEl.classList.add('hidden');
+        }
+    });
+
+    // --- NEW TAB LOGIC ---
+    const huntsModal = document.getElementById('hunts-modal');
+    if (huntsModal) {
+        addTapListener(huntsModal, (e) => {
             if (!(e.target instanceof HTMLElement)) return;
-        
-            const rewardEl = e.target.closest('.hunt-reward'); // This class is only on bounty rewards
-            if (rewardEl instanceof HTMLElement && rewardEl.dataset.rewardId) {
-                const rewardId = rewardEl.dataset.rewardId;
-                const consumableBase = CONSUMABLES[rewardId];
-                if (consumableBase) {
-                    elements.tooltipEl.className = 'hidden';
-                    elements.tooltipEl.classList.add('legendary');
-                    elements.tooltipEl.innerHTML = `
-                        <div class="item-header"><span class="legendary">${consumableBase.name}</span></div>
-                        <ul><li>${consumableBase.description}</li></ul>
-                    `;
-        
-                    const rect = rewardEl.getBoundingClientRect();
-                    elements.tooltipEl.style.left = `${rect.right + 10}px`;
-                    elements.tooltipEl.style.top = `${rect.top}px`;
-                    elements.tooltipEl.classList.remove('hidden');
-                }
+
+            // Handle Main Tab (Bounties vs Shop)
+            if (e.target.matches('.tab-button') && e.target.dataset.huntsView) {
+                huntsModal.querySelectorAll('.tab-button').forEach(t => t.classList.remove('active'));
+                huntsModal.querySelectorAll('.hunts-main-view').forEach(v => v.classList.remove('active'));
+                e.target.classList.add('active');
+                const viewId = e.target.dataset.huntsView;
+                const viewToShow = document.getElementById(viewId);
+                if (viewToShow) viewToShow.classList.add('active');
+                ui.renderHuntsView(elements, gameState); // Re-render to populate content
+            }
+
+            // Handle Shop Sub-Tabs (Utility, Potions, etc.)
+            if (e.target.matches('.sub-tab-button') && e.target.dataset.shopCategory) {
+                huntsModal.querySelectorAll('#shop-sub-tabs .sub-tab-button').forEach(t => t.classList.remove('active'));
+                e.target.classList.add('active');
+                ui.renderHuntsView(elements, gameState); // Re-render to show correct category
             }
         });
-        
-        huntsModalBackdrop.addEventListener('mouseout', (e) => {
+    }
+
+    const shopContainer = document.getElementById('hunt-shop-container');
+    if (shopContainer) {
+        addTapListener(shopContainer, (e) => {
             if (!(e.target instanceof HTMLElement)) return;
-            const rewardEl = e.target.closest('.hunt-reward');
-            if (rewardEl) {
+            const buyButton = e.target.closest('.shop-item-buy-btn');
+            if (buyButton instanceof HTMLButtonElement && !buyButton.disabled && buyButton.dataset.itemId) {
+                purchaseHuntShopItem(buyButton.dataset.itemId);
+            }
+        });
+
+        shopContainer.addEventListener('mouseover', (e) => {
+            if (!(e.target instanceof HTMLElement)) return;
+            const shopItem = e.target.closest('.hunt-shop-item');
+            if (shopItem instanceof HTMLElement && shopItem.dataset.itemId) {
+                ui.showHuntShopTooltip(elements, shopItem, shopItem.dataset.itemId);
+            }
+        });
+
+        shopContainer.addEventListener('mouseout', (e) => {
+            if (!(e.target instanceof HTMLElement)) return;
+            if (e.target.closest('.hunt-shop-item')) {
                 elements.tooltipEl.classList.add('hidden');
             }
         });
     }
+
+    huntsModalBackdrop.addEventListener('mouseover', (e) => {
+        if (!(e.target instanceof HTMLElement)) return;
+        const rewardEl = e.target.closest('.hunt-reward');
+        if (rewardEl instanceof HTMLElement && rewardEl.dataset.rewardId) {
+            const rewardId = rewardEl.dataset.rewardId;
+            const consumableBase = CONSUMABLES[rewardId];
+            if (consumableBase) {
+                elements.tooltipEl.className = 'hidden';
+                elements.tooltipEl.classList.add('legendary');
+                elements.tooltipEl.innerHTML = `
+                    <div class="item-header"><span class="legendary">${consumableBase.name}</span></div>
+                    <ul><li>${consumableBase.description}</li></ul>
+                `;
+                const rect = rewardEl.getBoundingClientRect();
+                elements.tooltipEl.style.left = `${rect.right + 10}px`;
+                elements.tooltipEl.style.top = `${rect.top}px`;
+                elements.tooltipEl.classList.remove('hidden');
+            }
+        }
+    });
+
+    huntsModalBackdrop.addEventListener('mouseout', (e) => {
+        if (!(e.target instanceof HTMLElement)) return;
+        const rewardEl = e.target.closest('.hunt-reward');
+        if (rewardEl) {
+            elements.tooltipEl.classList.add('hidden');
+        }
+    });
+}
 
     function purchaseHuntShopItem(itemId) {
         const result = player.purchaseHuntShopItem(gameState, itemId);

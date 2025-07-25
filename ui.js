@@ -197,7 +197,7 @@ export function initHuntsDOMElements() {
         huntsModalBackdrop: document.getElementById('hunts-modal-backdrop'),
         huntsCloseBtn: document.getElementById('hunts-close-btn'),
         huntTokensAmount: document.getElementById('hunt-tokens-amount'),
-        totalHuntsCompleted: document.getElementById('total-hunts-completed'), // <<< ADD THIS LINE
+        totalHuntsCompleted: document.getElementById('total-hunts-completed'), 
         activeHuntSection: document.getElementById('active-hunt-section'),
         activeHuntCard: document.getElementById('active-hunt-card'),
         noActiveHuntText: document.getElementById('no-active-hunt-text'),
@@ -2825,48 +2825,82 @@ export function showStatBreakdownTooltip(elements, statKey, statBreakdown, gameS
 }
 
 /**
- * Renders the Hunts modal UI.
+ * Renders the Hunts modal UI, including main tabs and shop sub-tabs.
  * @param {DOMElements} elements
  * @param {object} gameState
  */
 export function renderHuntsView(elements, gameState) {
+    const modal = document.getElementById('hunts-modal');
+    if (!modal) return;
+
     const { activeHuntCard, noActiveHuntText, availableHuntsContainer, rerollHuntsBtn, huntTokensAmount, huntShopContainer, totalHuntsCompleted } = initHuntsDOMElements();
 
+    // Update shared elements
     huntTokensAmount.textContent = gameState.hunts.tokens.toString();
     totalHuntsCompleted.textContent = gameState.hunts.totalCompleted.toString();
 
-    // Render Active Hunt
-    if (gameState.hunts.active) {
-        activeHuntCard.innerHTML = createHuntCardHTML(gameState.hunts.active, null, true, gameState, gameState.hunts.progress); // <<< MODIFIED
-        activeHuntCard.classList.remove('hidden');
-        noActiveHuntText.classList.add('hidden');
-    } else {
-        activeHuntCard.classList.add('hidden');
-        noActiveHuntText.classList.remove('hidden');
-    }
+    // Determine which main view is active
+    const activeMainTab = (/** @type {HTMLElement | null} */(modal.querySelector('.tab-button.active')))?.dataset.huntsView || 'bounties-view';
 
-    // Render Available Bounties
-    availableHuntsContainer.innerHTML = '';
-    gameState.hunts.available.forEach((hunt, index) => {
-        if (hunt) {
-            const card = document.createElement('div');
-            card.innerHTML = createHuntCardHTML(hunt, index, false, gameState); // <<< MODIFIED
-            availableHuntsContainer.appendChild(card);
+    if (activeMainTab === 'bounties-view') {
+        // Render Active Hunt
+        if (gameState.hunts.active) {
+            activeHuntCard.innerHTML = createHuntCardHTML(gameState.hunts.active, null, true, gameState, gameState.hunts.progress);
+            activeHuntCard.classList.remove('hidden');
+            noActiveHuntText.classList.add('hidden');
+        } else {
+            activeHuntCard.classList.add('hidden');
+            noActiveHuntText.classList.remove('hidden');
         }
-    });
 
-    // Update Reroll Button
-    const rerollButton = /** @type {HTMLButtonElement} */ (rerollHuntsBtn);
-    rerollButton.textContent = `Reroll All (${gameState.hunts.dailyRerollsLeft})`;
-    rerollButton.disabled = gameState.hunts.dailyRerollsLeft <= 0;
+        // Render Available Bounties
+        availableHuntsContainer.innerHTML = '';
+        gameState.hunts.available.forEach((hunt, index) => {
+            if (hunt) {
+                const card = document.createElement('div');
+                card.innerHTML = createHuntCardHTML(hunt, index, false, gameState);
+                availableHuntsContainer.appendChild(card);
+            }
+        });
 
-    // Render Shop
-    huntShopContainer.innerHTML = '';
-    HUNT_SHOP_INVENTORY.forEach(item => {
-        const card = document.createElement('div');
-        card.innerHTML = createHuntShopItemHTML(item, gameState);
-        huntShopContainer.appendChild(card.firstElementChild);
-    });
+        // Update Reroll Button
+        const rerollButton = /** @type {HTMLButtonElement} */(rerollHuntsBtn);
+        rerollButton.textContent = `Reroll All (${gameState.hunts.dailyRerollsLeft})`;
+        rerollButton.disabled = gameState.hunts.dailyRerollsLeft <= 0;
+    } else if (activeMainTab === 'shop-view') {
+        // Render Shop based on active sub-tab
+        const activeShopCategory = (/** @type {HTMLElement | null} */(modal.querySelector('#shop-sub-tabs .sub-tab-button.active')))?.dataset.shopCategory || 'Utility';
+        
+        huntShopContainer.innerHTML = '';
+        const itemsToRender = HUNT_SHOP_INVENTORY[activeShopCategory] || [];
+        
+        // Sort Gems by Tier then Cost
+        if (activeShopCategory === 'Gems') {
+            itemsToRender.sort((a, b) => {
+                const gemA = GEMS[a.id];
+                const gemB = GEMS[b.id];
+
+                // --- START OF FIX: Add safety checks ---
+                if (!gemA || !gemB) {
+                    if (!gemA) console.error(`Shop item with ID "${a.id}" not found in GEMS data.`);
+                    if (!gemB) console.error(`Shop item with ID "${b.id}" not found in GEMS data.`);
+                    return a.cost - b.cost; // Fallback to a simple sort
+                }
+                // --- END OF FIX ---
+
+                if (gemA.tier !== gemB.tier) {
+                    return gemA.tier - gemB.tier;
+                }
+                return a.cost - b.cost;
+            });
+        }
+
+        itemsToRender.forEach(item => {
+            const cardWrapper = document.createElement('div');
+            cardWrapper.innerHTML = createHuntShopItemHTML(item, gameState);
+            huntShopContainer.appendChild(cardWrapper.firstElementChild);
+        });
+    }
 }
 
 /**
@@ -2891,15 +2925,6 @@ function createHuntCardHTML(hunt, index, isActive, gameState, progress = 0) {
     }
 
     const description = hunt.description.replace('{quantity}', formatNumber(hunt.quantity));
-
-    let tokenRewardText;
-    if (isActive) {
-        // For the active hunt, show the specific, pre-rolled amount.
-        tokenRewardText = `+${hunt.tokenReward}`;
-    } else {
-        // For available bounties, show the potential range.
-        tokenRewardText = `1-${hunt.maxTokens || 3}`;
-    }
 
     const tokenRewardHTML = `
         <div class="hunt-token-reward">
@@ -3031,16 +3056,27 @@ function createHuntShopItemHTML(shopItem, gameState) {
     // Handle special, non-consumable items
     if (shopItem.id === 'HUNT_CANCEL') {
         name = "Cancel Active Hunt";
-        description = "Abandon your current hunt and return it to the bounty board. Does not refund the cost of rerolls.";
+        description = "Abandon your current hunt if you get stuck. Does not refund reroll costs.";
         icon = 'images/icons/cancel_hunt.png';
     } else if (shopItem.id === 'HUNT_REROLL') {
         name = "Purchase Reroll";
         description = "Gain one extra bounty reroll for the day.";
         icon = 'images/icons/reroll_charge.png';
     } else {
-        itemData = CONSUMABLES[shopItem.id];
+        // Check both GEMS and CONSUMABLES
+        itemData = GEMS[shopItem.id] || CONSUMABLES[shopItem.id];
+        
+        // --- START OF FIX ---
+        if (!itemData) {
+            console.error(`Shop item with ID "${shopItem.id}" could not be found in GEMS or CONSUMABLES data. Skipping render.`);
+            // Return a placeholder or an empty string to avoid a crash.
+            // Returning a full element prevents other potential errors.
+            return `<div class="hunt-shop-item locked"><div class="shop-item-details"><div class="shop-item-name">Invalid Item</div><div class="shop-item-desc">ID: ${shopItem.id}</div></div></div>`;
+        }
+        // --- END OF FIX ---
+        
         name = itemData.name;
-        description = itemData.description;
+        description = itemData.description || `A powerful Tier ${itemData.tier} gem.`;
         icon = itemData.icon;
     }
 

@@ -2138,6 +2138,16 @@ h5 .legendary { color: #f39c12; }
     display: flex;
 }
 
+/* --- START: Add these new rules here --- */
+.hunts-main-view {
+    display: none;
+    flex-direction: column;
+    gap: 1.5625rem; /* 25px */
+}
+
+.hunts-main-view.active {
+    display: flex;
+}
 #active-hunt-section {
     padding: 0.9375rem; /* 15px */
     border: 0.0625rem solid #34495e; /* 1px */

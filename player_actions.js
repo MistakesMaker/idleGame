@@ -1147,7 +1147,7 @@ export function checkDailyResets(gameState) {
  * @returns {{success: boolean, message: string}}
  */
 export function cancelActiveHunt(gameState) {
-    const shopItem = HUNT_SHOP_INVENTORY.find(item => item.id === 'HUNT_CANCEL');
+    const shopItem = HUNT_SHOP_INVENTORY.Utility.find(item => item.id === 'HUNT_CANCEL');
     if (!shopItem) return { success: false, message: "Cancel item not found in shop data." };
     const cost = shopItem.cost;
 
@@ -1172,13 +1172,22 @@ export function cancelActiveHunt(gameState) {
  * @returns {{success: boolean, message: string, itemType: string|null}}
  */
 export function purchaseHuntShopItem(gameState, itemId) {
-    const shopItem = HUNT_SHOP_INVENTORY.find(item => item.id === itemId);
+    let shopItem = null;
+    // Find the item across all categories
+    for (const category in HUNT_SHOP_INVENTORY) {
+        const found = HUNT_SHOP_INVENTORY[category].find(item => item.id === itemId);
+        if (found) {
+            shopItem = found;
+            break;
+        }
+    }
+
     if (!shopItem) {
         return { success: false, message: "Item not found in shop.", itemType: null };
     }
 
     if (shopItem.unlock && gameState.hunts.totalCompleted < shopItem.unlock) {
-        return { success: false, message: "You have not completed enough hunts to purchase this.", itemType: null };
+        return { success: false, message: `You have not completed enough hunts to purchase this. Unlocks at ${shopItem.unlock}.`, itemType: null };
     }
     if (shopItem.oneTimePurchase && gameState.purchasedOneTimeShopItems.includes(itemId)) {
         return { success: false, message: "You have already purchased this unique item.", itemType: null };
@@ -1187,7 +1196,7 @@ export function purchaseHuntShopItem(gameState, itemId) {
         return { success: false, message: `You need ${shopItem.cost} tokens to buy this.`, itemType: null };
     }
 
-    // Special handlers for non-consumable shop items
+    // Special handlers for non-item shop actions
     if (itemId === 'HUNT_REROLL') {
         gameState.hunts.tokens -= shopItem.cost;
         gameState.hunts.dailyRerollsLeft++;
@@ -1195,13 +1204,25 @@ export function purchaseHuntShopItem(gameState, itemId) {
     }
     if (itemId === 'HUNT_CANCEL') {
         const cancelResult = cancelActiveHunt(gameState);
+        // Note: cancelActiveHunt handles its own token cost
         return { ...cancelResult, itemType: 'utility' };
     }
-    
 
+    // Check if the item is a Gem
+    const gemBase = GEMS[itemId];
+    if (gemBase) {
+        gameState.hunts.tokens -= shopItem.cost;
+        addToPlayerStacks(gameState, gemBase, 'gems');
+        if (shopItem.oneTimePurchase) {
+            gameState.purchasedOneTimeShopItems.push(itemId);
+        }
+        return { success: true, message: `Purchased ${gemBase.name}!`, itemType: 'gem' };
+    }
+
+    // Fallback to checking Consumables
     const consumableBase = CONSUMABLES[itemId];
     if (!consumableBase) {
-        return { success: false, message: "Consumable data not found for this item.", itemType: null };
+        return { success: false, message: "Data not found for this item.", itemType: null };
     }
 
     gameState.hunts.tokens -= shopItem.cost;

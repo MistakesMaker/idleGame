@@ -522,12 +522,14 @@
                     </div>
                 </div>
             </div>
-            <div class="sub-tabs" id="hunts-tabs">
-                <button class="sub-tab-button active" data-subview="bounties-view">Bounties</button>
-                <button class="sub-tab-button" data-subview="shop-view">Shop</button>
+            
+            <div class="tabs">
+                <button class="tab-button active" data-hunts-view="bounties-view">Bounties</button>
+                <button class="tab-button" data-hunts-view="shop-view">Shop</button>
             </div>
+
             <div id="hunts-modal-body">
-                <div id="bounties-view" class="hunts-sub-view active">
+                <div id="bounties-view" class="hunts-main-view active">
                     <div id="active-hunt-section">
                         <h4>Active Hunt</h4>
                         <div id="active-hunt-card" class="hidden"></div>
@@ -541,13 +543,21 @@
                         <div id="available-hunts-container"></div>
                     </div>
                 </div>
-                <div id="shop-view" class="hunts-sub-view">
+
+                <div id="shop-view" class="hunts-main-view">
+                    <div class="sub-tabs" id="shop-sub-tabs">
+                        <button class="sub-tab-button active" data-shop-category="Utility">Utility</button>
+                        <button class="sub-tab-button" data-shop-category="Potions">Potions</button>
+                        <button class="sub-tab-button" data-shop-category="Gems">Gems</button>
+                        <button class="sub-tab-button" data-shop-category="Permanent">Permanent</button>
+                    </div>
                     <p class="small-text-hint">Spend your Hunt Tokens on powerful rewards. Your total completed hunts will unlock more items over time.</p>
                     <div id="hunt-shop-container">
                         <!-- Shop items will be injected here by JS -->
                     </div>
                 </div>
             </div>
+
             <button id="hunts-close-btn">Close</button>
         </div>
     </div>
