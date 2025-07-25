@@ -3066,18 +3066,30 @@ function createHuntShopItemHTML(shopItem, gameState) {
         // Check both GEMS and CONSUMABLES
         itemData = GEMS[shopItem.id] || CONSUMABLES[shopItem.id];
         
-        // --- START OF FIX ---
         if (!itemData) {
             console.error(`Shop item with ID "${shopItem.id}" could not be found in GEMS or CONSUMABLES data. Skipping render.`);
-            // Return a placeholder or an empty string to avoid a crash.
-            // Returning a full element prevents other potential errors.
             return `<div class="hunt-shop-item locked"><div class="shop-item-details"><div class="shop-item-name">Invalid Item</div><div class="shop-item-desc">ID: ${shopItem.id}</div></div></div>`;
         }
-        // --- END OF FIX ---
         
         name = itemData.name;
-        description = itemData.description || `A powerful Tier ${itemData.tier} gem.`;
         icon = itemData.icon;
+
+        // --- START OF MODIFICATION: Generate specific gem descriptions ---
+        if (itemData.tier >= 1 && itemData.stats) {
+            const statKey = Object.keys(itemData.stats)[0];
+            const statValue = itemData.stats[statKey];
+            const statInfo = Object.values(STATS).find(s => s.key === statKey);
+            
+            if (statInfo) {
+                const valueStr = statInfo.type === 'percent' ? `${statValue.toFixed(2)}%` : formatNumber(statValue);
+                description = `A powerful Tier ${itemData.tier} gem.<br><b>+${valueStr} ${statInfo.name}</b>`;
+            } else {
+                description = `A powerful Tier ${itemData.tier} gem.`;
+            }
+        } else {
+            description = itemData.description;
+        }
+        // --- END OF MODIFICATION ---
     }
 
     let buttonHTML;

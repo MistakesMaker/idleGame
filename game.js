@@ -246,41 +246,63 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function recalculateStats() {
-        statBreakdown = {
-            clickDamage: { sources: [], multipliers: [], synergy: 0 },
-            dps: { sources: [], multipliers: [], synergy: 0 },
-            goldGain: { sources: [] },
-            magicFind: { sources: [] }
-        };
+    statBreakdown = {
+        clickDamage: { sources: [], multipliers: [], synergy: 0 },
+        dps: { sources: [], multipliers: [], synergy: 0 },
+        goldGain: { sources: [] },
+        magicFind: { sources: [] }
+    };
 
-        const hero = gameState.hero;
-        const absorbed = gameState.absorbedStats || {};
-        const permUpgrades = gameState.permanentUpgrades || {};
-        const permUpgradeDefs = PERMANENT_UPGRADES;
-        const permStatBonuses = gameState.permanentStatBonuses || { totalClickDamage: 0, totalDps: 0, magicFind: 0 };
+    const hero = gameState.hero;
+    const absorbed = gameState.absorbedStats || {};
+    const permUpgrades = gameState.permanentUpgrades || {};
+    const permUpgradeDefs = PERMANENT_UPGRADES;
+    const permStatBonuses = gameState.permanentStatBonuses || { totalClickDamage: 0, totalDps: 0, magicFind: 0 };
 
-        const permanentUpgradeBonuses = {
-            magicFind: (permUpgrades.LOOT_HOARDER || 0) * (permUpgradeDefs.LOOT_HOARDER?.bonusPerLevel || 0),
-            critChance: (permUpgrades.CRITICAL_POWER || 0) * permUpgradeDefs.CRITICAL_POWER.bonusPerLevel,
-            critDamage: (permUpgrades.CRITICAL_DAMAGE || 0) * permUpgradeDefs.CRITICAL_DAMAGE.bonusPerLevel,
-            prestigePower: (permUpgrades.PRESTIGE_POWER || 0) * permUpgradeDefs.PRESTIGE_POWER.bonusPerLevel,
-            scrap: (permUpgrades.SCRAP_SCAVENGER || 0) * permUpgradeDefs.SCRAP_SCAVENGER.bonusPerLevel,
-            gemFind: (permUpgrades.GEM_FIND || 0) * permUpgradeDefs.GEM_FIND.bonusPerLevel,
-            bossDamage: (permUpgrades.BOSS_HUNTER || 0) * permUpgradeDefs.BOSS_HUNTER.bonusPerLevel,
-            multiStrike: (permUpgrades.SWIFT_STRIKES || 0) * permUpgradeDefs.SWIFT_STRIKES.bonusPerLevel,
-            legacyKeeper: (permUpgrades.LEGACY_KEEPER || 0) * permUpgradeDefs.LEGACY_KEEPER.bonusPerLevel,
-        };
-        
-        const prestigeMultiplier = 1 + ((permanentUpgradeBonuses.prestigePower * (gameState.prestigeCount || 0)) / 100);
+    const permanentUpgradeBonuses = {
+        magicFind: (permUpgrades.LOOT_HOARDER || 0) * (permUpgradeDefs.LOOT_HOARDER?.bonusPerLevel || 0),
+        critChance: (permUpgrades.CRITICAL_POWER || 0) * permUpgradeDefs.CRITICAL_POWER.bonusPerLevel,
+        critDamage: (permUpgrades.CRITICAL_DAMAGE || 0) * permUpgradeDefs.CRITICAL_DAMAGE.bonusPerLevel,
+        prestigePower: (permUpgrades.PRESTIGE_POWER || 0) * permUpgradeDefs.PRESTIGE_POWER.bonusPerLevel,
+        scrap: (permUpgrades.SCRAP_SCAVENGER || 0) * permUpgradeDefs.SCRAP_SCAVENGER.bonusPerLevel,
+        gemFind: (permUpgrades.GEM_FIND || 0) * permUpgradeDefs.GEM_FIND.bonusPerLevel,
+        bossDamage: (permUpgrades.BOSS_HUNTER || 0) * permUpgradeDefs.BOSS_HUNTER.bonusPerLevel,
+        multiStrike: (permUpgrades.SWIFT_STRIKES || 0) * permUpgradeDefs.SWIFT_STRIKES.bonusPerLevel,
+        legacyKeeper: (permUpgrades.LEGACY_KEEPER || 0) * permUpgradeDefs.LEGACY_KEEPER.bonusPerLevel,
+    };
+    
+    const prestigeMultiplier = 1 + ((permanentUpgradeBonuses.prestigePower * (gameState.prestigeCount || 0)) / 100);
 
-        let baseClickDamage = 1;
-        let baseDps = 0;
-        let bonusGold = 0;
-        let magicFind = 0;
-        let bonusXp = 0;
+    let baseClickDamage = 1;
+    let baseDps = 0;
+    let bonusGold = 0;
+    let magicFind = 0;
+    let bonusXp = 0;
 
-        statBreakdown.clickDamage.sources.push({ label: 'Base', value: 1 });
-        
+    // --- NEW POTION BUFFS ---
+    let bonusBossDamagePercent = 0;
+    let bonusCritChance = 0;
+    let bonusCritDamage = 0;
+    let dpsToClickDamagePercent = 0;
+    let bonusClickDamagePercent = 0;
+
+    statBreakdown.clickDamage.sources.push({ label: 'Base', value: 1 });
+    
+    if (gameState.activeBuffs) {
+        gameState.activeBuffs.forEach(buff => {
+            if (buff.stats) {
+                bonusGold += buff.stats.bonusGold || 0;
+                magicFind += buff.stats.magicFind || 0;
+                bonusXp += buff.stats.bonusXp || 0;
+                bonusBossDamagePercent += buff.stats.bonusBossDamagePercent || 0;
+                bonusCritChance += buff.stats.bonusCritChance || 0;
+                bonusCritDamage += buff.stats.bonusCritDamage || 0;
+                dpsToClickDamagePercent += buff.stats.dpsToClickDamagePercent || 0;
+                bonusClickDamagePercent += buff.stats.bonusClickDamagePercent || 0;
+            }
+        });
+    }
+    
     // --- Prestige Stats (separated for clarity) ---
     if (absorbed.clickDamage) {
         const rawValue = absorbed.clickDamage;
@@ -321,15 +343,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (powerBonus > 0) {
             statBreakdown.magicFind.sources.push({ label: 'From Prestige Power', value: powerBonus, isPercent: true });
         }
-    }
-
-    // --- Active Buffs ---
-    if (gameState.activeBuffs) {
-        gameState.activeBuffs.forEach(buff => {
-            if(buff.statKey === 'bonusGold') bonusGold += buff.value;
-            if(buff.statKey === 'magicFind') magicFind += buff.value;
-            if(buff.statKey === 'bonusXp') bonusXp += buff.value;
-        });
     }
     
     // --- Gear Stats ---
@@ -401,13 +414,20 @@ document.addEventListener('DOMContentLoaded', () => {
     finalDps *= (1 + (dpsUpgradeBonusPercent / 100));
     statBreakdown.dps.multipliers.push({ label: 'From Gold Upgrades', value: dpsUpgradeBonusPercent });
     
-    // --- Synergy ---
+    // --- Synergy & Potion Click Damage ---
     const dpsToClickSynergyValue = (gameState.absorbedSynergies && gameState.absorbedSynergies['dps_to_clickDamage']) || 0;
     const totalSynergy = synergyFromGems + (dpsToClickSynergyValue * prestigeMultiplier);
-    if (totalSynergy > 0) {
-        const synergyBonus = finalDps * totalSynergy;
+    
+    const totalDpsToClickPercent = totalSynergy + (dpsToClickDamagePercent / 100);
+    if (totalDpsToClickPercent > 0) {
+        const synergyBonus = finalDps * totalDpsToClickPercent;
         finalClickDamage += synergyBonus;
         statBreakdown.clickDamage.synergy = synergyBonus;
+    }
+
+    // --- NEW POTION BUFFS (Multiplicative) ---
+    if (bonusClickDamagePercent > 0) {
+        finalClickDamage *= (1 + (bonusClickDamagePercent / 100));
     }
 
     // --- FINAL MULTIPLIERS FROM TOMES ---
@@ -431,10 +451,10 @@ document.addEventListener('DOMContentLoaded', () => {
         bonusGold: bonusGold,
         magicFind: magicFind,
         bonusXp: bonusXp,
-        critChance: permanentUpgradeBonuses.critChance,
-        critDamage: 1.5 + (permanentUpgradeBonuses.critDamage / 100),
+        critChance: permanentUpgradeBonuses.critChance + bonusCritChance,
+        critDamage: 1.5 + ((permanentUpgradeBonuses.critDamage + bonusCritDamage) / 100),
         multiStrikeChance: permanentUpgradeBonuses.multiStrike,
-        bossDamageBonus: 1 + (permanentUpgradeBonuses.bossDamage / 100),
+        bossDamageBonus: 1 + ((permanentUpgradeBonuses.bossDamage + bonusBossDamagePercent) / 100),
         scrapBonus: 1 + (permanentUpgradeBonuses.scrap / 100),
         gemFindChance: permanentUpgradeBonuses.gemFind,
         legacyKeeperBonus: permanentUpgradeBonuses.legacyKeeper,
@@ -622,41 +642,45 @@ function startNewMonster() {
 }
 
     function attack(baseDamage, isClick = false) {
-        if (gameState.monster.hp <= 0) return;
+    if (gameState.monster.hp <= 0) return;
 
-        let finalDamage = baseDamage;
-        const level = gameState.currentFightingLevel;
-        const isAnyBoss = isBossLevel(level) || isBigBossLevel(level) || isMiniBossLevel(level);
+    let finalDamage = baseDamage;
+    const level = gameState.currentFightingLevel;
+    const isAnyBoss = isBossLevel(level) || isBigBossLevel(level) || isMiniBossLevel(level);
 
-        if (isAnyBoss) {
-            finalDamage *= playerStats.bossDamageBonus;
-        }
+    if (isAnyBoss) {
+        finalDamage *= playerStats.bossDamageBonus;
+    }
 
-        const isCrit = Math.random() * 100 < playerStats.critChance;
-        if (isCrit) {
-            finalDamage *= playerStats.critDamage;
-            if (isClick) {
-                playSound('crit_hit');
-            }
-        }
-        
-        gameState.monster.hp -= finalDamage;
+    // --- START OF MODIFICATION ---
+    const isRagingAutomatonActive = !isClick && gameState.activeBuffs.some(b => b.specialEffect === 'guaranteedDpsCrit');
+    const isCrit = isRagingAutomatonActive || (Math.random() * 100 < playerStats.critChance);
+    // --- END OF MODIFICATION ---
 
+    if (isCrit) {
+        finalDamage *= playerStats.critDamage;
         if (isClick) {
-            ui.showDamagePopup(elements.popupContainerEl, finalDamage, isCrit);
-        } else {
-            ui.showDpsPopup(elements.popupContainerEl, finalDamage, isCrit);
-        }
-
-        if (Math.random() * 100 < playerStats.multiStrikeChance) {
-            gameState.monster.hp -= finalDamage;
-             if (isClick) {
-                ui.showDamagePopup(elements.popupContainerEl, finalDamage, isCrit, true);
-            } else {
-                ui.showDpsPopup(elements.popupContainerEl, finalDamage, isCrit, true);
-            }
+            playSound('crit_hit');
         }
     }
+    
+    gameState.monster.hp -= finalDamage;
+
+    if (isClick) {
+        ui.showDamagePopup(elements.popupContainerEl, finalDamage, isCrit);
+    } else {
+        ui.showDpsPopup(elements.popupContainerEl, finalDamage, isCrit);
+    }
+
+    if (Math.random() * 100 < playerStats.multiStrikeChance) {
+        gameState.monster.hp -= finalDamage;
+         if (isClick) {
+            ui.showDamagePopup(elements.popupContainerEl, finalDamage, isCrit, true);
+        } else {
+            ui.showDpsPopup(elements.popupContainerEl, finalDamage, isCrit, true);
+        }
+    }
+}
 
     function clickMonster() {
         if (gameState.monster.hp <= 0) return;
@@ -3463,20 +3487,7 @@ function startNewMonster() {
             }
         });
 
-        shopContainer.addEventListener('mouseover', (e) => {
-            if (!(e.target instanceof HTMLElement)) return;
-            const shopItem = e.target.closest('.hunt-shop-item');
-            if (shopItem instanceof HTMLElement && shopItem.dataset.itemId) {
-                ui.showHuntShopTooltip(elements, shopItem, shopItem.dataset.itemId);
-            }
-        });
-
-        shopContainer.addEventListener('mouseout', (e) => {
-            if (!(e.target instanceof HTMLElement)) return;
-            if (e.target.closest('.hunt-shop-item')) {
-                elements.tooltipEl.classList.add('hidden');
-            }
-        });
+        // --- TOOLTIP LISTENERS FOR SHOP REMOVED ---
     }
 
     huntsModalBackdrop.addEventListener('mouseover', (e) => {
@@ -3510,25 +3521,35 @@ function startNewMonster() {
 }
 
     function purchaseHuntShopItem(itemId) {
-        const result = player.purchaseHuntShopItem(gameState, itemId);
-        logMessage(elements.gameLogEl, result.message, result.success ? 'legendary' : 'rare', isAutoScrollingLog);
+    const result = player.purchaseHuntShopItem(gameState, itemId);
+    logMessage(elements.gameLogEl, result.message, result.success ? 'legendary' : 'rare', isAutoScrollingLog);
 
-        if (result.success) {
-            // Rerender the shop to update button states (e.g., for one-time purchases)
-            const huntsModal = document.getElementById('hunts-modal-backdrop');
-            if (huntsModal && !huntsModal.classList.contains('hidden')) {
-                ui.renderHuntsView(elements, gameState);
-            }
-            // If the reward was a consumable, refresh that view if it's open
+    if (result.success) {
+        // Rerender the shop to update button states (e.g., for one-time purchases) and token count
+        const huntsModal = document.getElementById('hunts-modal-backdrop');
+        if (huntsModal && !huntsModal.classList.contains('hidden')) {
+            ui.renderHuntsView(elements, gameState);
+        }
+
+        // --- START: NEW UI REFRESH LOGIC ---
+        // Check the type of item purchased and refresh the relevant inventory tab if it's open.
+        if (result.itemType === 'gem') {
+            // This helper already checks if the gem view is active before redrawing.
+            refreshGemViewIfActive();
+        } else if (result.itemType === 'consumable') {
             const consumablesView = document.getElementById('inventory-consumables-view');
-            if (result.itemType === 'consumable' && consumablesView && consumablesView.classList.contains('active')) {
+            if (consumablesView && consumablesView.classList.contains('active')) {
+                // Manually re-render the consumables grid if it's the active view.
                 ui.renderGrid(elements.consumablesSlotsEl, gameState.consumables, { calculatePositions: true, showLockIcon: false });
             }
-            recalculateStats();
-            ui.updateStatsPanel(elements, playerStats);
-            autoSave();
         }
+        // --- END: NEW UI REFRESH LOGIC ---
+
+        recalculateStats();
+        ui.updateStatsPanel(elements, playerStats);
+        autoSave();
     }
+}
 
     function cancelActiveHunt() {
         const result = player.cancelActiveHunt(gameState);

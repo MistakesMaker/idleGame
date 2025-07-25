@@ -121,8 +121,7 @@ export const CONSUMABLES = {
         effect: {
             type: 'timedBuff',
             name: 'Minor Gold Boost',
-            statKey: 'bonusGold',
-            value: 50,
+            stats: { bonusGold: 50 },
             duration: 600 // 10 minutes in seconds
         }
     },
@@ -136,8 +135,7 @@ export const CONSUMABLES = {
         effect: {
             type: 'timedBuff',
             name: 'Major Gold Boost',
-            statKey: 'bonusGold',
-            value: 200,
+            stats: { bonusGold: 200 },
             duration: 600
         }
     },
@@ -151,8 +149,7 @@ export const CONSUMABLES = {
         effect: {
             type: 'timedBuff',
             name: 'Minor XP Boost',
-            statKey: 'bonusXp',
-            value: 50,
+            stats: { bonusXp: 50 },
             duration: 900 // 15 minutes
         }
     },
@@ -166,8 +163,7 @@ export const CONSUMABLES = {
         effect: {
             type: 'timedBuff',
             name: 'Major XP Boost',
-            statKey: 'bonusXp',
-            value: 200,
+            stats: { bonusXp: 200 },
             duration: 900
         }
     },
@@ -181,8 +177,7 @@ export const CONSUMABLES = {
         effect: {
             type: 'timedBuff',
             name: 'Minor Luck',
-            statKey: 'magicFind',
-            value: 10,
+            stats: { magicFind: 10 },
             duration: 300 // 5 minutes
         }
     },
@@ -196,9 +191,94 @@ export const CONSUMABLES = {
         effect: {
             type: 'timedBuff',
             name: 'Minor Gem Seeker',
-            statKey: 'gemFindChance',
-            value: 5,
+            stats: { gemFindChance: 5 },
             duration: 600
+        }
+    },
+
+    // --- NEW POTIONS START HERE ---
+    POTION_FUSED_POWER: {
+        id: 'POTION_FUSED_POWER',
+        name: 'Potion of Fused Power',
+        type: 'consumable',
+        icon: 'images/consumables/potion_fused_power.png',
+        width: 1, height: 1,
+        description: "For 5 minutes, 100% of your total DPS is added to your total Click Damage.",
+        effect: {
+            type: 'timedBuff',
+            name: 'Fused Power',
+            stats: { dpsToClickDamagePercent: 100 },
+            duration: 300
+        }
+    },
+    POTION_GIANTS_STRENGTH: {
+        id: 'POTION_GIANTS_STRENGTH',
+        name: "Potion of Giant's Strength",
+        type: 'consumable',
+        icon: 'images/consumables/potion_giants_strength.png',
+        width: 1, height: 1,
+        description: "For 5 minutes, your total Click Damage is increased by 100%.",
+        effect: {
+            type: 'timedBuff',
+            name: "Giant's Strength",
+            stats: { bonusClickDamagePercent: 100 },
+            duration: 300
+        }
+    },
+    POTION_BOSS_SLAYER: {
+        id: 'POTION_BOSS_SLAYER',
+        name: "Boss Slayer's Brew",
+        type: 'consumable',
+        icon: 'images/consumables/potion_boss_slayer.png',
+        width: 1, height: 1,
+        description: "For 3 minutes, deal 50% more damage to all Boss-type monsters.",
+        effect: {
+            type: 'timedBuff',
+            name: "Boss Slayer",
+            stats: { bonusBossDamagePercent: 50 },
+            duration: 180
+        }
+    },
+    POTION_DEADLY_FOCUS: {
+        id: 'POTION_DEADLY_FOCUS',
+        name: "Flask of Deadly Focus",
+        type: 'consumable',
+        icon: 'images/consumables/potion_deadly_focus.png',
+        width: 1, height: 1,
+        description: "For 2 minutes, increases your Critical Hit Chance by 10% and Critical Hit Damage by 50%.",
+        effect: {
+            type: 'timedBuff',
+            name: "Deadly Focus",
+            stats: { bonusCritChance: 10, bonusCritDamage: 50 },
+            duration: 120
+        }
+    },
+    POTION_RAGING_AUTOMATON: {
+        id: 'POTION_RAGING_AUTOMATON',
+        name: "Draught of the Raging Automaton",
+        type: 'consumable',
+        icon: 'images/consumables/potion_raging_automaton.png',
+        width: 1, height: 1,
+        description: "For 1 minute, all of your automatic DPS hits are guaranteed to be critical hits.",
+        effect: {
+            type: 'timedBuff',
+            name: "Raging Automaton",
+            specialEffect: 'guaranteedDpsCrit',
+            duration: 60
+        }
+    },
+    POTION_LIQUID_LUCK: {
+        id: 'POTION_LIQUID_LUCK',
+        name: "Liquid Luck",
+        type: 'consumable',
+        icon: 'images/consumables/potion_liquid_luck.png',
+        width: 1, height: 1,
+        description: "For 5 minutes, gain +1000% Gold Gain, +100% Magic Find.",
+        effect: {
+            type: 'timedBuff',
+            name: "Liquid Luck",
+            stats: { bonusGold: 1000, magicFind: 100 },
+            duration: 300
         }
     },
 };

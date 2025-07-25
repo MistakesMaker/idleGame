@@ -29,7 +29,7 @@ export const HUNT_SHOP_INVENTORY = {
             id: 'ARTISAN_DRILL', 
             cost: 50, 
             unlock: 100 
-        }, // Moved here
+        },
     ],
 
     // ===================================
@@ -41,8 +41,14 @@ export const HUNT_SHOP_INVENTORY = {
         { id: 'XP_ELIXIR_MINOR', cost: 5, unlock: 10 },
         { id: 'GOLD_BOOSTER_MAJOR', cost: 10, unlock: 50 },
         { id: 'MAGIC_FIND_POTION_MINOR', cost: 12, unlock: 50 },
+        { id: 'POTION_BOSS_SLAYER', cost: 15, unlock: 100 },
         { id: 'XP_ELIXIR_MAJOR', cost: 15, unlock: 100 },
+        { id: 'POTION_LIQUID_LUCK', cost: 75, unlock: 100 },
         { id: 'GEM_SEEKER_DRAFT_MINOR', cost: 20, unlock: 100 },
+        { id: 'POTION_GIANTS_STRENGTH', cost: 25, unlock: 150 },
+        { id: 'POTION_FUSED_POWER', cost: 25, unlock: 150 },
+        { id: 'POTION_DEADLY_FOCUS', cost: 30, unlock: 200 },
+        { id: 'POTION_RAGING_AUTOMATON', cost: 50, unlock: 300 },
     ],
     
     // ===================================
