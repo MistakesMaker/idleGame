@@ -364,7 +364,7 @@ export const underdarkItems = {
         maxSockets: 2,
         possibleStats: [ 
             { key: STATS.GOLD_GAIN.key, min: 1, max: 600 },
-            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 3500 }
+            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 20000 }
          ]
     },
     FUNGAL_CRAWLER_RING: {
@@ -566,7 +566,7 @@ export const underdarkItems = {
         maxSockets: 4,
         possibleStats: [ 
             { key: STATS.DPS.key, min: 1, max: 125000 },
-            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 6000 },
+            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 40000 },
          ]
     },
 
@@ -616,7 +616,7 @@ export const underdarkItems = {
         canHaveSockets: true,
         maxSockets: 3,
         possibleStats: [
-            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 20000 },
+            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 50000 },
             { key: STATS.DPS.key, min: 1, max: 110000 },
             { key: STATS.GOLD_GAIN.key, min: 1, max: 1100 },
         ]
@@ -782,7 +782,7 @@ export const underdarkItems = {
         maxSockets: 3,
         possibleStats: [
             { key: STATS.DPS.key, min: 1, max: 145000 },
-            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 8000 }
+            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 60000 }
         ]
     },
 
