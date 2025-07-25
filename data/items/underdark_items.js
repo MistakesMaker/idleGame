@@ -32,7 +32,7 @@ export const underdarkItems = {
         maxSockets: 2,
         possibleStats: [ 
             { key: STATS.GOLD_GAIN.key, min: 1, max: 175 },
-            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 3500 },
+            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 11000 },
             { key: STATS.DPS.key, min: 1, max: 50000 }
          ]
     },
@@ -213,7 +213,7 @@ export const underdarkItems = {
         maxSockets: 3,
         possibleStats: [ 
             { key: STATS.DPS.key, min: 1, max: 65000 },
-            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 4000 },
+            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 20000 },
          ]
     },
 
@@ -522,7 +522,7 @@ export const underdarkItems = {
         maxSockets: 3,
         possibleStats: [ 
             { key: STATS.DPS.key, min: 1, max: 111000 },
-            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 6500 },
+            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 33000 },
             { key: STATS.GOLD_GAIN.key, min: 1, max: 350 }
          ]
     },
@@ -687,7 +687,7 @@ export const underdarkItems = {
         maxSockets: 3,
         possibleStats: [ 
             { key: STATS.DPS.key, min: 1, max: 130000 },
-            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 9999 },
+            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 45000 },
             { key: STATS.GOLD_GAIN.key, min: 1, max: 500 }
          ]
     },
