@@ -53,7 +53,10 @@ export const underdarkItems = {
         width: 2, height: 3,
         canHaveSockets: true,
         maxSockets: 2,
-        possibleStats: [ { key: STATS.CLICK_DAMAGE.key, min: 1, max: 20000 } ]
+        possibleStats: [ 
+            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 20000 },
+            { key: STATS.DPS.key, min: 1, max: 80000 },
+         ]
     },
 
     // --- Sub-Zone: Crystal Golem (Boss Lvl 425) ---
@@ -125,10 +128,10 @@ export const underdarkItems = {
         width: 2, height: 3,
         isUnique: true,
         canHaveSockets: true,
-        maxSockets: 3,
+        maxSockets: 4,
         possibleStats: [
             { key: STATS.CLICK_DAMAGE.key, min: 1, max: 30000 },
-            { key: STATS.DPS.key, min: 1, max: 50000 },
+            { key: STATS.DPS.key, min: 1, max: 95000 },
             { key: STATS.GOLD_GAIN.key, min: 500, max: 500 }
         ]
     },
@@ -282,7 +285,9 @@ export const underdarkItems = {
         width: 2, height: 3,
         canHaveSockets: true,
         maxSockets: 1,
-        possibleStats: [ { key: STATS.CLICK_DAMAGE.key, min: 1, max: 33000 } ]
+        possibleStats: [ 
+            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 33000 },
+            { key: STATS.DPS.key, min: 1, max: 100000 }]
     },
 
     // --- Sub-Zone: Fungal Guardian (Boss Lvl 525) ---
@@ -341,8 +346,9 @@ export const underdarkItems = {
         canHaveSockets: true,
         maxSockets: 3,
         possibleStats: [
-            { key: STATS.DPS.key, min: 1, max: 66666 },
+            { key: STATS.DPS.key, min: 1, max: 130000 },
             { key: STATS.GOLD_GAIN.key, min: 888, max: 888 },
+            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 15000 }
         ]
     },
 
@@ -421,7 +427,7 @@ export const underdarkItems = {
         icon: 'images/icons/mandragora_root.png',
         width: 2, height: 3,
         canHaveSockets: true,
-        maxSockets: 3,
+        maxSockets: 4,
         possibleStats: [ { key: STATS.CLICK_DAMAGE.key, min: 1, max: 40000 } ]
     },
     
@@ -581,7 +587,10 @@ export const underdarkItems = {
         width: 2, height: 3,
         canHaveSockets: true,
         maxSockets: 3,
-        possibleStats: [ { key: STATS.CLICK_DAMAGE.key, min: 1, max: 50000 } ]
+        possibleStats: [ 
+            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 50000 },
+            { key: STATS.DPS.key, min: 1, max: 150000 },
+         ]
     },
 
     // --- Sub-Zone: House of Shadows (Boss Lvl 675) ---
@@ -636,7 +645,7 @@ export const underdarkItems = {
         uniqueEffect: 'weaversEnvy',
         canHaveSockets: true,
         maxSockets: 3,
-        possibleStats: [ { key: STATS.DPS.key, min: 1, max: 100000 } ]
+        possibleStats: [ { key: STATS.DPS.key, min: 1, max: 200000 } ]
     },
 
     // ====================================================================================
@@ -801,7 +810,7 @@ export const underdarkItems = {
         maxSockets: 3,
         possibleStats: [
             { key: STATS.CLICK_DAMAGE.key, min: 1, max: 70000 },
-            { key: STATS.DPS.key, min: 1, max: 120000 }
+            { key: STATS.DPS.key, min: 1, max: 250000 }
         ]
     },
     CHAOS_CORE: {
