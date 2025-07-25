@@ -31,9 +31,9 @@ export const HUNT_POOLS = [
         // Tier 1: Green Meadows Hunts (Levels 1-100)
         requiredLevel: 1,
         hunts: [
-            { id: 'hunt_kill_slimes', title: 'Slime Culling', description: 'Defeat {quantity} Slimes.', type: 'kill_specific', target: 'SLIME', quantityMin: 25, quantityMax: 50, rewardIds: ['SCRAP_CACHE_SMALL', 'XP_ELIXIR_MINOR'] },
-            { id: 'hunt_kill_goblins', title: 'Goblin Menace', description: 'Defeat {quantity} Goblins.', type: 'kill_specific', target: 'GOBLIN', quantityMin: 25, quantityMax: 50, rewardIds: ['XP_ELIXIR_MINOR', 'GOLD_BOOSTER_MINOR'] },
-            { id: 'hunt_kill_spiders', title: 'Webbed Threat', description: 'Defeat {quantity} Giant Spiders.', type: 'kill_specific', target: 'GIANT_SPIDER', quantityMin: 20, quantityMax: 40, rewardIds: ['GOLD_BOOSTER_MINOR', 'SCRAP_CACHE_SMALL'] },
+            { id: 'hunt_kill_slimes', title: 'Slime Culling', description: 'Defeat {quantity} Slimes of any kind.', type: 'kill_category', target: { nameContains: 'Slime' }, quantityMin: 25, quantityMax: 50, rewardIds: ['SCRAP_CACHE_SMALL', 'XP_ELIXIR_MINOR'] },
+            { id: 'hunt_kill_goblins', title: 'Goblin Menace', description: 'Defeat {quantity} Goblins of any kind.', type: 'kill_category', target: { nameContains: 'Goblin' }, quantityMin: 25, quantityMax: 50, rewardIds: ['XP_ELIXIR_MINOR', 'GOLD_BOOSTER_MINOR'] },
+            { id: 'hunt_kill_spiders', title: 'Webbed Threat', description: 'Defeat {quantity} Spiders of any kind.', type: 'kill_category', target: { nameContains: 'Spider' }, quantityMin: 20, quantityMax: 40, rewardIds: ['GOLD_BOOSTER_MINOR', 'SCRAP_CACHE_SMALL'] },
             { id: 'hunt_kill_meadows_bosses', title: 'Meadow Overlords', description: 'Vanquish {quantity} bosses in the Green Meadows.', type: 'kill_category', target: { isBoss: true, zoneId: 'green_meadows' }, quantityMin: 1, quantityMax: 3, rewardIds: ['MAGIC_FIND_POTION_MINOR', 'SCRAP_CACHE_MEDIUM'] }
         ]
     },
@@ -51,7 +51,7 @@ export const HUNT_POOLS = [
         // Tier 3: Undead Desert Hunts (Levels 201-300)
         requiredLevel: 201,
         hunts: [
-            { id: 'hunt_kill_skeletons', title: 'Bone Collector', description: 'Defeat {quantity} Skeletons.', type: 'kill_specific', target: 'SKELETON', quantityMin: 35, quantityMax: 50, rewardIds: ['MAGIC_FIND_POTION_MINOR', 'XP_ELIXIR_MAJOR'] },
+            { id: 'hunt_kill_skeletons', title: 'Bone Collector', description: 'Defeat {quantity} Skeletons of any kind.', type: 'kill_category', target: { nameContains: 'Skeleton' }, quantityMin: 35, quantityMax: 50, rewardIds: ['MAGIC_FIND_POTION_MINOR', 'XP_ELIXIR_MAJOR'] },
             { id: 'hunt_kill_scorpions', title: 'Stinger Season', description: 'Defeat {quantity} Giant Scorpions.', type: 'kill_specific', target: 'GIANT_SCORPION', quantityMin: 25, quantityMax: 40, rewardIds: ['XP_ELIXIR_MAJOR', 'GOLD_BOOSTER_MAJOR'] },
             { id: 'hunt_kill_desert_any', title: 'Cleansing the Desert', description: 'Defeat {quantity} monsters within the Undead Desert.', type: 'kill_category', target: { zoneId: 'undead_desert' }, quantityMin: 40, quantityMax: 60, rewardIds: ['GOLD_BOOSTER_MAJOR', 'SCRAP_CACHE_LARGE'] },
             { id: 'hunt_kill_desert_bosses', title: 'Pharaoh\'s Fall', description: 'Vanquish {quantity} bosses in the Undead Desert.', type: 'kill_category', target: { isBoss: true, zoneId: 'undead_desert' }, quantityMin: 1, quantityMax: 3, rewardIds: ['SCRAP_CACHE_LARGE', 'GEM_SEEKER_DRAFT_MINOR'] }

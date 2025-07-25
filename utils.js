@@ -287,85 +287,74 @@ export function formatTime(totalSeconds) {
 }
 
 /**
- * Determines all possible travel locations for a given hunt objective.
+ * Determines all possible travel locations for a given hunt objective, limited to realms unlocked in the current run,
+ * and showing only the first location for each unique monster.
  * @param {object} hunt The hunt object from gameState.
+ * @param {object} gameState The entire game state, used to check player progress.
  * @returns {Array<{level: number, monster: object, location: string}>|null} An array of possible travel locations, or null.
  */
-export function getTravelOptionsForHunt(hunt) {
+export function getTravelOptionsForHunt(hunt, gameState) {
     if (!hunt || !hunt.type || !hunt.target) {
         return null;
     }
 
-    let options = [];
+    const currentRunMaxLevel = gameState.currentRunCompletedLevels.length > 0 ? Math.max(...gameState.currentRunCompletedLevels) : 1;
+    const unlockedRealms = REALMS.filter(realm => currentRunMaxLevel >= realm.requiredLevel);
 
-    switch (hunt.type) {
-        case 'kill_specific': {
-            const monsterId = hunt.target;
-            const targetMonster = MONSTERS[monsterId];
-            if (!targetMonster) return null;
+    const options = [];
+    const addedMonsters = new Set(); // --- NEW: This is our "memory"
 
-            for (const realm of REALMS) {
-                for (const zoneId in realm.zones) {
-                    const zone = realm.zones[zoneId];
-                    for (const subZoneId in zone.subZones) {
-                        const subZone = zone.subZones[subZoneId];
-                        if (subZone.monsterPool.some(m => m.name === targetMonster.name)) {
-                            options.push({
-                                level: subZone.levelRange[0],
-                                monster: targetMonster,
-                                location: `${subZone.name} (Lvl ${subZone.levelRange[0]})`
-                            });
-                        }
+    for (const realm of unlockedRealms) {
+        // --- NEW: Sort zones and sub-zones to ensure we always find the lowest level first ---
+        const sortedZoneIds = Object.keys(realm.zones).sort((a, b) => findFirstLevelOfZone(realm.zones[a]) - findFirstLevelOfZone(realm.zones[b]));
+        
+        for (const zoneId of sortedZoneIds) {
+            const zone = realm.zones[zoneId];
+            const sortedSubZoneIds = Object.keys(zone.subZones).sort((a, b) => zone.subZones[a].levelRange[0] - zone.subZones[b].levelRange[0]);
+
+            for (const subZoneId of sortedSubZoneIds) {
+                const subZone = zone.subZones[subZoneId];
+
+                for (const monster of subZone.monsterPool) {
+                    // --- NEW: If we've already added this monster, skip it ---
+                    if (addedMonsters.has(monster.name)) {
+                        continue;
                     }
-                }
-            }
-            break;
-        }
 
-        case 'kill_category': {
-            const target = hunt.target;
-            for (const realm of REALMS) {
-                for (const zoneId in realm.zones) {
-                    const zone = realm.zones[zoneId];
-                    // Filter by realm or zone if specified
-                    if (target.realm && realm.name !== target.realm) continue;
-                    if (target.zoneId && zoneId !== target.zoneId) continue;
-
-                    for (const subZoneId in zone.subZones) {
-                        const subZone = zone.subZones[subZoneId];
-                        let isValidSubZone = true;
-                        let representativeMonster = subZone.monsterPool[0]; // Default monster for display
-
-                        if (target.isBoss && !subZone.isBoss) {
-                            isValidSubZone = false;
+                    let isMatch = false;
+                    if (hunt.type === 'kill_specific') {
+                        const targetMonster = MONSTERS[hunt.target];
+                        if (targetMonster === monster) {
+                            isMatch = true;
                         }
-                        if (target.nameContains) {
-                            const matchingMonster = subZone.monsterPool.find(m => m.name.includes(target.nameContains));
-                            if (matchingMonster) {
-                                representativeMonster = matchingMonster;
-                            } else {
-                                isValidSubZone = false;
-                            }
-                        }
+                    } else if (hunt.type === 'kill_category') {
+                        const target = hunt.target;
+                        let conditionsMet = true; 
+
+                        if (target.isBoss && !monster.isBoss) conditionsMet = false;
+                        if (target.nameContains && !monster.name.toLowerCase().includes(target.nameContains.toLowerCase())) conditionsMet = false;
+                        if (target.zoneId && zoneId !== target.zoneId) conditionsMet = false;
+                        if(target.realm && realm.name !== target.realm) conditionsMet = false;
                         
-                        if (isValidSubZone) {
-                             options.push({
-                                level: subZone.levelRange[0],
-                                monster: representativeMonster,
-                                location: `${subZone.name} (Lvl ${subZone.levelRange[0]})`
-                            });
+                        if (conditionsMet) {
+                            isMatch = true;
                         }
+                    }
+
+                    if (isMatch) {
+                        options.push({
+                            level: subZone.levelRange[0],
+                            monster: monster,
+                            location: `${subZone.name} (Lvl ${subZone.levelRange[0]})`
+                        });
+                        // --- NEW: Add the monster's name to our memory ---
+                        addedMonsters.add(monster.name);
                     }
                 }
             }
-            break;
         }
-
-        default:
-            return null;
     }
     
-    // Remove duplicate levels before returning
-    const uniqueOptions = Array.from(new Map(options.map(item => [item.level, item])).values());
-    return uniqueOptions.sort((a,b) => a.level - b.level);
+    // The list is already sorted by level due to the new sorted loops.
+    return options;
 }

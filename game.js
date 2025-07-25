@@ -1437,7 +1437,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function handleHuntTravel() {
         if (!gameState.hunts.active) return;
         
-        const travelOptions = getTravelOptionsForHunt(gameState.hunts.active);
+        const travelOptions = getTravelOptionsForHunt(gameState.hunts.active, gameState);
         
         const travelCallback = (level) => {
             // This is the action performed when a travel button is clicked
@@ -1459,11 +1459,8 @@ document.addEventListener('DOMContentLoaded', () => {
             autoSave();
         };
         
-        if (travelOptions && travelOptions.length === 1) {
-            // If there's only one option, just go there directly.
-            travelCallback(travelOptions[0].level);
-        } else if (travelOptions && travelOptions.length > 1) {
-            // If there are multiple options, show the selection modal.
+        if (travelOptions && travelOptions.length > 0) {
+            // If there's one or more options, always show the selection modal.
             ui.showHuntTravelModal(elements, travelOptions, gameState.maxLevel, travelCallback);
         } else {
             // If no options are found.
