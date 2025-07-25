@@ -61,12 +61,10 @@ export const HUNT_SHOP_INVENTORY = [
         id: 'TOME_OF_STRENGTH', // Replaces Hunter's Emblem
         cost: 250,
         unlock: 200,
-        oneTimePurchase: true,
     },
     {
         id: 'TOME_OF_AGILITY', // New DPS Tome
         cost: 250,
         unlock: 200,
-        oneTimePurchase: true,
     }
 ];

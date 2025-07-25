@@ -2868,10 +2868,18 @@ function createHuntCardHTML(hunt, index, isActive, gameState, progress = 0) {
 
     const description = hunt.description.replace('{quantity}', formatNumber(hunt.quantity));
 
-    const tokenRewardText = hunt.tokenReward ? `+${hunt.tokenReward}` : `1-3`;
+    let tokenRewardText;
+    if (isActive) {
+        // For the active hunt, show the specific, pre-rolled amount.
+        tokenRewardText = `+${hunt.tokenReward}`;
+    } else {
+        // For available bounties, show the potential range.
+        tokenRewardText = `1-${hunt.maxTokens || 3}`;
+    }
+
     const tokenRewardHTML = `
         <div class="hunt-token-reward">
-            <span>${tokenRewardText}</span>
+            <span>${hunt.tokenReward}</span>
             <img src="images/icons/hunt_token.png" alt="Token">
         </div>
     `;
@@ -2904,7 +2912,7 @@ function createHuntCardHTML(hunt, index, isActive, gameState, progress = 0) {
             <div class="hunt-reward" data-reward-id="${reward.id}">
                 <img src="${reward.icon}" alt="${reward.name}">
                 <span class="hunt-reward-name">${reward.name}</span>
-                ${tokenRewardHTML} 
+                ${tokenRewardHTML}
             </div>
             <div class="hunt-details">
                 <p class="hunt-title">${hunt.title}</p>

@@ -2179,13 +2179,19 @@ h5 .legendary { color: #f39c12; }
     gap: 0.9375rem; /* 15px */
 }
 
-.hunt-details { flex-grow: 1; }
 .hunt-title { font-family: 'Cinzel', serif; font-size: 1.1em; font-weight: bold; color: #f1c40f; margin: 0 0 0.3125rem 0; }
 .hunt-description { margin: 0 0 0.625rem 0; color: #bdc3c7; }
 .hunt-reward { display: flex; flex-direction: column; align-items: center; gap: 0.5rem; font-size: 0.9em; text-align: center; width: 6.25rem; flex-shrink: 0; }
 .hunt-reward img { width: 3rem; height: 3rem; border-radius: 0.25rem; background: rgba(0,0,0,0.5); padding: 0.125rem; }
 .hunt-reward-name { color: #ecf0f1; font-weight: bold; }
-.hunt-actions { display: flex; flex-direction: column; align-items: center; gap: 0.3125rem; }
+.hunt-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.3125rem;
+    margin-top: auto; /* This is the key: it pushes the button to the bottom */
+    padding-top: 0.625rem; /* Adds space between description and button */
+}
 .hunt-progress-bar-container { width: 6.25rem; height: 0.625rem; background-color: #1a1a1a; border-radius: 0.3125rem; overflow: hidden; }
 .hunt-progress-bar { width: 0%; height: 100%; background: linear-gradient(to right, #2ecc71, #27ae60); transition: width 0.3s ease; }
 .hunt-progress-text { font-size: 0.8em; color: #95a5a6; }
@@ -2463,10 +2469,6 @@ h5 .legendary { color: #f39c12; }
     margin: 0; /* Remove default margin for better flex alignment */
 }
 
-.reset-attributes-container {
-    /* No special layout styles needed here anymore */
-}
-
 #reset-attributes-btn {
     background: #c0392b;
     border-bottom-color: #922b21;
@@ -2475,4 +2477,9 @@ h5 .legendary { color: #f39c12; }
 
 #reset-attributes-btn:hover {
     background: #e74c3c;
+}
+.hunt-details {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
 }

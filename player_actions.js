@@ -985,16 +985,22 @@ export function generateNewHunt(gameState, indexToReplace, huntPools) {
     const huntTemplate = { ...potentialHunts[Math.floor(Math.random() * potentialHunts.length)] };
 
     const completionCount = gameState.hunts.completionCounts[huntTemplate.id] || 0;
-    const completionBonus = completionCount * 10;
+    const completionBonus = completionCount * 2;// Each completion gives +2 to the quantity range
     const quantity = getRandomInt(huntTemplate.quantityMin + completionBonus, huntTemplate.quantityMax + completionBonus);
 
     const chosenRewardId = huntTemplate.rewardIds[Math.floor(Math.random() * huntTemplate.rewardIds.length)];
 
+    // --- START OF MODIFICATION ---
+    // Find the index of the tier this hunt belongs to.
+    const tierIndex = huntPools.findIndex(tier => tier.hunts.some(h => h.id === huntTemplate.id));
+    const maxTokens = 3 + (tierIndex > -1 ? tierIndex : 0); // Base 3, +1 for each tier index.
+    
     const newHunt = {
         ...huntTemplate,
         quantity: quantity,
         rewardId: chosenRewardId,
-        tokenReward: getRandomInt(1, 3),
+        tokenReward: getRandomInt(1, maxTokens), // The actual rolled amount for this specific bounty
+        maxTokens: maxTokens,                   // The potential maximum for this tier
         instanceId: Date.now() + Math.random(),
     };
 
