@@ -455,77 +455,46 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function handleMonsterDefeated() {
-        playSound('monster_defeat');
-        const huntsModal = document.getElementById('hunts-modal-backdrop');
-        if (huntsModal && !huntsModal.classList.contains('hidden')) {
-            ui.renderHuntsView(elements, gameState);
-        }
-        ui.updateHuntsButtonGlow(gameState);
-        const oldSubZone = findSubZoneByLevel(gameState.currentFightingLevel);
-        const oldRealmIndex = oldSubZone ? REALMS.findIndex(r => Object.values(r.zones).some(z => z === oldSubZone.parentZone)) : -1;
+    playSound('monster_defeat');
     
-        const result = logic.monsterDefeated(gameState, playerStats, currentMonster);
-    
-        result.logMessages.forEach(msg => {
-            logMessage(elements.gameLogEl, msg.message, msg.class, isAutoScrollingLog);
-        });
-        if (result.events && result.events.includes('gemFind')) {
-            ui.showInfoPopup(elements.popupContainerEl, 'Double Gem!', { top: '10%', fontSize: '3.5em' });
-        }
-        ui.showGoldPopup(elements.popupContainerEl, result.goldGained);
-    
-        if (result.droppedItems && result.droppedItems.length > 0) {
-            result.droppedItems.forEach((item, index) => {
-                ui.showItemDropAnimation(elements.popupContainerEl, item, index);
-                
-                if (item.type === 'consumable') {
-                    ui.renderGrid(elements.consumablesSlotsEl, gameState.consumables, { calculatePositions: true, showLockIcon: false });
-                    if (!gameState.unlockedFeatures.consumables) {
-                        gameState.unlockedFeatures.consumables = true;
-                        logMessage(elements.gameLogEl, '<b>Consumables Unlocked!</b> You can now use special one-time-use items from a new tab in your inventory.', 'legendary', isAutoScrollingLog);
-                        ui.updateTabVisibility(gameState);
-                        ui.flashTab('inventory-view');
-                        gameState.pendingSubTabViewFlash = 'inventory-consumables-view';
+    // NOTE: The Hunts UI update logic was moved from here...
 
-                        if (document.getElementById('inventory-view')?.classList.contains('active')) {
-                            ui.switchInventorySubView('inventory-consumables-view');
-                            const subTabButton = document.querySelector(`.sub-tab-button[data-subview="inventory-consumables-view"]`);
-                            if (subTabButton) {
-                                subTabButton.classList.add('newly-unlocked-flash');
-                                setTimeout(() => subTabButton.classList.remove('newly-unlocked-flash'), 5000);
-                            }
-                            gameState.pendingSubTabViewFlash = null;
-                        }
-                    }
-                } else {
-                    ui.addItemToGrid(elements.inventorySlotsEl, item);
-                    if (!gameState.unlockedFeatures.inventory) {
-                        gameState.unlockedFeatures.inventory = true;
-                        logMessage(elements.gameLogEl, '<b>Inventory Unlocked!</b> You can now view and manage your items.', 'legendary', isAutoScrollingLog);
-                        ui.updateTabVisibility(gameState);
-                        ui.flashTab('inventory-view');
-                    }
-                }
-                
-                if (item.sockets && item.sockets.length > 0 && !gameState.unlockedFeatures.gems) {
-                     logMessage(elements.gameLogEl, 'You found an item with strange, empty sockets. Perhaps there are special stones that could fit inside...', 'uncommon', isAutoScrollingLog);
-                }
-            });
-        }
-        
-        if (result.droppedGems && result.droppedGems.length > 0) {
-            result.droppedGems.forEach((gemStack, index) => {
-                ui.showItemDropAnimation(elements.popupContainerEl, gemStack, index);
-                 if (!gameState.unlockedFeatures.gems) {
-                    gameState.unlockedFeatures.gems = true;
-                    logMessage(elements.gameLogEl, '<b>Gems Unlocked!</b> You can now view and socket powerful gems from a new tab in your inventory.', 'legendary', isAutoScrollingLog);
+    const oldSubZone = findSubZoneByLevel(gameState.currentFightingLevel);
+    const oldRealmIndex = oldSubZone ? REALMS.findIndex(r => Object.values(r.zones).some(z => z === oldSubZone.parentZone)) : -1;
+
+    const result = logic.monsterDefeated(gameState, playerStats, currentMonster);
+
+    // ...to here. This ensures the UI is rendered AFTER the gameState (hunt progress) has been updated.
+    const huntsModal = document.getElementById('hunts-modal-backdrop');
+    if (huntsModal && !huntsModal.classList.contains('hidden')) {
+        ui.renderHuntsView(elements, gameState);
+    }
+    ui.updateHuntsButtonGlow(gameState);
+
+    result.logMessages.forEach(msg => {
+        logMessage(elements.gameLogEl, msg.message, msg.class, isAutoScrollingLog);
+    });
+    if (result.events && result.events.includes('gemFind')) {
+        ui.showInfoPopup(elements.popupContainerEl, 'Double Gem!', { top: '10%', fontSize: '3.5em' });
+    }
+    ui.showGoldPopup(elements.popupContainerEl, result.goldGained);
+
+    if (result.droppedItems && result.droppedItems.length > 0) {
+        result.droppedItems.forEach((item, index) => {
+            ui.showItemDropAnimation(elements.popupContainerEl, item, index);
+            
+            if (item.type === 'consumable') {
+                ui.renderGrid(elements.consumablesSlotsEl, gameState.consumables, { calculatePositions: true, showLockIcon: false });
+                if (!gameState.unlockedFeatures.consumables) {
+                    gameState.unlockedFeatures.consumables = true;
+                    logMessage(elements.gameLogEl, '<b>Consumables Unlocked!</b> You can now use special one-time-use items from a new tab in your inventory.', 'legendary', isAutoScrollingLog);
                     ui.updateTabVisibility(gameState);
                     ui.flashTab('inventory-view');
-                    gameState.pendingSubTabViewFlash = 'inventory-gems-view';
-                    
+                    gameState.pendingSubTabViewFlash = 'inventory-consumables-view';
+
                     if (document.getElementById('inventory-view')?.classList.contains('active')) {
-                        ui.switchInventorySubView('inventory-gems-view');
-                        const subTabButton = document.querySelector(`.sub-tab-button[data-subview="inventory-gems-view"]`);
+                        ui.switchInventorySubView('inventory-consumables-view');
+                        const subTabButton = document.querySelector(`.sub-tab-button[data-subview="inventory-consumables-view"]`);
                         if (subTabButton) {
                             subTabButton.classList.add('newly-unlocked-flash');
                             setTimeout(() => subTabButton.classList.remove('newly-unlocked-flash'), 5000);
@@ -533,88 +502,124 @@ document.addEventListener('DOMContentLoaded', () => {
                         gameState.pendingSubTabViewFlash = null;
                     }
                 }
-            });
-            refreshGemViewIfActive();
-        }
-    
-        const wasBossDefeated = isBigBossLevel(gameState.currentFightingLevel) || isBossLevel(gameState.currentFightingLevel);
-        if (wasBossDefeated && gameState.currentFightingLevel === gameState.nextPrestigeLevel) {
-            if (!gameState.unlockedFeatures.prestige) {
-                gameState.unlockedFeatures.prestige = true;
-                logMessage(elements.gameLogEl, '<b>Prestige Unlocked!</b> You can now reset your progress for powerful permanent bonuses.', 'legendary', isAutoScrollingLog);
-                ui.updatePrestigeUI(elements, gameState);
-            }
-        }
-
-        const levelUpLogs = player.gainXP(gameState, result.xpGained, playerStats.bonusXp);
-        if (levelUpLogs.length > 0) {
-            levelUpLogs.forEach(msg => logMessage(elements.gameLogEl, msg, 'legendary', isAutoScrollingLog));
-            recalculateStats();
-        }
-    
-        ui.updateHeroPanel(elements, gameState, heldKeys);
-        ui.updatePrestigeUI(elements, gameState);
-        ui.updateCurrency(elements, gameState);
-        ui.updateUpgrades(elements, gameState);
-        ui.renderPermanentUpgrades(elements, gameState);
-    
-        if (result.encounterEnded) {
-            gameState.specialEncounter = null;
-        }
-    
-        if (gameState.isAutoProgressing) {
-            const newSubZone = findSubZoneByLevel(gameState.currentFightingLevel);
-            if (newSubZone) {
-                const newRealmIndex = REALMS.findIndex(r => Object.values(r.zones).some(z => z === newSubZone.parentZone));
-                if (newRealmIndex !== -1 && (newRealmIndex !== oldRealmIndex || (oldSubZone && newSubZone.name !== oldSubZone.name))) {
-                    const newZoneId = Object.keys(REALMS[newRealmIndex].zones).find(id => REALMS[newRealmIndex].zones[id] === newSubZone.parentZone);
-                    currentViewingRealmIndex = newRealmIndex;
-                    currentViewingZoneId = newZoneId || 'world';
-                    isMapRenderPending = true;
+            } else {
+                ui.addItemToGrid(elements.inventorySlotsEl, item);
+                if (!gameState.unlockedFeatures.inventory) {
+                    gameState.unlockedFeatures.inventory = true;
+                    logMessage(elements.gameLogEl, '<b>Inventory Unlocked!</b> You can now view and manage your items.', 'legendary', isAutoScrollingLog);
+                    ui.updateTabVisibility(gameState);
+                    ui.flashTab('inventory-view');
                 }
             }
-        }
-        
-        const currentFightingRealmIndex = REALMS.findIndex(realm =>
-            Object.values(realm.zones).some(zone =>
-                Object.values(zone.subZones).some(sz =>
-                    gameState.currentFightingLevel >= sz.levelRange[0] && gameState.currentFightingLevel <= sz.levelRange[1]
-                )
-            )
-        ) || 0;
-        const nextRealmIndex = currentFightingRealmIndex + 1;
-        if (REALMS[nextRealmIndex] && gameState.maxLevel >= REALMS[nextRealmIndex].requiredLevel && !gameState.completedLevels.includes(REALMS[nextRealmIndex].requiredLevel - 1)) {
-            logMessage(elements.gameLogEl, `A new realm has been unlocked: <b>${REALMS[nextRealmIndex].name}</b>!`, 'legendary', isAutoScrollingLog);
-            isMapRenderPending = true;
-        }
-    
-        autoSave();
-    
-        setTimeout(() => {
-            startNewMonster();
-            ui.updateMonsterUI(elements, gameState, currentMonster);
-            ui.updateLootPanel(elements, currentMonster, gameState);
-            if (isMapRenderPending) {
-                renderMapAccordion();
-                isMapRenderPending = false;
+            
+            if (item.sockets && item.sockets.length > 0 && !gameState.unlockedFeatures.gems) {
+                 logMessage(elements.gameLogEl, 'You found an item with strange, empty sockets. Perhaps there are special stones that could fit inside...', 'uncommon', isAutoScrollingLog);
             }
-        }, 300);
-        updateRealmMusic();
+        });
     }
     
-    function startNewMonster() {
-        const { newMonster, newMonsterState } = logic.generateMonster(gameState.currentFightingLevel, gameState.specialEncounter);
-        currentMonster = newMonster;
-        gameState.monster = newMonsterState;
-        ui.updateMonsterUI(elements, gameState, newMonster);
+    if (result.droppedGems && result.droppedGems.length > 0) {
+        result.droppedGems.forEach((gemStack, index) => {
+            ui.showItemDropAnimation(elements.popupContainerEl, gemStack, index);
+             if (!gameState.unlockedFeatures.gems) {
+                gameState.unlockedFeatures.gems = true;
+                logMessage(elements.gameLogEl, '<b>Gems Unlocked!</b> You can now view and socket powerful gems from a new tab in your inventory.', 'legendary', isAutoScrollingLog);
+                ui.updateTabVisibility(gameState);
+                ui.flashTab('inventory-view');
+                gameState.pendingSubTabViewFlash = 'inventory-gems-view';
+                
+                if (document.getElementById('inventory-view')?.classList.contains('active')) {
+                    ui.switchInventorySubView('inventory-gems-view');
+                    const subTabButton = document.querySelector(`.sub-tab-button[data-subview="inventory-gems-view"]`);
+                    if (subTabButton) {
+                        subTabButton.classList.add('newly-unlocked-flash');
+                        setTimeout(() => subTabButton.classList.remove('newly-unlocked-flash'), 5000);
+                    }
+                    gameState.pendingSubTabViewFlash = null;
+                }
+            }
+        });
+        refreshGemViewIfActive();
+    }
 
-        if (!gameState.unlockedFeatures.wiki && gameState.currentFightingLevel === 25) {
-            gameState.unlockedFeatures.wiki = true;
-            logMessage(elements.gameLogEl, '<b>Item Wiki Unlocked!</b> You can now research items and their drop locations.', 'legendary', isAutoScrollingLog);
-            ui.updateTabVisibility(gameState);
-            ui.flashTab('wiki-view');
+    const wasBossDefeated = isBigBossLevel(gameState.currentFightingLevel) || isBossLevel(gameState.currentFightingLevel);
+    if (wasBossDefeated && gameState.currentFightingLevel === gameState.nextPrestigeLevel) {
+        if (!gameState.unlockedFeatures.prestige) {
+            gameState.unlockedFeatures.prestige = true;
+            logMessage(elements.gameLogEl, '<b>Prestige Unlocked!</b> You can now reset your progress for powerful permanent bonuses.', 'legendary', isAutoScrollingLog);
+            ui.updatePrestigeUI(elements, gameState);
         }
     }
+
+    const levelUpLogs = player.gainXP(gameState, result.xpGained, playerStats.bonusXp);
+    if (levelUpLogs.length > 0) {
+        levelUpLogs.forEach(msg => logMessage(elements.gameLogEl, msg, 'legendary', isAutoScrollingLog));
+        recalculateStats();
+    }
+
+    ui.updateHeroPanel(elements, gameState, heldKeys);
+    ui.updatePrestigeUI(elements, gameState);
+    ui.updateCurrency(elements, gameState);
+    ui.updateUpgrades(elements, gameState);
+    ui.renderPermanentUpgrades(elements, gameState);
+
+    if (result.encounterEnded) {
+        gameState.specialEncounter = null;
+    }
+
+    if (gameState.isAutoProgressing) {
+        const newSubZone = findSubZoneByLevel(gameState.currentFightingLevel);
+        if (newSubZone) {
+            const newRealmIndex = REALMS.findIndex(r => Object.values(r.zones).some(z => z === newSubZone.parentZone));
+            if (newRealmIndex !== -1 && (newRealmIndex !== oldRealmIndex || (oldSubZone && newSubZone.name !== oldSubZone.name))) {
+                const newZoneId = Object.keys(REALMS[newRealmIndex].zones).find(id => REALMS[newRealmIndex].zones[id] === newSubZone.parentZone);
+                currentViewingRealmIndex = newRealmIndex;
+                currentViewingZoneId = newZoneId || 'world';
+                isMapRenderPending = true;
+            }
+        }
+    }
+    
+    const currentFightingRealmIndex = REALMS.findIndex(realm =>
+        Object.values(realm.zones).some(zone =>
+            Object.values(zone.subZones).some(sz =>
+                gameState.currentFightingLevel >= sz.levelRange[0] && gameState.currentFightingLevel <= sz.levelRange[1]
+            )
+        )
+    ) || 0;
+    const nextRealmIndex = currentFightingRealmIndex + 1;
+    if (REALMS[nextRealmIndex] && gameState.maxLevel >= REALMS[nextRealmIndex].requiredLevel && !gameState.completedLevels.includes(REALMS[nextRealmIndex].requiredLevel - 1)) {
+        logMessage(elements.gameLogEl, `A new realm has been unlocked: <b>${REALMS[nextRealmIndex].name}</b>!`, 'legendary', isAutoScrollingLog);
+        isMapRenderPending = true;
+    }
+
+    autoSave();
+
+    setTimeout(() => {
+        startNewMonster();
+        ui.updateMonsterUI(elements, gameState, currentMonster);
+        ui.updateLootPanel(elements, currentMonster, gameState);
+        if (isMapRenderPending) {
+            renderMapAccordion();
+            isMapRenderPending = false;
+        }
+    }, 300);
+    updateRealmMusic();
+}
+
+function startNewMonster() {
+    const { newMonster, newMonsterState } = logic.generateMonster(gameState.currentFightingLevel, gameState.specialEncounter);
+    currentMonster = newMonster;
+    gameState.monster = newMonsterState;
+    ui.updateMonsterUI(elements, gameState, newMonster);
+
+    if (!gameState.unlockedFeatures.wiki && gameState.currentFightingLevel === 25) {
+        gameState.unlockedFeatures.wiki = true;
+        logMessage(elements.gameLogEl, '<b>Item Wiki Unlocked!</b> You can now research items and their drop locations.', 'legendary', isAutoScrollingLog);
+        ui.updateTabVisibility(gameState);
+        ui.flashTab('wiki-view');
+    }
+}
 
     function attack(baseDamage, isClick = false) {
         if (gameState.monster.hp <= 0) return;
