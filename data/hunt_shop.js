@@ -60,51 +60,51 @@ export const HUNT_SHOP_INVENTORY = {
         { id: 'BASE_SAPPHIRE', cost: 1 },
         { id: 'BASE_EMERALD', cost: 1 },
         { id: 'BASE_TOPAZ', cost: 1 },
-        // Tier 2 (Cost: 2)
-        { id: 'BASE_RUBY_T2', cost: 2 },
-        { id: 'BASE_SAPPHIRE_T2', cost: 2 },
-        { id: 'BASE_EMERALD_T2', cost: 2 },
-        { id: 'BASE_TOPAZ_T2', cost: 2 },
-        // Tier 3 (Cost: 4)
-        { id: 'BASE_RUBY_T3', cost: 4 },
-        { id: 'BASE_SAPPHIRE_T3', cost: 4 },
-        { id: 'BASE_EMERALD_T3', cost: 4 },
-        { id: 'BASE_TOPAZ_T3', cost: 4 },
-        // Tier 4 (Cost: 8, Unlock: 100)
-        { id: 'BASE_RUBY_T4', cost: 8, unlock: 100 },
-        { id: 'BASE_SAPPHIRE_T4', cost: 8, unlock: 100 },
-        { id: 'BASE_EMERALD_T4', cost: 8, unlock: 100 },
-        { id: 'BASE_TOPAZ_T4', cost: 8, unlock: 100 },
+        // Tier 2 (Cost: 2 Unlock: 5)
+        { id: 'BASE_RUBY_T2', cost: 2, unlock: 5 },
+        { id: 'BASE_SAPPHIRE_T2', cost: 2, unlock: 5 },
+        { id: 'BASE_EMERALD_T2', cost: 2, unlock: 5 },
+        { id: 'BASE_TOPAZ_T2', cost: 2, unlock: 5 },
+        // Tier 3 (Cost: 4 Unlock: 25)
+        { id: 'BASE_RUBY_T3', cost: 4, unlock: 25 },
+        { id: 'BASE_SAPPHIRE_T3', cost: 4, unlock: 25 },
+        { id: 'BASE_EMERALD_T3', cost: 4, unlock: 25 },
+        { id: 'BASE_TOPAZ_T3', cost: 4, unlock: 25 },
+        // Tier 4 (Cost: 8, Unlock: 50)
+        { id: 'BASE_RUBY_T4', cost: 8, unlock: 50 },
+        { id: 'BASE_SAPPHIRE_T4', cost: 8, unlock: 50 },
+        { id: 'BASE_EMERALD_T4', cost: 8, unlock: 50 },
+        { id: 'BASE_TOPAZ_T4', cost: 8, unlock: 50 },
         // Tier 5 (Cost: 16, Unlock: 100)
         { id: 'BASE_RUBY_T5', cost: 16, unlock: 100 },
         { id: 'BASE_SAPPHIRE_T5', cost: 16, unlock: 100 },
         { id: 'BASE_EMERALD_T5', cost: 16, unlock: 100 },
         { id: 'BASE_TOPAZ_T5', cost: 16, unlock: 100 },
-        // Tier 6 (Cost: 32, Unlock: 100)
-        { id: 'BASE_RUBY_T6', cost: 32, unlock: 100 },
-        { id: 'BASE_SAPPHIRE_T6', cost: 32, unlock: 100 },
-        { id: 'BASE_EMERALD_T6', cost: 32, unlock: 100 },
-        { id: 'BASE_TOPAZ_T6', cost: 32, unlock: 100 },
-        // Tier 7 (Cost: 64, Unlock: 250)
-        { id: 'BASE_RUBY_T7', cost: 64, unlock: 250 },
-        { id: 'BASE_SAPPHIRE_T7', cost: 64, unlock: 250 },
-        { id: 'BASE_EMERALD_T7', cost: 64, unlock: 250 },
-        { id: 'BASE_TOPAZ_T7', cost: 64, unlock: 250 },
+        // Tier 6 (Cost: 32, Unlock: 150)
+        { id: 'BASE_RUBY_T6', cost: 32, unlock: 150 },
+        { id: 'BASE_SAPPHIRE_T6', cost: 32, unlock: 150 },
+        { id: 'BASE_EMERALD_T6', cost: 32, unlock: 150 },
+        { id: 'BASE_TOPAZ_T6', cost: 32, unlock: 150 },
+        // Tier 7 (Cost: 64, Unlock: 200)
+        { id: 'BASE_RUBY_T7', cost: 64, unlock: 200 },
+        { id: 'BASE_SAPPHIRE_T7', cost: 64, unlock: 200 },
+        { id: 'BASE_EMERALD_T7', cost: 64, unlock: 200 },
+        { id: 'BASE_TOPAZ_T7', cost: 64, unlock: 200 },
         // Tier 8 (Cost: 128, Unlock: 250)
         { id: 'BASE_RUBY_T8', cost: 128, unlock: 250 },
         { id: 'BASE_SAPPHIRE_T8', cost: 128, unlock: 250 },
         { id: 'BASE_EMERALD_T8', cost: 128, unlock: 250 },
         { id: 'BASE_TOPAZ_T8', cost: 128, unlock: 250 },
-        // Tier 9 (Cost: 256, Unlock: 250)
-        { id: 'BASE_RUBY_T9', cost: 256, unlock: 250 },
-        { id: 'BASE_SAPPHIRE_T9', cost: 256, unlock: 250 },
-        { id: 'BASE_EMERALD_T9', cost: 256, unlock: 250 },
-        { id: 'BASE_TOPAZ_T9', cost: 256, unlock: 250 },
-        // Tier 10 (Cost: 512, Unlock: 500)
-        { id: 'BASE_RUBY_T10', cost: 512, unlock: 500 },
-        { id: 'BASE_SAPPHIRE_T10', cost: 512, unlock: 500 },
-        { id: 'BASE_EMERALD_T10', cost: 512, unlock: 500 },
-        { id: 'BASE_TOPAZ_T10', cost: 512, unlock: 500 },
+        // Tier 9 (Cost: 256, Unlock: 300)
+        { id: 'BASE_RUBY_T9', cost: 256, unlock: 300 },
+        { id: 'BASE_SAPPHIRE_T9', cost: 256, unlock: 300 },
+        { id: 'BASE_EMERALD_T9', cost: 256, unlock: 300 },
+        { id: 'BASE_TOPAZ_T9', cost: 256, unlock: 300 },
+        // Tier 10 (Cost: 512, Unlock: 350)
+        { id: 'BASE_RUBY_T10', cost: 512, unlock: 350 },
+        { id: 'BASE_SAPPHIRE_T10', cost: 512, unlock: 350 },
+        { id: 'BASE_EMERALD_T10', cost: 512, unlock: 350 },
+        { id: 'BASE_TOPAZ_T10', cost: 512, unlock: 350 },
     ],
 
     // ===================================

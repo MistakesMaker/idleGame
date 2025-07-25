@@ -1033,55 +1033,96 @@ function startNewMonster() {
         if (offlineDurationSeconds < 10) return;
 
         recalculateStats();
-
         if (playerStats.totalDps <= 0) return;
 
-        const level = gameState.currentFightingLevel;
-        
-        const { newMonster, newMonsterState } = logic.generateMonster(level);
-        const monsterHp = newMonsterState.maxHp;
-        const monsterDropChance = newMonster.data.dropChance;
-        
-        const timeToKill = monsterHp / playerStats.totalDps;
-        const killsPerSecond = 1 / timeToKill;
+        let totalGoldGained = 0;
+        let totalXPGained = 0;
+        let totalScrapGained = 0;
 
-        const tier = Math.floor((level - 1) / 10);
-        const difficultyResetFactor = 1;
-        const effectiveLevel = level - (tier * difficultyResetFactor);
+        if (!gameState.isAutoProgressing) {
+            // --- "CAMPING" MODE ---
+            // Player was farming a single level.
+            const level = gameState.currentFightingLevel;
+            const { newMonster, newMonsterState } = logic.generateMonster(level);
+            
+            // This is the core fix: timeToKill can't be less than 1 second.
+            const timeToKill = Math.max(1, newMonsterState.maxHp / playerStats.totalDps);
+            const totalKills = Math.floor(offlineDurationSeconds / timeToKill);
 
-        const baseGold = 10;
-        const goldFactor = 3;
-        const goldPower = 2.0;
-        let goldPerKill = baseGold + (goldFactor * Math.pow(effectiveLevel, goldPower));
-        goldPerKill = Math.ceil(goldPerKill * (1 + (playerStats.bonusGold / 100)));
+            if (totalKills > 0) {
+                // Calculate rewards for a single kill and then multiply.
+                const tier = Math.floor((level - 1) / 10);
+                const effectiveLevel = level - (tier * 1);
+                let baseGoldDrop = 10 + (3 * Math.pow(effectiveLevel, 2.1));
+                let xpPerKill = 20 * Math.pow(level, 1.2);
+                
+                if (isBigBossLevel(level)) { xpPerKill *= 3; baseGoldDrop *= 3; } 
+                else if (isBossLevel(level)) { xpPerKill *= 2; baseGoldDrop *= 2; } 
+                else if (isMiniBossLevel(level)) { xpPerKill *= 1.5; baseGoldDrop *= 1.5; }
+                
+                const goldMasteryLevel = gameState.permanentUpgrades.GOLD_MASTERY || 0;
+                const goldMasteryBonus = PERMANENT_UPGRADES.GOLD_MASTERY.bonusPerLevel * goldMasteryLevel;
+                const goldAfterMastery = baseGoldDrop * (1 + (goldMasteryBonus / 100));
 
-        const baseXp = 20;
-        const xpPower = 1.2;
-        let xpPerKill = baseXp * Math.pow(level, xpPower);
-        xpPerKill *= (1 + (playerStats.bonusXp / 100));
-        
-        if (isBigBossLevel(level)) {
-            xpPerKill *= 3;
-            goldPerKill *= 3;
-        } else if (isBossLevel(level)) {
-            xpPerKill *= 2;
-            goldPerKill *= 2;
-        } else if(isMiniBossLevel(level)) {
-            xpPerKill *= 1.5;
-            goldPerKill *= 1.5;
+                const finalGoldPerKill = Math.ceil(goldAfterMastery * (1 + (playerStats.bonusGold / 100)));
+                xpPerKill = Math.ceil(xpPerKill * (1 + (playerStats.bonusXp / 100)));
+
+                const dropsPerKill = (newMonster.data.dropChance / 100);
+                const scrapPerKill = dropsPerKill * (2 * playerStats.scrapBonus);
+
+                totalGoldGained = Math.floor(finalGoldPerKill * totalKills);
+                totalXPGained = Math.floor(xpPerKill * totalKills);
+                totalScrapGained = Math.floor(scrapPerKill * totalKills);
+            }
+        } else {
+            // --- "PROGRESSING" MODE ---
+            // Player was auto-progressing. Simulate level by level.
+            let remainingTime = offlineDurationSeconds;
+            let currentSimLevel = gameState.currentFightingLevel;
+            let lastLevelBeforeStop = gameState.currentFightingLevel;
+
+            while (remainingTime > 1) {
+                const { newMonster, newMonsterState } = logic.generateMonster(currentSimLevel);
+                
+                // This is the core fix: timeToKill can't be less than 1 second.
+                const timeToKill = Math.max(1, newMonsterState.maxHp / playerStats.totalDps);
+
+                if (remainingTime < timeToKill) break;
+                
+                remainingTime -= timeToKill;
+                lastLevelBeforeStop = currentSimLevel;
+
+                // Calculate rewards for this specific kill.
+                const tier = Math.floor((currentSimLevel - 1) / 10);
+                const effectiveLevel = currentSimLevel - (tier * 1);
+                let baseGoldDrop = 10 + (3 * Math.pow(effectiveLevel, 2.1));
+                let xpPerKill = 20 * Math.pow(currentSimLevel, 1.2);
+                
+                if (isBigBossLevel(currentSimLevel)) { xpPerKill *= 3; baseGoldDrop *= 3; } 
+                else if (isBossLevel(currentSimLevel)) { xpPerKill *= 2; baseGoldDrop *= 2; }
+                else if (isMiniBossLevel(currentSimLevel)) { xpPerKill *= 1.5; baseGoldDrop *= 1.5; }
+                
+                const goldMasteryLevel = gameState.permanentUpgrades.GOLD_MASTERY || 0;
+                const goldMasteryBonus = PERMANENT_UPGRADES.GOLD_MASTERY.bonusPerLevel * goldMasteryLevel;
+                const goldAfterMastery = baseGoldDrop * (1 + (goldMasteryBonus / 100));
+
+                const finalGoldPerKill = Math.ceil(goldAfterMastery * (1 + (playerStats.bonusGold / 100)));
+                xpPerKill = Math.ceil(xpPerKill * (1 + (playerStats.bonusXp / 100)));
+
+                const dropsPerKill = (newMonster.data.dropChance / 100);
+                const scrapPerKill = dropsPerKill * (2 * playerStats.scrapBonus);
+
+                totalGoldGained += Math.floor(finalGoldPerKill);
+                totalXPGained += Math.floor(xpPerKill);
+                totalScrapGained += Math.floor(scrapPerKill);
+
+                currentSimLevel++;
+            }
+             // Update player's level to where they progressed to offline.
+            gameState.currentFightingLevel = lastLevelBeforeStop;
         }
 
-        const goldPerSecond = goldPerKill * killsPerSecond;
-        const xpPerSecond = xpPerKill * killsPerSecond;
-
-        const AVERAGE_SCRAP_VALUE = 2 * playerStats.scrapBonus;
-        const dropsPerSecond = (monsterDropChance / 100) * killsPerSecond;
-        const scrapPerSecond = dropsPerSecond * AVERAGE_SCRAP_VALUE;
-
-        const totalGoldGained = Math.floor(goldPerSecond * offlineDurationSeconds);
-        const totalXPGained = Math.floor(xpPerSecond * offlineDurationSeconds);
-        const totalScrapGained = Math.floor(scrapPerSecond * offlineDurationSeconds);
-
+        // --- APPLY REWARDS AND SHOW MODAL (This part is the same as before) ---
         if (totalGoldGained === 0 && totalXPGained === 0 && totalScrapGained === 0) return;
 
         const startingLevel = gameState.hero.level;
