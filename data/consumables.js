@@ -35,7 +35,7 @@ export const CONSUMABLES = {
         name: "Artisan's Drill",
         type: 'consumable',
         icon: 'images/consumables/artisan_drill.png',
-        width: 1, height: 1,
+        width: 2, height: 2,
         description: "A master craftsman's tool. Use on an item to carve a new socket, up to the item's maximum potential. Requires selecting an item after use.",
         effect: {
             type: 'targetedItemModifier',
@@ -47,7 +47,7 @@ export const CONSUMABLES = {
         name: "Tome of Strength",
         type: 'consumable',
         icon: 'images/consumables/tome_of_strength.png',
-        width: 1, height: 1,
+        width: 2, height: 2,
         description: "A book of forgotten power. Consuming it permanently increases your total Click Damage by 1%.",
         effect: {
             type: 'permanentStat',
@@ -60,7 +60,7 @@ export const CONSUMABLES = {
         name: "Tome of Agility",
         type: 'consumable',
         icon: 'images/consumables/tome_of_agility.png',
-        width: 1, height: 1,
+        width: 2, height: 2,
         description: "A book of forgotten techniques. Consuming it permanently increases your total DPS by 1%.",
         effect: {
             type: 'permanentStat',

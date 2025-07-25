@@ -2,7 +2,7 @@
 
 import { rarities } from './game.js';
 import { REALMS } from './data/realms.js';
-import { getXpForNextLevel, getUpgradeCost, findEmptySpot, getRandomInt, findSubZoneByLevel, formatNumber } from './utils.js';
+import { getXpForNextLevel, getUpgradeCost, findEmptySpot, getRandomInt, findSubZoneByLevel, formatNumber, findNextAvailableSpot } from './utils.js';
 import { GEMS } from './data/gems.js';
 import { ITEMS } from './data/items.js';
 import { PERMANENT_UPGRADES } from './data/upgrades.js';
@@ -86,6 +86,18 @@ export function addToPlayerStacks(gameState, itemBase, inventoryType) {
             baseId: itemBase.id || itemBase.baseId, // Fused gems won't have an ID, but will have a baseId
             quantity: 1,
         };
+        // --- THIS IS THE CORRECTED LOGIC ---
+        // It now correctly finds the first available spot even if existing items have no position data.
+        const spot = findNextAvailableSpot(itemBase.width || 1, itemBase.height || 1, inventory);
+        if (spot) {
+            targetStack.x = spot.x;
+            targetStack.y = spot.y;
+        } else {
+            console.error(`No space found for new ${inventoryType} stack!`);
+            targetStack.x = -1; // Failsafe
+            targetStack.y = -1; // Failsafe
+        }
+        // --- END OF CORRECTION ---
         inventory.push(targetStack);
     }
     return targetStack;
@@ -1203,42 +1215,45 @@ export function purchaseHuntShopItem(gameState, itemId) {
         return { success: true, message: "Purchased 1 Bounty Reroll charge.", itemType: 'utility' };
     }
     if (itemId === 'HUNT_CANCEL') {
+        // The cancel function handles its own cost. We just trigger it.
         const cancelResult = cancelActiveHunt(gameState);
-        // Note: cancelActiveHunt handles its own token cost
         return { ...cancelResult, itemType: 'utility' };
     }
 
-    // Check if the item is a Gem
-    const gemBase = GEMS[itemId];
-    if (gemBase) {
-        gameState.hunts.tokens -= shopItem.cost;
-        addToPlayerStacks(gameState, gemBase, 'gems');
-        if (shopItem.oneTimePurchase) {
-            gameState.purchasedOneTimeShopItems.push(itemId);
-        }
-        return { success: true, message: `Purchased ${gemBase.name}!`, itemType: 'gem' };
-    }
+    // --- START OF THE ACTUAL FIX ---
+    // Unified lookup for the item's base definition from all relevant data files.
+    const itemBase = GEMS[itemId] || CONSUMABLES[itemId];
 
-    // Fallback to checking Consumables
-    const consumableBase = CONSUMABLES[itemId];
-    if (!consumableBase) {
+    if (!itemBase) {
+        // This will now correctly catch any item ID that doesn't exist in our data.
         return { success: false, message: "Data not found for this item.", itemType: null };
     }
 
+    // If we found the item, proceed with the purchase.
     gameState.hunts.tokens -= shopItem.cost;
-    addToPlayerStacks(gameState, consumableBase, 'consumables');
+    let itemType = null;
+
+    // Now, determine where to put the item based on its properties.
+    if (itemBase.tier >= 1) { // This is how we identify Gems.
+        addToPlayerStacks(gameState, itemBase, 'gems');
+        itemType = 'gem';
+    } else if (itemBase.type === 'consumable') { // This is how we identify Consumables.
+        addToPlayerStacks(gameState, itemBase, 'consumables');
+        itemType = 'consumable';
+    } else {
+        // This is a failsafe in case other item types are added to the shop later.
+        console.error("Unknown item type purchased from Hunt Shop:", itemBase);
+        // We should still return success since the player was charged.
+        return { success: true, message: `Purchased ${itemBase.name}, but it's an unknown type!`, itemType: null };
+    }
+
     if (shopItem.oneTimePurchase) {
         gameState.purchasedOneTimeShopItems.push(itemId);
     }
 
-    return { success: true, message: `Purchased ${consumableBase.name}!`, itemType: 'consumable' };
+    return { success: true, message: `Purchased ${itemBase.name}!`, itemType };
+    // --- END OF THE ACTUAL FIX ---
 }
-
-/**
- * Resets all spent hero attributes in exchange for Scrap.
- * @param {object} gameState The main game state object.
- * @returns {{success: boolean, message: string}}
- */
 export function resetAttributes(gameState) {
     const { strength, agility, luck } = gameState.hero.attributes;
     const totalSpentPoints = strength + agility + luck;

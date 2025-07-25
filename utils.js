@@ -24,7 +24,11 @@ export function findEmptySpot(itemWidth, itemHeight, inventory) {
     // Determine the max search height needed. No need to scan all 1000 rows.
     let max_y = 0;
     for (const item of inventory) {
-        max_y = Math.max(max_y, item.y + item.height);
+        // --- THIS IS THE FIX ---
+        // We now safely handle items that might not have y or height properties.
+        const itemBottom = (item.y || 0) + (item.height || 0);
+        max_y = Math.max(max_y, itemBottom);
+        // --- END OF FIX ---
     }
     const searchHeight = max_y + itemHeight;
 
@@ -53,7 +57,7 @@ export function findEmptySpot(itemWidth, itemHeight, inventory) {
             for (let i = y; i < y + itemHeight; i++) {
                 for (let j = x; j < x + itemWidth; j++) {
                     // If we're out of bounds or the cell is taken, this spot is invalid.
-                    if (i >= searchHeight || j >= INVENTORY_GRID.WIDTH || gridMap[i][j]) {
+                    if (i >= searchHeight || j >= INVENTORY_GRID.WIDTH || (gridMap[i] && gridMap[i][j])) { // Added gridMap[i] check for safety
                         isFound = false;
                         break;
                     }
@@ -71,6 +75,7 @@ export function findEmptySpot(itemWidth, itemHeight, inventory) {
 }
 
 
+
 /**
  * --- FIX: This function now correctly calls the performant findEmptySpot. ---
  * This provides a more natural drop behavior than the old, slow method.
@@ -80,8 +85,8 @@ export function findEmptySpot(itemWidth, itemHeight, inventory) {
  * @returns {{x: number, y: number}|null} The coordinates for the new spot.
  */
 export function findNextAvailableSpot(itemWidth, itemHeight, inventory) {
-    // We now just call the new, performant version of findEmptySpot.
-    // This is ideal for appending items to the grid efficiently.
+    // This function is now a simple alias for the performant grid scanner.
+    // Its purpose is to find the VERY FIRST available slot, which is perfect for adding new items.
     return findEmptySpot(itemWidth, itemHeight, inventory);
 }
 

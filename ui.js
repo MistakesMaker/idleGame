@@ -309,7 +309,7 @@ export function populateGemSortOptions(elements, gems, currentSort) {
 
 /**
  * Renders a list of items or gems into a grid container. This is a full re-render.
- * It now relies on pre-calculated positions and does not modify item data.
+ * It now automatically calculates positions for stackable types (gems, consumables).
  * @param {HTMLElement} containerEl - The grid container element.
  * @param {Array<object>} items - The array of items or gems to render.
  * @param {object} options - Configuration options.
@@ -319,6 +319,12 @@ export function renderGrid(containerEl, items, options = {}) {
     
     containerEl.innerHTML = '';
     let maxRow = 0;
+    
+    // --- START OF THE FIX ---
+    // For stackable types, we ignore saved positions and recalculate them on the fly for a neat grid.
+    const shouldCalculatePositions = type === 'gem' || type === 'consumable';
+    const tempPlacement = []; // Used for on-the-fly position calculation
+    // --- END OF THE FIX ---
 
     for (const item of items) {
         const isTemporaryCraftingGem = craftingGemIds.some(g => g.sourceStackId === item.id);
@@ -332,8 +338,20 @@ export function renderGrid(containerEl, items, options = {}) {
         const id = item.id;
         wrapper.dataset.id = String(id);
         
-        // This function now TRUSTS that item.x and item.y are correct.
-        const pos = { x: item.x, y: item.y };
+        // --- MODIFIED LOGIC ---
+        let pos;
+        if (shouldCalculatePositions) {
+            // Calculate a temporary position for this render without modifying the original item.
+            pos = findEmptySpot(item.width || 1, item.height || 1, tempPlacement);
+            if(pos) {
+                // Add a placeholder to our temporary grid so the next item knows this spot is taken.
+                tempPlacement.push({ ...item, x: pos.x, y: pos.y });
+            }
+        } else {
+            // For gear, we trust the saved coordinates.
+            pos = { x: item.x, y: item.y };
+        }
+        // --- END MODIFIED LOGIC ---
 
         if (pos && pos.x !== -1 && pos.x !== undefined) {
             wrapper.style.gridColumn = `${pos.x + 1} / span ${item.width}`;
@@ -817,9 +835,10 @@ export function updateUI(elements, gameState, playerStats, currentMonster, salva
                     break;
                 case 'inventory-consumables-view':
                     if (gameState.unlockedFeatures.consumables) {
-                        renderGrid(consumablesSlotsEl, gameState.consumables, { showLockIcon: false });
+                        // Change is on the next line
+                        renderGrid(elements.consumablesSlotsEl, gameState.consumables, { type: 'consumable', showLockIcon: false });
                     }
-                    break;
+                    break;;
             }
         }
     }

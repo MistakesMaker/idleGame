@@ -262,7 +262,6 @@ export function dropLoot(currentMonster, gameState, playerStats) {
     if (isConsumable) {
         const updatedStack = player.addToPlayerStacks(gameState, item, 'consumables');
         droppedItems.push(updatedStack); // Animate the stack
-        gameState.consumables = player.compactInventory(gameState.consumables);
     } else {
         const spot = findNextAvailableSpot(item.width, item.height, gameState.inventory);
         if (spot) {

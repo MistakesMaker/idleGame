@@ -1488,7 +1488,7 @@ function startNewMonster() {
         }
     }
 
-     function handleHuntCompletion() {
+    function handleHuntCompletion() {
         const result = player.completeHunt(gameState);
         if (result.reward) {
             playSound('hunt_reward');
@@ -1507,10 +1507,14 @@ function startNewMonster() {
             }
             ui.renderHuntsView(elements, gameState);
             ui.updateHuntsButtonGlow(gameState);
+            
+            // --- START OF FIX: Always refresh the consumables grid after a hunt ---
             const consumablesView = document.getElementById('inventory-consumables-view');
-            if (consumablesView && consumablesView.classList.contains('active')) {
-                ui.renderGrid(elements.consumablesSlotsEl, gameState.consumables, { calculatePositions: true, showLockIcon: false });
+            if (consumablesView) { // Check if the element exists
+                ui.renderGrid(elements.consumablesSlotsEl, gameState.consumables, { type: 'consumable', showLockIcon: false });
             }
+            // --- END OF FIX ---
+
             autoSave();
         }
     }
@@ -1687,7 +1691,8 @@ function startNewMonster() {
                 }
             });
         }
-        
+        migrateStackablePositions(gameState.gems);
+        migrateStackablePositions(gameState.consumables);
         buildWikiDatabase();
         const allItemTypes = new Set(wikiState.data.map(d => d.base.type).filter(Boolean));
         const allStatKeys = new Set();
@@ -3562,35 +3567,23 @@ function startNewMonster() {
 }
 
     function purchaseHuntShopItem(itemId) {
-    const result = player.purchaseHuntShopItem(gameState, itemId);
-    logMessage(elements.gameLogEl, result.message, result.success ? 'legendary' : 'rare', isAutoScrollingLog);
+        const result = player.purchaseHuntShopItem(gameState, itemId);
+        logMessage(elements.gameLogEl, result.message, result.success ? 'legendary' : 'rare', isAutoScrollingLog);
 
-    if (result.success) {
-        // Rerender the shop to update button states (e.g., for one-time purchases) and token count
-        const huntsModal = document.getElementById('hunts-modal-backdrop');
-        if (huntsModal && !huntsModal.classList.contains('hidden')) {
-            ui.renderHuntsView(elements, gameState);
-        }
-
-        // --- START: NEW UI REFRESH LOGIC ---
-        // Check the type of item purchased and refresh the relevant inventory tab if it's open.
-        if (result.itemType === 'gem') {
-            // This helper already checks if the gem view is active before redrawing.
-            refreshGemViewIfActive();
-        } else if (result.itemType === 'consumable') {
-            const consumablesView = document.getElementById('inventory-consumables-view');
-            if (consumablesView && consumablesView.classList.contains('active')) {
-                // Manually re-render the consumables grid if it's the active view.
-                ui.renderGrid(elements.consumablesSlotsEl, gameState.consumables, { calculatePositions: true, showLockIcon: false });
+        if (result.success) {
+            // Rerender the shop to update button states (e.g., for one-time purchases) and token count
+            const huntsModal = document.getElementById('hunts-modal-backdrop');
+            if (huntsModal && !huntsModal.classList.contains('hidden')) {
+                ui.renderHuntsView(elements, gameState);
             }
-        }
-        // --- END: NEW UI REFRESH LOGIC ---
 
-        recalculateStats();
-        ui.updateStatsPanel(elements, playerStats);
-        autoSave();
+            fullUIRender(); // This one call correctly handles all UI updates.
+
+            recalculateStats();
+            ui.updateStatsPanel(elements, playerStats);
+            autoSave();
+        }
     }
-}
 
     function cancelActiveHunt() {
         const result = player.cancelActiveHunt(gameState);
@@ -3641,6 +3634,34 @@ function startNewMonster() {
 
         return migratedState;
     }
+
+/**
+ * A one-time migration function to fix stackable items (gems, consumables)
+ * in older save files that are missing x/y coordinates.
+ * @param {Array<object>} itemsArray The array to fix (e.g., gameState.gems).
+ */
+function migrateStackablePositions(itemsArray) {
+    if (!itemsArray || itemsArray.length === 0) return;
+
+    const positionedItems = itemsArray.filter(item => typeof item.x === 'number' && typeof item.y === 'number' && item.x !== -1);
+    const itemsToPlace = itemsArray.filter(item => typeof item.x !== 'number' || typeof item.y !== 'number' || item.x === -1);
+
+    if (itemsToPlace.length > 0) {
+        console.log(`Migrating positions for ${itemsToPlace.length} stackable items.`);
+        itemsToPlace.forEach(item => {
+            const spot = findNextAvailableSpot(item.width || 1, item.height || 1, positionedItems);
+            if (spot) {
+                item.x = spot.x;
+                item.y = spot.y;
+                positionedItems.push(item);
+            } else {
+                console.error("Migration failed: No space found for item", item);
+                item.x = -1;
+                item.y = -1;
+            }
+        });
+    }
+}    
 
     main();
 });

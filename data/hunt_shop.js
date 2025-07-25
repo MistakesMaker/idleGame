@@ -27,7 +27,7 @@ export const HUNT_SHOP_INVENTORY = {
         },
         { 
             id: 'ARTISAN_DRILL', 
-            cost: 50, 
+            cost: 50,
             unlock: 100 
         },
     ],
@@ -43,7 +43,7 @@ export const HUNT_SHOP_INVENTORY = {
         { id: 'MAGIC_FIND_POTION_MINOR', cost: 12, unlock: 50 },
         { id: 'POTION_BOSS_SLAYER', cost: 15, unlock: 100 },
         { id: 'XP_ELIXIR_MAJOR', cost: 15, unlock: 100 },
-        { id: 'POTION_LIQUID_LUCK', cost: 75, unlock: 100 },
+        { id: 'POTION_LIQUID_LUCK', cost: 20, unlock: 100 },
         { id: 'GEM_SEEKER_DRAFT_MINOR', cost: 20, unlock: 100 },
         { id: 'POTION_GIANTS_STRENGTH', cost: 25, unlock: 150 },
         { id: 'POTION_FUSED_POWER', cost: 25, unlock: 150 },
@@ -113,13 +113,13 @@ export const HUNT_SHOP_INVENTORY = {
     Permanent: [
         {
             id: 'TOME_OF_STRENGTH',
-            cost: 250,
-            unlock: 200,
+            cost: 100, 
+            unlock: 200, 
         },
         {
             id: 'TOME_OF_AGILITY',
-            cost: 250,
-            unlock: 200,
+            cost: 100,
+            unlock: 200
         }
     ],
 };
