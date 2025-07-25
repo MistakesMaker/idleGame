@@ -2992,12 +2992,14 @@ function createHuntCardHTML(hunt, index, isActive, gameState, progress = 0) {
         actionButtonHTML = `<div class="hunt-actions"><button data-index="${index}">Accept</button></div>`;
     }
 
+    // --- START OF MODIFICATION ---
+    // The token reward is now its own column, and removed from inside the consumable reward div.
     return `
         <div class="hunt-card">
+            ${tokenRewardHTML}
             <div class="hunt-reward" data-reward-id="${reward.id}">
                 <img src="${reward.icon}" alt="${reward.name}">
                 <span class="hunt-reward-name">${reward.name}</span>
-                ${tokenRewardHTML}
             </div>
             <div class="hunt-main-content">
                 <div class="hunt-details">
@@ -3008,6 +3010,7 @@ function createHuntCardHTML(hunt, index, isActive, gameState, progress = 0) {
             </div>
         </div>
     `;
+    // --- END OF MODIFICATION ---
 }
 
 /**

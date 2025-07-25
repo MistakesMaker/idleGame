@@ -128,7 +128,7 @@ export const underdarkItems = {
         width: 2, height: 3,
         isUnique: true,
         canHaveSockets: true,
-        maxSockets: 4,
+        maxSockets: 3,
         possibleStats: [
             { key: STATS.CLICK_DAMAGE.key, min: 1, max: 33000 },
             { key: STATS.DPS.key, min: 1, max: 95000 },
@@ -427,7 +427,7 @@ export const underdarkItems = {
         icon: 'images/icons/mandragora_root.png',
         width: 2, height: 3,
         canHaveSockets: true,
-        maxSockets: 4,
+        maxSockets: 3,
         possibleStats: [ 
             { key: STATS.CLICK_DAMAGE.key, min: 1, max: 40000 },
             { key: STATS.GOLD_GAIN.key, min: 1, max: 500 }
@@ -562,7 +562,7 @@ export const underdarkItems = {
         width: 2, height: 3,
         isUnique: true,
         canHaveSockets: true,
-        maxSockets: 4,
+        maxSockets: 3,
         possibleStats: [ 
             { key: STATS.DPS.key, min: 1, max: 125000 },
             { key: STATS.CLICK_DAMAGE.key, min: 1, max: 40000 },
