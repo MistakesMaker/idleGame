@@ -198,6 +198,7 @@ export function initHuntsDOMElements() {
         huntsCloseBtn: document.getElementById('hunts-close-btn'),
         huntTokensAmount: document.getElementById('hunt-tokens-amount'),
         totalHuntsCompleted: document.getElementById('total-hunts-completed'), 
+        totalHuntsIcon: document.getElementById('total-hunts-icon'), // <-- ADD THIS LINE
         activeHuntSection: document.getElementById('active-hunt-section'),
         activeHuntCard: document.getElementById('active-hunt-card'),
         noActiveHuntText: document.getElementById('no-active-hunt-text'),
@@ -2852,11 +2853,26 @@ export function renderHuntsView(elements, gameState) {
     const modal = document.getElementById('hunts-modal');
     if (!modal) return;
 
-    const { activeHuntCard, noActiveHuntText, availableHuntsContainer, rerollHuntsBtn, huntTokensAmount, huntShopContainer, totalHuntsCompleted } = initHuntsDOMElements();
+    const { activeHuntCard, noActiveHuntText, availableHuntsContainer, rerollHuntsBtn, huntTokensAmount, huntShopContainer, totalHuntsCompleted, totalHuntsIcon } = initHuntsDOMElements();
 
     // Update shared elements
     huntTokensAmount.textContent = gameState.hunts.tokens.toString();
     totalHuntsCompleted.textContent = gameState.hunts.totalCompleted.toString();
+
+    // --- START OF NEW LOGIC ---
+    if (totalHuntsIcon instanceof HTMLImageElement) {
+        const count = gameState.hunts.totalCompleted;
+        if (count <= 99) {
+            totalHuntsIcon.src = 'images/icons/hunt_count1.png';
+        } else if (count <= 249) {
+            totalHuntsIcon.src = 'images/icons/hunt_count2.png';
+        } else if (count <= 499) {
+            totalHuntsIcon.src = 'images/icons/hunt_count3.png';
+        } else {
+            totalHuntsIcon.src = 'images/icons/hunt_count4.png';
+        }
+    }
+    // --- END OF NEW LOGIC ---
 
     // Determine which main view is active
     const activeMainTab = (/** @type {HTMLElement | null} */(modal.querySelector('.tab-button.active')))?.dataset.huntsView || 'bounties-view';
@@ -2921,6 +2937,7 @@ export function renderHuntsView(elements, gameState) {
         });
     }
 }
+
 
 /**
  * Creates the HTML for a single hunt card.

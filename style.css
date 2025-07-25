@@ -2108,6 +2108,9 @@ h5 .legendary { color: #f39c12; }
 #hunt-tokens-display img {
     height: 1.5rem; /* 24px */
 }
+#total-hunts-display img {
+    height: 1.5rem; /* 24px */
+}
 
 #hunt-tokens-amount {
     font-size: 1.2em;
