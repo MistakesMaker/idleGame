@@ -200,7 +200,7 @@ export const underdarkItems = {
         maxSockets: 2,
         possibleStats: [ 
             { key: STATS.GOLD_GAIN.key, min: 1, max: 350 },
-            { key: STATS.DPS.key, min: 1, max: 35000 }
+            { key: STATS.DPS.key, min: 1, max: 50000 }
          ]
     },
     LIVING_CRYSTAL_LEGGINGS: {
@@ -274,7 +274,7 @@ export const underdarkItems = {
         canHaveSockets: true,
         maxSockets: 1,
         possibleStats: [ 
-            { key: STATS.DPS.key, min: 1, max: 40000 },
+            { key: STATS.DPS.key, min: 1, max: 60000 },
             { key: STATS.CLICK_DAMAGE.key, min: 1, max: 10000 },
          ]
     },
@@ -376,7 +376,7 @@ export const underdarkItems = {
         canHaveSockets: true,
         maxSockets: 2,
         possibleStats: [
-            { key: STATS.DPS.key, min: 1, max: 50000 },
+            { key: STATS.DPS.key, min: 1, max: 66000 },
             { key: STATS.GOLD_GAIN.key, min: 1, max: 450 }
         ]
     },
@@ -503,7 +503,7 @@ export const underdarkItems = {
         canHaveSockets: true,
         maxSockets: 2,
         possibleStats: [
-            { key: STATS.DPS.key, min: 1, max: 66666 },
+            { key: STATS.DPS.key, min: 1, max: 100000 },
             { key: STATS.CLICK_DAMAGE.key, min: 1, max: 12500 },
         ]
     },
@@ -805,9 +805,12 @@ export const underdarkItems = {
         icon: 'images/icons/ring_of_despair.png',
         isUnique: true,
         canHaveSockets: true,
-        maxSockets: 2,
+        maxSockets: 5,
         width: 1, height: 1,
-        possibleStats: [ { key: STATS.GOLD_GAIN.key, min: 1, max: 1000 } ]
+        possibleStats: [ 
+            { key: STATS.GOLD_GAIN.key, min: 1, max: 1000 },
+            { key: STATS.DPS.key, min: 1, max: 140000 },
+         ]
     },
     BALORS_WHIP: {
         id: 'BALORS_WHIP',
