@@ -986,7 +986,7 @@ export function generateNewHunt(gameState, indexToReplace, huntPools) {
 
     const completionCount = gameState.hunts.completionCounts[huntTemplate.id] || 0;
     const completionBonus = completionCount * 2;// Each completion gives +2 to the quantity range
-    const quantity = getRandomInt(huntTemplate.quantityMin + completionBonus, huntTemplate.quantityMax + completionBonus);
+    const quantity = getRandomInt(huntTemplate.quantityMin, huntTemplate.quantityMax + completionBonus);
 
     const chosenRewardId = huntTemplate.rewardIds[Math.floor(Math.random() * huntTemplate.rewardIds.length)];
 
