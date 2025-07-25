@@ -2010,7 +2010,14 @@ function drawMapPaths(mapContainerEl, realm, viewingZoneId, gameState) {
     if (!zone || !mapContainerEl) return;
 
     const subZonesArray = Object.values(zone.subZones).sort((a, b) => a.levelRange[0] - b.levelRange[0]);
-    const unlockedNodes = subZonesArray.filter(sz => gameState.maxLevel >= sz.levelRange[0]);
+    
+    // --- START OF MODIFICATION ---
+    // Calculate the highest level reached in the current run, just like in the other map functions.
+    const highestCompletedThisRun = gameState.currentRunCompletedLevels.length > 0 ? Math.max(...gameState.currentRunCompletedLevels) : 0;
+    const highestReachedThisRun = highestCompletedThisRun + 1;
+    // Use the new, correct variable to determine which nodes should have paths.
+    const unlockedNodes = subZonesArray.filter(sz => highestReachedThisRun >= sz.levelRange[0]);
+    // --- END OF MODIFICATION ---
 
     if (unlockedNodes.length > 1) {
         const mapWidth = mapContainerEl.clientWidth;
