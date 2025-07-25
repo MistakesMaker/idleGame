@@ -13,7 +13,7 @@ const greenMeadowsItems = {
         type: 'sword',
         icon: 'images/icons/rusty_sword.png',
         width: 2, height: 3,
-        possibleStats: [ { key: STATS.CLICK_DAMAGE.key, min: 1, max: 15 } ]
+        possibleStats: [ { key: STATS.CLICK_DAMAGE.key, min: 10, max: 15 } ]
     },
     LEATHER_CAP: {
         id: 'LEATHER_CAP',
@@ -23,7 +23,7 @@ const greenMeadowsItems = {
         width: 2, height: 2,
         possibleStats: [ 
             { key: STATS.GOLD_GAIN.key, min: 1, max: 8 },
-            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 1 }
+            { key: STATS.CLICK_DAMAGE.key, min: 5, max: 5 }
          ]
     },
     LEATHER_TUNIC: {
@@ -34,7 +34,7 @@ const greenMeadowsItems = {
         width: 2, height: 3,
         possibleStats: [ 
             { key: STATS.DPS.key, min: 50, max: 150 },
-            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 1 }
+            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 10 }
          ]
     },
     IRON_SHORTSWORD: {
@@ -43,7 +43,10 @@ const greenMeadowsItems = {
         type: 'sword',
         icon: 'images/icons/iron_shortsword.png',
         width: 2, height: 3,
-        possibleStats: [ { key: STATS.CLICK_DAMAGE.key, min: 10, max: 30 } ]
+        possibleStats: [
+            { key: STATS.CLICK_DAMAGE.key, min: 10, max: 30 },
+            { key: STATS.DPS.key, min: 10, max: 50 }
+         ]
     },
     WOODEN_SHIELD: {
         id: 'WOODEN_SHIELD',
@@ -61,7 +64,7 @@ const greenMeadowsItems = {
         width: 2, height: 1,
         possibleStats: [ 
             { key: STATS.DPS.key, min: 30, max: 90 },
-            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 1 }
+            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 9 }
          ]
     },
     LEATHER_TROUSERS: {
@@ -72,7 +75,7 @@ const greenMeadowsItems = {
         width: 2, height: 3,
         possibleStats: [ 
             { key: STATS.DPS.key, min: 30, max: 100 },
-            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 1 }
+            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 15 }
          ]
     },
     SIMPLE_SASH: {
@@ -91,7 +94,10 @@ const greenMeadowsItems = {
         type: 'sword',
         icon: 'images/icons/steel_longsword.png',
         width: 2, height: 3,
-        possibleStats: [ { key: STATS.CLICK_DAMAGE.key, min: 25, max: 75 } ]
+        possibleStats: [ 
+            { key: STATS.CLICK_DAMAGE.key, min: 25, max: 75 },
+            { key: STATS.DPS.key, min: 10, max: 80 }
+         ]
     },
     IRON_KITESHIELD: {
         id: 'IRON_KITESHIELD',
