@@ -307,18 +307,17 @@ export function populateGemSortOptions(elements, gems, currentSort) {
     }
 }
 
-
 /**
  * Renders a list of items or gems into a grid container. This is a full re-render.
+ * It now relies on pre-calculated positions and does not modify item data.
  * @param {HTMLElement} containerEl - The grid container element.
  * @param {Array<object>} items - The array of items or gems to render.
  * @param {object} options - Configuration options.
  */
 export function renderGrid(containerEl, items, options = {}) {
-    const { calculatePositions = false, type = 'item', selectedItem = null, salvageSelections = [], showLockIcon = true, bulkCombineSelection = {}, bulkCombineDeselectedIds = new Set(), selectedGemId = null, craftingGemIds = [] } = options;
+    const { type = 'item', selectedItem = null, salvageSelections = [], showLockIcon = true, bulkCombineSelection = {}, bulkCombineDeselectedIds = new Set(), selectedGemId = null, craftingGemIds = [] } = options;
     
     containerEl.innerHTML = '';
-    const tempPlacement = []; 
     let maxRow = 0;
 
     for (const item of items) {
@@ -333,24 +332,14 @@ export function renderGrid(containerEl, items, options = {}) {
         const id = item.id;
         wrapper.dataset.id = String(id);
         
-        let pos;
-        if (calculatePositions) {
-            pos = findEmptySpot(item.width, item.height, tempPlacement);
-            if (pos) {
-                // Update the item's position in the main state array if it's being calculated
-                item.x = pos.x;
-                item.y = pos.y;
-                tempPlacement.push({ ...item });
-            }
-        } else {
-            pos = { x: item.x, y: item.y };
-        }
+        // This function now TRUSTS that item.x and item.y are correct.
+        const pos = { x: item.x, y: item.y };
 
         if (pos && pos.x !== -1 && pos.x !== undefined) {
             wrapper.style.gridColumn = `${pos.x + 1} / span ${item.width}`;
             wrapper.style.gridRow = `${pos.y + 1} / span ${item.height}`;
             
-            const currentMaxRow = pos.y + item.height;
+            const currentMaxRow = (pos.y || 0) + (item.height || 1);
             if (currentMaxRow > maxRow) {
                 maxRow = currentMaxRow;
             }
@@ -358,13 +347,11 @@ export function renderGrid(containerEl, items, options = {}) {
             wrapper.innerHTML = type === 'gem' ? createGemHTML(item) : createItemHTML(item, showLockIcon);
             
             if (item.locked) wrapper.classList.add('locked-item');
-            if (type === 'gem' && selectedGemId && item.id === selectedGemId) {
-                wrapper.classList.add('selected-gem');
-            }
+            if (type === 'gem' && selectedGemId && item.id === selectedGemId) wrapper.classList.add('selected-gem');
             if (selectedItem && selectedItem.id === item.id) wrapper.classList.add('selected-for-forge');
             if (salvageSelections.some(sel => sel.id === item.id)) wrapper.classList.add('selected-for-salvage');
 
-            if (type === 'gem' && bulkCombineSelection && bulkCombineSelection.tier && bulkCombineSelection.selectionKey) {
+            if (type === 'gem' && bulkCombineSelection?.tier && bulkCombineSelection?.selectionKey) {
                 const isSynergyCombine = bulkCombineSelection.selectionKey.startsWith('synergy_');
                 let isMatch = false;
                 if (isSynergyCombine) {
@@ -384,6 +371,7 @@ export function renderGrid(containerEl, items, options = {}) {
     }
     containerEl.style.gridTemplateRows = `repeat(${Math.max(10, maxRow)}, var(--grid-cell-size))`;
 }
+
 
 // --- START PERFORMANCE FIX: GRANULAR UI UPDATERS ---
 
@@ -818,18 +806,18 @@ export function updateUI(elements, gameState, playerStats, currentMonster, salva
             switch (activeSubView.id) {
                 case 'inventory-gear-view':
                     if (gameState.unlockedFeatures.inventory) {
-                        renderGrid(inventorySlotsEl, gameState.inventory, { calculatePositions: true, salvageSelections: salvageMode.selections, showLockIcon: true });
+                        renderGrid(inventorySlotsEl, gameState.inventory, { salvageSelections: salvageMode.selections, showLockIcon: true });
                     }
                     break;
                 case 'inventory-gems-view':
                     if (gameState.unlockedFeatures.gems) {
-                        renderGrid(gemSlotsEl, gameState.gems, { type: 'gem', calculatePositions: true, bulkCombineSelection, bulkCombineDeselectedIds, craftingGemIds: craftingGems });
+                        renderGrid(gemSlotsEl, gameState.gems, { type: 'gem', bulkCombineSelection, bulkCombineDeselectedIds, craftingGemIds: craftingGems });
                         updateGemCraftingUI(elements, craftingGems, gameState);
                     }
                     break;
                 case 'inventory-consumables-view':
                     if (gameState.unlockedFeatures.consumables) {
-                        renderGrid(consumablesSlotsEl, gameState.consumables, { calculatePositions: true, showLockIcon: false });
+                        renderGrid(consumablesSlotsEl, gameState.consumables, { showLockIcon: false });
                     }
                     break;
             }
@@ -838,7 +826,8 @@ export function updateUI(elements, gameState, playerStats, currentMonster, salva
     
     // Grid render for Forge view
     if(document.getElementById('forge-view')?.classList.contains('active') && gameState.unlockedFeatures.forge) {
-        renderGrid(forgeInventorySlotsEl, player.getAllItems(gameState), { calculatePositions: true, selectedItem: selectedItemForForge, showLockIcon: false });
+        // This is the key change: call the new, specialized function
+        renderForgeInventory(forgeInventorySlotsEl, player.getAllItems(gameState), selectedItemForForge);
     }
     
     // Paperdoll
@@ -864,11 +853,23 @@ export function updateUI(elements, gameState, playerStats, currentMonster, salva
     });
 
     // Prestige View
-    if (elements.prestigeView.classList.contains('active') && gameState.unlockedFeatures.prestige) {
+     if (elements.prestigeView.classList.contains('active') && gameState.unlockedFeatures.prestige) {
+        // --- START OF MODIFICATION ---
+        // 1. Get the IDs of items currently on the active paperdoll.
+        const equippedItemIds = new Set(Object.values(gameState.equipment).filter(Boolean).map(item => item.id));
+
+        // 2. Get ALL items (from inventory and all presets) and filter out the equipped ones.
+        const allUnequippedItems = player.getAllItems(gameState).filter(item => !equippedItemIds.has(item.id));
+
+        // 3. From that unequipped list, show only items that can fit in legacy slots.
         const unlockedItemTypes = gameState.unlockedPrestigeSlots.map(slot => slot.replace(/\d/g, ''));
-        const filteredInventory = player.getAllItems(gameState).filter(item => unlockedItemTypes.includes(item.type.replace(/\d/g, '')));
-        renderGrid(prestigeInventoryDisplay, filteredInventory, { calculatePositions: true, showLockIcon: false });
+        const filteredInventory = allUnequippedItems.filter(item => unlockedItemTypes.includes(item.type.replace(/\d/g, '')));
         
+        // 4. Render the final, correctly filtered list.
+        renderPrestigeInventory(prestigeInventoryDisplay, filteredInventory);
+        // --- END OF MODIFICATION ---
+
+        // ... (rest of the prestige logic is unchanged) ...
         prestigeEquipmentPaperdoll.querySelectorAll('.equipment-slot').forEach(slotEl => {
             const slotName = slotEl.id.replace('prestige-slot-', '');
             const item = gameState.equipment[slotName];
@@ -903,6 +904,7 @@ export function updateUI(elements, gameState, playerStats, currentMonster, salva
     // Salvage Button Glow
     filterElements.autoSalvageFilterBtn.classList.toggle('filter-active-glow', filter.enabled);
 }
+
 
 
 /**
@@ -3183,4 +3185,87 @@ export function showHuntTravelModal(elements, travelOptions, playerMaxLevel, tra
     
     elements.modalCloseBtnEl.classList.remove('hidden');
     elements.modalBackdropEl.classList.remove('hidden');
+}
+/**
+ * Renders a filtered list of items into the Prestige inventory grid, calculating temporary positions on the fly.
+ * This prevents visual overlap without modifying the original item data.
+ * @param {HTMLElement} containerEl - The grid container element.
+ * @param {Array<object>} itemsToRender - The filtered array of items to display.
+ */
+export function renderPrestigeInventory(containerEl, itemsToRender) {
+    containerEl.innerHTML = '';
+    const tempPlacement = []; // Use a temporary array for position calculations
+    let maxRow = 0;
+
+    for (const item of itemsToRender) {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'item-wrapper';
+        wrapper.dataset.id = String(item.id);
+        
+        // Calculate temporary position for this filtered view
+        const pos = findEmptySpot(item.width, item.height, tempPlacement);
+        if (pos) {
+            // Add a temporary item with the new position to our placement tracker
+            tempPlacement.push({ ...item, x: pos.x, y: pos.y });
+
+            wrapper.style.gridColumn = `${pos.x + 1} / span ${item.width}`;
+            wrapper.style.gridRow = `${pos.y + 1} / span ${item.height}`;
+            
+            const currentMaxRow = pos.y + item.height;
+            if (currentMaxRow > maxRow) {
+                maxRow = currentMaxRow;
+            }
+
+            // We don't need to show lock icons in the prestige view
+            wrapper.innerHTML = createItemHTML(item, false);
+            containerEl.appendChild(wrapper);
+        }
+    }
+    containerEl.style.gridTemplateRows = `repeat(${Math.max(10, maxRow)}, var(--grid-cell-size))`;
+}
+
+/**
+ * Renders the Forge inventory grid, calculating temporary positions on the fly.
+ * @param {HTMLElement} containerEl - The grid container element.
+ * @param {Array<object>} itemsToRender - The array of all player items.
+ * @param {object|null} selectedItemForForge - The item currently selected in the Forge.
+ */
+export function renderForgeInventory(containerEl, itemsToRender, selectedItemForForge) {
+    containerEl.innerHTML = '';
+    const tempPlacement = []; // Use a temporary array for position calculations
+    let maxRow = 0;
+
+    for (const item of itemsToRender) {
+        // We only want to render gear items in the forge
+        if (item.type === 'consumable' || item.tier >= 1) {
+            continue;
+        }
+
+        const wrapper = document.createElement('div');
+        wrapper.className = 'item-wrapper';
+        wrapper.dataset.id = String(item.id);
+        
+        // Calculate temporary position for this view
+        const pos = findEmptySpot(item.width, item.height, tempPlacement);
+        if (pos) {
+            tempPlacement.push({ ...item, x: pos.x, y: pos.y });
+
+            wrapper.style.gridColumn = `${pos.x + 1} / span ${item.width}`;
+            wrapper.style.gridRow = `${pos.y + 1} / span ${item.height}`;
+            
+            const currentMaxRow = pos.y + item.height;
+            if (currentMaxRow > maxRow) {
+                maxRow = currentMaxRow;
+            }
+
+            wrapper.innerHTML = createItemHTML(item, false);
+
+            if (selectedItemForForge && selectedItemForForge.id === item.id) {
+                wrapper.classList.add('selected-for-forge');
+            }
+            
+            containerEl.appendChild(wrapper);
+        }
+    }
+    containerEl.style.gridTemplateRows = `repeat(${Math.max(10, maxRow)}, var(--grid-cell-size))`;
 }

@@ -312,6 +312,7 @@ export function unequipItem(gameState, slotName) {
         gameState.inventory.push(item);
         activePreset.equipment[slotName] = null;
         playEquipSound(item.type);
+        gameState.inventory = compactInventory(gameState.inventory); 
     } else {
         alert("Cannot unequip item, inventory is full!");
     }

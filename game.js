@@ -2129,7 +2129,9 @@ document.addEventListener('DOMContentLoaded', () => {
             player.unequipItem(gameState, slotName);
             recalculateStats();
             ui.renderPaperdoll(elements, gameState);
-            ui.addItemToGrid(elements.inventorySlotsEl, item);
+            // This is the key change: force a full, re-compacting grid render
+            // instead of just adding one item.
+            ui.renderGrid(elements.inventorySlotsEl, gameState.inventory, { calculatePositions: true });
             ui.updateStatsPanel(elements, playerStats);
             autoSave();
         });
@@ -2424,7 +2426,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             }
                             break;
                         case 'forge-view':
-                            ui.renderGrid(elements.forgeInventorySlotsEl, player.getAllItems(gameState), { calculatePositions: true, selectedItem: selectedItemForForge, showLockIcon: false });
+                            ui.renderForgeInventory(elements.forgeInventorySlotsEl, player.getAllItems(gameState), { selectedItem: selectedItemForForge, showLockIcon: false });
                             ui.updateForge(elements, selectedItemForForge, selectedStatToForgeKey, gameState.scrap);
                             break;
                         case 'wiki-view':
