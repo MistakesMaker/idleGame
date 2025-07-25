@@ -858,75 +858,87 @@ function startNewMonster() {
     }    
     
     function showSubZoneModal(subZone) {
-        elements.modalTitleEl.textContent = subZone.name;
-        elements.modalBodyEl.innerHTML = '';
-        elements.modalCloseBtnEl.classList.remove('hidden');
+    elements.modalTitleEl.textContent = subZone.name;
+    elements.modalBodyEl.innerHTML = '';
+    elements.modalCloseBtnEl.classList.remove('hidden');
 
-        const startLevel = subZone.levelRange[0];
-        const finalLevel = subZone.levelRange[1];
-        const isSingleLevelZone = startLevel === finalLevel;
+    const startLevel = subZone.levelRange[0];
+    const finalLevel = subZone.levelRange[1];
+    const isSingleLevelZone = startLevel === finalLevel;
 
-        const startCombat = (level, isFarming) => {
-            gameState.currentFightingLevel = level;
-            gameState.isFarming = isFarming;
-            
-            gameState.isAutoProgressing = isFarming ? gameState.isAutoProgressing : false;
+    // --- START OF NEW LOGIC ---
+    // First, determine the player's absolute highest progress point for this run.
+    const highestCompletedOverall = gameState.currentRunCompletedLevels.length > 0 ? Math.max(...gameState.currentRunCompletedLevels) : 0;
+    const highestReachedOverall = highestCompletedOverall + 1;
+    const peakSubZone = findSubZoneByLevel(highestReachedOverall);
+    // --- END OF NEW LOGIC ---
 
-            const newSubZone = findSubZoneByLevel(gameState.currentFightingLevel);
-            if (newSubZone) {
-                const newRealmIndex = REALMS.findIndex(r => Object.values(r.zones).some(z => z === newSubZone.parentZone));
-                if (newRealmIndex !== -1) {
-                    const newZoneId = Object.keys(REALMS[newRealmIndex].zones).find(id => REALMS[newRealmIndex].zones[id] === newSubZone.parentZone);
-                    currentViewingRealmIndex = newRealmIndex;
-                    currentViewingZoneId = newZoneId || 'world';
-                    isMapRenderPending = true;
-                }
-            }
+    const startCombat = (level, isFarming, isContinuingAtPeak) => {
+        gameState.currentFightingLevel = level;
+        gameState.isFarming = isFarming;
+        
+        gameState.isAutoProgressing = isContinuingAtPeak;
 
-            logMessage(elements.gameLogEl, `Traveling to level ${level}.`, '', isAutoScrollingLog);
-            elements.modalBackdropEl.classList.add('hidden');
-            startNewMonster();
-
-            ui.updateMonsterUI(elements, gameState, currentMonster);
-            ui.updateLootPanel(elements, currentMonster, gameState);
-            ui.updateAutoProgressToggle(elements, gameState.isAutoProgressing);
-            if (isMapRenderPending) {
-                renderMapAccordion();
-                isMapRenderPending = false;
-            }
-            autoSave();
-            updateRealmMusic();
-        };
-
-        if (isSingleLevelZone) {
-            const bossLevel = startLevel;
-            const fightBossButton = document.createElement('button');
-            fightBossButton.textContent = gameState.completedLevels.includes(bossLevel) ? `Re-fight Boss (Lvl ${bossLevel})` : `Fight Boss (Lvl ${bossLevel})`;
-            addTapListener(fightBossButton, () => startCombat(bossLevel, false));
-            elements.modalBodyEl.appendChild(fightBossButton);
-
-        } else {
-            const highestCompleted = ui.getHighestCompletedLevelInSubZone(gameState.currentRunCompletedLevels, subZone);
-            
-            const nextLevelToTry = Math.min(highestCompleted + 1, finalLevel);
-            const isNewZone = highestCompleted < startLevel;
-            const levelToStart = isNewZone ? startLevel : nextLevelToTry;
-
-            const continueButton = document.createElement('button');
-            continueButton.textContent = isNewZone ? `Start at Lvl ${startLevel}` : `Continue at Lvl ${levelToStart}`;
-            addTapListener(continueButton, () => startCombat(levelToStart, true));
-            elements.modalBodyEl.appendChild(continueButton);
-
-            if (!isNewZone && highestCompleted < finalLevel) {
-                const restartButton = document.createElement('button');
-                restartButton.textContent = `Restart at Lvl ${startLevel}`;
-                addTapListener(restartButton, () => startCombat(startLevel, true));
-                elements.modalBodyEl.appendChild(restartButton);
+        const newSubZone = findSubZoneByLevel(gameState.currentFightingLevel);
+        if (newSubZone) {
+            const newRealmIndex = REALMS.findIndex(r => Object.values(r.zones).some(z => z === newSubZone.parentZone));
+            if (newRealmIndex !== -1) {
+                const newZoneId = Object.keys(REALMS[newRealmIndex].zones).find(id => REALMS[newRealmIndex].zones[id] === newSubZone.parentZone);
+                currentViewingRealmIndex = newRealmIndex;
+                currentViewingZoneId = newZoneId || 'world';
+                isMapRenderPending = true;
             }
         }
 
-        elements.modalBackdropEl.classList.remove('hidden');
+        logMessage(elements.gameLogEl, `Traveling to level ${level}.`, '', isAutoScrollingLog);
+        elements.modalBackdropEl.classList.add('hidden');
+        startNewMonster();
+
+        ui.updateMonsterUI(elements, gameState, currentMonster);
+        ui.updateLootPanel(elements, currentMonster, gameState);
+        ui.updateAutoProgressToggle(elements, gameState.isAutoProgressing);
+        if (isMapRenderPending) {
+            renderMapAccordion();
+            isMapRenderPending = false;
+        }
+        autoSave();
+        updateRealmMusic();
+    };
+
+    if (isSingleLevelZone) {
+        const bossLevel = startLevel;
+        const fightBossButton = document.createElement('button');
+        fightBossButton.textContent = gameState.completedLevels.includes(bossLevel) ? `Re-fight Boss (Lvl ${bossLevel})` : `Fight Boss (Lvl ${bossLevel})`;
+        addTapListener(fightBossButton, () => startCombat(bossLevel, false, false));
+        elements.modalBodyEl.appendChild(fightBossButton);
+
+    } else {
+        // This is progress *within this specific sub-zone only*.
+        const highestCompletedInThisZone = ui.getHighestCompletedLevelInSubZone(gameState.currentRunCompletedLevels, subZone);
+        
+        const nextLevelToTry = Math.min(highestCompletedInThisZone + 1, finalLevel);
+        const isNewZone = highestCompletedInThisZone < startLevel;
+        const levelToStart = isNewZone ? startLevel : nextLevelToTry;
+
+        const continueButton = document.createElement('button');
+        continueButton.textContent = isNewZone ? `Start at Lvl ${startLevel}` : `Continue at Lvl ${levelToStart}`;
+        
+        // --- MODIFICATION: The crucial check is now here ---
+        // isContinuingAtPeak is only true if this sub-zone is the player's current peak sub-zone.
+        const isContinuingAtPeak = (peakSubZone === subZone);
+        addTapListener(continueButton, () => startCombat(levelToStart, true, isContinuingAtPeak));
+        elements.modalBodyEl.appendChild(continueButton);
+
+        if (!isNewZone && highestCompletedInThisZone < finalLevel) {
+            const restartButton = document.createElement('button');
+            restartButton.textContent = `Restart at Lvl ${startLevel}`;
+            addTapListener(restartButton, () => startCombat(startLevel, true, false));
+            elements.modalBodyEl.appendChild(restartButton);
+        }
     }
+
+    elements.modalBackdropEl.classList.remove('hidden');
+}
 
     function showRingSelectionModal(pendingRing) {
         const { ringSelectionModalBackdrop, ringSelectionSlot1, ringSelectionSlot2 } = elements;
