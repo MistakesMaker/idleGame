@@ -3110,7 +3110,6 @@ function createHuntShopItemHTML(shopItem, gameState) {
         name = itemData.name;
         icon = itemData.icon;
 
-        // --- START OF MODIFICATION: Generate specific gem descriptions ---
         if (itemData.tier >= 1 && itemData.stats) {
             const statKey = Object.keys(itemData.stats)[0];
             const statValue = itemData.stats[statKey];
@@ -3125,17 +3124,29 @@ function createHuntShopItemHTML(shopItem, gameState) {
         } else {
             description = itemData.description;
         }
-        // --- END OF MODIFICATION ---
     }
 
-    let buttonHTML;
+    // --- START OF MODIFICATION ---
+    let buttonContent;
+    let buttonDisabled = '';
+    let unlockReqHTML = '';
+
     if (isPurchased) {
-        buttonHTML = `<button class="shop-item-buy-btn" disabled>Purchased</button>`;
+        buttonContent = `Purchased`;
+        buttonDisabled = 'disabled';
     } else if (!isUnlocked) {
-        buttonHTML = `<button class="shop-item-buy-btn" disabled>Buy</button><div class="shop-item-unlock-req">Requires ${shopItem.unlock} Hunts</div>`;
+        buttonContent = `<span>${shopItem.cost}</span><img src="images/icons/hunt_token.png" alt="Token">`;
+        buttonDisabled = 'disabled';
+        unlockReqHTML = `<div class="shop-item-unlock-req">Requires ${shopItem.unlock} Hunts</div>`;
     } else {
-        buttonHTML = `<button class="shop-item-buy-btn" data-item-id="${shopItem.id}" ${!canAfford ? 'disabled' : ''}>Buy</button>`;
+        buttonContent = `<span>${shopItem.cost}</span><img src="images/icons/hunt_token.png" alt="Token">`;
+        if (!canAfford) {
+            buttonDisabled = 'disabled';
+        }
     }
+
+    const buttonHTML = `<button class="shop-item-buy-btn" data-item-id="${shopItem.id}" ${buttonDisabled}>${buttonContent}</button>`;
+    // --- END OF MODIFICATION ---
 
     const classes = ['hunt-shop-item'];
     if (!isUnlocked) classes.push('locked');
@@ -3151,11 +3162,8 @@ function createHuntShopItemHTML(shopItem, gameState) {
                 <div class="shop-item-desc">${description}</div>
             </div>
             <div class="shop-item-action">
-                <div class="shop-item-cost">
-                    <span>${shopItem.cost}</span>
-                    <img src="images/icons/hunt_token.png" alt="Token">
-                </div>
                 ${buttonHTML}
+                ${unlockReqHTML}
             </div>
         </div>
     `;

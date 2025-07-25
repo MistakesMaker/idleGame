@@ -2339,23 +2339,18 @@ h5 .legendary { color: #f39c12; }
     min-width: 6.25rem; /* 100px */
 }
 
-.shop-item-cost {
-    display: flex;
-    align-items: center;
-    gap: 0.3125rem; /* 5px */
-    font-size: 1.1em;
-    font-weight: bold;
-    color: #f1c40f;
-}
-
-.shop-item-cost img {
-    height: 1.25rem; /* 20px */
-}
-
 .shop-item-buy-btn {
     width: 100%;
     margin: 0;
     padding: 0.5rem; /* 8px */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.5rem; /* 8px */
+}
+
+.shop-item-buy-btn img {
+    height: 1.25rem; /* 20px */
 }
 
 /* Locked & Purchased States */
