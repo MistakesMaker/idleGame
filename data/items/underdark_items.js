@@ -88,7 +88,7 @@ export const underdarkItems = {
         maxSockets: 1,
         possibleStats: [ 
             { key: STATS.DPS.key, min: 1, max: 70000 },
-            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 16000 } ,
+            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 25000 } ,
          ]
     },
     ACOLYTES_ROBE: {
@@ -184,7 +184,7 @@ export const underdarkItems = {
         maxSockets: 3,
         possibleStats: [ 
             { key: STATS.DPS.key, min: 1, max: 90000 },
-            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 15000 },
+            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 30000 },
             { key: STATS.GOLD_GAIN.key, min: 1, max: 300 }
          ]
     },
@@ -330,7 +330,7 @@ export const underdarkItems = {
         maxSockets: 2,
         possibleStats: [ 
             { key: STATS.DPS.key, min: 50000, max: 50000 },
-            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 11500 },
+            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 25000 },
             { key: STATS.GOLD_GAIN.key, min: 1, max: 450 }       
 
         ]
@@ -633,7 +633,7 @@ export const underdarkItems = {
         maxSockets: 3,
         possibleStats: [ 
             { key: STATS.DPS.key, min: 1, max: 90000 },
-            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 14000 }
+            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 50000 }
          ]
     },
     HIGH_PRIESTESS_ROBES: {
@@ -735,7 +735,7 @@ export const underdarkItems = {
         maxSockets: 3,
         possibleStats: [ 
             { key: STATS.DPS.key, min: 1, max: 125000 },
-            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 17500 },
+            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 55000 },
             { key: STATS.GOLD_GAIN.key, min: 1, max: 600 }
          ]
     },
