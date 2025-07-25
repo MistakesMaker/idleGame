@@ -1810,8 +1810,15 @@ export function renderMapAccordion(elements, gameState, viewingRealmIndex, viewi
     const container = elements.mapAccordionContainerEl;
     container.innerHTML = '';
 
+    // --- START OF MODIFICATION ---
+    // Calculate the highest level reached in the current prestige run.
+    const highestCompletedThisRun = gameState.currentRunCompletedLevels.length > 0 ? Math.max(...gameState.currentRunCompletedLevels) : 0;
+    const highestReachedThisRun = highestCompletedThisRun + 1;
+    // --- END OF MODIFICATION ---
+
     REALMS.forEach((realm, index) => {
-        const isUnlocked = gameState.maxLevel >= realm.requiredLevel;
+        // --- MODIFICATION: Use the new variable for the unlock check ---
+        const isUnlocked = highestReachedThisRun >= realm.requiredLevel;
         if (!isUnlocked) return;
 
         const isViewing = index === viewingRealmIndex;
@@ -1833,16 +1840,15 @@ export function renderMapAccordion(elements, gameState, viewingRealmIndex, viewi
             renderMap(/** @type {HTMLElement} */(content), realm, viewingZoneId, gameState, fightingZoneId, callbacks);
             const contentEl = /** @type {HTMLElement} */ (content);
             
-            // This logic ensures the panel opens correctly, with or without CSS animation.
             setTimeout(() => {
-                if (!animate) contentEl.style.transition = 'none'; // Instantly open if not animating
+                if (!animate) contentEl.style.transition = 'none';
                 contentEl.style.maxHeight = contentEl.scrollHeight + 'px';
                 const mapContainerEl = contentEl.querySelector('.map-container-instance');
                 if(mapContainerEl) {
                     drawMapPaths(/** @type {HTMLElement} */(mapContainerEl), realm, viewingZoneId, gameState);
                 }
                 if (!animate) {
-                    setTimeout(() => { contentEl.style.transition = ''; }, 0); // Restore transition for user clicks
+                    setTimeout(() => { contentEl.style.transition = ''; }, 0);
                 }
             }, 0);
         }
@@ -1868,22 +1874,25 @@ export function updateMapContentSurgically(contentEl, realm, viewingZoneId, game
     const mapContainerEl = /** @type {HTMLElement} */ (contentEl.querySelector('.map-container-instance'));
     const backBtn = /** @type {HTMLButtonElement} */ (contentEl.querySelector('#back-to-world-map-btn'));
 
-    if (!mapTitleEl || !mapContainerEl || !backBtn) return; // Safety check
+    if (!mapTitleEl || !mapContainerEl || !backBtn) return;
 
-    // IMPORTANT: Clear only the nodes, not the whole container.
     mapContainerEl.innerHTML = ''; 
 
-    // Instantly set the new background image.
     const newBgImage = viewingZoneId === 'world' ? realm.mapImage : realm.zones[viewingZoneId]?.mapImage;
     mapContainerEl.style.backgroundImage = `url('${newBgImage}')`;
+    
+    // --- START OF MODIFICATION ---
+    const highestCompletedThisRun = gameState.currentRunCompletedLevels.length > 0 ? Math.max(...gameState.currentRunCompletedLevels) : 0;
+    const highestReachedThisRun = highestCompletedThisRun + 1;
+    // --- END OF MODIFICATION ---
 
-    // Update title, button visibility, and render the new nodes.
     if (viewingZoneId === 'world') {
         mapTitleEl.textContent = realm.name;
         backBtn.classList.add('hidden');
         for (const zoneId in realm.zones) {
             const zone = realm.zones[zoneId];
-            const isUnlocked = gameState.maxLevel >= findFirstLevelOfZone(zone);
+            // --- MODIFICATION: Use the new variable for the unlock check ---
+            const isUnlocked = highestReachedThisRun >= findFirstLevelOfZone(zone);
             const isFightingInThisZone = zoneId === fightingZoneId;
             const node = createMapNode(zone.name, zone.icon, zone.coords, isUnlocked, false, gameState.currentFightingLevel, null, false, isFightingInThisZone);
             if (isUnlocked) {
@@ -1898,7 +1907,8 @@ export function updateMapContentSurgically(contentEl, realm, viewingZoneId, game
         backBtn.classList.remove('hidden');
         const subZonesArray = Object.values(zone.subZones).sort((a, b) => a.levelRange[0] - b.levelRange[0]);
         for (const subZone of subZonesArray) {
-            const isUnlocked = gameState.maxLevel >= subZone.levelRange[0];
+            // --- MODIFICATION: Use the new variable for the unlock check ---
+            const isUnlocked = highestReachedThisRun >= subZone.levelRange[0];
             const isCompleted = gameState.completedLevels.includes(subZone.levelRange[1]);
             let iconSrc = (subZone.isBoss && subZone.monsterPool?.length === 1) ? subZone.monsterPool[0].image : subZone.icon;
             const node = createMapNode(subZone.name, iconSrc, subZone.coords, isUnlocked, isCompleted, gameState.currentFightingLevel, subZone.levelRange, subZone.isBoss, false);
@@ -1909,13 +1919,11 @@ export function updateMapContentSurgically(contentEl, realm, viewingZoneId, game
         }
     }
     
-    // Draw paths for the new nodes.
     drawMapPaths(mapContainerEl, realm, viewingZoneId, gameState);
 
-    // After rendering, we MUST update the panel's height to fit the new content, but do it instantly.
     contentEl.style.transition = 'none';
     contentEl.style.maxHeight = contentEl.scrollHeight + 'px';
-    setTimeout(() => { contentEl.style.transition = ''; }, 50); // Restore transition for next time
+    setTimeout(() => { contentEl.style.transition = ''; }, 50);
 }
 
 /**
@@ -1942,13 +1950,19 @@ function renderMap(contentEl, realm, viewingZoneId, gameState, fightingZoneId, {
     
     backBtn.addEventListener('click', () => onBackToWorldClick(REALMS.indexOf(realm)));
 
+    // --- START OF MODIFICATION ---
+    const highestCompletedThisRun = gameState.currentRunCompletedLevels.length > 0 ? Math.max(...gameState.currentRunCompletedLevels) : 0;
+    const highestReachedThisRun = highestCompletedThisRun + 1;
+    // --- END OF MODIFICATION ---
+
     if (viewingZoneId === 'world') {
         mapTitleEl.textContent = realm.name;
         backBtn.classList.add('hidden');
         mapContainerEl.style.backgroundImage = `url('${realm.mapImage}')`;
         for (const zoneId in realm.zones) {
             const zone = realm.zones[zoneId];
-            const isUnlocked = gameState.maxLevel >= findFirstLevelOfZone(zone);
+            // --- MODIFICATION: Use the new variable for the unlock check ---
+            const isUnlocked = highestReachedThisRun >= findFirstLevelOfZone(zone);
             const isFightingInThisZone = zoneId === fightingZoneId;
             const node = createMapNode(zone.name, zone.icon, zone.coords, isUnlocked, false, gameState.currentFightingLevel, null, false, isFightingInThisZone);
             if (isUnlocked) {
@@ -1966,7 +1980,8 @@ function renderMap(contentEl, realm, viewingZoneId, gameState, fightingZoneId, {
 
         const subZonesArray = Object.values(zone.subZones).sort((a, b) => a.levelRange[0] - b.levelRange[0]);
         for (const subZone of subZonesArray) {
-            const isUnlocked = gameState.maxLevel >= subZone.levelRange[0];
+            // --- MODIFICATION: Use the new variable for the unlock check ---
+            const isUnlocked = highestReachedThisRun >= subZone.levelRange[0];
             const isCompleted = gameState.completedLevels.includes(subZone.levelRange[1]);
             let iconSrc;
             if (subZone.isBoss && subZone.monsterPool && subZone.monsterPool.length === 1) {
