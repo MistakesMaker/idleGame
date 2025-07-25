@@ -29,7 +29,7 @@ export const underdarkItems = {
         icon: 'images/icons/shimmering_leggings.png',
         width: 2, height: 3,
         canHaveSockets: true,
-        maxSockets: 2,
+        maxSockets: 3,
         possibleStats: [ 
             { key: STATS.GOLD_GAIN.key, min: 1, max: 175 },
             { key: STATS.CLICK_DAMAGE.key, min: 1, max: 11000 },
@@ -53,7 +53,7 @@ export const underdarkItems = {
         icon: 'images/icons/crystal_tipped_spear.png',
         width: 2, height: 3,
         canHaveSockets: true,
-        maxSockets: 2,
+        maxSockets: 3,
         possibleStats: [ 
             { key: STATS.CLICK_DAMAGE.key, min: 1, max: 25000 },
             { key: STATS.DPS.key, min: 1, max: 80000 },
@@ -69,7 +69,7 @@ export const underdarkItems = {
         width: 2, height: 2,
         isUnique: true,
         canHaveSockets: true,
-        maxSockets: 2,
+        maxSockets: 3,
         possibleStats: [
             { key: STATS.GOLD_GAIN.key, min: 1, max: 150 },
             { key: STATS.CLICK_DAMAGE.key, min: 1, max: 9999 },
@@ -145,7 +145,7 @@ export const underdarkItems = {
         icon: 'images/icons/gnomish_mining_helm.png',
         width: 2, height: 2,
         canHaveSockets: true,
-        maxSockets: 2,
+        maxSockets: 3,
         possibleStats: [ { key: STATS.GOLD_GAIN.key, min: 1000, max: 1000 } ]
     },
     CAVE_STALKER_TUNIC: {
@@ -197,7 +197,7 @@ export const underdarkItems = {
         icon: 'images/icons/quartz_ring.png',
         width: 1, height: 1,
         canHaveSockets: true,
-        maxSockets: 2,
+        maxSockets: 3,
         possibleStats: [ 
             { key: STATS.GOLD_GAIN.key, min: 1, max: 350 },
             { key: STATS.DPS.key, min: 1, max: 50000 }
@@ -259,7 +259,7 @@ export const underdarkItems = {
         icon: 'images/icons/spore-weave_pants.png',
         width: 2, height: 3,
         canHaveSockets: true,
-        maxSockets: 2,
+        maxSockets: 3,
         possibleStats: [ 
             { key: STATS.GOLD_GAIN.key, min: 1, max: 275 },
             { key: STATS.DPS.key, min: 1, max: 89000 }
@@ -315,7 +315,7 @@ export const underdarkItems = {
         icon: 'images/icons/shrieker_amulet.png',
         width: 2, height: 2,
         canHaveSockets: true,
-        maxSockets: 2,
+        maxSockets: 3,
         possibleStats: [ 
             { key: STATS.CLICK_DAMAGE.key, min: 1, max: 6000 }
          ]
@@ -327,7 +327,7 @@ export const underdarkItems = {
         icon: 'images/icons/fungal_barrier.png',
         width: 2, height: 3,
         canHaveSockets: true,
-        maxSockets: 2,
+        maxSockets: 3,
         possibleStats: [ 
             { key: STATS.DPS.key, min: 50000, max: 50000 },
             { key: STATS.CLICK_DAMAGE.key, min: 1, max: 25000 },
@@ -361,7 +361,7 @@ export const underdarkItems = {
         icon: 'images/icons/glimmerweave_robes.png',
         width: 2, height: 3,
         canHaveSockets: true,
-        maxSockets: 2,
+        maxSockets: 3,
         possibleStats: [ 
             { key: STATS.GOLD_GAIN.key, min: 1, max: 600 },
             { key: STATS.CLICK_DAMAGE.key, min: 1, max: 20000 }
@@ -374,7 +374,7 @@ export const underdarkItems = {
         icon: 'images/icons/fungal_crawler_ring.png',
         width: 1, height: 1,
         canHaveSockets: true,
-        maxSockets: 2,
+        maxSockets: 3,
         possibleStats: [
             { key: STATS.DPS.key, min: 1, max: 66000 },
             { key: STATS.GOLD_GAIN.key, min: 1, max: 450 }
@@ -504,7 +504,7 @@ export const underdarkItems = {
         width: 1, height: 1,
         isUnique: true,
         canHaveSockets: true,
-        maxSockets: 2,
+        maxSockets: 3,
         possibleStats: [
             { key: STATS.DPS.key, min: 1, max: 100000 },
             { key: STATS.CLICK_DAMAGE.key, min: 1, max: 12500 },
@@ -546,7 +546,7 @@ export const underdarkItems = {
         icon: 'images/icons/drow_mage_hood.png',
         width: 2, height: 2,
         canHaveSockets: true,
-        maxSockets: 2,
+        maxSockets: 3,
         possibleStats: [ 
             { key: STATS.GOLD_GAIN.key, min: 1, max: 1500 },
             { key: STATS.DPS.key, min: 1, max: 88888 },
@@ -578,7 +578,7 @@ export const underdarkItems = {
         icon: 'images/icons/drow_noble_signet.png',
         width: 1, height: 1,
         canHaveSockets: true,
-        maxSockets: 2,
+        maxSockets: 3,
         possibleStats: [ { key: STATS.GOLD_GAIN.key, min: 750, max: 750 } ]
     },
     OBSIDIAN_PLATEBODY: {
@@ -746,7 +746,7 @@ export const underdarkItems = {
         icon: 'images/icons/soul_eater_ring.png',
         width: 1, height: 1,
         canHaveSockets: true,
-        maxSockets: 2,
+        maxSockets: 3,
         possibleStats: [ 
             { key: STATS.CLICK_DAMAGE.key, min: 1, max: 15000 },
             { key: STATS.GOLD_GAIN.key, min: 1, max: 900 }

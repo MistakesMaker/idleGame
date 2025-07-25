@@ -117,7 +117,7 @@ const greenMeadowsItems = {
         icon: 'images/icons/gladiators_longsword.png',
         width: 2, height: 3,
         canHaveSockets: true,
-        maxSockets: 3,
+        maxSockets: 2,
         possibleStats: [
             { key: STATS.CLICK_DAMAGE.key, min: 20, max: 100 },
             { key: STATS.DPS.key, min: 500, max: 2500 }
@@ -131,7 +131,7 @@ const greenMeadowsItems = {
         width: 2, height: 2,
         isUnique: true,
         canHaveSockets: true,
-        maxSockets: 3,
+        maxSockets: 2,
         possibleStats: [
             { key: STATS.DPS.key, min: 1000, max: 3000 },
             { key: STATS.GOLD_GAIN.key, min: 10, max: 30 },
@@ -238,7 +238,7 @@ const greenMeadowsItems = {
         width: 2, height: 1,
         isUnique: true,
         canHaveSockets: true,
-        maxSockets: 3,
+        maxSockets: 2,
         possibleStats: [
             { key: STATS.CLICK_DAMAGE.key, min: 50, max: 250 },
             { key: STATS.DPS.key, min: 1500, max: 3500 },
@@ -251,7 +251,7 @@ const greenMeadowsItems = {
         icon: 'images/icons/runic_blade.png',
         width: 2, height: 3,
         canHaveSockets: true,
-        maxSockets: 3,
+        maxSockets: 2,
         possibleStats: [
             { key: STATS.CLICK_DAMAGE.key, min: 80, max: 150 },
             { key: STATS.DPS.key, min: 1500, max: 4000 }
@@ -400,7 +400,7 @@ const greenMeadowsItems = {
         isUnique: true,
         uniqueEffect: 'slimeSplit',
         canHaveSockets: true,
-        maxSockets: 3,
+        maxSockets: 2,
         possibleStats: [
             { key: STATS.CLICK_DAMAGE.key, min: 400, max: 900 },
             { key: STATS.DPS.key, min: 2000, max: 6500 },
@@ -593,7 +593,7 @@ const orcVolcanoItems = {
         icon: 'images/icons/mithril_scimitar.png',
         width: 2, height: 3,
         canHaveSockets: true,
-        maxSockets: 3,
+        maxSockets: 2,
         possibleStats: [ { key: STATS.CLICK_DAMAGE.key, min: 1250, max: 5500 } ]
     },
     MAGMA_FORGED_GREAVES: {
@@ -658,7 +658,7 @@ const undeadDesertItems = {
         icon: 'images/icons/sandstrider_leggings.png',
         width: 2, height: 3,
         canHaveSockets: true,
-        maxSockets: 3,
+        maxSockets: 2,
         possibleStats: [
             { key: STATS.DPS.key, min: 5000, max: 15000 },
             { key: STATS.GOLD_GAIN.key, min: 25, max: 75 },
@@ -671,7 +671,7 @@ const undeadDesertItems = {
         icon: 'images/icons/carapace_of_the_scarab.png',
         width: 2, height: 3,
         canHaveSockets: true,
-        maxSockets: 3,
+        maxSockets: 2,
         possibleStats: [
             { key: STATS.DPS.key, min: 4000, max: 12000 },
             { key: STATS.CLICK_DAMAGE.key, min: 100, max: 120 },
@@ -685,7 +685,7 @@ const undeadDesertItems = {
         icon: 'images/icons/amulet_of_the_viper.png',
         width: 2, height: 2,
         canHaveSockets: true,
-        maxSockets: 3,
+        maxSockets: 2,
         possibleStats: [
             { key: STATS.DPS.key, min: 1500, max: 4500 },
             { key: STATS.MAGIC_FIND.key, min: 1, max: 3 },
@@ -710,7 +710,7 @@ const undeadDesertItems = {
         icon: 'images/icons/mage_pants.png',
         width: 2, height: 3,
         canHaveSockets: true,
-        maxSockets: 3,
+        maxSockets: 2,
         possibleStats: [
             { key: STATS.GOLD_GAIN.key, min: 15, max: 45 },
             { key: STATS.MAGIC_FIND.key, min: 5, max: 5 }, // Note: Min and max are the same here
@@ -764,7 +764,7 @@ const undeadDesertItems = {
         icon: 'images/icons/spiked_bulwark.png',
         width: 2, height: 3,
         canHaveSockets: true,
-        maxSockets: 3,
+        maxSockets: 2,
         possibleStats: [
             { key: STATS.CLICK_DAMAGE.key, min: 300, max: 2500 },
         ]
@@ -792,7 +792,7 @@ const undeadDesertItems = {
         icon: 'images/icons/bone_legplates.png',
         width: 2, height: 3,
         canHaveSockets: true,
-        maxSockets: 3,
+        maxSockets: 2,
         possibleStats: [
             { key: STATS.DPS.key, min: 3500, max: 10500 },
             { key: STATS.MAGIC_FIND.key, min: 1, max: 3 },
@@ -836,7 +836,7 @@ const undeadDesertItems = {
         icon: 'images/icons/pharaohs_curse.png', // ICON PATH CORRECTED
         width: 2, height: 3,
         canHaveSockets: true,
-        maxSockets: 3,
+        maxSockets: 2,
         possibleStats: [
             { key: STATS.CLICK_DAMAGE.key, min: 2000, max: 8000 },
             { key: STATS.GOLD_GAIN.key, min: 20, max: 50 },
@@ -867,7 +867,7 @@ const undeadDesertItems = {
         width: 2, height: 3,
         isUnique: true,
         canHaveSockets: true,
-        maxSockets: 3,
+        maxSockets: 2,
         possibleStats: [
             { key: STATS.CLICK_DAMAGE.key, min: 2500, max: 11000 },
             { key: STATS.DPS.key, min: 10000, max: 25000 },
@@ -911,7 +911,7 @@ const finalDungeonItems = {
         icon: 'images/icons/bloodstone_pendant.png',
         width: 2, height: 2,
         canHaveSockets: true,
-        maxSockets: 3,
+        maxSockets: 2,
         possibleStats: [
             { key: STATS.CLICK_DAMAGE.key, min: 1000, max: 3000 },
             { key: STATS.DPS.key, min: 2000, max: 6000 },
@@ -924,7 +924,7 @@ const finalDungeonItems = {
         icon: 'images/icons/greaves_of_haste.png',
         width: 2, height: 3,
         canHaveSockets: true,
-        maxSockets: 3,
+        maxSockets: 2,
         possibleStats: [
             { key: STATS.DPS.key, min: 3000, max: 9000 },
             { key: STATS.CLICK_DAMAGE.key, min: 50, max: 2400 },
@@ -937,7 +937,7 @@ const finalDungeonItems = {
         icon: 'images/icons/ghastly_robes.png',
         width: 2, height: 3,
         canHaveSockets: true,
-        maxSockets: 3,
+        maxSockets: 2,
         possibleStats: [
             { key: STATS.DPS.key, min: 12000, max: 20000 },
             { key: STATS.MAGIC_FIND.key, min: 10, max: 10 },
@@ -951,7 +951,7 @@ const finalDungeonItems = {
         icon: 'images/icons/shadow_cowl.png',
         width: 2, height: 2,
         canHaveSockets: true,
-        maxSockets: 3,
+        maxSockets: 2,
         possibleStats: [
             { key: STATS.DPS.key, min: 2500, max: 40000 },
             { key: STATS.MAGIC_FIND.key, min: 1.5, max: 3 },
@@ -985,7 +985,7 @@ const finalDungeonItems = {
         icon: 'images/icons/mirrored_shield.png',
         width: 2, height: 3,
         canHaveSockets: true,
-        maxSockets: 3,
+        maxSockets: 2,
         possibleStats: [
             { key: STATS.DPS.key, min: 12000, max: 20000 },
             { key: STATS.GOLD_GAIN.key, min: 70, max: 120 },
@@ -1027,7 +1027,7 @@ const finalDungeonItems = {
         icon: 'images/icons/dragonhide_vest.png',
         width: 2, height: 3,
         canHaveSockets: true,
-        maxSockets: 3,
+        maxSockets: 2,
         possibleStats: [
             { key: STATS.DPS.key, min: 10000, max: 30000 },
             { key: STATS.CLICK_DAMAGE.key, min: 250, max: 1500 },
@@ -1040,7 +1040,7 @@ const finalDungeonItems = {
         icon: 'images/icons/dragonbone_greaves.png',
         width: 2, height: 3,
         canHaveSockets: true,
-        maxSockets: 3,
+        maxSockets: 2,
         possibleStats: [
             { key: STATS.DPS.key, min: 9000, max: 27000 },
             { key: STATS.GOLD_GAIN.key, min: 30, max: 90 },
@@ -1053,7 +1053,7 @@ const finalDungeonItems = {
         icon: 'images/icons/dragonfang.png',
         width: 2, height: 3,
         canHaveSockets: true,
-        maxSockets: 3,
+        maxSockets: 2,
         possibleStats: [
             { key: STATS.CLICK_DAMAGE.key, min: 500, max: 1500 },
             { key: STATS.DPS.key, min: 10000, max: 30000 }
@@ -1066,7 +1066,7 @@ const finalDungeonItems = {
         icon: 'images/icons/dragonscale_ward.png',
         width: 2, height: 3,
         canHaveSockets: true,
-        maxSockets: 3,
+        maxSockets: 2,
         possibleStats: [
             { key: STATS.DPS.key, min: 12000, max: 36000 },
             { key: STATS.MAGIC_FIND.key, min: 1.5, max: 3 },
@@ -1079,7 +1079,7 @@ const finalDungeonItems = {
         icon: 'images/icons/dragonbone_headdress.png',
         width: 2, height: 2,
         canHaveSockets: true,
-        maxSockets: 3,
+        maxSockets: 2,
         possibleStats: [
             { key: STATS.DPS.key, min: 12000, max: 29000 },
             { key: STATS.GOLD_GAIN.key, min: 30, max: 90 },
