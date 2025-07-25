@@ -1054,7 +1054,9 @@ export function checkHuntProgress(gameState, defeatedMonster) {
             if (activeHunt.target.isBoss && defeatedMonster.data.isBoss) conditionsMet++;
             if (activeHunt.target.realm && realm && realm.name === activeHunt.target.realm) conditionsMet++;
             if (activeHunt.target.zoneId && zoneId === activeHunt.target.zoneId) conditionsMet++;
-            if (activeHunt.target.nameContains && defeatedMonster.name.includes(activeHunt.target.nameContains)) conditionsMet++;
+            
+            // --- THIS IS THE CORRECTED LINE ---
+            if (activeHunt.target.nameContains && defeatedMonster.name.toLowerCase().includes(activeHunt.target.nameContains.toLowerCase())) conditionsMet++;
             
             if (conditionsMet === conditionsRequired) {
                 isMatch = true;
