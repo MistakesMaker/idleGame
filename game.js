@@ -1464,25 +1464,14 @@ function startNewMonster() {
             return valB - valA;
         });
 
-        // Re-calculate grid positions after sorting
-        const placedGems = [];
-        sortedGems.forEach(gem => {
-            const spot = findNextAvailableSpot(gem.width, gem.height, placedGems);
-            if (spot) {
-                gem.x = spot.x;
-                gem.y = spot.y;
-                placedGems.push(gem); 
-            } else {
-                gem.x = -1; 
-                gem.y = -1;
-            }
-        });
-
+        // The old, incorrect positioning logic has been removed from here.
+        
         gameState.gems = sortedGems;
         
+        // This now calls renderGrid and lets IT handle positioning, just like the consumables tab.
         ui.renderGrid(elements.gemSlotsEl, gameState.gems, {
             type: 'gem',
-            calculatePositions: false, // Positions are now pre-calculated
+            // calculatePositions is no longer needed, renderGrid does it automatically for gems.
             bulkCombineSelection,
             bulkCombineDeselectedIds,
             selectedGemId: selectedGemForSocketing ? selectedGemForSocketing.id : null,
