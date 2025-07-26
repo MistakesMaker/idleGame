@@ -1083,13 +1083,22 @@ function startNewMonster() {
             while (remainingTime > 1) {
                 const { newMonster, newMonsterState } = logic.generateMonster(currentSimLevel);
                 
-                // This is the core fix: timeToKill can't be less than 1 second.
                 const timeToKill = Math.max(1, newMonsterState.maxHp / playerStats.totalDps);
 
                 if (remainingTime < timeToKill) break;
                 
                 remainingTime -= timeToKill;
                 lastLevelBeforeStop = currentSimLevel;
+
+                // --- START OF FIX ---
+                // Record the completed level for map progression and unlocks
+                if (!gameState.completedLevels.includes(currentSimLevel)) {
+                    gameState.completedLevels.push(currentSimLevel);
+                }
+                if (!gameState.currentRunCompletedLevels.includes(currentSimLevel)) {
+                    gameState.currentRunCompletedLevels.push(currentSimLevel);
+                }
+                // --- END OF FIX ---
 
                 // Calculate rewards for this specific kill.
                 const tier = Math.floor((currentSimLevel - 1) / 10);
@@ -1119,6 +1128,10 @@ function startNewMonster() {
             }
              // Update player's level to where they progressed to offline.
             gameState.currentFightingLevel = lastLevelBeforeStop;
+            // --- START OF FIX ---
+            // Also update the maxLevel stat
+            gameState.maxLevel = Math.max(gameState.maxLevel, lastLevelBeforeStop);
+            // --- END OF FIX ---
         }
 
         // --- APPLY REWARDS AND SHOW MODAL (This part is the same as before) ---
