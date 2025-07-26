@@ -1407,9 +1407,12 @@ function startNewMonster() {
             if (wikiState.filters.sockets !== null && (itemData.base.maxSockets || 0) < wikiState.filters.sockets) {
                 return false;
             }
-            for (const [statKey] of wikiState.filters.stats.entries()) {
-                const hasStat = itemData.base.possibleStats?.some(stat => stat.key === statKey);
-                if (!hasStat) {
+            for (const [statKey, minValue] of wikiState.filters.stats.entries()) {
+                // Find the specific stat on the item to get its max value.
+                const itemStat = itemData.base.possibleStats?.find(stat => stat.key === statKey);
+
+                // If the item doesn't have the stat, OR its max value is less than the filter's min value, reject it.
+                if (!itemStat || itemStat.max < minValue) {
                     return false;
                 }
             }
