@@ -1037,6 +1037,11 @@ function startNewMonster() {
         let totalGoldGained = 0;
         let totalXPGained = 0;
         let totalScrapGained = 0;
+        
+        // --- START OF MODIFICATION ---
+        const startingProgressLevel = gameState.currentFightingLevel;
+        let lastLevelBeforeStop = gameState.currentFightingLevel;
+        // --- END OF MODIFICATION ---
 
         if (!gameState.isAutoProgressing) {
             // --- "CAMPING" MODE ---
@@ -1044,7 +1049,6 @@ function startNewMonster() {
             const level = gameState.currentFightingLevel;
             const { newMonster, newMonsterState } = logic.generateMonster(level);
             
-            // This is the core fix: timeToKill can't be less than 1 second.
             const timeToKill = Math.max(1, newMonsterState.maxHp / playerStats.totalDps);
             const totalKills = Math.floor(offlineDurationSeconds / timeToKill);
 
@@ -1078,7 +1082,7 @@ function startNewMonster() {
             // Player was auto-progressing. Simulate level by level.
             let remainingTime = offlineDurationSeconds;
             let currentSimLevel = gameState.currentFightingLevel;
-            let lastLevelBeforeStop = gameState.currentFightingLevel;
+            // lastLevelBeforeStop is already defined above
 
             while (remainingTime > 1) {
                 const { newMonster, newMonsterState } = logic.generateMonster(currentSimLevel);
@@ -1090,15 +1094,12 @@ function startNewMonster() {
                 remainingTime -= timeToKill;
                 lastLevelBeforeStop = currentSimLevel;
 
-                // --- START OF FIX ---
-                // Record the completed level for map progression and unlocks
                 if (!gameState.completedLevels.includes(currentSimLevel)) {
                     gameState.completedLevels.push(currentSimLevel);
                 }
                 if (!gameState.currentRunCompletedLevels.includes(currentSimLevel)) {
                     gameState.currentRunCompletedLevels.push(currentSimLevel);
                 }
-                // --- END OF FIX ---
 
                 // Calculate rewards for this specific kill.
                 const tier = Math.floor((currentSimLevel - 1) / 10);
@@ -1128,13 +1129,10 @@ function startNewMonster() {
             }
              // Update player's level to where they progressed to offline.
             gameState.currentFightingLevel = lastLevelBeforeStop;
-            // --- START OF FIX ---
-            // Also update the maxLevel stat
             gameState.maxLevel = Math.max(gameState.maxLevel, lastLevelBeforeStop);
-            // --- END OF FIX ---
         }
 
-        // --- APPLY REWARDS AND SHOW MODAL (This part is the same as before) ---
+        // --- APPLY REWARDS AND SHOW MODAL ---
         if (totalGoldGained === 0 && totalXPGained === 0 && totalScrapGained === 0) return;
 
         const startingLevel = gameState.hero.level;
@@ -1152,6 +1150,16 @@ function startNewMonster() {
         elements.offlineXp.textContent = formatNumber(totalXPGained);
         elements.offlineScrap.textContent = formatNumber(totalScrapGained);
         
+        // --- START OF MODIFICATION ---
+        const levelsProgressed = lastLevelBeforeStop - startingProgressLevel;
+        if (gameState.isAutoProgressing && levelsProgressed > 0) {
+            elements.offlineLevels.innerHTML = `<i class="fas fa-arrow-up"></i> Progressed <b>${levelsProgressed}</b> levels! (Lvl ${startingProgressLevel} → Lvl ${lastLevelBeforeStop})`;
+            elements.offlineLevels.classList.remove('hidden');
+        } else {
+            elements.offlineLevels.classList.add('hidden');
+        }
+        // --- END OF MODIFICATION ---
+
         const existingLevelUps = elements.offlineRewards.querySelectorAll('.level-up-summary');
         existingLevelUps.forEach(el => el.remove());
 

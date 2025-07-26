@@ -119,6 +119,7 @@ export function initDOMElements() {
         offlineXp: document.getElementById('offline-xp'),
         offlineScrap: document.getElementById('offline-scrap'),
         offlineRewards: document.getElementById('offline-rewards'),
+        offlineLevels: document.getElementById('offline-levels'),
         ringSelectionModalBackdrop: document.getElementById('ring-selection-modal-backdrop'),
         ringSelectionSlot1: document.getElementById('ring-selection-slot1'),
         ringSelectionSlot2: document.getElementById('ring-selection-slot2'),
