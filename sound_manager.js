@@ -13,6 +13,7 @@ const sounds = {
     socket_gem: new Audio('sounds/socket_gem.wav'),
     gem_success: new Audio('sounds/gem_success.wav'),
     gem_fail: new Audio('sounds/gem_fail.wav'),
+    permanent_upgrade_buy: new Audio('sounds/cha_ching.wav'),
     
 };
 const POOL_SIZE = 10; // Number of clones for high-frequency sounds
@@ -61,6 +62,7 @@ export function initSounds() {
     sounds.gem_success.volume = 0.8;
     sounds.gem_fail.volume = 0.8;
     sounds.salvage.volume = 0.6;
+    sounds.permanent_upgrade_buy.volume = 0.7;
     for (const soundName in soundPool) {
         for (let i = 0; i < POOL_SIZE; i++) {
             const clone = sounds[soundName].cloneNode();
@@ -76,15 +78,19 @@ export function initSounds() {
  * Handles the global mute state and allows for rapid re-playing of sounds.
  * @param {string} name The key of the sound to play (e.g., 'monster_hit').
  */
-// AFTER
 export function playSound(name) {
+    // --- DEBUGGING LINE ---
+    console.log(`[DEBUG] Attempting to play sound: '${name}'`);
+
     if (isMuted || !isInitialized) {
+        if (isMuted) console.log('[DEBUG] Sound blocked: Game is muted.');
+        if (!isInitialized) console.log('[DEBUG] Sound blocked: Sound system not initialized.');
         return;
     }
 
     const masterSound = sounds[name];
     if (!masterSound) {
-        console.warn(`Sound not found: ${name}`);
+        console.warn(`[DEBUG] Sound not found in 'sounds' object: ${name}`);
         return;
     }
 

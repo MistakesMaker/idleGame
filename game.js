@@ -1,5 +1,3 @@
-// --- START OF FILE game.js ---
-
 import { REALMS } from './data/realms.js';
 import { MONSTERS } from './data/monsters.js';
 import { ITEMS } from './data/items.js';
@@ -632,7 +630,7 @@ function startNewMonster() {
     const { newMonster, newMonsterState } = logic.generateMonster(gameState.currentFightingLevel, gameState.specialEncounter);
     currentMonster = newMonster;
     gameState.monster = newMonsterState;
-    ui.updateMonsterUI(elements, gameState, newMonster);
+    ui.updateMonsterUI(elements, gameState, currentMonster);
 
     if (!gameState.unlockedFeatures.wiki && gameState.currentFightingLevel === 25) {
         gameState.unlockedFeatures.wiki = true;
@@ -2451,8 +2449,7 @@ function startNewMonster() {
                     }
                 });
             }
-        
-        document.querySelectorAll('.tabs').forEach(tabContainer => {
+                    document.querySelectorAll('.tabs').forEach(tabContainer => {
             const tabs = tabContainer.querySelectorAll('.tab-button');
             tabs.forEach((tab) => {
                 if (!(tab instanceof HTMLElement)) return;
@@ -2667,6 +2664,7 @@ function startNewMonster() {
 
             const result = player.buyPermanentUpgrade(gameState, upgradeId);
             if (result.success) {
+                playSound('permanent_upgrade_buy');
                 logMessage(elements.gameLogEl, `Purchased Level ${result.newLevel} of <b>${PERMANENT_UPGRADES[upgradeId].name}</b>!`, 'epic', isAutoScrollingLog);
                 recalculateStats();
                 ui.renderPermanentUpgrades(elements, gameState);
