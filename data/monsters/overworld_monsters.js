@@ -448,7 +448,7 @@ const finalDungeonMonsters = {
     // --- Sub-Zone: Demon Sentry (Boss Lvl 325) ---
     DEMON_SENTRY_BOSS: {
         name: 'Demon Sentry',
-        image: 'images/monsters/gargoyle.png', // Re-using image
+        image: 'images/monsters/demon_sentry.png', 
         isBoss: true,
         dropChance: 100,
         lootTable: [
