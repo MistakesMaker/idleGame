@@ -11,7 +11,7 @@
   - 16px: The absolute largest the font can get.
 */
 html {
-    font-size: clamp(10px, 0.8333vw, 16px);
+    font-size: clamp(10px, 1.2vh, 16px);
 }
 
 :root {
