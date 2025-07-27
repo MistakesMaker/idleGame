@@ -1446,9 +1446,33 @@ function startNewMonster() {
             if (wikiState.filters.searchText && !itemData.base.name.toLowerCase().includes(wikiState.filters.searchText)) {
                 return false;
             }
-             if (wikiState.filters.type && itemData.base.type !== wikiState.filters.type) {
-                return false;
+            // --- START OF FIX ---
+            // Handle all type filters including the new default "Gear" filter.
+            const filterType = wikiState.filters.type;
+            const itemBase = itemData.base;
+
+            if (filterType === "") { // This is our "Gear" filter
+                // If "Gear" is selected, we must exclude Gems and Consumables.
+                if (GEMS[itemBase.id] || itemBase.type === 'consumable') {
+                    return false;
+                }
+            } else if (filterType === 'Gems') {
+                // If "Gems" is selected, only show items that are gems.
+                if (!GEMS[itemBase.id]) {
+                    return false;
+                }
+            } else if (filterType === 'Consumables') {
+                // If "Consumables" is selected, only show items with the 'consumable' type.
+                if (itemBase.type !== 'consumable') {
+                    return false;
+                }
+            } else if (filterType) {
+                // For any other specific type (e.g., "sword"), do a direct match.
+                if (itemBase.type !== filterType) {
+                    return false;
+                }
             }
+            // --- END OF FIX ---
             if (wikiState.filters.sockets !== null && (itemData.base.maxSockets || 0) < wikiState.filters.sockets) {
                 return false;
             }
@@ -1730,7 +1754,21 @@ function startNewMonster() {
         migrateStackablePositions(gameState.gems);
         migrateStackablePositions(gameState.consumables);
         buildWikiDatabase();
-        const allItemTypes = new Set(wikiState.data.map(d => d.base.type).filter(Boolean));
+        // --- START OF MODIFICATION ---
+        // Group all gems under a single "Gem" type for the filter dropdown.
+        const allItemTypes = new Set();
+        wikiState.data.forEach(d => {
+            if (d.base.type) { // Ensure the item has a type
+                if (GEMS[d.base.id]) {
+                    allItemTypes.add('Gems');
+                } else if (d.base.type === 'consumable') {
+                    allItemTypes.add('Consumables');
+                } else {
+                    allItemTypes.add(d.base.type);
+                }
+            }
+        });
+        // --- END OF MODIFICATION ---
         const allStatKeys = new Set();
         wikiState.data.forEach(d => {
             d.base.possibleStats?.forEach(stat => allStatKeys.add(stat.key));
