@@ -203,12 +203,12 @@ export const CONSUMABLES = {
         type: 'consumable',
         icon: 'images/consumables/potion_fused_power.png',
         width: 1, height: 1,
-        description: "For 15 minutes, 100% of your total DPS is added to your total Click Damage.",
+        description: "For 5 minutes, 100% of your total DPS is added to your total Click Damage.",
         effect: {
             type: 'timedBuff',
             name: 'Fused Power',
             stats: { dpsToClickDamagePercent: 100 },
-            duration: 900 // 15 minutes in seconds
+            duration: 300 // 5 minutes in seconds
         }
     },
     POTION_GIANTS_STRENGTH: {
@@ -217,12 +217,12 @@ export const CONSUMABLES = {
         type: 'consumable',
         icon: 'images/consumables/potion_giants_strength.png',
         width: 1, height: 1,
-        description: "For 15 minutes, your total Click Damage is increased by 100%.",
+        description: "For 5 minutes, your total Click Damage is increased by 100%.",
         effect: {
             type: 'timedBuff',
             name: "Giant's Strength",
             stats: { bonusClickDamagePercent: 100 },
-            duration: 900 // 15 minutes in seconds
+            duration: 300 // 5 minutes in seconds
         }
     },
     POTION_BOSS_SLAYER: {
@@ -231,12 +231,12 @@ export const CONSUMABLES = {
         type: 'consumable',
         icon: 'images/consumables/potion_boss_slayer.png',
         width: 1, height: 1,
-        description: "For 15 minutes, deal 200% more damage to all Boss-type monsters.",
+        description: "For 3 minutes, deal 100% more damage to all Boss-type monsters.",
         effect: {
             type: 'timedBuff',
             name: "Boss Slayer",
-            stats: { bonusBossDamagePercent: 200 },
-            duration: 900 // 15 minutes in seconds
+            stats: { bonusBossDamagePercent: 100 },
+            duration: 300 // 3 minutes in seconds
         }
     },
     POTION_DEADLY_FOCUS: {
@@ -245,12 +245,12 @@ export const CONSUMABLES = {
         type: 'consumable',
         icon: 'images/consumables/potion_deadly_focus.png',
         width: 1, height: 1,
-        description: "For 15 minutes, increases your Critical Hit Chance by 30% and Critical Hit Damage by 50%.",
+        description: "For 5 minutes, increases your Critical Hit Chance by 30% and Critical Hit Damage by 50%.",
         effect: {
             type: 'timedBuff',
             name: "Deadly Focus",
             stats: { bonusCritChance: 30, bonusCritDamage: 50 },
-            duration: 900 // 15 minutes in seconds
+            duration: 300 // 5 minutes in seconds
         }
     },
     POTION_RAGING_AUTOMATON: {
@@ -259,12 +259,12 @@ export const CONSUMABLES = {
         type: 'consumable',
         icon: 'images/consumables/potion_raging_automaton.png',
         width: 1, height: 1,
-        description: "For 15 minute, all of your automatic DPS hits are guaranteed to be critical hits.",
+        description: "For 5 minute, all of your automatic DPS hits are guaranteed to be critical hits.",
         effect: {
             type: 'timedBuff',
             name: "Raging Automaton",
             specialEffect: 'guaranteedDpsCrit',
-            duration: 900 // 15 minutes in seconds
+            duration: 300 // 5 minutes in seconds
         }
     },
     POTION_LIQUID_LUCK: {
