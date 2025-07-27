@@ -1282,9 +1282,30 @@ function startNewMonster() {
                     }
                 }
             }
+            for (const category in HUNT_SHOP_INVENTORY) {
+                const shopItems = HUNT_SHOP_INVENTORY[category];
+                const shopItem = shopItems.find(item => item.id === itemBase.id);
+                if (shopItem) {
+                    // --- START OF FIX ---
+                    // Add a simple check for correct pluralization of "Token".
+                    const tokenLabel = shopItem.cost === 1 ? 'Token' : 'Tokens';
+                    itemEntry.dropSources.push({
+                        monster: { name: "Hunt Shop", image: "images/icons/hunt_token.png" }, // Use a token as the icon
+                        chance: 100, // It's a purchase, so chance is 100% if you have tokens
+                        location: `Hunt Shop (${shopItem.cost} ${tokenLabel})`, // Use the corrected label
+                        level: shopItem.unlock || 0, // Use the unlock requirement as the 'level' for sorting
+                        realmIndex: 0,
+                        isHunt: true,
+                    });
+                    // --- END OF FIX ---
+                    break; // An item can only be in the shop once
+                }
+            }
+
             wikiState.data.push(itemEntry);
         }
     }
+
 
     function getUpgradeComparison(potentialItemBase, equippedItem) {
         if (!equippedItem) {
@@ -3311,6 +3332,15 @@ function startNewMonster() {
     }
     
     function handleWikiTravel(level) {
+        // --- START OF FAILSAFE ---
+        // Ensure the level is a valid, positive number before proceeding.
+        if (typeof level !== 'number' || level <= 0 || isNaN(level)) {
+            logMessage(elements.gameLogEl, "Invalid travel location selected.", 'rare', isAutoScrollingLog);
+            elements.modalBackdropEl.classList.add('hidden'); // Close the modal
+            return; // Stop the function here to prevent breaking the game
+        }
+        // --- END OF FAILSAFE ---
+
         gameState.isAutoProgressing = false;
         elements.modalBackdropEl.classList.add('hidden');
         
@@ -3323,6 +3353,7 @@ function startNewMonster() {
         ui.updateMonsterUI(elements, gameState, currentMonster);
         ui.updateAutoProgressToggle(elements, gameState.isAutoProgressing);
         ui.updateLootPanel(elements, currentMonster, gameState);
+        updateRealmMusic();
         autoSave();
     }
 
@@ -3431,9 +3462,20 @@ function startNewMonster() {
             if (card) {
                 const parentCard = card.closest('.wiki-item-card');
                 if (parentCard instanceof HTMLElement && parentCard.dataset.itemId) {
-                     const itemData = wikiState.data.find(item => item.id === parentCard.dataset.itemId);
+                    const itemData = wikiState.data.find(item => item.id === parentCard.dataset.itemId);
                     if (itemData && itemData.dropSources.length > 0) {
-                        ui.showWikiTravelModal(elements, itemData.dropSources, gameState.maxLevel, handleWikiTravel);
+                        // --- START OF FIX ---
+                        // Filter out non-travelable hunt/shop sources before showing the modal.
+                        const travelableSources = itemData.dropSources.filter(source => !source.isHunt);
+
+                        if (travelableSources.length > 0) {
+                            // If there are actual places to travel to, show the modal.
+                            ui.showWikiTravelModal(elements, travelableSources, gameState.maxLevel, handleWikiTravel);
+                        } else {
+                            // Otherwise, inform the player that this item cannot be traveled to directly.
+                            logMessage(elements.gameLogEl, `The <b>${itemData.base.name}</b> can only be obtained from Hunts or the Hunt Shop.`, 'uncommon', isAutoScrollingLog);
+                        }
+                        // --- END OF FIX ---
                     }
                 }
             }

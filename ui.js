@@ -2293,14 +2293,20 @@ function createWikiItemCardHTML(itemData, isFavorited, comparison) {
         const sortedSources = itemData.dropSources.sort((a, b) => a.level - b.level);
         sortedSources.forEach(source => {
             if (source.isHunt) {
+                // --- START OF FIX ---
+                // Add an icon for hunt sources to ensure proper alignment.
+                // It uses the specific icon if available (like for the shop) or a default hunt icon.
+                const iconSrc = source.monster.image || 'images/icons/hunt_count1.png';
                 dropsHtml += `
                     <li class="wiki-drop-source">
+                        <img src="${iconSrc}" alt="${source.monster.name}">
                         <div class="wiki-drop-source-details">
                              <span class="wiki-monster-name">${source.monster.name}</span>
                              <span class="wiki-monster-location">${source.location}</span>
                         </div>
                     </li>
                 `;
+                // --- END OF FIX ---
             } else {
                 dropsHtml += `
                     <li class="wiki-drop-source">
