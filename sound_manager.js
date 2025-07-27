@@ -41,6 +41,7 @@ let volumeSettings = {
     music: 0.3,
     sfx: 0.7,
     // Store previous non-zero volume for toggling mute
+    _lastMaster: 1.0,
     _lastMusic: 0.3,
     _lastSfx: 0.7,
 };
@@ -64,6 +65,7 @@ function loadVolumeSettings() {
             volumeSettings.master = typeof parsed.master === 'number' ? parsed.master : 1.0;
             volumeSettings.music = typeof parsed.music === 'number' ? parsed.music : 0.3;
             volumeSettings.sfx = typeof parsed.sfx === 'number' ? parsed.sfx : 0.7;
+            volumeSettings._lastMaster = typeof parsed._lastMaster === 'number' && parsed._lastMaster > 0 ? parsed._lastMaster : 1.0;
             volumeSettings._lastMusic = typeof parsed._lastMusic === 'number' && parsed._lastMusic > 0 ? parsed._lastMusic : 0.3;
             volumeSettings._lastSfx = typeof parsed._lastSfx === 'number' && parsed._lastSfx > 0 ? parsed._lastSfx : 0.7;
 
@@ -195,6 +197,7 @@ export function updateVolume(category, value) {
         volumeSettings[category] = value;
         // If we are adjusting a category, store this as the last non-zero volume for mute toggling
         if (value > 0) {
+            if (category === 'master') volumeSettings._lastMaster = value;
             if (category === 'music') volumeSettings._lastMusic = value;
             if (category === 'sfx') volumeSettings._lastSfx = value;
         }
@@ -222,10 +225,13 @@ export function updateVolume(category, value) {
 
 /**
  * Toggles a category between 0 and its last known non-zero volume.
- * @param {'music'|'sfx'} category The category to toggle.
+ * @param {'master'|'music'|'sfx'} category The category to toggle.
  */
 export function toggleCategoryMute(category) {
-    if (category === 'music') {
+    if (category === 'master') {
+        const newVolume = volumeSettings.master > 0 ? 0 : volumeSettings._lastMaster;
+        updateVolume('master', newVolume);
+    } else if (category === 'music') {
         const newVolume = volumeSettings.music > 0 ? 0 : volumeSettings._lastMusic;
         updateVolume('music', newVolume);
     } else if (category === 'sfx') {

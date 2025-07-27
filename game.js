@@ -1944,6 +1944,10 @@ function startNewMonster() {
             sound_manager.updateVolume('master', value);
             ui.updateVolumeSlidersUI(elements, sound_manager.getVolumeSettings());
         });
+        addTapListener(masterMuteBtn, () => {
+    sound_manager.toggleCategoryMute('master');
+    ui.updateVolumeSlidersUI(elements, sound_manager.getVolumeSettings());
+});
 
         // Music Volume
         musicVolumeSlider.addEventListener('input', (e) => {
