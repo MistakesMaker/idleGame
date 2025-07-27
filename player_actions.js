@@ -1009,14 +1009,18 @@ export function generateNewHunt(gameState, indexToReplace, huntPools) {
     const tierIndex = huntPools.findIndex(tier => tier.hunts.some(h => h.id === huntTemplate.id));
     const maxTokens = 3 + (tierIndex > -1 ? tierIndex : 0); // Base 3, +1 for each tier index.
     
+    // NEW: Calculate the minimum tokens based on the tier index.
+    const minTokens = 1 + Math.floor((tierIndex > -1 ? tierIndex : 0) / 2);
+    
     const newHunt = {
         ...huntTemplate,
         quantity: quantity,
         rewardId: chosenRewardId,
-        tokenReward: getRandomInt(1, maxTokens), // The actual rolled amount for this specific bounty
+        tokenReward: getRandomInt(minTokens, maxTokens), // The actual rolled amount for this specific bounty
         maxTokens: maxTokens,                   // The potential maximum for this tier
         instanceId: Date.now() + Math.random(),
     };
+    // --- END OF MODIFICATION ---
 
     gameState.hunts.available[indexToReplace] = newHunt;
 }
