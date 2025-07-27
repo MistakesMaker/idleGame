@@ -688,7 +688,6 @@ select option {
 .equipment-slot.selected-for-prestige { border: 0.125rem solid #f1c40f; box-shadow: 0 0 0.9375rem #f1c40f !important; } /* 2px, 15px */
 .hidden { display: none !important; }
 #prestige-button:not(:disabled) { animation: pulse 2s infinite; background: linear-gradient(145deg, #f1c40f, #e67e22); border-bottom: 0.125rem solid #d35400; } /* 2px */
-#view-prestige-slots-btn { background: #7f8c8d; border-bottom-color: #6c7a7b; }
 
 @keyframes pulse { 0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(241, 196, 15, 0.7); } 70% { box-shadow: 0 0 0 0.625rem rgba(241, 196, 15, 0); } 100% { box-shadow: 0 0 0 0 rgba(241, 196, 15, 0); } } /* 10px */
 
