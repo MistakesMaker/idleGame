@@ -2259,15 +2259,34 @@ function createWikiItemCardHTML(itemData, isFavorited, comparison) {
         });
 
     } else { // Normal view
-        if (itemBase.type === 'consumable' && itemBase.description) {
+        // --- START OF FIX ---
+        // Add specific logic for Gems, Consumables, and regular Gear.
+        if (GEMS[itemBase.id]) { // It's a gem
+            const gem = GEMS[itemBase.id];
+            if (gem.stats) {
+                for (const statKey in gem.stats) {
+                    const statInfo = Object.values(STATS).find(s => s.key === statKey);
+                    const statName = statInfo ? statInfo.name : statKey;
+                    const value = gem.stats[statKey];
+                    const statValue = statInfo && statInfo.type === 'percent' ? `${value.toFixed(2)}%` : formatNumber(value);
+                    statsHtml += `<li>+ ${statValue} ${statName}</li>`;
+                }
+            }
+            if (gem.synergy) {
+                const synergyPercentage = (gem.synergy.value * 100).toFixed(2);
+                statsHtml += `<li style="margin-top: 8px;"><b>Special:</b> +${synergyPercentage}% of total DPS to Click Dmg</li>`;
+            }
+        } else if (itemBase.type === 'consumable' && itemBase.description) { // It's a consumable
             statsHtml += `<li>${itemBase.description}</li>`;
+        } else if (itemBase.possibleStats) { // It's regular gear
+            itemBase.possibleStats.forEach(stat => {
+                const statDefinition = Object.values(STATS).find(s => s.key === stat.key);
+                const statName = statDefinition?.name || stat.key;
+                const valueSuffix = (statDefinition && statDefinition.type === 'percent') ? '%' : '';
+                statsHtml += `<li>+ ${formatNumber(stat.min)}${valueSuffix} - ${formatNumber(stat.max)}${valueSuffix} ${statName}</li>`;
+            });
         }
-        itemBase.possibleStats?.forEach(stat => {
-            const statDefinition = Object.values(STATS).find(s => s.key === stat.key);
-            const statName = statDefinition?.name || stat.key;
-            const valueSuffix = (statDefinition && statDefinition.type === 'percent') ? '%' : '';
-            statsHtml += `<li>+ ${formatNumber(stat.min)}${valueSuffix} - ${formatNumber(stat.max)}${valueSuffix} ${statName}</li>`;
-        });
+        // --- END OF FIX ---
     }
 
     if (itemBase.canHaveSockets && itemBase.maxSockets > 0) {
@@ -2293,7 +2312,6 @@ function createWikiItemCardHTML(itemData, isFavorited, comparison) {
         const sortedSources = itemData.dropSources.sort((a, b) => a.level - b.level);
         sortedSources.forEach(source => {
             if (source.isHunt) {
-                // --- START OF FIX ---
                 // Add an icon for hunt sources to ensure proper alignment.
                 // It uses the specific icon if available (like for the shop) or a default hunt icon.
                 const iconSrc = source.monster.image || 'images/icons/hunt_count1.png';
@@ -2306,7 +2324,6 @@ function createWikiItemCardHTML(itemData, isFavorited, comparison) {
                         </div>
                     </li>
                 `;
-                // --- END OF FIX ---
             } else {
                 dropsHtml += `
                     <li class="wiki-drop-source">
