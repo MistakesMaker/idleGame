@@ -636,10 +636,35 @@ select option {
 .equipment-slot .placeholder-icon { width: 60%; height: 60%; opacity: 0.5; filter: invert(100%) brightness(0.8); }
 
 /* --- UNIFIED GRID SYSTEM --- */
-.grid-scroll-container { flex-grow: 1; overflow-y: auto; background-color: rgba(0,0,0,0.3); padding: 0.625rem; border-radius: 0.3125rem; margin-top: 0.625rem; } /* 10px, 5px */
-.item-grid { display: grid; grid-template-columns: repeat(8, 1fr); gap: var(--grid-gap); background-color: #1c2833; background-image: linear-gradient(to right, #2f3e4e 0.0625rem, transparent 0.0625rem), linear-gradient(to bottom, #2f3e4e 0.0625rem, transparent 0.0625rem); background-size: calc(var(--grid-cell-size) + var(--grid-gap)) calc(var(--grid-cell-size) + var(--grid-gap)); background-position: -0.0625rem -0.0625rem; min-height: calc(10 * (var(--grid-cell-size) + var(--grid-gap))); } /* 1px */
-/* --- ICON-CENTRIC ITEM VIEW --- */
-.item-wrapper { cursor: pointer; display: flex; justify-content: center; align-items: center; transition: transform 0.2s ease, box-shadow 0.2s ease; padding: 0.125rem; } /* 2px */
+.grid-scroll-container { 
+    flex-grow: 1; 
+    overflow-y: auto; 
+    background-color: rgba(0,0,0,0.3); 
+    padding: 0.625rem; /* 10px */
+    border-radius: 0.3125rem; /* 5px */
+    margin-top: 0.625rem; /* 10px */
+}
+
+.item-grid { 
+    display: grid; 
+    grid-template-columns: repeat(8, 1fr); /* 8 flexible columns that always fit */
+    gap: var(--grid-gap); 
+    background-color: #1c2833; 
+    background-image: linear-gradient(to right, #2f3e4e 0.0625rem, transparent 0.0625rem), linear-gradient(to bottom, #2f3e4e 0.0625rem, transparent 0.0625rem); 
+    background-position: -0.0625rem -0.0625rem; 
+    min-height: calc(10 * (var(--grid-cell-size) + var(--grid-gap))); /* Keep the tall container */
+    /* background-size will be set by JS */
+}
+
+.item-wrapper { 
+    cursor: pointer; 
+    display: flex; 
+    justify-content: center; 
+    align-items: center; 
+    transition: transform 0.2s ease, box-shadow 0.2s ease; 
+    padding: 0.125rem; /* 2px */
+    /* aspect-ratio has been removed to support rectangular items */
+}
 .item-wrapper:hover { transform: scale(1.05); z-index: 10; }
 .item-wrapper:hover .item { border-color: #f1c40f; }
 

@@ -312,6 +312,40 @@ export function populateGemSortOptions(elements, gems, currentSort) {
 }
 
 /**
+ * Measures a grid container and applies the correct square dimensions for its rows and background pattern.
+ * This should be called after rendering or when the container is resized.
+ * @param {HTMLElement} containerEl The grid container element (e.g., #inventory-slots).
+ */
+export function updateGridGeometry(containerEl) {
+    if (!containerEl) return;
+
+    const containerWidth = containerEl.clientWidth;
+    if (containerWidth > 0) {
+        const gap = parseFloat(getComputedStyle(containerEl).gap) || 0;
+        // The total width is 8 cells + 7 gaps. So, one cell's width is (total width - 7 gaps) / 8.
+        const cellWidth = (containerWidth - (7 * gap)) / 8;
+
+        if (cellWidth > 0) {
+            // Force the row height to match the calculated column width, creating perfect squares.
+            containerEl.style.gridAutoRows = `${cellWidth}px`;
+            // Set the background pattern to match the cell + gap size.
+            containerEl.style.backgroundSize = `${cellWidth + gap}px ${cellWidth + gap}px`;
+        }
+    } else {
+        // Fallback for hidden or empty containers to clear any old styles.
+        containerEl.style.gridAutoRows = '';
+        containerEl.style.backgroundSize = '';
+    }
+}
+
+/**
+ * Renders a list of items or gems into a grid container. This is a full re-render.
+ * It now automatically calculates positions for stackable types (gems, consumables).
+ * @param {HTMLElement} containerEl - The grid container element.
+ * @param {Array<object>} items - The array of items or gems to render.
+ * @param {object} options - Configuration options.
+ */
+/**
  * Renders a list of items or gems into a grid container. This is a full re-render.
  * It now automatically calculates positions for stackable types (gems, consumables).
  * @param {HTMLElement} containerEl - The grid container element.
@@ -322,13 +356,9 @@ export function renderGrid(containerEl, items, options = {}) {
     const { type = 'item', selectedItem = null, salvageSelections = [], showLockIcon = true, bulkCombineSelection = {}, bulkCombineDeselectedIds = new Set(), selectedGemId = null, craftingGemIds = [] } = options;
     
     containerEl.innerHTML = '';
-    let maxRow = 0;
     
-    // --- START OF THE FIX ---
-    // For stackable types, we ignore saved positions and recalculate them on the fly for a neat grid.
-    const shouldCalculatePositions = type === 'consumable';
-    const tempPlacement = []; // Used for on-the-fly position calculation
-    // --- END OF THE FIX ---
+    const shouldCalculatePositions = type === 'consumable' || type === 'gem';
+    const tempPlacement = []; 
 
     for (const item of items) {
         const isTemporaryCraftingGem = craftingGemIds.some(g => g.sourceStackId === item.id);
@@ -342,30 +372,20 @@ export function renderGrid(containerEl, items, options = {}) {
         const id = item.id;
         wrapper.dataset.id = String(id);
         
-        // --- MODIFIED LOGIC ---
         let pos;
         if (shouldCalculatePositions) {
-            // Calculate a temporary position for this render without modifying the original item.
             pos = findEmptySpot(item.width || 1, item.height || 1, tempPlacement);
             if(pos) {
-                // Add a placeholder to our temporary grid so the next item knows this spot is taken.
                 tempPlacement.push({ ...item, x: pos.x, y: pos.y });
             }
         } else {
-            // For gear, we trust the saved coordinates.
             pos = { x: item.x, y: item.y };
         }
-        // --- END MODIFIED LOGIC ---
 
         if (pos && pos.x !== -1 && pos.x !== undefined) {
             wrapper.style.gridColumn = `${pos.x + 1} / span ${item.width}`;
             wrapper.style.gridRow = `${pos.y + 1} / span ${item.height}`;
             
-            const currentMaxRow = (pos.y || 0) + (item.height || 1);
-            if (currentMaxRow > maxRow) {
-                maxRow = currentMaxRow;
-            }
-
             wrapper.innerHTML = type === 'gem' ? createGemHTML(item) : createItemHTML(item, showLockIcon);
             
             if (item.locked) wrapper.classList.add('locked-item');
@@ -391,7 +411,9 @@ export function renderGrid(containerEl, items, options = {}) {
             containerEl.appendChild(wrapper);
         }
     }
-    containerEl.style.gridTemplateRows = `repeat(${Math.max(10, maxRow)}, var(--grid-cell-size))`;
+
+    // Call the new, reusable function to set the grid's visual properties.
+    updateGridGeometry(containerEl);
 }
 
 

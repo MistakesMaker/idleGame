@@ -1644,7 +1644,34 @@ function startNewMonster() {
     function main() {
         elements = ui.initDOMElements();
         initSounds(); // Initialize the sound manager
-        
+          const gridContainersToObserve = [
+        elements.inventorySlotsEl,
+        elements.gemSlotsEl,
+        elements.consumablesSlotsEl,
+        elements.forgeInventorySlotsEl,
+        elements.prestigeInventoryDisplay
+    ];
+
+    const gridResizeObserver = new ResizeObserver(entries => {
+        // Use requestAnimationFrame to avoid common errors and ensure the update is smooth.
+        window.requestAnimationFrame(() => {
+            if (!Array.isArray(entries) || !entries.length) {
+                return;
+            }
+            // Re-calculate the geometry for any grid that was resized.
+            for (const entry of entries) {
+                ui.updateGridGeometry(/** @type {HTMLElement} */ (entry.target));
+            }
+        });
+    });
+
+    // Tell the observer which elements to watch.
+    gridContainersToObserve.forEach(container => {
+        if (container) {
+            gridResizeObserver.observe(container);
+        }
+    });
+    // --- END: Instant Grid Resizing Logic ---
         const savedData = localStorage.getItem('idleRPGSaveData');
         if (savedData) {
             let loadedState = JSON.parse(savedData);
