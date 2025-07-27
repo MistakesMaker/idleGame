@@ -103,7 +103,7 @@ export const REALMS = [
                     // --- Sub-Zone: Pit Lord's Arena (Boss Lvl 375) ---
                     "pit_lord_arena": { name: "Pit Lord's Arena", levelRange: [375, 375], monsterPool: [MONSTERS.PIT_FIEND], coords: {top: '20%', left: '50%'}, isBoss: true, icon: 'images/icons/pit_lord_arena.png' },
                     // --- Sub-Zone: Throne Approach (Levels 376-399) ---
-                    "throne_approach": { name: "Throne Approach", levelRange: [376, 399], monsterPool: [MONSTERS.CHAOS_DEMON, MONSTERS.PIT_FIEND], coords: {top: '40%', left: '25%'}, icon: 'images/icons/throne_approach.png' },
+                    "throne_approach": { name: "Throne Approach", levelRange: [376, 399], monsterPool: [MONSTERS.CHAOS_DEMON, MONSTERS.SUCCUBUS], coords: {top: '40%', left: '25%'}, icon: 'images/icons/throne_approach.png' },
                     // --- Sub-Zone: Archdemon's Lair (Boss Lvl 400) ---
                     "archdemon_lair": { name: "Archdemon's Lair", levelRange: [400, 400], monsterPool: [MONSTERS.ARCHDEMON_OVERLORD], coords: {top: '85%', left: '45%'}, isBoss: true, icon: 'images/icons/archdemon_lair.png' }
                 }
