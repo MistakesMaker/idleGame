@@ -652,6 +652,19 @@ export function updateLootPanel(elements, currentMonster, gameState) {
             const entryDiv = document.createElement('div');
             entryDiv.className = 'loot-table-entry';
             entryDiv.dataset.lootIndex = index.toString();
+            
+            // --- START OF MODIFICATION ---
+            // Check if the unique consumable has been used and apply the 'obtained' class.
+            const itemId = entry.item.id;
+            const isObtained = 
+                (itemId === 'WISDOM_OF_THE_OVERWORLD' && gameState.wisdomOfTheOverworldUsed) ||
+                (itemId === 'WISDOM_OF_THE_UNDERDARK' && gameState.wisdomOfTheUnderdarkUsed);
+
+            if (isObtained) {
+                entryDiv.classList.add('obtained');
+            }
+            // --- END OF MODIFICATION ---
+
             entryDiv.innerHTML = `<img src="${entry.item.icon}" class="loot-item-icon" alt="${entry.item.name}"><div class="loot-item-details"><div class="item-name">${entry.item.name}</div><div class="drop-chance">${itemChance.toFixed(2)}% chance</div></div>`;
             lootTableDisplayEl.appendChild(entryDiv);
         });
