@@ -127,7 +127,9 @@ const numberAbbreviations = ['K', 'M', 'B', 'T', 'Qa', 'Qi', 'Sx', 'Sp', 'Oc', '
  * @returns {string} The formatted number string.
  */
 export function formatNumber(num) {
-    if (num < 1000) {
+    // START OF MODIFICATION
+    if (Math.abs(num) < 1000) {
+    // END OF MODIFICATION
         return Math.floor(num).toString();
     }
     const tier = Math.floor(Math.log10(Math.abs(num)) / 3);

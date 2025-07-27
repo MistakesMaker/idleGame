@@ -514,9 +514,13 @@ export function updateStatsPanel(elements, playerStats) {
     clickDamageStatEl.className = `currency-tier-${clickTier}`;
     clickDamageStatEl.textContent = formatNumber(playerStats.totalClickDamage);
 
-    bonusGoldStatEl.textContent = `${playerStats.bonusGold.toFixed(2)}%`;
-    magicFindStatEl.textContent = `${playerStats.magicFind.toFixed(2)}%`;
+    // --- START OF MODIFICATION ---
+    // Use formatNumber for large percentages, but keep decimals for smaller ones.
+    bonusGoldStatEl.textContent = `${playerStats.bonusGold >= 1000 ? formatNumber(playerStats.bonusGold) : playerStats.bonusGold.toFixed(2)}%`;
+    magicFindStatEl.textContent = `${playerStats.magicFind >= 1000 ? formatNumber(playerStats.magicFind) : playerStats.magicFind.toFixed(2)}%`;
+    // --- END OF MODIFICATION ---
 }
+
 
 
 /**
@@ -982,7 +986,11 @@ function createDetailedItemStatBlockHTML(item) {
             const statInfo = Object.values(STATS).find(s => s.key === statKey) || { name: statKey, type: 'flat' };
             const statName = statInfo.name;
             const value = item.stats[statKey];
-            const statValue = statInfo.type === 'percent' ? `${value.toFixed(2)}%` : formatNumber(value);
+
+            // --- THIS IS THE FIX ---
+            const statValue = statInfo.type === 'percent' ? `${value >= 1000 ? formatNumber(value) : value.toFixed(2)}%` : formatNumber(value);
+            // --- END OF FIX ---
+
             statsHTML += `<li>+ ${statValue} ${statName}</li>`;
         }
     }
@@ -1003,7 +1011,9 @@ function createDetailedItemStatBlockHTML(item) {
                          const statInfo = Object.values(STATS).find(s => s.key === statKey) || { name: statKey, type: 'flat' };
                          const statName = statInfo.name;
                          const value = gem.stats[statKey];
-                         const statValue = statInfo.type === 'percent' ? `${value.toFixed(2)}%` : formatNumber(value);
+                         // --- THIS IS THE FIX (for gems inside items) ---
+                         const statValue = statInfo.type === 'percent' ? `${value >= 1000 ? formatNumber(value) : value.toFixed(2)}%` : formatNumber(value);
+                         // --- END OF FIX ---
                          gemsHTML += `<li>+ ${statValue} ${statName}</li>`;
                     }
                 }
@@ -1092,7 +1102,7 @@ export function createItemComparisonTooltipHTML(hoveredItem, equippedItem, equip
     const itemTypeString = `${hoveredItem.rarity.charAt(0).toUpperCase() + hoveredItem.rarity.slice(1)} ${hoveredItem.type.charAt(0).toUpperCase() + hoveredItem.type.slice(1)}`;
     html += `
         <div class="tooltip-subheader">
-            <span>${itemTypeString}</span> 
+            <span>${itemTypeString}</span> 
             <span class="tooltip-shift-hint">Hold [SHIFT] for blueprint</span>
         </div>
     `;
@@ -1126,12 +1136,14 @@ export function createItemComparisonTooltipHTML(hoveredItem, equippedItem, equip
             if (equippedItem && Math.abs(diff) > 0.001) {
                 const diffClass = diff > 0 ? 'stat-better' : 'stat-worse';
                 const sign = diff > 0 ? '+' : '';
-                const diffStr = isPercent ? `${diff.toFixed(2)}%` : formatNumber(diff);
-                diffSpan = ` <span class="${diffClass}">(${sign}${diffStr})</span>`;
+                const diffStr = isPercent ? `${Math.abs(diff) >= 1000 ? formatNumber(diff) : diff.toFixed(2)}%` : formatNumber(diff);
+                diffSpan = ` <span class="${diffClass}">(${sign}${diffStr.startsWith('-') ? '' : ''}${diffStr})</span>`;
             }
             
             if (hoveredValue > 0 || (equippedItem && diff !== 0)) {
-                const valueStr = isPercent ? `${hoveredValue.toFixed(2)}%` : formatNumber(hoveredValue);
+                // --- THIS IS THE FIX ---
+                const valueStr = isPercent ? `${hoveredValue >= 1000 ? formatNumber(hoveredValue) : hoveredValue.toFixed(2)}%` : formatNumber(hoveredValue);
+                // --- END OF FIX ---
                 const displayStr = hoveredValue > 0 ? `+ ${valueStr} ` : '';
                 statListHtml += `<li>${displayStr}${statInfo.name}${diffSpan}</li>`;
             }
@@ -1151,13 +1163,12 @@ export function createItemComparisonTooltipHTML(hoveredItem, equippedItem, equip
 
     return html;
 }
-/**
- * Helper function to create the dual-ring comparison HTML block.
- * @param {object} hoveredItem - The full hovered ring item object.
- * @param {object|null} equippedRing1 - The first equipped ring.
- * @param {object|null} equippedRing2 - The second equipped ring.
- * @returns {string} The HTML string for the comparison.
- */
+
+// --- END OF REPLACEMENT ---
+
+
+// --- START OF REPLACEMENT (Replace the existing createDualRingComparison function) ---
+
 function createDualRingComparison(hoveredItem, equippedRing1, equippedRing2) {
     let html = '<div class="tooltip-ring-comparison">';
     const hoveredCombinedStats = getCombinedItemStats(hoveredItem);
@@ -1185,8 +1196,9 @@ function createDualRingComparison(hoveredItem, equippedRing1, equippedRing2) {
                 if (Math.abs(diff) > 0.001) {
                     const diffClass = diff > 0 ? 'stat-better' : 'stat-worse';
                     const sign = diff > 0 ? '+' : '';
-                    const diffStr = statInfo.type === 'percent' ? `${diff.toFixed(2)}%` : formatNumber(diff);
-                    diffSpan = ` <span class="${diffClass}">(${sign}${diffStr})</span>`;
+                    // --- THIS IS THE FIX ---
+                    const diffStr = statInfo.type === 'percent' ? `${Math.abs(diff) >= 1000 ? formatNumber(diff) : diff.toFixed(2)}%` : formatNumber(diff);
+                    diffSpan = ` <span class="${diffClass}">(${sign}${diffStr.startsWith('-') ? '' : ''}${diffStr})</span>`;
                     statListHtml += `<li>${statInfo.name}${diffSpan}</li>`;
                 }
             };
@@ -1202,8 +1214,6 @@ function createDualRingComparison(hoveredItem, equippedRing1, equippedRing2) {
     return html;
 }
 
-
-
 export function createGemTooltipHTML(gem) {
     const name = gem.name || `T${gem.tier} Gem`;
     const displayName = gem.tier > 1 ? `T${gem.tier} Fused Gem` : name;
@@ -1218,6 +1228,7 @@ export function createGemTooltipHTML(gem) {
             const statInfo = Object.values(STATS).find(s => s.key === statKey);
             const statName = statInfo ? statInfo.name : statKey;
             const value = gem.stats[statKey];
+            // THIS IS THE FIX
             const statValue = statInfo && statInfo.type === 'percent' ? `${value.toFixed(2)}%` : formatNumber(value);
             statsHTML += `<li>+ ${statValue} ${statName}</li>`;
         }
@@ -2277,15 +2288,15 @@ function createWikiItemCardHTML(itemData, isFavorited, comparison) {
 
     let statsHtml = '<ul>';
     
-    // --- START: Reworked Stat Display Logic ---
-    if (comparison) { // "Show Upgrades" view
+    if (comparison) {
+        // ... (Comparison logic remains unchanged) ...
         const allStatKeys = new Set(Object.keys(comparison.diffs));
         itemBase.possibleStats?.forEach(s => allStatKeys.add(s.key));
 
         const sortedStatKeys = Array.from(allStatKeys).sort((a, b) => STAT_DISPLAY_ORDER.indexOf(a) - STAT_DISPLAY_ORDER.indexOf(b));
         
         sortedStatKeys.forEach(statKey => {
-            if (statKey === 'sockets') return; // Handle sockets separately
+            if (statKey === 'sockets') return;
             const statDefinition = Object.values(STATS).find(s => s.key === statKey);
             if (!statDefinition) return;
 
@@ -2300,7 +2311,6 @@ function createWikiItemCardHTML(itemData, isFavorited, comparison) {
             if (potentialStat) {
                 text = `+ ${formatNumber(potentialStat.min)}${valueSuffix} - ${formatNumber(potentialStat.max)}${valueSuffix} ${statName}`;
             } else {
-                // Stat exists on equipped item but not this one, so it's a downgrade
                 text = `(Loses ${statName})`;
             }
             
@@ -2311,8 +2321,6 @@ function createWikiItemCardHTML(itemData, isFavorited, comparison) {
         });
 
     } else { // Normal view
-        // --- START OF FIX ---
-        // Add specific logic for Gems, Consumables, and regular Gear.
         if (GEMS[itemBase.id]) { // It's a gem
             const gem = GEMS[itemBase.id];
             if (gem.stats) {
@@ -2320,7 +2328,16 @@ function createWikiItemCardHTML(itemData, isFavorited, comparison) {
                     const statInfo = Object.values(STATS).find(s => s.key === statKey);
                     const statName = statInfo ? statInfo.name : statKey;
                     const value = gem.stats[statKey];
-                    const statValue = statInfo && statInfo.type === 'percent' ? `${value.toFixed(2)}%` : formatNumber(value);
+                    
+                    // --- THIS IS THE FIX ---
+                    let statValue;
+                    if (statInfo && statInfo.type === 'percent') {
+                        statValue = `${value >= 1000 ? formatNumber(value) : value.toFixed(2)}%`;
+                    } else {
+                        statValue = formatNumber(value);
+                    }
+                    // --- END OF FIX ---
+                    
                     statsHtml += `<li>+ ${statValue} ${statName}</li>`;
                 }
             }
@@ -2328,9 +2345,9 @@ function createWikiItemCardHTML(itemData, isFavorited, comparison) {
                 const synergyPercentage = (gem.synergy.value * 100).toFixed(2);
                 statsHtml += `<li style="margin-top: 8px;"><b>Special:</b> +${synergyPercentage}% of total DPS to Click Dmg</li>`;
             }
-        } else if (itemBase.type === 'consumable' && itemBase.description) { // It's a consumable
+        } else if (itemBase.type === 'consumable' && itemBase.description) {
             statsHtml += `<li>${itemBase.description}</li>`;
-        } else if (itemBase.possibleStats) { // It's regular gear
+        } else if (itemBase.possibleStats) {
             itemBase.possibleStats.forEach(stat => {
                 const statDefinition = Object.values(STATS).find(s => s.key === stat.key);
                 const statName = statDefinition?.name || stat.key;
@@ -2338,7 +2355,6 @@ function createWikiItemCardHTML(itemData, isFavorited, comparison) {
                 statsHtml += `<li>+ ${formatNumber(stat.min)}${valueSuffix} - ${formatNumber(stat.max)}${valueSuffix} ${statName}</li>`;
             });
         }
-        // --- END OF FIX ---
     }
 
     if (itemBase.canHaveSockets && itemBase.maxSockets > 0) {
@@ -2355,8 +2371,7 @@ function createWikiItemCardHTML(itemData, isFavorited, comparison) {
         const effect = UNIQUE_EFFECTS[itemBase.uniqueEffect];
         statsHtml += `<li style="margin-top: 8px;"><b>${effect.name}:</b> ${effect.description}</li>`;
     }
-    // --- END: Reworked Stat Display Logic ---
-
+    
     statsHtml += '</ul>';
 
     let dropsHtml = '<ul>';
@@ -2364,8 +2379,6 @@ function createWikiItemCardHTML(itemData, isFavorited, comparison) {
         const sortedSources = itemData.dropSources.sort((a, b) => a.level - b.level);
         sortedSources.forEach(source => {
             if (source.isHunt) {
-                // Add an icon for hunt sources to ensure proper alignment.
-                // It uses the specific icon if available (like for the shop) or a default hunt icon.
                 const iconSrc = source.monster.image || 'images/icons/hunt_count1.png';
                 dropsHtml += `
                     <li class="wiki-drop-source">
@@ -2878,12 +2891,18 @@ export function showStatBreakdownTooltip(elements, statKey, statBreakdown, gameS
     let html = `<h4>${statInfo.name} Breakdown</h4><ul>`;
     
     data.sources.forEach(source => {
-        // Skip rendering the 'Base' source for damage stats as it's not meaningful to the player
         if ((statKey === 'clickDamage' || statKey === 'dps') && source.label === 'Base') {
             return;
         }
         if (source.value !== 0) {
-            const valueStr = source.isPercent ? `+${source.value.toFixed(2)}%` : `+${formatNumber(source.value)}`;
+            // --- THIS IS THE FIX ---
+            let valueStr;
+            if (source.isPercent) {
+                valueStr = `+${source.value >= 1000 ? formatNumber(source.value) : source.value.toFixed(2)}%`;
+            } else {
+                valueStr = `+${formatNumber(source.value)}`;
+            }
+            // --- END OF FIX ---
             html += `<li>${source.label}: ${valueStr}</li>`;
         }
     });
