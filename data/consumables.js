@@ -48,11 +48,11 @@ export const CONSUMABLES = {
         type: 'consumable',
         icon: 'images/consumables/tome_of_strength.png',
         width: 2, height: 2,
-        description: "A book of forgotten power. Consuming it permanently increases your total Click Damage by 1%.",
+        description: "A book of forgotten power. Consuming it permanently increases your total Click Damage by 5%.",
         effect: {
             type: 'permanentStat',
             key: 'totalClickDamage',
-            value: 1, // Represents +1%
+            value: 5, // Represents +5%
         }
     },
     TOME_OF_AGILITY: {
@@ -61,11 +61,11 @@ export const CONSUMABLES = {
         type: 'consumable',
         icon: 'images/consumables/tome_of_agility.png',
         width: 2, height: 2,
-        description: "A book of forgotten techniques. Consuming it permanently increases your total DPS by 1%.",
+        description: "A book of forgotten techniques. Consuming it permanently increases your total DPS by 5%.",
         effect: {
             type: 'permanentStat',
             key: 'totalDps',
-            value: 1, // Represents +1%
+            value: 5, // Represents +5%
         }
     },
 
@@ -173,12 +173,12 @@ export const CONSUMABLES = {
         type: 'consumable',
         icon: 'images/consumables/magic_find_potion_minor.png',
         width: 1, height: 1,
-        description: "A swirling, iridescent liquid. Increases Magic Find by 10% for 5 minutes.",
+        description: "A swirling, iridescent liquid. Increases Magic Find by 10% for 10 minutes.",
         effect: {
             type: 'timedBuff',
             name: 'Minor Luck',
             stats: { magicFind: 10 },
-            duration: 300 // 5 minutes
+            duration: 600 // 10 minutes
         }
     },
     GEM_SEEKER_DRAFT_MINOR: {
@@ -203,12 +203,12 @@ export const CONSUMABLES = {
         type: 'consumable',
         icon: 'images/consumables/potion_fused_power.png',
         width: 1, height: 1,
-        description: "For 5 minutes, 100% of your total DPS is added to your total Click Damage.",
+        description: "For 15 minutes, 100% of your total DPS is added to your total Click Damage.",
         effect: {
             type: 'timedBuff',
             name: 'Fused Power',
             stats: { dpsToClickDamagePercent: 100 },
-            duration: 300
+            duration: 900 // 15 minutes in seconds
         }
     },
     POTION_GIANTS_STRENGTH: {
@@ -217,12 +217,12 @@ export const CONSUMABLES = {
         type: 'consumable',
         icon: 'images/consumables/potion_giants_strength.png',
         width: 1, height: 1,
-        description: "For 5 minutes, your total Click Damage is increased by 100%.",
+        description: "For 15 minutes, your total Click Damage is increased by 100%.",
         effect: {
             type: 'timedBuff',
             name: "Giant's Strength",
             stats: { bonusClickDamagePercent: 100 },
-            duration: 300
+            duration: 900 // 15 minutes in seconds
         }
     },
     POTION_BOSS_SLAYER: {
@@ -231,12 +231,12 @@ export const CONSUMABLES = {
         type: 'consumable',
         icon: 'images/consumables/potion_boss_slayer.png',
         width: 1, height: 1,
-        description: "For 3 minutes, deal 50% more damage to all Boss-type monsters.",
+        description: "For 15 minutes, deal 200% more damage to all Boss-type monsters.",
         effect: {
             type: 'timedBuff',
             name: "Boss Slayer",
-            stats: { bonusBossDamagePercent: 50 },
-            duration: 180
+            stats: { bonusBossDamagePercent: 200 },
+            duration: 900 // 15 minutes in seconds
         }
     },
     POTION_DEADLY_FOCUS: {
@@ -245,12 +245,12 @@ export const CONSUMABLES = {
         type: 'consumable',
         icon: 'images/consumables/potion_deadly_focus.png',
         width: 1, height: 1,
-        description: "For 2 minutes, increases your Critical Hit Chance by 10% and Critical Hit Damage by 50%.",
+        description: "For 15 minutes, increases your Critical Hit Chance by 30% and Critical Hit Damage by 50%.",
         effect: {
             type: 'timedBuff',
             name: "Deadly Focus",
-            stats: { bonusCritChance: 10, bonusCritDamage: 50 },
-            duration: 120
+            stats: { bonusCritChance: 30, bonusCritDamage: 50 },
+            duration: 900 // 15 minutes in seconds
         }
     },
     POTION_RAGING_AUTOMATON: {
@@ -259,12 +259,12 @@ export const CONSUMABLES = {
         type: 'consumable',
         icon: 'images/consumables/potion_raging_automaton.png',
         width: 1, height: 1,
-        description: "For 1 minute, all of your automatic DPS hits are guaranteed to be critical hits.",
+        description: "For 15 minute, all of your automatic DPS hits are guaranteed to be critical hits.",
         effect: {
             type: 'timedBuff',
             name: "Raging Automaton",
             specialEffect: 'guaranteedDpsCrit',
-            duration: 60
+            duration: 900 // 15 minutes in seconds
         }
     },
     POTION_LIQUID_LUCK: {
@@ -273,12 +273,12 @@ export const CONSUMABLES = {
         type: 'consumable',
         icon: 'images/consumables/potion_liquid_luck.png',
         width: 1, height: 1,
-        description: "For 5 minutes, gain +1000% Gold Gain, +100% Magic Find.",
+        description: "For 15 minutes, gain +1000% Gold Gain, +100% Magic Find.",
         effect: {
             type: 'timedBuff',
             name: "Liquid Luck",
             stats: { bonusGold: 1000, magicFind: 100 },
-            duration: 300
+            duration: 900 // 15 minutes in seconds
         }
     },
 };
