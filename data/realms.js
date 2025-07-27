@@ -136,7 +136,7 @@ export const REALMS = [
                 name: "Fungal Forest",
                 mapImage: "images/backgrounds/sub_zone/map_fungal_zoomed.png",
                 monsterAreaBg: "images/backgrounds/bg_fungal.png",
-                coords: { top: '30%', left: '60%' },
+                coords: { top: '70%', left: '20%' },
                 icon: 'images/icons/fungal_forest.png',
                 subZones: {
                     "spore_meadows": { name: "Spore Meadows", levelRange: [501, 524], monsterPool: [MONSTERS.MYCONID_SPOREKEEPER, MONSTERS.SPORE_BAT, MONSTERS.FUNGAL_HULK], coords: {top: '80%', left: '20%'}, icon: 'images/icons/spore_meadows.png' },
@@ -153,7 +153,7 @@ export const REALMS = [
                 name: "Drow City",
                 mapImage: "images/backgrounds/sub_zone/map_drow_zoomed.png",
                 monsterAreaBg: "images/backgrounds/bg_drow.png",
-                coords: { top: '85%', left: '65%' },
+                coords: { top: '75%', left: '82%' },
                 icon: 'images/icons/drow_city.png',
                 subZones: {
                     "outer_spires": { name: "Outer Spires", levelRange: [601, 624], monsterPool: [MONSTERS.DROW_WARRIOR, MONSTERS.GIANT_CAVE_SPIDER, MONSTERS.DROW_SCOUT], coords: {top: '80%', left: '20%'}, icon: 'images/icons/outer_spires.png' },
@@ -170,7 +170,7 @@ export const REALMS = [
                 name: "Abyssal Rift",
                 mapImage: "images/backgrounds/sub_zone/map_abyss_zoomed.png",
                 monsterAreaBg: "images/backgrounds/bg_abyss.png",
-                coords: { top: '55%', left: '53%' },
+                coords: { top: '60%', left: '52%' },
                 icon: 'images/icons/abyssal_rift.png',
                 subZones: {
                     "chasm_descent": { name: "Chasm Descent", levelRange: [701, 724], monsterPool: [MONSTERS.SHADOW_FIEND, MONSTERS.ABYSSAL_LEECH, MONSTERS.WARPED_SOUL], coords: {top: '80%', left: '20%'}, icon: 'images/icons/chasm_descent.png' },
