@@ -474,16 +474,17 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function handleMonsterDefeated() {
+    // --- START OF FIX (Part 1): Capture the level that was just defeated BEFORE it can be changed. ---
+    const defeatedLevel = gameState.currentFightingLevel;
+    // --- END OF FIX (Part 1) ---
+
     playSound('monster_defeat');
     
-    // NOTE: The Hunts UI update logic was moved from here...
-
-    const oldSubZone = findSubZoneByLevel(gameState.currentFightingLevel);
+    const oldSubZone = findSubZoneByLevel(defeatedLevel);
     const oldRealmIndex = oldSubZone ? REALMS.findIndex(r => Object.values(r.zones).some(z => z === oldSubZone.parentZone)) : -1;
 
     const result = logic.monsterDefeated(gameState, playerStats, currentMonster);
 
-    // ...to here. This ensures the UI is rendered AFTER the gameState (hunt progress) has been updated.
     const huntsModal = document.getElementById('hunts-modal-backdrop');
     if (huntsModal && !huntsModal.classList.contains('hidden')) {
         ui.renderHuntsView(elements, gameState);
@@ -561,14 +562,16 @@ document.addEventListener('DOMContentLoaded', () => {
         refreshGemViewIfActive();
     }
 
-    const wasBossDefeated = isBigBossLevel(gameState.currentFightingLevel) || isBossLevel(gameState.currentFightingLevel);
-    if (wasBossDefeated && gameState.currentFightingLevel === gameState.nextPrestigeLevel) {
+    // --- START OF FIX (Part 2): Use the saved 'defeatedLevel' for the check. ---
+    const wasBossDefeated = isBigBossLevel(defeatedLevel) || isBossLevel(defeatedLevel);
+    if (wasBossDefeated && defeatedLevel === gameState.nextPrestigeLevel) {
         if (!gameState.unlockedFeatures.prestige) {
             gameState.unlockedFeatures.prestige = true;
             logMessage(elements.gameLogEl, '<b>Prestige Unlocked!</b> You can now reset your progress for powerful permanent bonuses.', 'legendary', isAutoScrollingLog);
             ui.updatePrestigeUI(elements, gameState);
         }
     }
+    // --- END OF FIX (Part 2) ---
 
     const levelUpLogs = player.gainXP(gameState, result.xpGained, playerStats.bonusXp);
     if (levelUpLogs.length > 0) {
