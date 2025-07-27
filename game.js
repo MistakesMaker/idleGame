@@ -2501,6 +2501,7 @@ function startNewMonster() {
                             ui.updateActivePresetButton(elements, gameState);
                             break;
                         case 'inventory-view':
+                             ui.updateTabVisibility(gameState); 
                             if (gameState.pendingSubTabViewFlash) {
                                 const subViewToFlash = gameState.pendingSubTabViewFlash;
                                 ui.switchInventorySubView(subViewToFlash);
