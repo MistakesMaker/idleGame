@@ -5,7 +5,7 @@ import { GEMS } from './data/gems.js';
 import { CONSUMABLES } from './data/consumables.js';
 import { STATS } from './data/stat_pools.js';
 import { PERMANENT_UPGRADES } from './data/upgrades.js';
-import { logMessage, formatNumber, getUpgradeCost, findSubZoneByLevel, findFirstLevelOfZone, isBossLevel, isBigBossLevel, getCombinedItemStats, isMiniBossLevel, findNextAvailableSpot, getRandomInt, getTravelOptionsForHunt } from './utils.js';
+import { logMessage, formatNumber, getUpgradeCost, findSubZoneByLevel, findFirstLevelOfZone, isBossLevel, isBigBossLevel, getCombinedItemStats, isMiniBossLevel, findNextAvailableSpot, findEmptySpot, getRandomInt, getTravelOptionsForHunt } from './utils.js';
 import * as ui from './ui.js';
 import { showSimpleTooltip } from './ui.js'; 
 import * as player from './player_actions.js';
@@ -1495,6 +1495,7 @@ function startNewMonster() {
         const sortKey = gemSortPreference;
         const sortedGems = [...gameState.gems]; 
 
+        // 1. Sort the array of gem objects to determine the new visual order.
         sortedGems.sort((a, b) => {
             if (sortKey === 'tier_desc') {
                 return (b.tier || 0) - (a.tier || 0);
@@ -1512,20 +1513,36 @@ function startNewMonster() {
             return valB - valA;
         });
 
-        // The old, incorrect positioning logic has been removed from here.
-        
+        // 2. Re-calculate and assign new grid positions for every gem based on the new order.
+        //    This effectively "compacts" the inventory.
+        const tempPlacementGrid = []; 
+        for (const gem of sortedGems) {
+            const spot = findEmptySpot(gem.width || 1, gem.height || 1, tempPlacementGrid);
+            if (spot) {
+                gem.x = spot.x;
+                gem.y = spot.y;
+                tempPlacementGrid.push(gem); // Add to the temp grid to block space
+            } else {
+                gem.x = -1; // Failsafe
+                gem.y = -1;
+                console.error("Could not find a spot for gem during sort compaction:", gem);
+            }
+        }
+
+        // 3. Update the main game state with the newly ordered and positioned array.
         gameState.gems = sortedGems;
         
-        // This now calls renderGrid and lets IT handle positioning, just like the consumables tab.
+        // 4. Render the grid. `renderGrid` will now use the correct, updated coordinates.
         ui.renderGrid(elements.gemSlotsEl, gameState.gems, {
             type: 'gem',
-            // calculatePositions is no longer needed, renderGrid does it automatically for gems.
             bulkCombineSelection,
             bulkCombineDeselectedIds,
             selectedGemId: selectedGemForSocketing ? selectedGemForSocketing.id : null,
             craftingGemIds: craftingGems.map(g => g.sourceStackId)
         });
     }
+
+
 
     // --- HUNTS LOGIC ---
     function generateNewHunt(indexToReplace) {

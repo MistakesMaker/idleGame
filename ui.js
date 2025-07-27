@@ -326,7 +326,7 @@ export function renderGrid(containerEl, items, options = {}) {
     
     // --- START OF THE FIX ---
     // For stackable types, we ignore saved positions and recalculate them on the fly for a neat grid.
-    const shouldCalculatePositions = type === 'gem' || type === 'consumable';
+    const shouldCalculatePositions = type === 'consumable';
     const tempPlacement = []; // Used for on-the-fly position calculation
     // --- END OF THE FIX ---
 
