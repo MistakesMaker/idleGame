@@ -253,11 +253,11 @@ export const underdarkMonsters = {
     CORRUPTED_DRYAD: {
         name: 'Corrupted Dryad',
         image: 'images/monsters/corrupted_dryad.png',
-        dropChance: 15,
+        dropChance: 35,
         lootTable: [
             { item: ITEMS.GLIMMERWEAVE_ROBES, weight: 1 },
             { item: GEMS.BASE_EMERALD_T4, weight: 0.35 },
-            { item: ITEMS.SHRIEKER_AMULET, weight: 0.15 }, // Rare cross-drop
+            { item: ITEMS.SHRIEKER_AMULET, weight: 2 }, 
         ]
     },
 
@@ -351,10 +351,10 @@ export const underdarkMonsters = {
     SHADOW_STALKER: {
         name: 'Shadow Stalker',
         image: 'images/monsters/shadow_stalker.png',
-        dropChance: 15,
+        dropChance: 23,
         lootTable: [
             { item: ITEMS.SHADOW_SPUN_LEGGINGS, weight: 1 },
-            { item: ITEMS.DROW_ASSASSINS_BLADE, weight: 0.2 }, // Rare cross-drop
+            { item: ITEMS.DROW_ASSASSINS_BLADE, weight: 1 }, // Rare cross-drop
         ]
     },
     PHASE_SPIDER: {
@@ -383,7 +383,7 @@ export const underdarkMonsters = {
     DROW_ELITE_GUARD: {
         name: 'Drow Elite Guard',
         image: 'images/monsters/drow_elite_guard.png',
-        dropChance: 15,
+        dropChance: 37,
         lootTable: [
             { item: ITEMS.OBSIDIAN_PLATEBODY, weight: 1 },
             { item: ITEMS.DROW_CHAINMAIL, weight: 0.2 },
@@ -417,7 +417,10 @@ export const underdarkMonsters = {
         name: 'Spider Swarm',
         image: 'images/monsters/spider_swarm.png',
         dropChance: 15,
-        lootTable: [ { item: ITEMS.SPIDER_CARAPACE_SHIELD, weight: 1 } ]
+        lootTable: [ 
+            { item: ITEMS.SPIDER_CARAPACE_SHIELD, weight: 1 },
+            { item: GEMS.BASE_EMERALD_T4, weight: 0.4 },
+        ]
     },
     DROW_HIGH_PRIESTESS: {
         name: 'Drow High Priestess',
@@ -449,7 +452,7 @@ export const underdarkMonsters = {
     SHADOW_FIEND: {
         name: 'Shadow Fiend',
         image: 'images/monsters/shadow_stalker.png',
-        dropChance: 15,
+        dropChance: 18,
         lootTable: [
             { item: ITEMS.VOIDFORGED_HELM, weight: 1 },
             { item: GEMS.BASE_RUBY_T4, weight: 0.5 },
@@ -458,14 +461,20 @@ export const underdarkMonsters = {
     ABYSSAL_LEECH: {
         name: 'Abyssal Leech',
         image: 'images/monsters/abyssal_leech.png',
-        dropChance: 15,
-        lootTable: [ { item: ITEMS.SHADOW_WEAVE_SASH, weight: 1 } ]
+        dropChance: 18,
+        lootTable: [ 
+            { item: ITEMS.SHADOW_WEAVE_SASH, weight: 1 },
+            { item: GEMS.BASE_TOPAZ_T4, weight: 0.5 },
+         ]
     },
     WARPED_SOUL: {
         name: 'Warped Soul',
         image: 'images/monsters/warped_soul.png',
         dropChance: 15,
-        lootTable: [ { item: ITEMS.RIFT_WARD, weight: 1 } ]
+        lootTable: [ 
+            { item: ITEMS.RIFT_WARD, weight: 1 },
+            { item: GEMS.BASE_SAPPHIRE_T4, weight: 0.5 },
+         ]
     },
 
     // --- Sub-Zone: Demonic Gate (Boss Lvl 725) ---
@@ -494,13 +503,19 @@ export const underdarkMonsters = {
         name: 'Soul Eater',
         image: 'images/monsters/soul_eater.png',
         dropChance: 15,
-        lootTable: [ { item: ITEMS.VOIDFORGED_GREAVES, weight: 1 } ]
+        lootTable: [ 
+            { item: ITEMS.VOIDFORGED_GREAVES, weight: 1 },
+            { item: GEMS.BASE_RUBY_T4, weight: 0.5 },
+         ]
     },
     MIND_SHARD: {
         name: 'Mind Shard',
         image: 'images/monsters/mind_shard.png',
         dropChance: 15,
-        lootTable: [ { item: ITEMS.SOUL_EATER_RING, weight: 1 } ]
+        lootTable: [ 
+            { item: ITEMS.SOUL_EATER_RING, weight: 1 },
+            { item: GEMS.BASE_TOPAZ_T4, weight: 0.5 },
+         ]
     },
 
     // --- Sub-Zone: Balor's Roost (Boss Lvl 750) ---
@@ -519,7 +534,7 @@ export const underdarkMonsters = {
     CHAOS_HOUND: {
         name: 'Chaos Hound',
         image: 'images/monsters/chaos_hound.png',
-        dropChance: 15,
+        dropChance: 13.33,
         lootTable: [ { item: ITEMS.CHAOS_HOUND_COLLAR, weight: 1 } ]
     },
     FLESH_GOLEM: {
@@ -548,16 +563,16 @@ export const underdarkMonsters = {
     RIFT_STALKER: {
         name: 'Rift Stalker',
         image: 'images/monsters/rift_stalker.png',
-        dropChance: 15,
+        dropChance: 13,
         lootTable: [ { item: ITEMS.RIFT_STALKER_CLOAK, weight: 1 } ]
     },
     CHAOS_BEAST: {
         name: 'Chaos Beast',
         image: 'images/monsters/chaos_beast.png',
-        dropChance: 15,
+        dropChance: 42,
         lootTable: [
-            { item: GEMS.BASE_TOPAZ_T4, weight: 0.5 },
-            { item: ITEMS.VOIDFORGED_HELM, weight: 0.2 }, // Rare cross-drop
+            { item: GEMS.BASE_TOPAZ_T4, weight: 13 },
+            { item: ITEMS.VOIDFORGED_HELM, weight: 4 }, 
         ]
     },
     
@@ -566,9 +581,10 @@ export const underdarkMonsters = {
         name: 'Maw of the Abyss',
         image: 'images/monsters/maw_of_the_abyss.png',
         isBoss: true,
-        dropChance: 10,
+        dropChance: 11,
         lootTable: [
             { item: ITEMS.SOULCAGE_AMULET, weight: 1 },
+            { item: ITEMS.RING_OF_DESPAIR, weight: 1 },
             { item: GEMS.BASE_TOPAZ_T5, weight: 7 },
         ]
     }
