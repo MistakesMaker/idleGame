@@ -169,6 +169,21 @@ export function initDOMElements() {
         inventoryLockedSubViewMessage: document.getElementById('inventory-locked-sub-view-message'),
         activeBuffsContainer: document.getElementById('active-buffs-container'),
         resetAttributesBtn: document.getElementById('reset-attributes-btn'),
+        // --- START: New Settings and Volume Elements ---
+        settingsPanel: document.getElementById('settings-panel'),
+        settingsToggleBtn: document.getElementById('settings-toggle-btn'),
+        settingsCloseBtn: document.getElementById('settings-close-btn'),
+        masterVolumeSlider: document.getElementById('master-volume-slider'),
+        masterVolumeValue: document.getElementById('master-volume-value'),
+        masterMuteBtn: document.getElementById('master-mute-btn'),
+        musicVolumeSlider: document.getElementById('music-volume-slider'),
+        musicVolumeValue: document.getElementById('music-volume-value'),
+        musicMuteBtn: document.getElementById('music-mute-btn'),
+        sfxVolumeSlider: document.getElementById('sfx-volume-slider'),
+        sfxVolumeValue: document.getElementById('sfx-volume-value'),
+        sfxMuteBtn: document.getElementById('sfx-mute-btn'),
+        resetGameBtn: document.getElementById('reset-game-btn'),
+        // --- END: New Settings and Volume Elements ---
     };
 }
 
@@ -3489,4 +3504,40 @@ export function showSimpleTooltip(elements, targetEl, text) {
     tooltipEl.classList.remove('hidden'); 
     tooltipEl.style.left = `${rect.left + (rect.width / 2) - (tooltipEl.offsetWidth / 2)}px`;
     tooltipEl.style.top = `${rect.bottom + 5}px`;
+}
+
+// --- START: New Function ---
+/**
+ * Updates the volume sliders and mute buttons in the UI to match the current volume settings.
+ * @param {DOMElements} elements The DOM elements object.
+ * @param {object} volumeSettings The current volume settings from the sound manager.
+ */
+export function updateVolumeSlidersUI(elements, volumeSettings) {
+    const {
+        masterVolumeSlider, masterVolumeValue, masterMuteBtn,
+        musicVolumeSlider, musicVolumeValue, musicMuteBtn,
+        sfxVolumeSlider, sfxVolumeValue, sfxMuteBtn
+    } = elements;
+
+    // Master Volume
+    if (masterVolumeSlider) (/** @type {HTMLInputElement} */(masterVolumeSlider)).value = String(volumeSettings.master * 100);
+    if (masterVolumeValue) masterVolumeValue.textContent = `${Math.round(volumeSettings.master * 100)}%`;
+    
+    // Music Volume
+    if (musicVolumeSlider) (/** @type {HTMLInputElement} */(musicVolumeSlider)).value = String(volumeSettings.music * 100);
+    if (musicVolumeValue) musicVolumeValue.textContent = `${Math.round(volumeSettings.music * 100)}%`;
+    if (musicMuteBtn) {
+        musicMuteBtn.classList.toggle('muted', volumeSettings.music === 0);
+        const icon = musicMuteBtn.querySelector('i');
+        if (icon) icon.className = volumeSettings.music > 0 ? 'fas fa-volume-up' : 'fas fa-volume-mute';
+    }
+
+    // SFX Volume
+    if (sfxVolumeSlider) (/** @type {HTMLInputElement} */(sfxVolumeSlider)).value = String(volumeSettings.sfx * 100);
+    if (sfxVolumeValue) sfxVolumeValue.textContent = `${Math.round(volumeSettings.sfx * 100)}%`;
+    if (sfxMuteBtn) {
+        sfxMuteBtn.classList.toggle('muted', volumeSettings.sfx === 0);
+        const icon = sfxMuteBtn.querySelector('i');
+        if (icon) icon.className = volumeSettings.sfx > 0 ? 'fas fa-volume-up' : 'fas fa-volume-mute';
+    }
 }

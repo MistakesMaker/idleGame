@@ -12,7 +12,7 @@ import * as player from './player_actions.js';
 import * as logic from './game_logic.js';
 import { HUNT_POOLS } from './data/hunts.js';
 import { HUNT_SHOP_INVENTORY } from './data/hunt_shop.js'; 
-import { initSounds, playSound, toggleMute, getMuteState, setRealmMusic } from './sound_manager.js';
+import * as sound_manager from './sound_manager.js';
 
 export const rarities = ['common', 'uncommon', 'rare', 'epic', 'legendary'];
 
@@ -242,7 +242,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (newRealmName !== currentPlayingRealmName) {
             console.log(`Realm changed. Playing music for: ${newRealmName}`);
             currentPlayingRealmName = newRealmName;
-            setRealmMusic(newRealmName);
+            sound_manager.setRealmMusic(newRealmName);
         }
     }
 
@@ -480,7 +480,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const defeatedLevel = gameState.currentFightingLevel;
     // --- END OF FIX (Part 1) ---
 
-    playSound('monster_defeat');
+    sound_manager.playSound('monster_defeat');
     
     const oldSubZone = findSubZoneByLevel(defeatedLevel);
     const oldRealmIndex = oldSubZone ? REALMS.findIndex(r => Object.values(r.zones).some(z => z === oldSubZone.parentZone)) : -1;
@@ -662,7 +662,7 @@ function startNewMonster() {
     if (isCrit) {
         finalDamage *= playerStats.critDamage;
         if (isClick) {
-            playSound('crit_hit');
+            sound_manager.playSound('crit_hit');
         }
     }
     
@@ -723,7 +723,7 @@ function startNewMonster() {
 
     function clickMonster() {
         if (gameState.monster.hp <= 0) return;
-        playSound('monster_hit');
+        sound_manager.playSound('monster_hit');
         attack(playerStats.totalClickDamage, true);
         elements.monsterImageEl.classList.add('monster-hit');
         setTimeout(() => elements.monsterImageEl.classList.remove('monster-hit'), 200);
@@ -775,6 +775,8 @@ function startNewMonster() {
         renderMapAccordion();
         ui.renderPermanentUpgrades(elements, gameState);
         ui.updateActiveBuffsUI(elements, gameState.activeBuffs);
+        // --- NEW: Keep volume UI in sync ---
+        ui.updateVolumeSlidersUI(elements, sound_manager.getVolumeSettings());
     }
 
     function autoSave() {
@@ -800,7 +802,7 @@ function startNewMonster() {
             isResetting = true;
             window.removeEventListener('beforeunload', saveOnExit);
             localStorage.removeItem('idleRPGSaveData');
-            localStorage.removeItem('idleRPG_isMuted'); // Also clear mute preference
+            localStorage.removeItem('idleRPGVolumeSettings'); // Also clear volume settings
             window.location.reload();
         }
     }
@@ -1053,7 +1055,7 @@ function startNewMonster() {
                 gameState.gems = gameState.gems.filter(g => g.id !== gemStackToSocket.id);
             }
             
-            playSound('socket_gem');
+            sound_manager.playSound('socket_gem');
             recalculateStats();
             logMessage(elements.gameLogEl, `Socketed <b>${singleGemToSocket.name}</b> into <b>${itemToSocketInto.name}</b>.`, 'epic', isAutoScrollingLog);
             
@@ -1620,7 +1622,7 @@ function startNewMonster() {
     function handleHuntCompletion() {
         const result = player.completeHunt(gameState);
         if (result.reward) {
-            playSound('hunt_reward');
+            sound_manager.playSound('hunt_reward');
             let logText = `Hunt complete! You received a <span class="legendary">${result.reward.name}</span> and <span style="color: #f1c40f;">${result.tokens} Hunt Tokens</span>!`;
             logMessage(elements.gameLogEl, logText, '', isAutoScrollingLog);
 
@@ -1695,7 +1697,7 @@ function startNewMonster() {
     }
     function main() {
         elements = ui.initDOMElements();
-        initSounds(); // Initialize the sound manager
+        sound_manager.initSounds(); // Initialize the sound manager
           const gridContainersToObserve = [
         elements.inventorySlotsEl,
         elements.gemSlotsEl,
@@ -1924,20 +1926,49 @@ function startNewMonster() {
     // ... This is where the file resumes from the previous response ...
     
     function setupEventListeners() {
-        const muteBtn = document.getElementById('mute-btn');
-        if (muteBtn) {
-            const updateMuteIcon = () => {
-                const icon = muteBtn.querySelector('i');
-                if (icon) {
-                    icon.className = getMuteState() ? 'fas fa-volume-mute' : 'fas fa-volume-up';
-                }
-            };
-            addTapListener(muteBtn, () => {
-                toggleMute();
-                updateMuteIcon();
-            });
-            updateMuteIcon(); // Set initial state
-        }
+        // --- START: New Settings Panel & Volume Control Listeners ---
+        const {
+            settingsPanel, settingsToggleBtn, settingsCloseBtn,
+            masterVolumeSlider, masterVolumeValue, masterMuteBtn,
+            musicVolumeSlider, musicVolumeValue, musicMuteBtn,
+            sfxVolumeSlider, sfxVolumeValue, sfxMuteBtn,
+            resetGameBtn
+        } = elements;
+
+        addTapListener(settingsToggleBtn, () => settingsPanel.classList.add('open'));
+        addTapListener(settingsCloseBtn, () => settingsPanel.classList.remove('open'));
+
+        // Master Volume
+        masterVolumeSlider.addEventListener('input', (e) => {
+            const value = parseFloat((/** @type {HTMLInputElement} */(e.target)).value) / 100;
+            sound_manager.updateVolume('master', value);
+            ui.updateVolumeSlidersUI(elements, sound_manager.getVolumeSettings());
+        });
+
+        // Music Volume
+        musicVolumeSlider.addEventListener('input', (e) => {
+            const value = parseFloat((/** @type {HTMLInputElement} */(e.target)).value) / 100;
+            sound_manager.updateVolume('music', value);
+            ui.updateVolumeSlidersUI(elements, sound_manager.getVolumeSettings());
+        });
+        addTapListener(musicMuteBtn, () => {
+            sound_manager.toggleCategoryMute('music');
+            ui.updateVolumeSlidersUI(elements, sound_manager.getVolumeSettings());
+        });
+
+        // SFX Volume
+        sfxVolumeSlider.addEventListener('input', (e) => {
+            const value = parseFloat((/** @type {HTMLInputElement} */(e.target)).value) / 100;
+            sound_manager.updateVolume('sfx', value);
+            ui.updateVolumeSlidersUI(elements, sound_manager.getVolumeSettings());
+        });
+        addTapListener(sfxMuteBtn, () => {
+            sound_manager.toggleCategoryMute('sfx');
+            ui.updateVolumeSlidersUI(elements, sound_manager.getVolumeSettings());
+        });
+        
+        addTapListener(resetGameBtn, resetGame);
+        // --- END: New Listeners ---
         
         window.addEventListener('beforeunload', saveOnExit);
         window.addEventListener('keydown', (e) => {
@@ -2101,7 +2132,7 @@ function startNewMonster() {
         addTapListener(document.getElementById('confirm-salvage-btn'), () => {
             const result = player.salvageSelectedItems(gameState, salvageMode, playerStats);
             if (result.count > 0) {
-                playSound('salvage');
+                sound_manager.playSound('salvage');
                 logMessage(elements.gameLogEl, `Salvaged ${result.count} items for a total of ${formatNumber(result.scrapGained)} Scrap.`, 'uncommon', isAutoScrollingLog);
                  if (!gameState.unlockedFeatures.forge) {
                     gameState.unlockedFeatures.forge = true;
@@ -2127,7 +2158,7 @@ function startNewMonster() {
             const rarity = e.target.dataset.rarity;
             const result = player.salvageByRarity(gameState, rarity, playerStats);
             if (result.count > 0) {
-                playSound('salvage');
+                sound_manager.playSound('salvage');
                 logMessage(elements.gameLogEl, `Salvaged ${result.count} ${rarity} items for ${formatNumber(result.scrapGained)} Scrap.`, 'uncommon', isAutoScrollingLog);
                 if (!gameState.unlockedFeatures.forge) {
                     gameState.unlockedFeatures.forge = true;
@@ -2531,7 +2562,6 @@ function startNewMonster() {
             elements.offlineProgressModalBackdrop.classList.add('hidden');
         });
 
-        addTapListener(document.getElementById('reset-game-btn'), resetGame);
         addTapListener(elements.modalCloseBtnEl, () => elements.modalBackdropEl.classList.add('hidden'));
         addTapListener(elements.modalBackdropEl, (e) => {
             if (e.target === elements.modalBackdropEl) elements.modalBackdropEl.classList.add('hidden');
@@ -2838,7 +2868,7 @@ function startNewMonster() {
 
             const result = player.buyPermanentUpgrade(gameState, upgradeId);
             if (result.success) {
-                playSound('permanent_upgrade_buy');
+                sound_manager.playSound('permanent_upgrade_buy');
                 logMessage(elements.gameLogEl, `Purchased Level ${result.newLevel} of <b>${PERMANENT_UPGRADES[upgradeId].name}</b>!`, 'epic', isAutoScrollingLog);
                 recalculateStats();
                 ui.renderPermanentUpgrades(elements, gameState);

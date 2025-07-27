@@ -33,8 +33,46 @@ const musicTracks = {
 
 let currentMusicTrack = null;
 let currentTrackName = null;
-let isMuted = false;
 let isInitialized = false;
+
+// --- START MODIFICATION: Volume Settings Management ---
+let volumeSettings = {
+    master: 1.0,
+    music: 0.3,
+    sfx: 0.7,
+    // Store previous non-zero volume for toggling mute
+    _lastMusic: 0.3,
+    _lastSfx: 0.7,
+};
+
+/**
+ * Saves the current volume settings to localStorage.
+ */
+function saveVolumeSettings() {
+    localStorage.setItem('idleRPGVolumeSettings', JSON.stringify(volumeSettings));
+}
+
+/**
+ * Loads volume settings from localStorage or uses defaults.
+ */
+function loadVolumeSettings() {
+    const savedSettings = localStorage.getItem('idleRPGVolumeSettings');
+    if (savedSettings) {
+        try {
+            const parsed = JSON.parse(savedSettings);
+            // Ensure all keys are present and are numbers
+            volumeSettings.master = typeof parsed.master === 'number' ? parsed.master : 1.0;
+            volumeSettings.music = typeof parsed.music === 'number' ? parsed.music : 0.3;
+            volumeSettings.sfx = typeof parsed.sfx === 'number' ? parsed.sfx : 0.7;
+            volumeSettings._lastMusic = typeof parsed._lastMusic === 'number' && parsed._lastMusic > 0 ? parsed._lastMusic : 0.3;
+            volumeSettings._lastSfx = typeof parsed._lastSfx === 'number' && parsed._lastSfx > 0 ? parsed._lastSfx : 0.7;
+
+        } catch (e) {
+            console.error("Failed to parse volume settings, using defaults.", e);
+        }
+    }
+}
+// --- END MODIFICATION ---
 
 /**
  * Initializes the sound manager. Loads mute preference and sets volumes.
@@ -43,34 +81,24 @@ let isInitialized = false;
 export function initSounds() {
     if (isInitialized) return;
 
-    // Load mute preference from localStorage
-    const savedMuteState = localStorage.getItem('idleRPG_isMuted');
-    isMuted = savedMuteState === 'true';
+    // Load volume settings from localStorage
+    loadVolumeSettings();
 
     // Set all music tracks to loop
     for (const key in musicTracks) {
         musicTracks[key].loop = true;
-        musicTracks[key].volume = 0.3; // Set a default volume for music
     }
-
-    // Set volumes for better balancing
-    sounds.monster_hit.volume = 0.4;
-    sounds.crit_hit.volume = 0.6;
-    sounds.monster_defeat.volume = 0.7;
-    sounds.unique_drop.volume = 1.0;
-    sounds.hunt_reward.volume = 1.0;
-    sounds.gem_success.volume = 0.8;
-    sounds.gem_fail.volume = 0.8;
-    sounds.salvage.volume = 0.6;
-    sounds.permanent_upgrade_buy.volume = 0.7;
+    
+    // Create sound pools for high-frequency sounds
     for (const soundName in soundPool) {
         for (let i = 0; i < POOL_SIZE; i++) {
             const clone = sounds[soundName].cloneNode();
             soundPool[soundName].push(clone);
         }
     }
+
     isInitialized = true;
-    console.log("Sound manager initialized. Muted:", isMuted);
+    console.log("Sound manager initialized. Volume settings:", volumeSettings);
 }
 
 /**
@@ -79,39 +107,38 @@ export function initSounds() {
  * @param {string} name The key of the sound to play (e.g., 'monster_hit').
  */
 export function playSound(name) {
-    // --- DEBUGGING LINE ---
-    console.log(`[DEBUG] Attempting to play sound: '${name}'`);
-
-    if (isMuted || !isInitialized) {
-        if (isMuted) console.log('[DEBUG] Sound blocked: Game is muted.');
-        if (!isInitialized) console.log('[DEBUG] Sound blocked: Sound system not initialized.');
+    if (!isInitialized) {
         return;
     }
 
     const masterSound = sounds[name];
     if (!masterSound) {
-        console.warn(`[DEBUG] Sound not found in 'sounds' object: ${name}`);
+        console.warn(`Sound not found in 'sounds' object: ${name}`);
         return;
     }
 
-    // Check if this sound has a dedicated pool
+    // --- START MODIFICATION: Calculate final volume ---
+    const finalVolume = volumeSettings.master * volumeSettings.sfx;
+    if (finalVolume <= 0) {
+        return; // Don't play if volume is zero
+    }
+    // --- END MODIFICATION ---
+
     if (soundPool[name]) {
-    // Use the pool for high-frequency sounds
-    const pool = soundPool[name];
-    let index = poolIndexes[name];
+        const pool = soundPool[name];
+        let index = poolIndexes[name];
 
-    const soundToPlay = pool[index];
-    soundToPlay.currentTime = 0; // Ensure it starts from the beginning
-    soundToPlay.playbackRate = 1 + (Math.random() - 0.5) * 0.3; // Random pitch between 0.95 and 1.05
-    soundToPlay.play().catch(e => { if (e.name !== 'AbortError') console.error(e) });
+        const soundToPlay = pool[index];
+        soundToPlay.currentTime = 0;
+        soundToPlay.volume = finalVolume; // Apply calculated volume
+        soundToPlay.playbackRate = 1 + (Math.random() - 0.5) * 0.3;
+        soundToPlay.play().catch(e => { if (e.name !== 'AbortError') console.error(e); });
 
-    // Move to the next sound in the pool for the next call
-    poolIndexes[name] = (index + 1) % POOL_SIZE;
+        poolIndexes[name] = (index + 1) % POOL_SIZE;
     } else {
-        // For less frequent sounds, a single clone is fine and saves memory.
         const soundClone = masterSound.cloneNode();
-        soundClone.volume = masterSound.volume;
-        soundClone.play().catch(e => { if (e.name !== 'AbortError') console.error(e) });
+        soundClone.volume = finalVolume; // Apply calculated volume
+        soundClone.play().catch(e => { if (e.name !== 'AbortError') console.error(e); });
     }
 }
 
@@ -135,16 +162,17 @@ export function setRealmMusic(realmName) {
     if (!isInitialized) return;
 
     stopMusic();
-    currentTrackName = realmName; // Always remember what should be playing
+    currentTrackName = realmName;
 
-    if (isMuted || !realmName) {
-        return; // Don't play if muted or if realm is null
+    const finalVolume = volumeSettings.master * volumeSettings.music;
+    if (finalVolume <= 0 || !realmName) {
+        return;
     }
 
     const newTrack = musicTracks[realmName];
     if (newTrack) {
         currentMusicTrack = newTrack;
-        // Play is asynchronous and might be interrupted by the browser
+        currentMusicTrack.volume = finalVolume;
         currentMusicTrack.play().catch(error => {
             if (error.name !== 'AbortError') {
                 console.warn(`Could not play music for "${realmName}" yet. Waiting for user interaction.`);
@@ -155,30 +183,64 @@ export function setRealmMusic(realmName) {
     }
 }
 
-/**
- * Toggles the global mute state for all sound effects and saves the preference.
- * @returns {boolean} The new mute state (true if muted, false otherwise).
- */
-export function toggleMute() {
-    if (!isInitialized) return;
-    isMuted = !isMuted;
-    localStorage.setItem('idleRPG_isMuted', String(isMuted));
-    console.log("Sound muted:", isMuted);
+// --- START MODIFICATION: New Volume Control Functions ---
 
-    if (isMuted) {
-        stopMusic();
-    } else {
-        // If we are unmuting, start playing the correct track for the current realm
-        setRealmMusic(currentTrackName);
+/**
+ * Updates a specific volume category, saves it, and applies the change.
+ * @param {'master'|'music'|'sfx'} category The category to update.
+ * @param {number} value The new volume level (0.0 to 1.0).
+ */
+export function updateVolume(category, value) {
+    if (volumeSettings.hasOwnProperty(category)) {
+        volumeSettings[category] = value;
+        // If we are adjusting a category, store this as the last non-zero volume for mute toggling
+        if (value > 0) {
+            if (category === 'music') volumeSettings._lastMusic = value;
+            if (category === 'sfx') volumeSettings._lastSfx = value;
+        }
+        
+        saveVolumeSettings();
+        
+        // Apply the new volume to the currently playing music track
+        if (category === 'master' || category === 'music') {
+            if (currentMusicTrack) {
+                const newMusicVolume = volumeSettings.master * volumeSettings.music;
+                currentMusicTrack.volume = newMusicVolume;
+                // If music was off and now it's on, try to play it
+                if (newMusicVolume > 0 && currentMusicTrack.paused) {
+                    setRealmMusic(currentTrackName);
+                } else if (newMusicVolume <= 0 && !currentMusicTrack.paused) {
+                    stopMusic();
+                }
+            } else if (volumeSettings.master * volumeSettings.music > 0) {
+                // If music was off and we turn it up, start playing it
+                setRealmMusic(currentTrackName);
+            }
+        }
     }
-
-    return isMuted;
 }
 
 /**
- * Gets the current mute state.
- * @returns {boolean} True if muted, false otherwise.
+ * Toggles a category between 0 and its last known non-zero volume.
+ * @param {'music'|'sfx'} category The category to toggle.
  */
-export function getMuteState() {
-    return isMuted;
+export function toggleCategoryMute(category) {
+    if (category === 'music') {
+        const newVolume = volumeSettings.music > 0 ? 0 : volumeSettings._lastMusic;
+        updateVolume('music', newVolume);
+    } else if (category === 'sfx') {
+        const newVolume = volumeSettings.sfx > 0 ? 0 : volumeSettings._lastSfx;
+        updateVolume('sfx', newVolume);
+    }
 }
+
+/**
+ * Gets the current volume settings for the UI.
+ * @returns {object} The volumeSettings object.
+ */
+export function getVolumeSettings() {
+    return { ...volumeSettings };
+}
+
+// The old toggleMute and getMuteState are no longer needed and have been removed.
+// --- END MODIFICATION ---

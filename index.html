@@ -313,7 +313,10 @@
 
         <!-- Actions Panel (Formerly Right Panel) -->
         <div class="panel actions-panel">
-            <h2>Actions</h2>
+            <div class="panel-header">
+                <h2>Actions</h2>
+                <button id="settings-toggle-btn" class="icon-btn"><i class="fas fa-cog"></i></button>
+            </div>
             
             <div id="currency-display">
                 <p><i class="fas fa-coins"></i> <span id="gold-stat" class="currency-tier-0">0</span></p>
@@ -321,7 +324,6 @@
             </div>
 
             <button id="hunts-btn">Hunts</button>
-            <button id="reset-game-btn">Hard Reset</button>
 
             <div id="upgrades-area">
                 <h3>Gold Upgrades</h3>
@@ -363,7 +365,51 @@
              </div>
         </div>
         
-        <button id="mute-btn" class="global-control-btn"><i class="fas fa-volume-up"></i></button>
+        <!-- NEW Settings Panel (Slide-out) -->
+        <div id="settings-panel" class="panel settings-panel">
+            <div class="panel-header">
+                <h3>Settings</h3>
+                <button id="settings-close-btn" class="icon-btn">×</button>
+            </div>
+            <div class="settings-content">
+                <div id="volume-controls">
+                    <h4>Audio</h4>
+                    <!-- Master Volume -->
+                    <div class="volume-slider-group">
+                        <label for="master-volume-slider">Master Volume</label>
+                        <div class="slider-wrapper">
+                            <button id="master-mute-btn" class="mute-toggle-btn"><i class="fas fa-volume-up"></i></button>
+                            <input type="range" id="master-volume-slider" min="0" max="100" value="100">
+                            <span id="master-volume-value">100%</span>
+                        </div>
+                    </div>
+                    <!-- Music Volume -->
+                    <div class="volume-slider-group">
+                        <label for="music-volume-slider">Music Volume</label>
+                        <div class="slider-wrapper">
+                            <button id="music-mute-btn" class="mute-toggle-btn"><i class="fas fa-volume-up"></i></button>
+                            <input type="range" id="music-volume-slider" min="0" max="100" value="30">
+                            <span id="music-volume-value">30%</span>
+                        </div>
+                    </div>
+                    <!-- SFX Volume -->
+                    <div class="volume-slider-group">
+                        <label for="sfx-volume-slider">SFX Volume</label>
+                        <div class="slider-wrapper">
+                            <button id="sfx-mute-btn" class="mute-toggle-btn"><i class="fas fa-volume-up"></i></button>
+                            <input type="range" id="sfx-volume-slider" min="0" max="100" value="70">
+                            <span id="sfx-volume-value">70%</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="other-settings">
+                     <h4>Game</h4>
+                     <button id="reset-game-btn">Hard Reset Game</button>
+                </div>
+            </div>
+        </div>
+
     </div>
     
     <div id="save-indicator" class="hidden"></div>
