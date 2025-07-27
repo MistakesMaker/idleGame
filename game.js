@@ -653,12 +653,10 @@ function startNewMonster() {
     if (isAnyBoss) {
         finalDamage *= playerStats.bossDamageBonus;
     }
-
-    // --- START OF MODIFICATION ---
+    
     const isRagingAutomatonActive = !isClick && gameState.activeBuffs.some(b => b.specialEffect === 'guaranteedDpsCrit');
     const isCrit = isRagingAutomatonActive || (Math.random() * 100 < playerStats.critChance);
-    // --- END OF MODIFICATION ---
-
+    
     if (isCrit) {
         finalDamage *= playerStats.critDamage;
         if (isClick) {
@@ -682,6 +680,43 @@ function startNewMonster() {
             ui.showDpsPopup(elements.popupContainerEl, finalDamage, isCrit, true);
         }
     }
+
+    // --- START: Weaver's Envy Poison Logic ---
+    if (!isClick) { // Only trigger poison on DPS hits
+        let poisonStacks = 0;
+        const equippedSword = gameState.equipment.sword;
+        const swordBase = equippedSword ? ITEMS[equippedSword.baseId] : null;
+        if (swordBase && swordBase.uniqueEffect === 'weaversEnvy') {
+            poisonStacks += 3;
+        }
+        if (gameState.absorbedUniqueEffects && gameState.absorbedUniqueEffects['weaversEnvy']) {
+            poisonStacks += gameState.absorbedUniqueEffects['weaversEnvy'];
+        }
+
+        if (poisonStacks > 0) {
+            const poisonTickDamage = playerStats.totalDps * 0.3333;
+            const totalAnimationTime = 800; // Total ms for all popups
+            const delayBetweenTicks = totalAnimationTime / poisonStacks;
+            const monsterInstanceId = gameState.monster.instanceId;
+
+            for (let i = 0; i < poisonStacks; i++) {
+                setTimeout(() => {
+                    // Safety check: only apply damage if the monster is the same one that was hit and is still alive.
+                    if (gameState.monster.instanceId === monsterInstanceId && gameState.monster.hp > 0) {
+                        gameState.monster.hp -= poisonTickDamage;
+                        ui.showPoisonPopup(elements.popupContainerEl, poisonTickDamage, 0); // Delay is handled by setTimeout
+                        
+                        // Check for defeat after each tick
+                        if (gameState.monster.hp <= 0) {
+                            handleMonsterDefeated();
+                        }
+                        ui.updateMonsterHealthBar(elements, gameState.monster);
+                    }
+                }, i * delayBetweenTicks);
+            }
+        }
+    }
+    // --- END: Weaver's Envy Poison Logic ---
 }
 
     function clickMonster() {
@@ -721,14 +756,17 @@ function startNewMonster() {
     function gameLoop() {
         if (playerStats.totalDps > 0 && gameState.monster.hp > 0) {
             attack(playerStats.totalDps, false);
-            if (gameState.monster.hp <= 0) {
+            if (gameState.monster.hp <= 0 && !gameState.monster.isDefeated) { // Prevent multiple defeat calls
+                gameState.monster.isDefeated = true; // Mark as defeated
                 handleMonsterDefeated();
             }
-            ui.updateMonsterHealthBar(elements, gameState.monster);
+            if (gameState.monster.hp > 0) {
+                ui.updateMonsterHealthBar(elements, gameState.monster);
+            }
         }
         updateActiveBuffs();
     }
-
+    
     function fullUIRender() {
         ui.updateTabVisibility(gameState);
         ui.updateUI(elements, gameState, playerStats, currentMonster, salvageMode, craftingGems, selectedItemForForge, bulkCombineSelection, bulkCombineDeselectedIds);
