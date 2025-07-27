@@ -2874,7 +2874,7 @@ function startNewMonster() {
         });
     }
 
-    function setupSalvageFilterListeners() {
+        function setupSalvageFilterListeners() {
         const {
             enableSalvageFilter,
             filterKeepRarity,

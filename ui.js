@@ -945,7 +945,7 @@ export function updateUI(elements, gameState, playerStats, currentMonster, salva
     });
 
     // Salvage Button Glow
-    filterElements.autoSalvageFilterBtn.classList.toggle('filter-active-glow', filter.enabled);
+    filterElements.autoSalvageFilterBtn.classList.toggle('btn-pressed', filter.enabled);
 }
 
 

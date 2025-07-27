@@ -699,7 +699,13 @@ select option {
 .upgrade-button.disabled .buy-max-btn { background-color: #95a5a6; cursor: not-allowed; }
 .upgrade-button p { margin: 0 0 0.3125rem 0; font-weight: bold; } /* 5px */
 .inventory-actions { display: flex; flex-wrap: wrap; justify-content: space-around; margin-bottom: 0.9375rem; } /* 15px */
-#auto-salvage-filter-btn { background: #8e44ad; border-bottom-color: #733190; }
+#auto-salvage-filter-btn.btn-pressed {
+    background: linear-gradient(145deg, #27ae60, #2ecc71);
+    border-bottom-color: #229954;
+    box-shadow: 0 0 0.5rem #2ecc71; /* 8px */
+    transform: translateY(1px);
+}
+
 
 .buy-max-btn { position: absolute; top: 50%; right: 0.625rem; transform: translateY(-50%); background-color: #f1c40f; color: #1a1a1a; padding: 0.5rem 0.75rem; border-radius: 0.3125rem; font-weight: bold; font-size: 0.875rem; cursor: pointer; transition: background-color 0.2s; } /* 10px, 8px, 12px, 5px, 14px */
 .buy-max-btn:hover { background-color: #f39c12; }
