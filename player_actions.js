@@ -556,9 +556,13 @@ export function combineGems(gameState, gem1, gem2) {
     gameState.scrap -= cost;
 
     let successChance = 0.5;
-     if (gem1.tier <= 4 && gameState.wisdomOfTheOverworldUsed) {
+    // START OF MODIFICATION
+    if (gem1.tier <= 4 && gameState.wisdomOfTheOverworldUsed) {
+        successChance = 0.6;
+    } else if (gem1.tier >= 5 && gem1.tier <= 8 && gameState.wisdomOfTheUnderdarkUsed) {
         successChance = 0.6;
     }
+    // END OF MODIFICATION
 
     if (Math.random() < successChance) {
         // SUCCESS
@@ -640,9 +644,11 @@ export function bulkCombineGems(gameState, tier, selectionKey, excludedIds) {
     let totalCost = 0;
     
     let successChance = 0.5;
+    // START OF MODIFICATION
     if (tier <= 4 && gameState.wisdomOfTheOverworldUsed) {
         successChance = 0.6;
-
+    } else if (tier >= 5 && tier <= 8 && gameState.wisdomOfTheUnderdarkUsed) {
+        successChance = 0.6;
     }
 
     let individualGems = [];

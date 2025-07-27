@@ -2,6 +2,7 @@
 
 import { ITEMS } from '../items.js';
 import { GEMS } from '../gems.js';
+import { CONSUMABLES } from '../consumables.js';
 
 export const underdarkMonsters = {
     // ====================================================================================
@@ -581,10 +582,11 @@ export const underdarkMonsters = {
         name: 'Maw of the Abyss',
         image: 'images/monsters/maw_of_the_abyss.png',
         isBoss: true,
-        dropChance: 11,
+        dropChance: 15,
         lootTable: [
-            { item: ITEMS.SOULCAGE_AMULET, weight: 1 },
-            { item: ITEMS.RING_OF_DESPAIR, weight: 1 },
+            { item: ITEMS.SOULCAGE_AMULET, weight: 2 },
+            { item: ITEMS.RING_OF_DESPAIR, weight: 2 },
+            { item: CONSUMABLES.WISDOM_OF_THE_UNDERDARK, weight: 1 },
             { item: GEMS.BASE_TOPAZ_T5, weight: 7 },
         ]
     }

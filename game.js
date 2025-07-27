@@ -177,6 +177,8 @@ document.addEventListener('DOMContentLoaded', () => {
             // --- NEW PROPERTIES END HERE ---
             wisdomOfTheOverworldDropped: false,
             wisdomOfTheOverworldUsed: false,
+            wisdomOfTheUnderdarkDropped: false,
+            wisdomOfTheUnderdarkUsed: false,
             prestigeCount: 0,
             nextPrestigeLevel: 100,
             specialEncounter: null,
@@ -1767,6 +1769,8 @@ function startNewMonster() {
                 tutorialCompleted: loadedState.tutorialCompleted || false,
                 wisdomOfTheOverworldDropped: loadedState.wisdomOfTheOverworldDropped || false,
                 wisdomOfTheOverworldUsed: loadedState.wisdomOfTheOverworldUsed || false,
+                wisdomOfTheUnderdarkDropped: loadedState.wisdomOfTheUnderdarkDropped || false,
+                wisdomOfTheUnderdarkUsed: loadedState.wisdomOfTheUnderdarkUsed || false,
                 firstKillCompleted: loadedState.firstKillCompleted || false,
                 pendingSubTabViewFlash: loadedState.pendingSubTabViewFlash || null,
                 hunts: {
