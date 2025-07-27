@@ -1398,6 +1398,8 @@ function startNewMonster() {
     }
 
 
+    // --- START OF REPLACEMENT ---
+
     function applyWikiFilters() {
         const highestLevelEverReached = gameState.completedLevels.length > 0 ? Math.max(...gameState.completedLevels) : 0;
         const highestUnlockedRealm = REALMS.slice().reverse().find(realm => highestLevelEverReached >= realm.requiredLevel);
@@ -1406,6 +1408,7 @@ function startNewMonster() {
         let results = [];
     
         if (wikiShowUpgradesOnly) {
+            // ... (The code for "Show Upgrades Only" remains exactly the same) ...
             const potentialUpgrades = [];
             
             const slotsToCheck = new Set();
@@ -1479,59 +1482,66 @@ function startNewMonster() {
     
         const finalFiltered = results.filter(data => {
             const { itemData } = data;
+            const itemBase = itemData.base;
+
+            // --- START OF NEW, CORRECTED LOGIC ---
+            
+            // Filter 1: Accessibility (must always pass)
             const isAccessible = itemData.dropSources.length === 0 || itemData.dropSources.some(source => source.realmIndex <= maxRealmIndex);
             if (!isAccessible) return false;
     
+            // Filter 2: Favorites (must always pass if active)
             if (wikiShowFavorites && !gameState.wikiFavorites.includes(itemData.id)) {
                 return false;
             }
-            if (wikiState.filters.searchText && !itemData.base.name.toLowerCase().includes(wikiState.filters.searchText)) {
+
+            // Filter 3: Search Text (always applies if present)
+            const hasSearchText = wikiState.filters.searchText.length > 0;
+            if (hasSearchText && !itemBase.name.toLowerCase().includes(wikiState.filters.searchText)) {
                 return false;
             }
-            // --- START OF FIX ---
-            // Handle all type filters including the new default "Gear" filter.
-            const filterType = wikiState.filters.type;
-            const itemBase = itemData.base;
 
-            if (filterType === "") { // This is our "Gear" filter
-                // If "Gear" is selected, we must exclude Gems and Consumables.
-                if (GEMS[itemBase.id] || itemBase.type === 'consumable') {
-                    return false;
-                }
-            } else if (filterType === 'Gems') {
-                // If "Gems" is selected, only show items that are gems.
-                if (!GEMS[itemBase.id]) {
-                    return false;
-                }
-            } else if (filterType === 'Consumables') {
-                // If "Consumables" is selected, only show items with the 'consumable' type.
-                if (itemBase.type !== 'consumable') {
-                    return false;
-                }
-            } else if (filterType) {
-                // For any other specific type (e.g., "sword"), do a direct match.
-                if (itemBase.type !== filterType) {
-                    return false;
+            // Filter 4: Type Dropdown (applies differently based on search)
+            const filterType = wikiState.filters.type;
+            
+            // This is the special case: if the user is searching with the default "All Gear" type,
+            // we should NOT filter by type, allowing the search to find anything.
+            const skipTypeFilter = hasSearchText && filterType === "";
+
+            if (!skipTypeFilter) {
+                if (filterType === 'Gems') {
+                    if (!GEMS[itemBase.id]) return false;
+                } else if (filterType === 'Consumables') {
+                    if (itemBase.type !== 'consumable') return false;
+                } else if (filterType) { // A specific gear type like "sword"
+                    if (itemBase.type !== filterType) return false;
+                } else { // The default "All Gear" (value: "") is active and there's no search text
+                    if (GEMS[itemBase.id] || itemBase.type === 'consumable') return false;
                 }
             }
-            // --- END OF FIX ---
+            
+            // --- END OF NEW, CORRECTED LOGIC ---
+
+            // Filter 5: Sockets (must always pass)
             if (wikiState.filters.sockets !== null && (itemData.base.maxSockets || 0) < wikiState.filters.sockets) {
                 return false;
             }
-            for (const [statKey, minValue] of wikiState.filters.stats.entries()) {
-                // Find the specific stat on the item to get its max value.
-                const itemStat = itemData.base.possibleStats?.find(stat => stat.key === statKey);
 
-                // If the item doesn't have the stat, OR its max value is less than the filter's min value, reject it.
+            // Filter 6: Stats (must always pass)
+            for (const [statKey, minValue] of wikiState.filters.stats.entries()) {
+                const itemStat = itemData.base.possibleStats?.find(stat => stat.key === statKey);
                 if (!itemStat || itemStat.max < minValue) {
                     return false;
                 }
             }
+
+            // If all checks passed, keep the item.
             return true;
         });
     
         ui.renderWikiResults(elements.wikiResultsContainer, finalFiltered, gameState.wikiFavorites, wikiShowFavorites, wikiShowUpgradesOnly);
     }
+// --- END OF REPLACEMENT ---
     
     function sortAndRenderGems() {
         const sortKey = gemSortPreference;
