@@ -24,7 +24,7 @@ export const CONSUMABLES = {
         type: 'consumable',
         icon: 'images/consumables/wisdom_of_the_overworld.png',
         width: 2, height: 2,
-        description: "A one-time use scroll from ancient times. When consumed, permanently increases your T1 gems combining success rate from 50% to 60%.",
+        description: "A one-time use scroll from ancient times. When consumed, permanently increases your T1-T4 gems combining success rate from 50% to 60%.",
         effect: {
             type: 'permanentFlag',
             key: 'wisdomOfTheOverworldUsed'

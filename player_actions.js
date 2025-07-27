@@ -556,7 +556,7 @@ export function combineGems(gameState, gem1, gem2) {
     gameState.scrap -= cost;
 
     let successChance = 0.5;
-    if (gem1.tier === 1 && gameState.wisdomOfTheOverworldUsed) {
+     if (gem1.tier <= 4 && gameState.wisdomOfTheOverworldUsed) {
         successChance = 0.6;
     }
 
@@ -640,8 +640,9 @@ export function bulkCombineGems(gameState, tier, selectionKey, excludedIds) {
     let totalCost = 0;
     
     let successChance = 0.5;
-    if (tier === 1 && gameState.wisdomOfTheOverworldUsed) {
+    if (tier <= 4 && gameState.wisdomOfTheOverworldUsed) {
         successChance = 0.6;
+
     }
 
     let individualGems = [];
