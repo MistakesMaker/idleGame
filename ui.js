@@ -1,5 +1,3 @@
-// --- START OF FILE ui.js ---
-
 import { STATS } from './data/stat_pools.js';
 import { getXpForNextLevel, getUpgradeCost, formatNumber, findSubZoneByLevel, getCombinedItemStats, findEmptySpot, findFirstLevelOfZone, formatTime } from './utils.js';
 import { ITEMS } from './data/items.js';
@@ -1511,6 +1509,25 @@ export function showDpsPopup(popupContainerEl, damage, isCrit = false, isMultiSt
     popupContainerEl.appendChild(popup);
     setTimeout(() => popup.remove(), 800);
 }
+
+/**
+ * NEW: Shows a poison damage popup with a delay.
+ * @param {HTMLElement} popupContainerEl
+ * @param {number} damage
+ * @param {number} delay
+ */
+export function showPoisonPopup(popupContainerEl, damage, delay) {
+    setTimeout(() => {
+        const popup = document.createElement('div');
+        popup.textContent = `-${formatNumber(damage)}`;
+        popup.className = 'poison-popup';
+        popup.style.left = `${30 + Math.random() * 40}%`;
+        popup.style.top = `${25 + Math.random() * 20}%`;
+        popupContainerEl.appendChild(popup);
+        setTimeout(() => popup.remove(), 800);
+    }, delay);
+}
+
 
 /**
  * Shows a large informational popup in the monster area (e.g., for special events).

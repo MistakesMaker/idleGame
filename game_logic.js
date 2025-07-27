@@ -563,7 +563,14 @@ export function generateMonster(level, specialEncounter = null) {
     monsterHealth = Math.ceil(monsterHealth);
     
     const newMonster = { name: monsterData.name, data: monsterData };
-    const newMonsterState = { hp: monsterHealth, maxHp: monsterHealth };
+    const newMonsterState = { 
+        hp: monsterHealth, 
+        maxHp: monsterHealth,
+        instanceId: Date.now() + Math.random(), // <-- NEW: Unique ID for this specific monster spawn
+        statusEffects: {
+            poisonStacks: 0
+        }
+    };
     
     return { newMonster, newMonsterState };
 }
