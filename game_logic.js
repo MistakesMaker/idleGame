@@ -193,11 +193,34 @@ export function dropLoot(currentMonster, gameState, playerStats) {
         }
     }
 
+    // Check for the new Underdark scroll and re-roll if needed.
+    if (itemBaseToDrop && itemBaseToDrop.id === 'WISDOM_OF_THE_UNDERDARK' && gameState.wisdomOfTheUnderdarkDropped) {
+        effectiveLootTable = effectiveLootTable.filter(entry => entry.item.id !== 'WISDOM_OF_THE_UNDERDARK');
+        totalWeight = effectiveLootTable.reduce((sum, entry) => sum + entry.weight, 0);
+        
+        if (totalWeight > 0) {
+            roll = Math.random() * totalWeight;
+            itemBaseToDrop = null; // Reset before re-rolling
+            for (const entry of effectiveLootTable) {
+                if (roll < entry.weight) {
+                    itemBaseToDrop = entry.item;
+                    break;
+                }
+                roll -= entry.weight;
+            }
+        } else {
+            itemBaseToDrop = null;
+        }
+    }
+
     if (!itemBaseToDrop) return { droppedItems: [], droppedGems: [], logMessages: [], events: [] };
 
     const isConsumable = itemBaseToDrop.type === 'consumable';
     if (isConsumable && itemBaseToDrop.id === 'WISDOM_OF_THE_OVERWORLD' && !gameState.wisdomOfTheOverworldDropped) {
         gameState.wisdomOfTheOverworldDropped = true;
+    }
+    if (isConsumable && itemBaseToDrop.id === 'WISDOM_OF_THE_UNDERDARK' && !gameState.wisdomOfTheUnderdarkDropped) {
+        gameState.wisdomOfTheUnderdarkDropped = true;
     }
 
     const logMessages = [];

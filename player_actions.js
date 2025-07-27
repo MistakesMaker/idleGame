@@ -556,9 +556,13 @@ export function combineGems(gameState, gem1, gem2) {
     gameState.scrap -= cost;
 
     let successChance = 0.5;
-    if (gem1.tier === 1 && gameState.wisdomOfTheOverworldUsed) {
+    // START OF MODIFICATION
+    if (gem1.tier <= 4 && gameState.wisdomOfTheOverworldUsed) {
+        successChance = 0.6;
+    } else if (gem1.tier >= 5 && gem1.tier <= 8 && gameState.wisdomOfTheUnderdarkUsed) {
         successChance = 0.6;
     }
+    // END OF MODIFICATION
 
     if (Math.random() < successChance) {
         // SUCCESS
@@ -640,7 +644,10 @@ export function bulkCombineGems(gameState, tier, selectionKey, excludedIds) {
     let totalCost = 0;
     
     let successChance = 0.5;
-    if (tier === 1 && gameState.wisdomOfTheOverworldUsed) {
+    // START OF MODIFICATION
+    if (tier <= 4 && gameState.wisdomOfTheOverworldUsed) {
+        successChance = 0.6;
+    } else if (tier >= 5 && tier <= 8 && gameState.wisdomOfTheUnderdarkUsed) {
         successChance = 0.6;
     }
 
@@ -1008,14 +1015,18 @@ export function generateNewHunt(gameState, indexToReplace, huntPools) {
     const tierIndex = huntPools.findIndex(tier => tier.hunts.some(h => h.id === huntTemplate.id));
     const maxTokens = 3 + (tierIndex > -1 ? tierIndex : 0); // Base 3, +1 for each tier index.
     
+    // NEW: Calculate the minimum tokens based on the tier index.
+    const minTokens = 1 + Math.floor((tierIndex > -1 ? tierIndex : 0) / 2);
+    
     const newHunt = {
         ...huntTemplate,
         quantity: quantity,
         rewardId: chosenRewardId,
-        tokenReward: getRandomInt(1, maxTokens), // The actual rolled amount for this specific bounty
+        tokenReward: getRandomInt(minTokens, maxTokens), // The actual rolled amount for this specific bounty
         maxTokens: maxTokens,                   // The potential maximum for this tier
         instanceId: Date.now() + Math.random(),
     };
+    // --- END OF MODIFICATION ---
 
     gameState.hunts.available[indexToReplace] = newHunt;
 }

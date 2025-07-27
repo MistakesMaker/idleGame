@@ -177,6 +177,8 @@ document.addEventListener('DOMContentLoaded', () => {
             // --- NEW PROPERTIES END HERE ---
             wisdomOfTheOverworldDropped: false,
             wisdomOfTheOverworldUsed: false,
+            wisdomOfTheUnderdarkDropped: false,
+            wisdomOfTheUnderdarkUsed: false,
             prestigeCount: 0,
             nextPrestigeLevel: 100,
             specialEncounter: null,
@@ -922,87 +924,89 @@ function startNewMonster() {
     }    
     
     function showSubZoneModal(subZone) {
-    elements.modalTitleEl.textContent = subZone.name;
-    elements.modalBodyEl.innerHTML = '';
-    elements.modalCloseBtnEl.classList.remove('hidden');
+        elements.modalTitleEl.textContent = subZone.name;
+        elements.modalBodyEl.innerHTML = '';
+        elements.modalCloseBtnEl.classList.remove('hidden');
 
-    const startLevel = subZone.levelRange[0];
-    const finalLevel = subZone.levelRange[1];
-    const isSingleLevelZone = startLevel === finalLevel;
+        const startLevel = subZone.levelRange[0];
+        const finalLevel = subZone.levelRange[1];
+        const isSingleLevelZone = startLevel === finalLevel;
 
-    // --- START OF NEW LOGIC ---
-    // First, determine the player's absolute highest progress point for this run.
-    const highestCompletedOverall = gameState.currentRunCompletedLevels.length > 0 ? Math.max(...gameState.currentRunCompletedLevels) : 0;
-    const highestReachedOverall = highestCompletedOverall + 1;
-    const peakSubZone = findSubZoneByLevel(highestReachedOverall);
-    // --- END OF NEW LOGIC ---
+        // First, determine the player's absolute highest progress point for this run.
+        const highestCompletedOverall = gameState.currentRunCompletedLevels.length > 0 ? Math.max(...gameState.currentRunCompletedLevels) : 0;
+        const highestReachedOverall = highestCompletedOverall + 1;
+        const peakSubZone = findSubZoneByLevel(highestReachedOverall);
 
-    const startCombat = (level, isFarming, isContinuingAtPeak) => {
-        gameState.currentFightingLevel = level;
-        gameState.isFarming = isFarming;
-        
-        gameState.isAutoProgressing = isContinuingAtPeak;
+        const startCombat = (level, isFarming, isContinuingAtPeak) => {
+            gameState.currentFightingLevel = level;
+            gameState.isFarming = isFarming;
+            
+            gameState.isAutoProgressing = isContinuingAtPeak;
 
-        const newSubZone = findSubZoneByLevel(gameState.currentFightingLevel);
-        if (newSubZone) {
-            const newRealmIndex = REALMS.findIndex(r => Object.values(r.zones).some(z => z === newSubZone.parentZone));
-            if (newRealmIndex !== -1) {
-                const newZoneId = Object.keys(REALMS[newRealmIndex].zones).find(id => REALMS[newRealmIndex].zones[id] === newSubZone.parentZone);
-                currentViewingRealmIndex = newRealmIndex;
-                currentViewingZoneId = newZoneId || 'world';
-                isMapRenderPending = true;
+            const newSubZone = findSubZoneByLevel(gameState.currentFightingLevel);
+            if (newSubZone) {
+                const newRealmIndex = REALMS.findIndex(r => Object.values(r.zones).some(z => z === newSubZone.parentZone));
+                if (newRealmIndex !== -1) {
+                    const newZoneId = Object.keys(REALMS[newRealmIndex].zones).find(id => REALMS[newRealmIndex].zones[id] === newSubZone.parentZone);
+                    currentViewingRealmIndex = newRealmIndex;
+                    currentViewingZoneId = newZoneId || 'world';
+                    isMapRenderPending = true;
+                }
             }
+
+            logMessage(elements.gameLogEl, `Traveling to level ${level}.`, '', isAutoScrollingLog);
+            elements.modalBackdropEl.classList.add('hidden');
+            startNewMonster();
+
+            ui.updateMonsterUI(elements, gameState, currentMonster);
+            ui.updateLootPanel(elements, currentMonster, gameState);
+            ui.updateAutoProgressToggle(elements, gameState.isAutoProgressing);
+            if (isMapRenderPending) {
+                renderMapAccordion();
+                isMapRenderPending = false;
+            }
+            autoSave();
+            updateRealmMusic();
+        };
+
+        if (isSingleLevelZone) {
+            const bossLevel = startLevel;
+            const fightBossButton = document.createElement('button');
+            fightBossButton.textContent = gameState.completedLevels.includes(bossLevel) ? `Re-fight Boss (Lvl ${bossLevel})` : `Fight Boss (Lvl ${bossLevel})`;
+            addTapListener(fightBossButton, () => startCombat(bossLevel, false, false));
+            elements.modalBodyEl.appendChild(fightBossButton);
+
+        } else {
+            // --- START OF MODIFICATION ---
+            // This is progress *within this specific sub-zone only*.
+            const highestCompletedInThisZone = ui.getHighestCompletedLevelInSubZone(gameState.currentRunCompletedLevels, subZone);
+            
+            const isNewZone = highestCompletedInThisZone < startLevel;
+            const nextLevelToTry = Math.min(highestCompletedInThisZone + 1, finalLevel);
+            const levelToStart = isNewZone ? startLevel : nextLevelToTry;
+
+            // ALWAYS create the "Continue/Start" button.
+            const continueButton = document.createElement('button');
+            continueButton.textContent = isNewZone ? `Start at Lvl ${startLevel}` : `Continue at Lvl ${levelToStart}`;
+            
+            // Determine if auto-progress should be enabled.
+            const isContinuingAtPeak = (peakSubZone === subZone);
+            addTapListener(continueButton, () => startCombat(levelToStart, true, isContinuingAtPeak));
+            elements.modalBodyEl.appendChild(continueButton);
+
+            // ALWAYS show the "Restart" button, UNLESS it's a brand new zone for the player.
+            if (!isNewZone) {
+                const restartButton = document.createElement('button');
+                restartButton.textContent = `Restart at Lvl ${startLevel}`;
+                // Restarting never enables auto-progress.
+                addTapListener(restartButton, () => startCombat(startLevel, true, false));
+                elements.modalBodyEl.appendChild(restartButton);
+            }
+            // --- END OF MODIFICATION ---
         }
 
-        logMessage(elements.gameLogEl, `Traveling to level ${level}.`, '', isAutoScrollingLog);
-        elements.modalBackdropEl.classList.add('hidden');
-        startNewMonster();
-
-        ui.updateMonsterUI(elements, gameState, currentMonster);
-        ui.updateLootPanel(elements, currentMonster, gameState);
-        ui.updateAutoProgressToggle(elements, gameState.isAutoProgressing);
-        if (isMapRenderPending) {
-            renderMapAccordion();
-            isMapRenderPending = false;
-        }
-        autoSave();
-        updateRealmMusic();
-    };
-
-    if (isSingleLevelZone) {
-        const bossLevel = startLevel;
-        const fightBossButton = document.createElement('button');
-        fightBossButton.textContent = gameState.completedLevels.includes(bossLevel) ? `Re-fight Boss (Lvl ${bossLevel})` : `Fight Boss (Lvl ${bossLevel})`;
-        addTapListener(fightBossButton, () => startCombat(bossLevel, false, false));
-        elements.modalBodyEl.appendChild(fightBossButton);
-
-    } else {
-        // This is progress *within this specific sub-zone only*.
-        const highestCompletedInThisZone = ui.getHighestCompletedLevelInSubZone(gameState.currentRunCompletedLevels, subZone);
-        
-        const nextLevelToTry = Math.min(highestCompletedInThisZone + 1, finalLevel);
-        const isNewZone = highestCompletedInThisZone < startLevel;
-        const levelToStart = isNewZone ? startLevel : nextLevelToTry;
-
-        const continueButton = document.createElement('button');
-        continueButton.textContent = isNewZone ? `Start at Lvl ${startLevel}` : `Continue at Lvl ${levelToStart}`;
-        
-        // --- MODIFICATION: The crucial check is now here ---
-        // isContinuingAtPeak is only true if this sub-zone is the player's current peak sub-zone.
-        const isContinuingAtPeak = (peakSubZone === subZone);
-        addTapListener(continueButton, () => startCombat(levelToStart, true, isContinuingAtPeak));
-        elements.modalBodyEl.appendChild(continueButton);
-
-        if (!isNewZone && highestCompletedInThisZone < finalLevel) {
-            const restartButton = document.createElement('button');
-            restartButton.textContent = `Restart at Lvl ${startLevel}`;
-            addTapListener(restartButton, () => startCombat(startLevel, true, false));
-            elements.modalBodyEl.appendChild(restartButton);
-        }
+        elements.modalBackdropEl.classList.remove('hidden');
     }
-
-    elements.modalBackdropEl.classList.remove('hidden');
-}
 
     function showRingSelectionModal(pendingRing) {
         const { ringSelectionModalBackdrop, ringSelectionSlot1, ringSelectionSlot2 } = elements;
@@ -1394,6 +1398,8 @@ function startNewMonster() {
     }
 
 
+    // --- START OF REPLACEMENT ---
+
     function applyWikiFilters() {
         const highestLevelEverReached = gameState.completedLevels.length > 0 ? Math.max(...gameState.completedLevels) : 0;
         const highestUnlockedRealm = REALMS.slice().reverse().find(realm => highestLevelEverReached >= realm.requiredLevel);
@@ -1402,6 +1408,7 @@ function startNewMonster() {
         let results = [];
     
         if (wikiShowUpgradesOnly) {
+            // ... (The code for "Show Upgrades Only" remains exactly the same) ...
             const potentialUpgrades = [];
             
             const slotsToCheck = new Set();
@@ -1475,59 +1482,66 @@ function startNewMonster() {
     
         const finalFiltered = results.filter(data => {
             const { itemData } = data;
+            const itemBase = itemData.base;
+
+            // --- START OF NEW, CORRECTED LOGIC ---
+            
+            // Filter 1: Accessibility (must always pass)
             const isAccessible = itemData.dropSources.length === 0 || itemData.dropSources.some(source => source.realmIndex <= maxRealmIndex);
             if (!isAccessible) return false;
     
+            // Filter 2: Favorites (must always pass if active)
             if (wikiShowFavorites && !gameState.wikiFavorites.includes(itemData.id)) {
                 return false;
             }
-            if (wikiState.filters.searchText && !itemData.base.name.toLowerCase().includes(wikiState.filters.searchText)) {
+
+            // Filter 3: Search Text (always applies if present)
+            const hasSearchText = wikiState.filters.searchText.length > 0;
+            if (hasSearchText && !itemBase.name.toLowerCase().includes(wikiState.filters.searchText)) {
                 return false;
             }
-            // --- START OF FIX ---
-            // Handle all type filters including the new default "Gear" filter.
-            const filterType = wikiState.filters.type;
-            const itemBase = itemData.base;
 
-            if (filterType === "") { // This is our "Gear" filter
-                // If "Gear" is selected, we must exclude Gems and Consumables.
-                if (GEMS[itemBase.id] || itemBase.type === 'consumable') {
-                    return false;
-                }
-            } else if (filterType === 'Gems') {
-                // If "Gems" is selected, only show items that are gems.
-                if (!GEMS[itemBase.id]) {
-                    return false;
-                }
-            } else if (filterType === 'Consumables') {
-                // If "Consumables" is selected, only show items with the 'consumable' type.
-                if (itemBase.type !== 'consumable') {
-                    return false;
-                }
-            } else if (filterType) {
-                // For any other specific type (e.g., "sword"), do a direct match.
-                if (itemBase.type !== filterType) {
-                    return false;
+            // Filter 4: Type Dropdown (applies differently based on search)
+            const filterType = wikiState.filters.type;
+            
+            // This is the special case: if the user is searching with the default "All Gear" type,
+            // we should NOT filter by type, allowing the search to find anything.
+            const skipTypeFilter = hasSearchText && filterType === "";
+
+            if (!skipTypeFilter) {
+                if (filterType === 'Gems') {
+                    if (!GEMS[itemBase.id]) return false;
+                } else if (filterType === 'Consumables') {
+                    if (itemBase.type !== 'consumable') return false;
+                } else if (filterType) { // A specific gear type like "sword"
+                    if (itemBase.type !== filterType) return false;
+                } else { // The default "All Gear" (value: "") is active and there's no search text
+                    if (GEMS[itemBase.id] || itemBase.type === 'consumable') return false;
                 }
             }
-            // --- END OF FIX ---
+            
+            // --- END OF NEW, CORRECTED LOGIC ---
+
+            // Filter 5: Sockets (must always pass)
             if (wikiState.filters.sockets !== null && (itemData.base.maxSockets || 0) < wikiState.filters.sockets) {
                 return false;
             }
-            for (const [statKey, minValue] of wikiState.filters.stats.entries()) {
-                // Find the specific stat on the item to get its max value.
-                const itemStat = itemData.base.possibleStats?.find(stat => stat.key === statKey);
 
-                // If the item doesn't have the stat, OR its max value is less than the filter's min value, reject it.
+            // Filter 6: Stats (must always pass)
+            for (const [statKey, minValue] of wikiState.filters.stats.entries()) {
+                const itemStat = itemData.base.possibleStats?.find(stat => stat.key === statKey);
                 if (!itemStat || itemStat.max < minValue) {
                     return false;
                 }
             }
+
+            // If all checks passed, keep the item.
             return true;
         });
     
         ui.renderWikiResults(elements.wikiResultsContainer, finalFiltered, gameState.wikiFavorites, wikiShowFavorites, wikiShowUpgradesOnly);
     }
+// --- END OF REPLACEMENT ---
     
     function sortAndRenderGems() {
         const sortKey = gemSortPreference;
@@ -1682,7 +1696,34 @@ function startNewMonster() {
     function main() {
         elements = ui.initDOMElements();
         initSounds(); // Initialize the sound manager
-        
+          const gridContainersToObserve = [
+        elements.inventorySlotsEl,
+        elements.gemSlotsEl,
+        elements.consumablesSlotsEl,
+        elements.forgeInventorySlotsEl,
+        elements.prestigeInventoryDisplay
+    ];
+
+    const gridResizeObserver = new ResizeObserver(entries => {
+        // Use requestAnimationFrame to avoid common errors and ensure the update is smooth.
+        window.requestAnimationFrame(() => {
+            if (!Array.isArray(entries) || !entries.length) {
+                return;
+            }
+            // Re-calculate the geometry for any grid that was resized.
+            for (const entry of entries) {
+                ui.updateGridGeometry(/** @type {HTMLElement} */ (entry.target));
+            }
+        });
+    });
+
+    // Tell the observer which elements to watch.
+    gridContainersToObserve.forEach(container => {
+        if (container) {
+            gridResizeObserver.observe(container);
+        }
+    });
+    // --- END: Instant Grid Resizing Logic ---
         const savedData = localStorage.getItem('idleRPGSaveData');
         if (savedData) {
             let loadedState = JSON.parse(savedData);
@@ -1738,6 +1779,8 @@ function startNewMonster() {
                 tutorialCompleted: loadedState.tutorialCompleted || false,
                 wisdomOfTheOverworldDropped: loadedState.wisdomOfTheOverworldDropped || false,
                 wisdomOfTheOverworldUsed: loadedState.wisdomOfTheOverworldUsed || false,
+                wisdomOfTheUnderdarkDropped: loadedState.wisdomOfTheUnderdarkDropped || false,
+                wisdomOfTheUnderdarkUsed: loadedState.wisdomOfTheUnderdarkUsed || false,
                 firstKillCompleted: loadedState.firstKillCompleted || false,
                 pendingSubTabViewFlash: loadedState.pendingSubTabViewFlash || null,
                 hunts: {
@@ -2847,7 +2890,7 @@ function startNewMonster() {
         });
     }
 
-    function setupSalvageFilterListeners() {
+        function setupSalvageFilterListeners() {
         const {
             enableSalvageFilter,
             filterKeepRarity,
