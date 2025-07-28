@@ -3,12 +3,18 @@
     "module": "ESNext",
     "moduleResolution": "node",
     "target": "ESNext",
-    "checkJs": true
+    "checkJs": true,
+    "lib": [
+      "ESNext",
+      "DOM",
+      "DOM.Iterable"
+    ],
+    // This new line is the most direct fix.
+    // It tells TypeScript to NOT automatically include any @types packages it finds.
+    "types": []
   },
   "include": [
-    "**/*.js",
-    "**/*.ts",
-    "types/**/*.d.ts"
+    "**/*.js"
   ],
   "exclude": [
     "node_modules"

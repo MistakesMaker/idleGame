@@ -17,8 +17,8 @@ export const underdarkItems = {
         canHaveSockets: true,
         maxSockets: 1,
         possibleStats: [ 
-            { key: STATS.DPS.key, min: 1, max: 158250 },
-            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 15825 },
+            { key: STATS.DPS.key, min: 1, max: 144883 },
+            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 14064 },
             { key: STATS.GOLD_GAIN.key, min: 1, max: 220 } 
          ]
     },
@@ -32,8 +32,8 @@ export const underdarkItems = {
         maxSockets: 3,
         possibleStats: [ 
             { key: STATS.GOLD_GAIN.key, min: 1, max: 250 },
-            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 53409 },
-            { key: STATS.DPS.key, min: 1, max: 534093 }
+            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 50824 },
+            { key: STATS.DPS.key, min: 1, max: 486774 }
          ]
     },
     FOCAL_GEM_RING: {
@@ -44,7 +44,7 @@ export const underdarkItems = {
         width: 1, height: 1,
         canHaveSockets: true,
         maxSockets: 3,
-        possibleStats: [ { key: STATS.CLICK_DAMAGE.key, min: 1, max: 79125 } ]
+        possibleStats: [ { key: STATS.CLICK_DAMAGE.key, min: 1, max: 80862 } ] // Specialist Bonus Applied
     },
     CRYSTAL_TIPPED_SPEAR: {
         id: 'CRYSTAL_TIPPED_SPEAR',
@@ -55,8 +55,8 @@ export const underdarkItems = {
         canHaveSockets: true,
         maxSockets: 3,
         possibleStats: [ 
-            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 79125 },
-            { key: STATS.DPS.key, min: 1, max: 791250 },
+            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 71228 },
+            { key: STATS.DPS.key, min: 1, max: 715206 },
          ]
     },
 
@@ -70,10 +70,10 @@ export const underdarkItems = {
         isUnique: true,
         canHaveSockets: true,
         maxSockets: 3,
-        possibleStats: [ // Boss Item Bonus (Stats of a Level 435 Item)
+        possibleStats: [ // Boss Item Bonus (Stats of a Level 445 Item)
             { key: STATS.GOLD_GAIN.key, min: 1, max: 480 },
-            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 49921 },
-            { key: STATS.DPS.key, min: 1, max: 499218 },
+            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 81898 },
+            { key: STATS.DPS.key, min: 1, max: 825700 },
         ]
     },
     
@@ -87,8 +87,8 @@ export const underdarkItems = {
         canHaveSockets: true,
         maxSockets: 1,
         possibleStats: [ 
-            { key: STATS.DPS.key, min: 1, max: 549250 },
-            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 54925 } ,
+            { key: STATS.DPS.key, min: 1, max: 501309 },
+            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 53123 } ,
          ]
     },
     ACOLYTES_ROBE: {
@@ -101,7 +101,7 @@ export const underdarkItems = {
         maxSockets: 3,
         possibleStats: [ 
             { key: STATS.GOLD_GAIN.key, min: 1, max: 500 },
-            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 65910 } 
+            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 74900 } // Specialist Bonus Applied
          ]
     },
     RESONANT_AMULET: {
@@ -113,8 +113,8 @@ export const underdarkItems = {
         canHaveSockets: true,
         maxSockets: 3,
         possibleStats: [ 
-            { key: STATS.DPS.key, min: 1, max: 263640 },
-            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 26364 },
+            { key: STATS.DPS.key, min: 1, max: 240409 },
+            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 23640 },
             { key: STATS.GOLD_GAIN.key, min: 1, max: 200 },
          ]
     },
@@ -129,9 +129,9 @@ export const underdarkItems = {
         isUnique: true,
         canHaveSockets: true,
         maxSockets: 3,
-        possibleStats: [ // Boss Item Bonus (Stats of a Level 460 Item)
-            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 126093 },
-            { key: STATS.DPS.key, min: 1, max: 1260937 },
+        possibleStats: [ // Boss Item Bonus (Stats of a Level 470 Item)
+            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 191262 },
+            { key: STATS.DPS.key, min: 1, max: 2056345 },
             { key: STATS.GOLD_GAIN.key, min: 1, max: 600 }
         ]
     },
@@ -155,7 +155,7 @@ export const underdarkItems = {
         width: 2, height: 3,
         canHaveSockets: true,
         maxSockets: 3,
-        possibleStats: [ { key: STATS.DPS.key, min: 1, max: 945500 } ]
+        possibleStats: [ { key: STATS.DPS.key, min: 1, max: 1025066 } ] // Specialist Bonus Applied
     },
     DEEP_GNOME_PICKAXE: {
         id: 'DEEP_GNOME_PICKAXE',
@@ -166,7 +166,7 @@ export const underdarkItems = {
         canHaveSockets: true,
         maxSockets: 1,
         possibleStats: [ 
-            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 118187 },
+            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 107693 },
             { key: STATS.GOLD_GAIN.key, min: 1, max: 800 }
          ]
     },
@@ -181,9 +181,9 @@ export const underdarkItems = {
         isUnique: true,
         canHaveSockets: true,
         maxSockets: 3,
-        possibleStats: [ // Boss Item Bonus (Stats of a Level 485 Item)
-            { key: STATS.DPS.key, min: 1, max: 825187 },
-            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 82518 },
+        possibleStats: [ // Boss Item Bonus (Stats of a Level 495 Item)
+            { key: STATS.DPS.key, min: 1, max: 1246199 },
+            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 125183 },
             { key: STATS.GOLD_GAIN.key, min: 1, max: 800 }
          ]
     },
@@ -199,7 +199,7 @@ export const underdarkItems = {
         maxSockets: 3,
         possibleStats: [ 
             { key: STATS.GOLD_GAIN.key, min: 1, max: 850 },
-            { key: STATS.DPS.key, min: 1, max: 431640 }
+            { key: STATS.DPS.key, min: 1, max: 393962 }
          ]
     },
     LIVING_CRYSTAL_LEGGINGS: {
@@ -211,8 +211,8 @@ export const underdarkItems = {
         canHaveSockets: true,
         maxSockets: 3,
         possibleStats: [ 
-            { key: STATS.DPS.key, min: 1, max: 1095781 },
-            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 109578 },
+            { key: STATS.DPS.key, min: 1, max: 999337 },
+            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 104719 },
          ]
     },
 
@@ -226,9 +226,9 @@ export const underdarkItems = {
         isUnique: true,
         canHaveSockets: true,
         maxSockets: 1,
-        possibleStats: [ // Boss Item Bonus (Stats of a Level 510 Item)
-            { key: STATS.DPS.key, min: 1, max: 550265 },
-            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 55026 },
+        possibleStats: [ // Boss Item Bonus (Stats of a Level 520 Item)
+            { key: STATS.DPS.key, min: 1, max: 818951 },
+            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 85331 },
             { key: STATS.GOLD_GAIN.key, min: 1, max: 750 }
         ]
     },
@@ -236,8 +236,6 @@ export const underdarkItems = {
     // ====================================================================================
     // --- Fungal Forest (Levels 501-600) ---
     // ====================================================================================
-
-    // --- Sub-Zone: Spore Meadows (Levels 501-524) ---
     MYCONID_LEATHER_BELT: {
         id: 'MYCONID_LEATHER_BELT',
         name: "Myconid Leather Belt",
@@ -247,7 +245,7 @@ export const underdarkItems = {
         canHaveSockets: true,
         maxSockets: 1,
         possibleStats: [ 
-            { key: STATS.DPS.key, min: 1, max: 521250 },
+            { key: STATS.DPS.key, min: 1, max: 475510 },
             { key: STATS.GOLD_GAIN.key, min: 1, max: 700 }
          ]
     },
@@ -261,7 +259,7 @@ export const underdarkItems = {
         maxSockets: 3,
         possibleStats: [ 
             { key: STATS.GOLD_GAIN.key, min: 1, max: 800 },
-            { key: STATS.DPS.key, min: 1, max: 1407375 }
+            { key: STATS.DPS.key, min: 1, max: 1283876 }
          ]
     },
     GLOWCAP_RING: {
@@ -273,8 +271,8 @@ export const underdarkItems = {
         canHaveSockets: true,
         maxSockets: 1,
         possibleStats: [ 
-            { key: STATS.DPS.key, min: 1, max: 521250 },
-            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 52125 },
+            { key: STATS.DPS.key, min: 1, max: 237755 },
+            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 23145 },
          ]
     },
     FUNGAL_TIPPED_ARROW: {
@@ -286,11 +284,9 @@ export const underdarkItems = {
         canHaveSockets: true,
         maxSockets: 1,
         possibleStats: [ 
-            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 130312 },
-            { key: STATS.DPS.key, min: 1, max: 1303125 }]
+            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 125139 },
+            { key: STATS.DPS.key, min: 1, max: 1182276 }]
     },
-
-    // --- Sub-Zone: Fungal Guardian (Boss Lvl 525) ---
     MYCONID_KINGS_CROWN: {
         id: 'MYCONID_KINGS_CROWN',
         name: "Myconid King's Crown",
@@ -300,13 +296,11 @@ export const underdarkItems = {
         isUnique: true,
         canHaveSockets: true,
         maxSockets: 3,
-        possibleStats: [ // Boss Item Bonus (Stats of a Level 535 Item)
-            { key: STATS.DPS.key, min: 1, max: 837890 },
-            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 83789 },
+        possibleStats: [ // Boss Item Bonus (Stats of a Level 545 Item)
+            { key: STATS.DPS.key, min: 1, max: 1211108 },
+            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 119842 },
             { key: STATS.GOLD_GAIN.key, min: 1, max: 950 } ]
     },
-
-    // --- Sub-Zone: Mycelial Network (Levels 526-549) ---
     SHRIEKER_AMULET: {
         id: 'SHRIEKER_AMULET',
         name: "Shrieker Amulet",
@@ -315,7 +309,7 @@ export const underdarkItems = {
         width: 2, height: 2,
         canHaveSockets: true,
         maxSockets: 3,
-        possibleStats: [ { key: STATS.CLICK_DAMAGE.key, min: 1, max: 99450 } ]
+        possibleStats: [ { key: STATS.CLICK_DAMAGE.key, min: 1, max: 104085 } ] // Specialist Bonus Applied
     },
     FUNGAL_BARRIER: {
         id: 'FUNGAL_BARRIER',
@@ -326,13 +320,11 @@ export const underdarkItems = {
         canHaveSockets: true,
         maxSockets: 3,
         possibleStats: [ 
-            { key: STATS.DPS.key, min: 1, max: 994500 },
-            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 99450 },
+            { key: STATS.DPS.key, min: 1, max: 907293 },
+            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 92842 },
             { key: STATS.GOLD_GAIN.key, min: 1, max: 900 }       
         ]
     },
-
-    // --- Sub-Zone: Gas Spore Grotto (Boss Lvl 550) ---
     FUNGAL_SPIRE: {
         id: 'FUNGAL_SPIRE',
         name: "Fungal Spire",
@@ -342,14 +334,12 @@ export const underdarkItems = {
         isUnique: true,
         canHaveSockets: true,
         maxSockets: 3,
-        possibleStats: [ // Boss Item Bonus (Stats of a Level 560 Item)
-            { key: STATS.DPS.key, min: 1, max: 2340781 },
+        possibleStats: [ // Boss Item Bonus (Stats of a Level 570 Item)
+            { key: STATS.DPS.key, min: 1, max: 2028682 },
             { key: STATS.GOLD_GAIN.key, min: 1, max: 1200 },
-            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 234078 }
+            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 219717 }
         ]
     },
-
-    // --- Sub-Zone: Shrieking Hollows (Levels 551-574) ---
     GLIMMERWEAVE_ROBES: {
         id: 'GLIMMERWEAVE_ROBES',
         name: "Glimmerweave Robes",
@@ -360,7 +350,7 @@ export const underdarkItems = {
         maxSockets: 3,
         possibleStats: [ 
             { key: STATS.GOLD_GAIN.key, min: 1, max: 1100 },
-            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 153600 }
+            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 172993 } // Specialist Bonus Applied
          ]
     },
     FUNGAL_CRAWLER_RING: {
@@ -372,7 +362,7 @@ export const underdarkItems = {
         canHaveSockets: true,
         maxSockets: 3,
         possibleStats: [
-            { key: STATS.DPS.key, min: 1, max: 768000 },
+            { key: STATS.DPS.key, min: 1, max: 699553 },
             { key: STATS.GOLD_GAIN.key, min: 1, max: 950 }
         ]
     },
@@ -383,13 +373,11 @@ export const underdarkItems = {
         icon: 'images/icons/mind_flayer_circlet.png',
         width: 2, height: 2,
         possibleStats: [ 
-            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 76800 },
-            { key: STATS.DPS.key, min: 1, max: 768000 },
+            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 74673 },
+            { key: STATS.DPS.key, min: 1, max: 700057 },
             { key: STATS.GOLD_GAIN.key, min: 1, max: 900 }
          ]
     },
-
-    // --- Sub-Zone: Mycelial Core (Boss Lvl 575) ---
     TITANS_FUNGAL_HEART: {
         id: 'TITANS_FUNGAL_HEART',
         name: "Titan's Fungal Heart",
@@ -399,14 +387,12 @@ export const underdarkItems = {
         isUnique: true,
         canHaveSockets: true,
         maxSockets: 1,
-        possibleStats: [ // Boss Item Bonus (Stats of a Level 585 Item)
-            { key: STATS.DPS.key, min: 1, max: 1132500 },
-            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 113250 },
+        possibleStats: [ // Boss Item Bonus (Stats of a Level 595 Item)
+            { key: STATS.DPS.key, min: 1, max: 1043743 },
+            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 105652 },
             { key: STATS.GOLD_GAIN.key, min: 1, max: 1300 },
         ]
     },
-
-    // --- Sub-Zone: Heart of the Forest (Levels 576-599) ---
     SPORE_WOLF_PELT: {
         id: 'SPORE_WOLF_PELT',
         name: 'Spore-wolf Pelt',
@@ -415,7 +401,7 @@ export const underdarkItems = {
         width: 2, height: 3,
         canHaveSockets: true,
         maxSockets: 1,
-        possibleStats: [ { key: STATS.DPS.key, min: 1, max: 2048000 } ]
+        possibleStats: [ { key: STATS.DPS.key, min: 1, max: 2362572 } ] // Specialist Bonus Applied
     },
     MANDRAGORA_ROOT: {
         id: 'MANDRAGORA_ROOT',
@@ -426,12 +412,10 @@ export const underdarkItems = {
         canHaveSockets: true,
         maxSockets: 3,
         possibleStats: [ 
-            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 256000 },
+            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 236040 },
             { key: STATS.GOLD_GAIN.key, min: 1, max: 1100 }
          ]
     },
-    
-    // --- Sub-Zone: The Great Fungus (Boss Lvl 600) ---
     GREAT_FUNGUS_HEART: {
         id: 'GREAT_FUNGUS_HEART',
         name: "Great Fungus' Heart",
@@ -441,9 +425,9 @@ export const underdarkItems = {
         width: 2, height: 2,
         canHaveSockets: true,
         maxSockets: 3,
-        possibleStats: [ // Boss Item Bonus (Stats of a Level 610 Item)
-            { key: STATS.DPS.key, min: 1, max: 1544000 },
-            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 154400 },
+        possibleStats: [ // Boss Item Bonus (Stats of a Level 620 Item)
+            { key: STATS.DPS.key, min: 1, max: 1435777 },
+            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 147571 },
             { key: STATS.GOLD_GAIN.key, min: 1, max: 1500 }
          ]
     },
@@ -451,8 +435,6 @@ export const underdarkItems = {
     // ====================================================================================
     // --- Drow City (Levels 601-700) ---
     // ====================================================================================
-    
-    // --- Sub-Zone: Outer Spires (Levels 601-624) ---
     DROW_ASSASSINS_BLADE: {
         id: 'DROW_ASSASSINS_BLADE',
         name: "Drow Assassin's Blade",
@@ -461,7 +443,7 @@ export const underdarkItems = {
         width: 2, height: 3,
         canHaveSockets: true,
         maxSockets: 3,
-        possibleStats: [ { key: STATS.CLICK_DAMAGE.key, min: 1, max: 320000 } ]
+        possibleStats: [ { key: STATS.CLICK_DAMAGE.key, min: 1, max: 367252 } ] // Specialist Bonus Applied
     },
     SPIDERSILK_SASH: {
         id: 'SPIDERSILK_SASH',
@@ -473,8 +455,8 @@ export const underdarkItems = {
         maxSockets: 1,
         possibleStats: [ 
             { key: STATS.GOLD_GAIN.key, min: 1, max: 1200 },
-            { key: STATS.DPS.key, min: 1, max: 1088000 },
-            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 108800 }
+            { key: STATS.DPS.key, min: 1, max: 994665 },
+            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 99343 }
          ]
     },
     DROW_CHAINMAIL: {
@@ -486,12 +468,10 @@ export const underdarkItems = {
         canHaveSockets: true,
         maxSockets: 3,
         possibleStats: [ 
-            { key: STATS.DPS.key, min: 1, max: 2176000 },
+            { key: STATS.DPS.key, min: 1, max: 1989330 },
             { key: STATS.GOLD_GAIN.key, min: 1, max: 1100 }
          ]
     },
-
-    // --- Sub-Zone: Drow Patrol (Boss Lvl 625) ---
     DROW_MATRONS_SIGNET: {
         id: 'DROW_MATRONS_SIGNET',
         name: "Drow Matron's Signet",
@@ -501,13 +481,11 @@ export const underdarkItems = {
         isUnique: true,
         canHaveSockets: true,
         maxSockets: 3,
-        possibleStats: [ // Boss Item Bonus (Stats of a Level 635 Item)
-            { key: STATS.DPS.key, min: 1, max: 1576800 },
-            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 157680 },
+        possibleStats: [ // Boss Item Bonus (Stats of a Level 645 Item)
+            { key: STATS.DPS.key, min: 1, max: 1470710 },
+            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 149488 },
         ]
     },
-
-    // --- Sub-Zone: Webbed Catacombs (Levels 626-649) ---
     SHADOW_SPUN_LEGGINGS: {
         id: 'SHADOW_SPUN_LEGGINGS',
         name: "Shadow-spun Leggings",
@@ -517,8 +495,8 @@ export const underdarkItems = {
         canHaveSockets: true,
         maxSockets: 3,
         possibleStats: [ 
-            { key: STATS.DPS.key, min: 1, max: 2448000 },
-            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 244800 },
+            { key: STATS.DPS.key, min: 1, max: 2232938 },
+            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 222874 },
             { key: STATS.GOLD_GAIN.key, min: 1, max: 1300 }
          ]
     },
@@ -531,7 +509,7 @@ export const underdarkItems = {
         canHaveSockets: true,
         maxSockets: 1,
         possibleStats: [ 
-            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 276480 },
+            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 252190 },
             { key: STATS.GOLD_GAIN.key, min: 1, max: 1400 }
          ]
     },
@@ -545,12 +523,10 @@ export const underdarkItems = {
         maxSockets: 3,
         possibleStats: [ 
             { key: STATS.GOLD_GAIN.key, min: 1, max: 1500 },
-            { key: STATS.DPS.key, min: 1, max: 1382400 },
-            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 138240 }
+            { key: STATS.DPS.key, min: 1, max: 1260950 },
+            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 125191 }
          ]
     },
-
-    // --- Sub-Zone: Drow Barracks (Boss Lvl 650) ---
     LOLTHS_EMBRACE: {
         id: 'LOLTHS_EMBRACE',
         name: "Lolth's Embrace",
@@ -560,13 +536,11 @@ export const underdarkItems = {
         isUnique: true,
         canHaveSockets: true,
         maxSockets: 3,
-        possibleStats: [ // Boss Item Bonus (Stats of a Level 660 Item)
-            { key: STATS.DPS.key, min: 1, max: 3712000 },
-            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 371200 },
+        possibleStats: [ // Boss Item Bonus (Stats of a Level 670 Item)
+            { key: STATS.DPS.key, min: 1, max: 3410714 },
+            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 342411 },
          ]
     },
-
-    // --- Sub-Zone: Noble District (Levels 651-674) ---
     DROW_NOBLE_SIGNET: {
         id: 'DROW_NOBLE_SIGNET',
         name: "Drow Noble Signet",
@@ -585,7 +559,7 @@ export const underdarkItems = {
         width: 2, height: 3,
         canHaveSockets: true,
         maxSockets: 3,
-        possibleStats: [ { key: STATS.DPS.key, min: 1, max: 3072000 } ]
+        possibleStats: [ { key: STATS.DPS.key, min: 1, max: 2800332 } ] // Specialist Bonus Applied
     },
     DROW_SPELLWEAVER_BLADE: {
         id: 'DROW_SPELLWEAVER_BLADE',
@@ -596,12 +570,10 @@ export const underdarkItems = {
         canHaveSockets: true,
         maxSockets: 2,
         possibleStats: [ 
-            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 384000 },
-            { key: STATS.DPS.key, min: 1, max: 3840000 },
+            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 345098 },
+            { key: STATS.DPS.key, min: 1, max: 3504191 },
          ]
     },
-
-    // --- Sub-Zone: House of Shadows (Boss Lvl 675) ---
     DEMONWEAVE_CLOAK: {
         id: 'DEMONWEAVE_CLOAK',
         name: "Demon-Weave Cloak",
@@ -611,14 +583,12 @@ export const underdarkItems = {
         isUnique: true,
         canHaveSockets: true,
         maxSockets: 3,
-        possibleStats: [ // Boss Item Bonus (Stats of a Level 685 Item)
-            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 393000 },
-            { key: STATS.DPS.key, min: 1, max: 3930000 },
+        possibleStats: [ // Boss Item Bonus (Stats of a Level 695 Item)
+            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 360064 },
+            { key: STATS.DPS.key, min: 1, max: 3603417 },
             { key: STATS.GOLD_GAIN.key, min: 1, max: 1800 },
         ]
     },
-
-    // --- Sub-Zone: Matron's Court (Levels 676-699) ---
     SPIDER_CARAPACE_SHIELD: {
         id: 'SPIDER_CARAPACE_SHIELD',
         name: "Spider Carapace Shield",
@@ -628,8 +598,8 @@ export const underdarkItems = {
         canHaveSockets: true,
         maxSockets: 3,
         possibleStats: [ 
-            { key: STATS.DPS.key, min: 1, max: 2736000 },
-            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 273600 }
+            { key: STATS.DPS.key, min: 1, max: 2501064 },
+            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 243916 }
          ]
     },
     HIGH_PRIESTESS_ROBES: {
@@ -642,8 +612,6 @@ export const underdarkItems = {
         maxSockets: 3,
         possibleStats: [ { key: STATS.GOLD_GAIN.key, min: 1, max: 2000 } ]
     },
-
-    // --- Sub-Zone: Spider Queen's Lair (Boss Lvl 700) ---
     THE_WEAVERS_ENVY: {
         id: 'THE_WEAVERS_ENVY',
         name: "The Weaver's Envy",
@@ -654,7 +622,7 @@ export const underdarkItems = {
         uniqueEffect: 'weaversEnvy',
         canHaveSockets: true,
         maxSockets: 3,
-        possibleStats: [ { key: STATS.DPS.key, min: 1, max: 6200000 } ] // Boss Item Bonus (Stats of a Level 710 Item)
+        possibleStats: [ { key: STATS.DPS.key, min: 1, max: 5900593 } ] // Boss Item Bonus (Stats of a Level 720 Item) + Specialist Bonus
     },
 
     // ====================================================================================
@@ -669,8 +637,8 @@ export const underdarkItems = {
         canHaveSockets: true,
         maxSockets: 3,
         possibleStats: [ 
-            { key: STATS.DPS.key, min: 1, max: 3200000 },
-            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 320000 } 
+            { key: STATS.DPS.key, min: 1, max: 2920320 },
+            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 291776 } 
          ]
     },
     VOIDFORGED_GREAVES: {
@@ -682,8 +650,8 @@ export const underdarkItems = {
         canHaveSockets: true,
         maxSockets: 3,
         possibleStats: [ 
-            { key: STATS.DPS.key, min: 1, max: 5440000 },
-            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 544000 },
+            { key: STATS.DPS.key, min: 1, max: 4964544 },
+            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 496019 },
             { key: STATS.GOLD_GAIN.key, min: 1, max: 1800 }
          ]
     },
@@ -695,7 +663,7 @@ export const underdarkItems = {
         width: 2, height: 3,
         canHaveSockets: true,
         maxSockets: 3,
-        possibleStats: [ { key: STATS.DPS.key, min: 1, max: 6400000 } ]
+        possibleStats: [ { key: STATS.DPS.key, min: 1, max: 6736735 } ] // Specialist Bonus Applied
     },
     SHADOW_WEAVE_SASH: {
         id: 'SHADOW_WEAVE_SASH',
@@ -707,8 +675,8 @@ export const underdarkItems = {
         maxSockets: 1,
         possibleStats: [ 
             { key: STATS.GOLD_GAIN.key, min: 1, max: 1700 },
-            { key: STATS.DPS.key, min: 1, max: 3200000 },
-            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 320000 }
+            { key: STATS.DPS.key, min: 1, max: 2920320 },
+            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 291264 }
          ]
     },
     ABYSSAL_EDGE: {
@@ -719,7 +687,7 @@ export const underdarkItems = {
         width: 2, height: 3,
         canHaveSockets: true,
         maxSockets: 3,
-        possibleStats: [ { key: STATS.CLICK_DAMAGE.key, min: 1, max: 800000 } ]
+        possibleStats: [ { key: STATS.CLICK_DAMAGE.key, min: 1, max: 887204 } ] // Specialist Bonus Applied
     },
     RIFT_WARD: {
         id: 'RIFT_WARD',
@@ -730,8 +698,8 @@ export const underdarkItems = {
         canHaveSockets: true,
         maxSockets: 3,
         possibleStats: [ 
-            { key: STATS.DPS.key, min: 1, max: 4160000 },
-            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 416000 },
+            { key: STATS.DPS.key, min: 1, max: 3796416 },
+            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 379555 },
             { key: STATS.GOLD_GAIN.key, min: 1, max: 1600 }
          ]
     },
@@ -744,7 +712,7 @@ export const underdarkItems = {
         canHaveSockets: true,
         maxSockets: 3,
         possibleStats: [ 
-            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 800000 },
+            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 730080 },
             { key: STATS.GOLD_GAIN.key, min: 1, max: 1900 }
          ]
     },
@@ -766,7 +734,7 @@ export const underdarkItems = {
         width: 2, height: 2,
         canHaveSockets: true,
         maxSockets: 1,
-        possibleStats: [ { key: STATS.DPS.key, min: 1, max: 1280000 } ]
+        possibleStats: [ { key: STATS.DPS.key, min: 1, max: 1421443 } ] // Specialist Bonus Applied
     },
     RIFT_STALKER_CLOAK: {
         id: 'RIFT_STALKER_CLOAK',
@@ -777,12 +745,10 @@ export const underdarkItems = {
         canHaveSockets: true,
         maxSockets: 3,
         possibleStats: [
-            { key: STATS.DPS.key, min: 1, max: 8192000 },
-            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 819200 }
+            { key: STATS.DPS.key, min: 1, max: 7464960 },
+            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 745814 }
         ]
     },
-
-    // --- Unique Boss Drops for Abyssal Rift ---
     SOULCAGE_AMULET: {
         id: 'SOULCAGE_AMULET',
         name: "Soul-cage Amulet",
@@ -792,8 +758,8 @@ export const underdarkItems = {
         isUnique: true,
         canHaveSockets: true,
         maxSockets: 1,
-        possibleStats: [ // Boss Item Bonus (Stats of a Level 810 Item)
-            { key: STATS.DPS.key, min: 1, max: 1966080 },
+        possibleStats: [ // Boss Item Bonus (Stats of a Level 820 Item)
+            { key: STATS.DPS.key, min: 1, max: 2187320 },
             { key: STATS.GOLD_GAIN.key, min: 1, max: 2200 }
         ]
     },
@@ -820,9 +786,9 @@ export const underdarkItems = {
         width: 2, height: 3,
         canHaveSockets: true,
         maxSockets: 3,
-        possibleStats: [ // Boss Item Bonus (Stats of a Level 760 Item)
-            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 1080000 },
-            { key: STATS.DPS.key, min: 1, max: 10800000 }
+        possibleStats: [ // Boss Item Bonus (Stats of a Level 780 Item)
+            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 978912 },
+            { key: STATS.DPS.key, min: 1, max: 9840960 }
         ]
     },
     CHAOS_CORE: {
@@ -834,10 +800,10 @@ export const underdarkItems = {
         isUnique: true,
         canHaveSockets: true,
         maxSockets: 1,
-        possibleStats: [ // Boss Item Bonus (Stats of a Level 785 Item)
+        possibleStats: [ // Boss Item Bonus (Stats of a Level 805 Item)
             { key: STATS.GOLD_GAIN.key, min: 1, max: 2400 },
-            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 432000 },
-            { key: STATS.DPS.key, min: 1, max: 4320000 },
+            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 407076 },
+            { key: STATS.DPS.key, min: 1, max: 4035978 },
         ]
     }
 };
