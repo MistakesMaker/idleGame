@@ -1619,18 +1619,35 @@ function startNewMonster() {
         }
     }
 
-    function handleHuntCompletion() {
+    function handleHuntCompletion(buttonElement) {
         const result = player.completeHunt(gameState);
         if (result.reward) {
             sound_manager.playSound('hunt_reward');
             let logText = `Hunt complete! You received a <span class="legendary">${result.reward.name}</span> and <span style="color: #f1c40f;">${result.tokens} Hunt Tokens</span>!`;
             logMessage(elements.gameLogEl, logText, '', isAutoScrollingLog);
 
-            // --- START MODIFICATION ---
+            // --- START OF NEW ANIMATION LOGIC ---
+            if (buttonElement && elements.globalAnimationContainer) {
+                const startRect = buttonElement.getBoundingClientRect();
+                // Animate the consumable reward
+                ui.showRewardAnimation(elements.globalAnimationContainer, result.reward, startRect, 0);
+
+                // Create a temporary object for the token animation
+                const tokenReward = {
+                    name: "Hunt Tokens",
+                    icon: 'images/icons/hunt_token.png',
+                    baseId: 'HUNT_TOKEN' // Use a generic ID
+                };
+                // Animate the tokens with a slight delay/offset
+                setTimeout(() => {
+                    ui.showRewardAnimation(elements.globalAnimationContainer, tokenReward, startRect, 1);
+                }, 150);
+            }
+            // --- END OF NEW ANIMATION LOGIC ---
+            
             if (result.justUnlockedTravel) {
                 logMessage(elements.gameLogEl, `<b>Fast Travel Unlocked!</b> You can now use the 'Travel' button on active bounties.`, 'legendary', isAutoScrollingLog);
             }
-            // --- END MODIFICATION ---
             
             const indexToReplace = gameState.hunts.available.findIndex(h => h === null);
             if (indexToReplace !== -1) {
@@ -1639,12 +1656,10 @@ function startNewMonster() {
             ui.renderHuntsView(elements, gameState);
             ui.updateHuntsButtonGlow(gameState);
             
-            // --- START OF FIX: Always refresh the consumables grid after a hunt ---
             const consumablesView = document.getElementById('inventory-consumables-view');
-            if (consumablesView) { // Check if the element exists
+            if (consumablesView) {
                 ui.renderGrid(elements.consumablesSlotsEl, gameState.consumables, { type: 'consumable', showLockIcon: false });
             }
-            // --- END OF FIX ---
 
             autoSave();
         }
@@ -1929,10 +1944,10 @@ function startNewMonster() {
         // --- START: New Settings Panel & Volume Control Listeners ---
         const {
             settingsPanel, settingsToggleBtn, settingsCloseBtn,
-            masterVolumeSlider, masterVolumeValue, masterMuteBtn,
-            musicVolumeSlider, musicVolumeValue, musicMuteBtn,
-            sfxVolumeSlider, sfxVolumeValue, sfxMuteBtn,
-            resetGameBtn
+            masterVolumeSlider,
+            musicVolumeSlider, musicMuteBtn,
+            sfxVolumeSlider, sfxMuteBtn,
+            resetGameBtn, masterMuteBtn
         } = elements;
 
         addTapListener(settingsToggleBtn, () => settingsPanel.classList.add('open'));
@@ -1945,9 +1960,9 @@ function startNewMonster() {
             ui.updateVolumeSlidersUI(elements, sound_manager.getVolumeSettings());
         });
         addTapListener(masterMuteBtn, () => {
-    sound_manager.toggleCategoryMute('master');
-    ui.updateVolumeSlidersUI(elements, sound_manager.getVolumeSettings());
-});
+            sound_manager.toggleCategoryMute('master');
+            ui.updateVolumeSlidersUI(elements, sound_manager.getVolumeSettings());
+        });
 
         // Music Volume
         musicVolumeSlider.addEventListener('input', (e) => {
@@ -3403,6 +3418,7 @@ function startNewMonster() {
             ui.switchView(elements, 'map-view', gameState);
             recalculateStats();
             startNewMonster();
+            sound_manager.reloadVolumeSettings();
             fullUIRender();
             autoSave();
         });
@@ -3696,7 +3712,7 @@ function startNewMonster() {
         if (!button) return;
 
         if (button.id === 'complete-hunt-btn') {
-            handleHuntCompletion();
+            handleHuntCompletion(button);
         } else if (button.id === 'travel-to-hunt-btn') {
             handleHuntTravel();
         }

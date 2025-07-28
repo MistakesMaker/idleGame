@@ -183,6 +183,7 @@ export function initDOMElements() {
         sfxVolumeValue: document.getElementById('sfx-volume-value'),
         sfxMuteBtn: document.getElementById('sfx-mute-btn'),
         resetGameBtn: document.getElementById('reset-game-btn'),
+        globalAnimationContainer: document.getElementById('global-animation-container'),
         // --- END: New Settings and Volume Elements ---
     };
 }
@@ -1468,16 +1469,19 @@ export function showGoldPopup(popupContainerEl, gold) {
 }
 
 /**
- * Creates a temporary image element and adds it to the monster area to show a visual item drop.
- * @param {HTMLElement} popupContainerEl - The container inside the monster display area.
- * @param {object} item - The dropped item object.
+ * Creates a flexible reward animation from any point on the screen.
+ * @param {HTMLElement} containerEl - The global container for the animation.
+ * @param {object} item - The item object to animate (needs an icon property).
+ * @param {object} startRect - The bounding rectangle of the starting element (e.g., a button or monster).
  * @param {number} [animationIndex=0] - An index to vary the animation for multiple drops.
  */
-export function showItemDropAnimation(popupContainerEl, item, animationIndex = 0) {
-    if (!item || !item.icon) return;
+export function showRewardAnimation(containerEl, item, startRect, animationIndex = 0) {
+    if (!item || !item.icon || !containerEl) return;
 
     const wrapper = document.createElement('div');
     wrapper.className = 'item-drop-wrapper';
+    // --- START OF FIX: Use translateX and translateY for positioning ---
+    wrapper.style.position = 'fixed'; // Use fixed positioning for the global container
 
     const itemImg = document.createElement('img');
     itemImg.src = item.icon;
@@ -1489,28 +1493,48 @@ export function showItemDropAnimation(popupContainerEl, item, animationIndex = 0
         itemImg.classList.add('sparkle-animation');
     }
 
-    const startX = 40 + (Math.random() * 20) + (animationIndex * 15);
-    const startY = 40 + (Math.random() * 20) - (animationIndex * 15);
-    wrapper.style.left = `${startX}%`;
-    wrapper.style.top = `${startY}%`;
+    // Start the animation at the center of the source element
+    const startX = startRect.left + (startRect.width / 2);
+    const startY = startRect.top + (startRect.height / 2);
+    
+    // --- START OF FIX: Correct trajectory math ---
+    const horizontalDirection = (Math.random() - 0.5) * 2; // -1 to 1
+    const peakX = startX + ((100 + Math.random() * 80) * horizontalDirection) + (animationIndex * 20 * horizontalDirection);
+    const peakY = startY - (150 + Math.random() * 50);
+    const endX = peakX + ((100 + Math.random() * 50) * horizontalDirection);
+    const endY = window.innerHeight + 100; // Fly off the bottom of the screen
 
-    const horizontalDirection = Math.random() < 0.5 ? -1 : 1;
-    const peakX = (50 + Math.random() * 50 + (animationIndex * 20)) * horizontalDirection;
-    const peakY = -(150 + Math.random() * 50);
-    const endX = (100 + Math.random() * 50 + (animationIndex * 30)) * horizontalDirection;
-    const endY = 100;
-
+    // Set CSS variables for the keyframes animation
+    wrapper.style.setProperty('--start-x', `${startX}px`);
+    wrapper.style.setProperty('--start-y', `${startY}px`);
     wrapper.style.setProperty('--peak-x', `${peakX}px`);
     wrapper.style.setProperty('--peak-y', `${peakY}px`);
     wrapper.style.setProperty('--end-x', `${endX}px`);
     wrapper.style.setProperty('--end-y', `${endY}px`);
+    // --- END OF FIX ---
 
+    containerEl.appendChild(wrapper);
     wrapper.appendChild(itemImg);
-    popupContainerEl.appendChild(wrapper);
-
+    // The actual animation is now handled by CSS keyframes
+    
     setTimeout(() => {
         wrapper.remove();
     }, 1500);
+}
+
+/**
+ * A wrapper for the new reward animation specifically for monster drops.
+ * @param {HTMLElement} popupContainerEl - The monster's popup container.
+ * @param {object} item - The dropped item object.
+ * @param {number} [animationIndex=0] - An index to vary the animation.
+ */
+export function showItemDropAnimation(popupContainerEl, item, animationIndex = 0) {
+    const monsterImg = document.getElementById('monster-image');
+    const globalContainer = document.getElementById('global-animation-container');
+    if (monsterImg && globalContainer) {
+        const startRect = monsterImg.getBoundingClientRect();
+        showRewardAnimation(globalContainer, item, startRect, animationIndex);
+    }
 }
 
 

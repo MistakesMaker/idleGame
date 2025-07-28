@@ -359,11 +359,12 @@ select option {
 
 
 .item-drop-wrapper {
-    position: absolute;
+    position: fixed; /* Changed from absolute */
     width: 5rem; /* 80px */
     height: 5rem; /* 80px */
-    z-index: 10;
+    z-index: 10006; /* Must be on top of animation container */
     animation: item-drop-path 1.5s ease-out forwards;
+    transform: translate(-50%, -50%); /* Center the wrapper on its coordinates */
 }
 .item-drop-wrapper.boss-unique-drop {
     width: 10rem; /* 160px */
@@ -384,21 +385,30 @@ select option {
 @keyframes float-up { 0% { transform: translateY(0); opacity: 1; } 100% { transform: translateY(-6.25rem); opacity: 0; } } /* 100px */
 @keyframes float-up-poison { 0% { transform: translate(0, 0) scale(0.9); opacity: 1; } 100% { transform: translate(1.25rem, -5rem) scale(1.1); opacity: 0; } } /* 20px, 80px */
 
+/* --- START OF CORRECTED ANIMATION --- */
 @keyframes item-drop-path {
     0% {
-        transform: translate(0, 0) scale(0.5);
+        left: var(--start-x);
+        top: var(--start-y);
+        transform: translate(-50%, -50%) scale(0.5);
         opacity: 1;
     }
     50% {
-        transform: translate(var(--peak-x), var(--peak-y)) scale(1.1);
+        left: var(--peak-x);
+        top: var(--peak-y);
+        transform: translate(-50%, -50%) scale(1.1);
         opacity: 1;
         animation-timing-function: cubic-bezier(0.3, 0, 0.8, 0.2);
     }
     100% {
-        transform: translate(var(--end-x), var(--end-y)) scale(0.8);
+        left: var(--end-x);
+        top: var(--end-y);
+        transform: translate(-50%, -50%) scale(0.8);
         opacity: 0;
     }
 }
+/* --- END OF CORRECTED ANIMATION --- */
+
 @keyframes continuous-spin {
     from { transform: rotate(0deg); }
     to { transform: rotate(720deg); }
@@ -2687,4 +2697,16 @@ input[type="range"]::-moz-range-thumb {
 input[type="range"]:focus::-moz-range-thumb {
     background-color: #f1c40f;
     box-shadow: 0 0 5px #f1c40f;
+}
+
+/* --- Global Animation Layer --- */
+#global-animation-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    pointer-events: none; /* Allows clicks to pass through to elements underneath */
+    z-index: 10005; /* Ensures it's on top of everything, including modals */
+    overflow: hidden;
 }

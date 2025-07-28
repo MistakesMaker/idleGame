@@ -35,15 +35,19 @@ let currentMusicTrack = null;
 let currentTrackName = null;
 let isInitialized = false;
 
-// --- START MODIFICATION: Volume Settings Management ---
+// --- START OF MODIFICATION: Global Volume Cap ---
+// This constant scales all audio. 0.5 means 100% in-game volume is 50% of max hardware volume.
+const GLOBAL_VOLUME_CEILING = 0.2;
+// --- END OF MODIFICATION ---
+
 let volumeSettings = {
-    master: 1.0,
-    music: 0.3,
-    sfx: 0.7,
+    master: 0.5,
+    music: 0.5,
+    sfx: 0.15,
     // Store previous non-zero volume for toggling mute
-    _lastMaster: 1.0,
-    _lastMusic: 0.3,
-    _lastSfx: 0.7,
+    _lastMaster: 0.5,
+    _lastMusic: 0.5,
+    _lastSfx: 0.15,
 };
 
 /**
@@ -62,19 +66,28 @@ function loadVolumeSettings() {
         try {
             const parsed = JSON.parse(savedSettings);
             // Ensure all keys are present and are numbers
-            volumeSettings.master = typeof parsed.master === 'number' ? parsed.master : 1.0;
-            volumeSettings.music = typeof parsed.music === 'number' ? parsed.music : 0.3;
-            volumeSettings.sfx = typeof parsed.sfx === 'number' ? parsed.sfx : 0.7;
-            volumeSettings._lastMaster = typeof parsed._lastMaster === 'number' && parsed._lastMaster > 0 ? parsed._lastMaster : 1.0;
-            volumeSettings._lastMusic = typeof parsed._lastMusic === 'number' && parsed._lastMusic > 0 ? parsed._lastMusic : 0.3;
-            volumeSettings._lastSfx = typeof parsed._lastSfx === 'number' && parsed._lastSfx > 0 ? parsed._lastSfx : 0.7;
+            volumeSettings.master = typeof parsed.master === 'number' ? parsed.master : 0.5;
+            volumeSettings.music = typeof parsed.music === 'number' ? parsed.music : 0.15;
+            volumeSettings.sfx = typeof parsed.sfx === 'number' ? parsed.sfx : 0.35;
+            volumeSettings._lastMaster = typeof parsed._lastMaster === 'number' && parsed._lastMaster > 0 ? parsed._lastMaster : 0.5;
+            volumeSettings._lastMusic = typeof parsed._lastMusic === 'number' && parsed._lastMusic > 0 ? parsed._lastMusic : 0.15;
+            volumeSettings._lastSfx = typeof parsed._lastSfx === 'number' && parsed._lastSfx > 0 ? parsed._lastSfx : 0.35;
 
         } catch (e) {
             console.error("Failed to parse volume settings, using defaults.", e);
         }
     }
 }
-// --- END MODIFICATION ---
+
+/**
+ * Reloads volume settings from localStorage and applies them.
+ * Useful after a full game state reset like Prestige.
+ */
+export function reloadVolumeSettings() {
+    loadVolumeSettings();
+    // Re-apply music volume in case it was playing
+    setRealmMusic(currentTrackName);
+}
 
 /**
  * Initializes the sound manager. Loads mute preference and sets volumes.
@@ -120,7 +133,7 @@ export function playSound(name) {
     }
 
     // --- START MODIFICATION: Calculate final volume ---
-    const finalVolume = volumeSettings.master * volumeSettings.sfx;
+    const finalVolume = volumeSettings.master * volumeSettings.sfx * GLOBAL_VOLUME_CEILING;
     if (finalVolume <= 0) {
         return; // Don't play if volume is zero
     }
@@ -166,7 +179,7 @@ export function setRealmMusic(realmName) {
     stopMusic();
     currentTrackName = realmName;
 
-    const finalVolume = volumeSettings.master * volumeSettings.music;
+    const finalVolume = volumeSettings.master * volumeSettings.music * GLOBAL_VOLUME_CEILING;
     if (finalVolume <= 0 || !realmName) {
         return;
     }
@@ -184,8 +197,6 @@ export function setRealmMusic(realmName) {
         console.warn(`No music track found for realm: ${realmName}`);
     }
 }
-
-// --- START MODIFICATION: New Volume Control Functions ---
 
 /**
  * Updates a specific volume category, saves it, and applies the change.
@@ -207,7 +218,7 @@ export function updateVolume(category, value) {
         // Apply the new volume to the currently playing music track
         if (category === 'master' || category === 'music') {
             if (currentMusicTrack) {
-                const newMusicVolume = volumeSettings.master * volumeSettings.music;
+                const newMusicVolume = volumeSettings.master * volumeSettings.music * GLOBAL_VOLUME_CEILING;
                 currentMusicTrack.volume = newMusicVolume;
                 // If music was off and now it's on, try to play it
                 if (newMusicVolume > 0 && currentMusicTrack.paused) {
@@ -247,6 +258,3 @@ export function toggleCategoryMute(category) {
 export function getVolumeSettings() {
     return { ...volumeSettings };
 }
-
-// The old toggleMute and getMuteState are no longer needed and have been removed.
-// --- END MODIFICATION ---
