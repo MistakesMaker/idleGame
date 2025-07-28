@@ -2580,8 +2580,21 @@ export function updatePrestigeUI(elements, gameState) {
                     `;
                     effectEl.title = `${effectData.description} Click to toggle ON/OFF.`;
                 } else {
-                    const stackText = count > 1 ? ` (x${count})` : '';
-                    effectEl.innerHTML = `<span><i class="fas fa-magic"></i></span><small>Absorbed: ${effectData.name}${stackText}</small>`;
+                    // This new logic builds the correct two-line structure with corrected styling.
+                    let iconHTML = `<i class="fas fa-magic"></i>`; // Default icon
+                    if (effectData.icon) {
+                        iconHTML = `<img src="${effectData.icon}" class="toggle-switch-img" alt="${effectData.name}">`;
+                    }
+
+                    effectEl.innerHTML = `
+                        <span class="prestige-stat-text">
+                            ${iconHTML}
+                            <span style="font-family: 'Segoe UI', sans-serif; font-size: 1.1em; font-weight: normal; margin-left: 0.625rem;">
+                                Stack Count: x${count}
+                            </span>
+                        </span>
+                        <small>Absorbed: ${effectData.name}</small>
+                    `;
                     effectEl.title = effectData.description;
                 }
                 absorbedStatsListEl.appendChild(effectEl);
