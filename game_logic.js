@@ -500,14 +500,6 @@ function calculateRawMonsterHp(level) {
         monsterHealth *= worldTierMultiplier;
     }
 
-    // 3. Compounding Realm Multiplier
-    const realmIndex = Math.floor((level - 1) / 400);
-    if (realmIndex > 0) {
-        const realmJumpFactor = 8;
-        const realmMultiplier = Math.pow(realmJumpFactor, realmIndex);
-        monsterHealth *= realmMultiplier;
-    }
-
     // NOTE: All boss-specific multipliers have been moved to generateMonster.
     return monsterHealth;
 }
@@ -583,6 +575,18 @@ export function generateMonster(level, specialEncounter = null) {
         }
     }
     
+    // Apply the final, unconditional Realm Jump Multiplier.
+    // This is the primary tuning knob for inter-realm difficulty.
+    const realmIndex = Math.floor((level - 1) / 400); // A "realm" is defined as 400 levels
+    if (realmIndex > 0) {
+        // vvv THIS IS THE PARAMETER TO TUNE vvv
+        const realmJumpFactor = 1.05; 
+        // ^^^ INCREASE THIS NUMBER TO MAKE THE JUMP BIGGER ^^^
+
+        const realmMultiplier = Math.pow(realmJumpFactor, realmIndex);
+        monsterHealth *= realmMultiplier;
+    }
+
     monsterHealth = Math.ceil(monsterHealth);
     
     const newMonster = { name: monsterData.name, data: monsterData };
