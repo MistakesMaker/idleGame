@@ -180,7 +180,10 @@ export function playSound(name) {
     }
 
     const { sound: masterSound, category } = soundData;
-    const subCategoryVolume = volumeSettings[`sfx_${category}`] || 1.0;
+    // --- START OF FIX ---
+    // Use the nullish coalescing operator (??) to correctly handle 0 as a valid volume.
+    const subCategoryVolume = volumeSettings[`sfx_${category}`] ?? 1.0;
+    // --- END OF FIX ---
 
     const finalVolume = volumeSettings.master * volumeSettings.sfx * subCategoryVolume * GLOBAL_VOLUME_CEILING;
     if (finalVolume <= 0) {
