@@ -519,7 +519,6 @@ select option {
     align-items: center; 
     margin-bottom: 0.625rem; /* 10px */
     font-size: 1em; 
-    cursor: help; 
 }
 
 .attribute-buy-btn {
@@ -598,8 +597,7 @@ select option {
 
 #loot-view { padding-top: 0; }
 #loot-table-display { display: flex; flex-direction: column; gap: 0.5rem; background-color: rgba(0,0,0,0.2); padding: 0.625rem; border-radius: 0.3125rem; margin-top: 0.625rem; overflow-y: auto; flex-grow: 1; } /* 8px, 10px, 5px */
-.loot-table-entry { display: flex; align-items: center; gap: 0.9375rem; padding: 0.3125rem; background-color: rgba(0,0,0,0.2); border-radius: 0.3125rem; border: 0.0625rem solid transparent; cursor: help; } /* 15px, 5px, 1px */
-.loot-table-entry:hover { border-color: #4a637e; }
+.loot-table-entry { display: flex; align-items: center; gap: 0.9375rem; padding: 0.3125rem; background-color: rgba(0,0,0,0.2); border-radius: 0.3125rem; border: 0.0625rem solid transparent; } /* 15px, 5px, 1px */
 .loot-item-icon { width: 2.5rem; height: 2.5rem; background-color: rgba(0,0,0,0.4); border: 0.0625rem solid #4a637e; border-radius: 0.5rem; padding: 0.3125rem; object-fit: contain; flex-shrink: 0; } /* 40px, 1px, 8px, 5px */
 .loot-item-details { flex-grow: 1; }
 .loot-item-details .item-name { font-weight: bold; }
@@ -2291,7 +2289,7 @@ h5 .legendary { color: #f39c12; }
 .hunt-progress-bar { width: 0%; height: 100%; background: linear-gradient(to right, #2ecc71, #27ae60); transition: width 0.3s ease; }
 .hunt-progress-text { font-size: 0.8em; color: #95a5a6; }
 #hunts-close-btn { margin-top: 1.25rem; background: #c0392b; border-bottom-color: #922b21; align-self: center; }
-#hunts-btn:disabled { background: #566573; color: #95a5a6; cursor: help; border-bottom-color: #43515c; transform: none; box-shadow: none; }
+#hunts-btn:disabled { background: #566573; color: #95a5a6; cursor: not-allowed; border-bottom-color: #43515c; transform: none; box-shadow: none; }
 
 #hunts-btn.hunt-ready-glow {
     background: linear-gradient(145deg, #e67e22, #f39c12);
@@ -2519,7 +2517,7 @@ h5 .legendary { color: #f39c12; }
     border-bottom-color: #2980b9;
 }
 .hunt-action-buttons button.hunt-travel-locked {
-    cursor: help;
+    cursor: not-allowed;
 }
 #travel-to-hunt-btn:disabled {
     background: #7f8c8d;
