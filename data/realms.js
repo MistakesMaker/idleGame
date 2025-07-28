@@ -1,4 +1,4 @@
-// --- START OF FILE realms.js ---
+// --- START OF FILE data/realms.js ---
 
 import { MONSTERS } from './monsters.js';
 
@@ -184,7 +184,8 @@ export const REALMS = [
                 }
             }
         }
-    },
+    }
+    /*,
     {
         name: "The Sunken World",
         mapImage: "images/sunken_world_map.png",
@@ -386,4 +387,5 @@ export const REALMS = [
             }
         }
     }
+    */
 ];

@@ -1132,6 +1132,12 @@ function startNewMonster() {
             // lastLevelBeforeStop is already defined above
 
             while (remainingTime > 1) {
+                // --- START OF MODIFICATION ---
+                // Safety check to ensure the next level exists in the realms data.
+                if (!findSubZoneByLevel(currentSimLevel)) {
+                    break; // Stop simulating if we've reached the end of content.
+                }
+                // --- END OF MODIFICATION ---
                 const { newMonster, newMonsterState } = logic.generateMonster(currentSimLevel);
                 
                 const timeToKill = Math.max(1, newMonsterState.maxHp / playerStats.totalDps);
