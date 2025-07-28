@@ -60,6 +60,8 @@ export function initDOMElements() {
         saveIndicatorEl: document.getElementById('save-indicator'),
         goldStatEl: document.getElementById('gold-stat'),
         scrapStatEl: document.getElementById('scrap-stat'),
+        clickDamageDisplay: document.getElementById('click-damage-display'),
+        dpsDisplay: document.getElementById('dps-display'),
         upgradeClickCostEl: document.getElementById('upgrade-click-cost'),
         upgradeDpsCostEl: document.getElementById('upgrade-dps-cost'),
         upgradeClickLevelEl: document.getElementById('upgrade-click-level'),
@@ -878,6 +880,7 @@ export function updateUI(elements, gameState, playerStats, currentMonster, salva
     updateMonsterUI(elements, gameState, currentMonster);
     updateLootPanel(elements, currentMonster, gameState);
     updatePrestigeUI(elements, gameState);
+    updateCombatStatsDisplay(elements, playerStats);
     updateHuntsButton(gameState);
 
     // Grid Renders for the active inventory sub-view
@@ -3603,4 +3606,29 @@ export function updateVolumeSlidersUI(elements, volumeSettings) {
         const icon = sfxLootMuteBtn.querySelector('i');
         if (icon) icon.className = volumeSettings.sfx_loot > 0 ? 'fas fa-volume-up' : 'fas fa-volume-mute';
     }
+}
+// 
+/**
+ * Updates the permanent combat stat display in the actions panel.
+ * @param {DOMElements} elements The DOM elements object.
+ * @param {object} playerStats The calculated player stats.
+ */
+export function updateCombatStatsDisplay(elements, playerStats) {
+    const { clickDamageDisplay, dpsDisplay } = elements;
+    if (!clickDamageDisplay || !dpsDisplay) return;
+
+    const getNumberTier = (amount) => {
+        if (amount < 1e3) return 0; if (amount < 1e6) return 1; if (amount < 1e9) return 2;
+        if (amount < 1e12) return 3; if (amount < 1e15) return 4; if (amount < 1e18) return 5;
+        return 6;
+    };
+
+    const dpsTier = getNumberTier(playerStats.totalDps);
+    const clickTier = getNumberTier(playerStats.totalClickDamage);
+    
+    dpsDisplay.className = `currency-tier-${dpsTier}`;
+    dpsDisplay.textContent = formatNumber(playerStats.totalDps);
+    
+    clickDamageDisplay.className = `currency-tier-${clickTier}`;
+    clickDamageDisplay.textContent = formatNumber(playerStats.totalClickDamage);
 }

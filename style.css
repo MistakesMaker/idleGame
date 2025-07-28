@@ -433,9 +433,9 @@ select option {
 .view { display: none; }
 .view.active { display: flex; flex-direction: column; flex-grow: 1; min-height: 0; }
 
-#currency-display { display: flex; justify-content: space-around; background-color: rgba(0,0,0,0.3); padding: 0.625rem; border-radius: 0.5rem; margin-bottom: 1.25rem; border: 0.0625rem solid #4a637e; } /* 10px, 8px, 20px, 1px */
-#currency-display p { margin: 0; font-size: 1.2em; font-family: 'Cinzel', serif; }
-#currency-display i { margin-right: 0.5rem; color: #f1c40f; } /* 8px */
+#currency-display { display: flex; flex-wrap: wrap; justify-content: space-around; background-color: rgba(0,0,0,0.3); padding: 0.625rem; border-radius: 0.5rem; margin-bottom: 1.25rem; border: 0.0625rem solid #4a637e; gap: 0.5rem 1rem; }
+#currency-display p { margin: 0; font-size: 1.2em; font-family: 'Cinzel', serif; flex-basis: 45%; }
+#currency-display i { margin-right: 0.5rem; color: #f1c40f; }
 /* Currency Milestone Colors */
 .currency-tier-0 { color: #ecf0f1; text-shadow: none; }
 .currency-tier-1 { color: #2ecc71; text-shadow: none; } /* K */
