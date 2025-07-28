@@ -2731,17 +2731,53 @@ input[type="range"]:focus::-moz-range-thumb {
     box-shadow: 0 0 5px #f1c40f;
 }
 
-/* --- Global Animation Layer --- */
-#global-animation-container {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    pointer-events: none; /* Allows clicks to pass through to elements underneath */
-    z-index: 10005; /* Ensures it's on top of everything, including modals */
-    overflow: hidden;
+.item-drop-wrapper {
+    position: fixed; /* Changed from absolute */
+    width: 5rem; /* 80px */
+    height: 5rem; /* 80px */
+    z-index: 10006; /* Must be on top of animation container */
+    animation: item-drop-path 1.5s ease-out forwards;
+    transform: translate(-50%, -50%); /* Center the wrapper on its coordinates */
 }
+.item-drop-wrapper.boss-unique-drop {
+    width: 10rem; /* 160px */
+    height: 10rem; /* 160px */
+}
+.item-drop-animation {
+    width: 100%;
+    height: 100%;
+    animation: continuous-spin 1.5s linear infinite;
+}
+.sparkle-animation {
+    animation-name: continuous-spin, sparkle;
+    animation-duration: 1.5s, 0.5s;
+    animation-timing-function: linear, linear;
+    animation-iteration-count: infinite, infinite;
+}
+
+/* --- START OF CORRECTED ANIMATION --- */
+@keyframes item-drop-path {
+    0% {
+        left: var(--start-x);
+        top: var(--start-y);
+        transform: translate(-50%, -50%) scale(0.5);
+        opacity: 1;
+    }
+    50% {
+        left: var(--peak-x);
+        top: var(--peak-y);
+        transform: translate(-50%, -50%) scale(1.1);
+        opacity: 1;
+        animation-timing-function: cubic-bezier(0.3, 0, 0.8, 0.2);
+    }
+    100% {
+        left: var(--end-x);
+        top: var(--end-y);
+        transform: translate(-50%, -50%) scale(0.8);
+        opacity: 0;
+    }
+}
+/* --- END OF CORRECTED ANIMATION --- */
 .advanced-audio-toggle {
     display: flex;
     align-items: center;
