@@ -183,6 +183,17 @@ export function initDOMElements() {
         sfxVolumeValue: document.getElementById('sfx-volume-value'),
         sfxMuteBtn: document.getElementById('sfx-mute-btn'),
         resetGameBtn: document.getElementById('reset-game-btn'),
+        advancedAudioToggleBtn: document.getElementById('advanced-audio-toggle-btn'),
+        advancedAudioControls: document.getElementById('advanced-audio-controls'),
+        sfxCombatVolumeSlider: document.getElementById('sfx-combat-volume-slider'),
+        sfxCombatVolumeValue: document.getElementById('sfx-combat-volume-value'),
+        sfxCombatMuteBtn: document.getElementById('sfx-combat-mute-btn'),
+        sfxUiVolumeSlider: document.getElementById('sfx-ui-volume-slider'),
+        sfxUiVolumeValue: document.getElementById('sfx-ui-volume-value'),
+        sfxUiMuteBtn: document.getElementById('sfx-ui-mute-btn'),
+        sfxLootVolumeSlider: document.getElementById('sfx-loot-volume-slider'),
+        sfxLootVolumeValue: document.getElementById('sfx-loot-volume-value'),
+        sfxLootMuteBtn: document.getElementById('sfx-loot-mute-btn'),
         globalAnimationContainer: document.getElementById('global-animation-container'),
         // --- END: New Settings and Volume Elements ---
     };
@@ -1480,8 +1491,7 @@ export function showRewardAnimation(containerEl, item, startRect, animationIndex
 
     const wrapper = document.createElement('div');
     wrapper.className = 'item-drop-wrapper';
-    // --- START OF FIX: Use translateX and translateY for positioning ---
-    wrapper.style.position = 'fixed'; // Use fixed positioning for the global container
+    wrapper.style.position = 'fixed'; 
 
     const itemImg = document.createElement('img');
     itemImg.src = item.icon;
@@ -1493,29 +1503,24 @@ export function showRewardAnimation(containerEl, item, startRect, animationIndex
         itemImg.classList.add('sparkle-animation');
     }
 
-    // Start the animation at the center of the source element
     const startX = startRect.left + (startRect.width / 2);
     const startY = startRect.top + (startRect.height / 2);
-    
-    // --- START OF FIX: Correct trajectory math ---
-    const horizontalDirection = (Math.random() - 0.5) * 2; // -1 to 1
+
+    const horizontalDirection = (Math.random() - 0.5) * 2; 
     const peakX = startX + ((100 + Math.random() * 80) * horizontalDirection) + (animationIndex * 20 * horizontalDirection);
     const peakY = startY - (150 + Math.random() * 50);
     const endX = peakX + ((100 + Math.random() * 50) * horizontalDirection);
-    const endY = window.innerHeight + 100; // Fly off the bottom of the screen
+    const endY = window.innerHeight + 100;
 
-    // Set CSS variables for the keyframes animation
     wrapper.style.setProperty('--start-x', `${startX}px`);
     wrapper.style.setProperty('--start-y', `${startY}px`);
     wrapper.style.setProperty('--peak-x', `${peakX}px`);
     wrapper.style.setProperty('--peak-y', `${peakY}px`);
     wrapper.style.setProperty('--end-x', `${endX}px`);
     wrapper.style.setProperty('--end-y', `${endY}px`);
-    // --- END OF FIX ---
 
     containerEl.appendChild(wrapper);
     wrapper.appendChild(itemImg);
-    // The actual animation is now handled by CSS keyframes
     
     setTimeout(() => {
         wrapper.remove();
@@ -3538,10 +3543,13 @@ export function showSimpleTooltip(elements, targetEl, text) {
  */
 export function updateVolumeSlidersUI(elements, volumeSettings) {
     const {
-        masterVolumeSlider, masterVolumeValue, masterMuteBtn,
-        musicVolumeSlider, musicVolumeValue, musicMuteBtn,
-        sfxVolumeSlider, sfxVolumeValue, sfxMuteBtn
-    } = elements;
+    masterVolumeSlider, masterVolumeValue, masterMuteBtn,
+    musicVolumeSlider, musicVolumeValue, musicMuteBtn,
+    sfxVolumeSlider, sfxVolumeValue, sfxMuteBtn,
+    sfxCombatVolumeSlider, sfxCombatVolumeValue, sfxCombatMuteBtn,
+    sfxUiVolumeSlider, sfxUiVolumeValue, sfxUiMuteBtn,
+    sfxLootVolumeSlider, sfxLootVolumeValue, sfxLootMuteBtn
+} = elements;
 
     // Master Volume
     if (masterVolumeSlider) (/** @type {HTMLInputElement} */(masterVolumeSlider)).value = String(volumeSettings.master * 100);
@@ -3568,5 +3576,31 @@ export function updateVolumeSlidersUI(elements, volumeSettings) {
         sfxMuteBtn.classList.toggle('muted', volumeSettings.sfx === 0);
         const icon = sfxMuteBtn.querySelector('i');
         if (icon) icon.className = volumeSettings.sfx > 0 ? 'fas fa-volume-up' : 'fas fa-volume-mute';
+    }
+        // Combat SFX
+    if (sfxCombatVolumeSlider) (/** @type {HTMLInputElement} */(sfxCombatVolumeSlider)).value = String(volumeSettings.sfx_combat * 100);
+    if (sfxCombatVolumeValue) sfxCombatVolumeValue.textContent = `${Math.round(volumeSettings.sfx_combat * 100)}%`;
+    if (sfxCombatMuteBtn) {
+        sfxCombatMuteBtn.classList.toggle('muted', volumeSettings.sfx_combat === 0);
+        const icon = sfxCombatMuteBtn.querySelector('i');
+        if (icon) icon.className = volumeSettings.sfx_combat > 0 ? 'fas fa-volume-up' : 'fas fa-volume-mute';
+    }
+
+    // UI SFX
+    if (sfxUiVolumeSlider) (/** @type {HTMLInputElement} */(sfxUiVolumeSlider)).value = String(volumeSettings.sfx_ui * 100);
+    if (sfxUiVolumeValue) sfxUiVolumeValue.textContent = `${Math.round(volumeSettings.sfx_ui * 100)}%`;
+    if (sfxUiMuteBtn) {
+        sfxUiMuteBtn.classList.toggle('muted', volumeSettings.sfx_ui === 0);
+        const icon = sfxUiMuteBtn.querySelector('i');
+        if (icon) icon.className = volumeSettings.sfx_ui > 0 ? 'fas fa-volume-up' : 'fas fa-volume-mute';
+    }
+
+    // Loot SFX
+    if (sfxLootVolumeSlider) (/** @type {HTMLInputElement} */(sfxLootVolumeSlider)).value = String(volumeSettings.sfx_loot * 100);
+    if (sfxLootVolumeValue) sfxLootVolumeValue.textContent = `${Math.round(volumeSettings.sfx_loot * 100)}%`;
+    if (sfxLootMuteBtn) {
+        sfxLootMuteBtn.classList.toggle('muted', volumeSettings.sfx_loot === 0);
+        const icon = sfxLootMuteBtn.querySelector('i');
+        if (icon) icon.className = volumeSettings.sfx_loot > 0 ? 'fas fa-volume-up' : 'fas fa-volume-mute';
     }
 }

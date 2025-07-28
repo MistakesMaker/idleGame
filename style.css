@@ -2569,6 +2569,35 @@ h5 .legendary { color: #f39c12; }
 }
 
 /* --- Settings Panel --- */
+#advanced-audio-toggle-btn {
+    width: 100%;
+    margin: 1rem 0 0 0;
+    background: #34495e;
+    border-bottom-color: #2c3e50;
+}
+
+#advanced-audio-toggle-btn.active {
+    background: linear-gradient(145deg, #27ae60, #2ecc71);
+    border-bottom-color: #229954;
+}
+
+#advanced-audio-controls {
+    padding-left: 1rem;
+    margin-top: 1rem;
+    border-left: 2px solid #34495e;
+    /* Adding a transition for a smooth slide-down effect */
+    transition: max-height 0.3s ease-out, padding 0.3s ease-out;
+    max-height: 0;
+    overflow: hidden;
+    padding-top: 0;
+    padding-bottom: 0;
+}
+
+#advanced-audio-controls:not(.hidden) {
+    max-height: 500px; /* A large enough value to not clip content */
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+}
 .settings-panel {
     position: fixed;
     top: 1.25rem; /* 20px */
@@ -2709,4 +2738,28 @@ input[type="range"]:focus::-moz-range-thumb {
     pointer-events: none; /* Allows clicks to pass through to elements underneath */
     z-index: 10005; /* Ensures it's on top of everything, including modals */
     overflow: hidden;
+}
+.advanced-audio-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 1.5rem;
+    padding-top: 1rem;
+    border-top: 1px solid #4a637e;
+}
+
+.advanced-audio-toggle label {
+    cursor: pointer;
+    font-family: 'Cinzel', serif;
+}
+
+.advanced-audio-toggle input[type="checkbox"] {
+    width: 1.25rem;
+    height: 1.25rem;
+    cursor: pointer;
+}
+#advanced-audio-controls {
+    padding-left: 1rem;
+    margin-top: 1rem;
+    border-left: 2px solid #34495e;
 }

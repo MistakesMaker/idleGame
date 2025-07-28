@@ -401,6 +401,39 @@
                             <span id="sfx-volume-value">70%</span>
                         </div>
                     </div>
+                    
+                    <!-- --- START OF MODIFICATION --- -->
+                    <button id="advanced-audio-toggle-btn">Advanced SFX Settings</button>
+                    <div id="advanced-audio-controls" class="hidden">
+                         <!-- Combat SFX -->
+                        <div class="volume-slider-group">
+                            <label for="sfx-combat-volume-slider">Combat</label>
+                            <div class="slider-wrapper">
+                                <button id="sfx-combat-mute-btn" class="mute-toggle-btn"><i class="fas fa-volume-up"></i></button>
+                                <input type="range" id="sfx-combat-volume-slider" min="0" max="100" value="100">
+                                <span id="sfx-combat-volume-value">100%</span>
+                            </div>
+                        </div>
+                        <!-- UI SFX -->
+                        <div class="volume-slider-group">
+                            <label for="sfx-ui-volume-slider">UI & Crafting</label>
+                            <div class="slider-wrapper">
+                                <button id="sfx-ui-mute-btn" class="mute-toggle-btn"><i class="fas fa-volume-up"></i></button>
+                                <input type="range" id="sfx-ui-volume-slider" min="0" max="100" value="80">
+                                <span id="sfx-ui-volume-value">80%</span>
+                            </div>
+                        </div>
+                        <!-- Loot SFX -->
+                        <div class="volume-slider-group">
+                            <label for="sfx-loot-volume-slider">Loot & Rewards</label>
+                            <div class="slider-wrapper">
+                                <button id="sfx-loot-mute-btn" class="mute-toggle-btn"><i class="fas fa-volume-up"></i></button>
+                                <input type="range" id="sfx-loot-volume-slider" min="0" max="100" value="100">
+                                <span id="sfx-loot-volume-value">100%</span>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- --- END OF MODIFICATION --- -->
                 </div>
                 
                 <div id="other-settings">

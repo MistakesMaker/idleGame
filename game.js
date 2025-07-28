@@ -1937,9 +1937,7 @@ function startNewMonster() {
             }
         }
     }
-    
-    // ... This is where the file resumes from the previous response ...
-    
+
     function setupEventListeners() {
         // --- START: New Settings Panel & Volume Control Listeners ---
         const {
@@ -1947,7 +1945,11 @@ function startNewMonster() {
             masterVolumeSlider,
             musicVolumeSlider, musicMuteBtn,
             sfxVolumeSlider, sfxMuteBtn,
-            resetGameBtn, masterMuteBtn
+            resetGameBtn, masterMuteBtn,
+            advancedAudioToggleBtn, advancedAudioControls, // Correctly added here
+            sfxCombatVolumeSlider, sfxCombatMuteBtn,
+            sfxUiVolumeSlider, sfxUiMuteBtn,
+            sfxLootVolumeSlider, sfxLootMuteBtn
         } = elements;
 
         addTapListener(settingsToggleBtn, () => settingsPanel.classList.add('open'));
@@ -1983,6 +1985,45 @@ function startNewMonster() {
         });
         addTapListener(sfxMuteBtn, () => {
             sound_manager.toggleCategoryMute('sfx');
+            ui.updateVolumeSlidersUI(elements, sound_manager.getVolumeSettings());
+        });
+
+        // --- THIS IS THE CORRECTED LISTENER FOR THE BUTTON ---
+        addTapListener(advancedAudioToggleBtn, () => {
+            advancedAudioControls.classList.toggle('hidden');
+            advancedAudioToggleBtn.classList.toggle('active');
+        });
+
+        // Combat SFX
+        sfxCombatVolumeSlider.addEventListener('input', (e) => {
+            const value = parseFloat((/** @type {HTMLInputElement} */(e.target)).value) / 100;
+            sound_manager.updateVolume('sfx_combat', value);
+            ui.updateVolumeSlidersUI(elements, sound_manager.getVolumeSettings());
+        });
+        addTapListener(sfxCombatMuteBtn, () => {
+            sound_manager.toggleCategoryMute('sfx_combat');
+            ui.updateVolumeSlidersUI(elements, sound_manager.getVolumeSettings());
+        });
+
+        // UI SFX
+        sfxUiVolumeSlider.addEventListener('input', (e) => {
+            const value = parseFloat((/** @type {HTMLInputElement} */(e.target)).value) / 100;
+            sound_manager.updateVolume('sfx_ui', value);
+            ui.updateVolumeSlidersUI(elements, sound_manager.getVolumeSettings());
+        });
+        addTapListener(sfxUiMuteBtn, () => {
+            sound_manager.toggleCategoryMute('sfx_ui');
+            ui.updateVolumeSlidersUI(elements, sound_manager.getVolumeSettings());
+        });
+        
+        // Loot SFX
+        sfxLootVolumeSlider.addEventListener('input', (e) => {
+            const value = parseFloat((/** @type {HTMLInputElement} */(e.target)).value) / 100;
+            sound_manager.updateVolume('sfx_loot', value);
+            ui.updateVolumeSlidersUI(elements, sound_manager.getVolumeSettings());
+        });
+        addTapListener(sfxLootMuteBtn, () => {
+            sound_manager.toggleCategoryMute('sfx_loot');
             ui.updateVolumeSlidersUI(elements, sound_manager.getVolumeSettings());
         });
         
@@ -2265,7 +2306,6 @@ function startNewMonster() {
                 ui.updateSocketingHighlights(elements, selectedGemForSocketing, gameState);
             } else {
                 const item = itemOrStack;
-                // --- START MODIFICATION for Targeted Consumables ---
                 if (item.type === 'consumable') {
                     if (gameState.activeTargetedConsumable) {
                         logMessage(elements.gameLogEl, "You cannot use another item while targeting.", "rare", isAutoScrollingLog);
@@ -2279,7 +2319,6 @@ function startNewMonster() {
                             const result = player.consumeItem(gameState, item.id);
                             logMessage(elements.gameLogEl, result.message, 'legendary', isAutoScrollingLog);
                             if (result.success) {
-                                // If the item puts us in targeting mode, update highlights
                                 if (gameState.activeTargetedConsumable) {
                                     ui.updateTargetingHighlights(elements, gameState);
                                 }
@@ -2297,13 +2336,12 @@ function startNewMonster() {
                     logMessage(elements.gameLogEl, result.message, result.success ? 'epic' : 'rare', isAutoScrollingLog);
                     if(result.success) {
                         recalculateStats();
-                        fullUIRender(); // Full render to update all views
+                        fullUIRender();
                         autoSave();
                     }
-                    ui.updateTargetingHighlights(elements, gameState); // Clear highlights after use
-                    return; // Exit after attempting to apply
+                    ui.updateTargetingHighlights(elements, gameState);
+                    return;
                 }
-                // --- END MODIFICATION ---
         
                 if (selectedGemForSocketing) {
                     if (item.sockets && item.sockets.includes(null)) {
@@ -2392,7 +2430,6 @@ function startNewMonster() {
             const item = gameState.equipment[slotName];
             if (!item) return;
 
-            // --- START MODIFICATION for Targeted Consumables ---
             if (gameState.activeTargetedConsumable) {
                 const result = player.applyTargetedConsumable(gameState, item);
                 logMessage(elements.gameLogEl, result.message, result.success ? 'epic' : 'rare', isAutoScrollingLog);
@@ -2401,10 +2438,9 @@ function startNewMonster() {
                     fullUIRender();
                     autoSave();
                 }
-                ui.updateTargetingHighlights(elements, gameState); // Clear highlights
+                ui.updateTargetingHighlights(elements, gameState);
                 return;
             }
-            // --- END MODIFICATION ---
 
             if (selectedGemForSocketing) {
                 if (item && item.sockets && item.sockets.includes(null)) {
@@ -2434,8 +2470,6 @@ function startNewMonster() {
             player.unequipItem(gameState, slotName);
             recalculateStats();
             ui.renderPaperdoll(elements, gameState);
-            // This is the key change: force a full, re-compacting grid render
-            // instead of just adding one item.
             ui.renderGrid(elements.inventorySlotsEl, gameState.inventory, { calculatePositions: true });
             ui.updateStatsPanel(elements, playerStats);
             autoSave();
@@ -2941,6 +2975,7 @@ function startNewMonster() {
 
         function setupSalvageFilterListeners() {
         const {
+            autoSalvageFilterBtn,
             enableSalvageFilter,
             filterKeepRarity,
             filterKeepSockets,
@@ -2964,9 +2999,8 @@ function startNewMonster() {
     
             salvageFilterControls.classList.toggle('hidden', !(/** @type {HTMLInputElement} */ (enableSalvageFilter)).checked);
             
-            const salvageFilterBtn = document.getElementById('auto-salvage-filter-btn');
-            if (salvageFilterBtn) {
-                salvageFilterBtn.classList.toggle('btn-pressed', gameState.salvageFilter.enabled);
+            if (autoSalvageFilterBtn) {
+                autoSalvageFilterBtn.classList.toggle('btn-pressed', gameState.salvageFilter.enabled);
             }
 
             autoSave();
@@ -2978,12 +3012,11 @@ function startNewMonster() {
         filterKeepSockets.addEventListener('change', updateFilter);
         filterKeepStatsContainer.addEventListener('change', updateFilter);
 
-        const salvageFilterBtn = document.getElementById('auto-salvage-filter-btn');
         const modalBackdrop = document.getElementById('salvage-filter-modal-backdrop');
         const closeBtn = document.getElementById('salvage-filter-close-btn');
 
-        if (salvageFilterBtn && modalBackdrop) {
-            addTapListener(salvageFilterBtn, () => {
+        if (autoSalvageFilterBtn && modalBackdrop) {
+            addTapListener(autoSalvageFilterBtn, () => {
                 modalBackdrop.classList.remove('hidden');
             });
         }
@@ -3518,14 +3551,11 @@ function startNewMonster() {
     }
     
     function handleWikiTravel(level) {
-        // --- START OF FAILSAFE ---
-        // Ensure the level is a valid, positive number before proceeding.
         if (typeof level !== 'number' || level <= 0 || isNaN(level)) {
             logMessage(elements.gameLogEl, "Invalid travel location selected.", 'rare', isAutoScrollingLog);
-            elements.modalBackdropEl.classList.add('hidden'); // Close the modal
-            return; // Stop the function here to prevent breaking the game
+            elements.modalBackdropEl.classList.add('hidden');
+            return;
         }
-        // --- END OF FAILSAFE ---
 
         gameState.isAutoProgressing = false;
         elements.modalBackdropEl.classList.add('hidden');
@@ -3650,18 +3680,13 @@ function startNewMonster() {
                 if (parentCard instanceof HTMLElement && parentCard.dataset.itemId) {
                     const itemData = wikiState.data.find(item => item.id === parentCard.dataset.itemId);
                     if (itemData && itemData.dropSources.length > 0) {
-                        // --- START OF FIX ---
-                        // Filter out non-travelable hunt/shop sources before showing the modal.
                         const travelableSources = itemData.dropSources.filter(source => !source.isHunt);
 
                         if (travelableSources.length > 0) {
-                            // If there are actual places to travel to, show the modal.
                             ui.showWikiTravelModal(elements, travelableSources, gameState.maxLevel, handleWikiTravel);
                         } else {
-                            // Otherwise, inform the player that this item cannot be traveled to directly.
                             logMessage(elements.gameLogEl, `The <b>${itemData.base.name}</b> can only be obtained from Hunts or the Hunt Shop.`, 'uncommon', isAutoScrollingLog);
                         }
-                        // --- END OF FIX ---
                     }
                 }
             }
@@ -3744,20 +3769,18 @@ function startNewMonster() {
     huntsModalBackdrop.addEventListener('mouseover', (e) => {
         if (!(e.target instanceof HTMLElement)) return;
         
-        // Handle currency tooltips
         const totalHuntsEl = e.target.closest('#total-hunts-display');
-        if (totalHuntsEl instanceof HTMLElement) { // <-- THIS IS THE FIX
+        if (totalHuntsEl instanceof HTMLElement) {
             showSimpleTooltip(elements, totalHuntsEl, "Total Hunts Completed");
             return; 
         }
         
         const huntTokensEl = e.target.closest('#hunt-tokens-display');
-        if (huntTokensEl instanceof HTMLElement) { // <-- THIS IS THE FIX
+        if (huntTokensEl instanceof HTMLElement) {
             showSimpleTooltip(elements, huntTokensEl, "Hunt Tokens");
             return;
         }
 
-        // Handle reward tooltips (existing logic)
         const rewardEl = e.target.closest('.hunt-reward');
         if (rewardEl instanceof HTMLElement && rewardEl.dataset.rewardId) {
             const rewardId = rewardEl.dataset.rewardId;
@@ -3825,13 +3848,12 @@ function startNewMonster() {
         logMessage(elements.gameLogEl, result.message, result.success ? 'legendary' : 'rare', isAutoScrollingLog);
 
         if (result.success) {
-            // Rerender the shop to update button states (e.g., for one-time purchases) and token count
             const huntsModal = document.getElementById('hunts-modal-backdrop');
             if (huntsModal && !huntsModal.classList.contains('hidden')) {
                 ui.renderHuntsView(elements, gameState);
             }
 
-            fullUIRender(); // This one call correctly handles all UI updates.
+            fullUIRender();
 
             recalculateStats();
             ui.updateStatsPanel(elements, playerStats);

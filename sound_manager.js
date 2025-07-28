@@ -1,21 +1,29 @@
 // --- START OF FILE sound_manager.js ---
 
+// --- START OF MODIFICATION: Categorize sounds ---
 const sounds = {
-    monster_hit: new Audio('sounds/monster_hit.wav'),
-    monster_defeat: new Audio('sounds/monster_defeat.wav'),
-    crit_hit: new Audio('sounds/crit_hit.wav'),
-    hunt_reward: new Audio('sounds/hunt_reward.wav'),
-    unique_drop: new Audio('sounds/unique_drop.wav'),
-    equip_armor: new Audio('sounds/equip_armor.wav'),
-    equip_weapon: new Audio('sounds/equip_weapon.wav'),
-    equip_jewelry: new Audio('sounds/equip_jewelry.wav'),
-    salvage: new Audio('sounds/salvage.wav'),
-    socket_gem: new Audio('sounds/socket_gem.wav'),
-    gem_success: new Audio('sounds/gem_success.wav'),
-    gem_fail: new Audio('sounds/gem_fail.wav'),
-    permanent_upgrade_buy: new Audio('sounds/cha_ching.wav'),
-    
+    combat: {
+        monster_hit: new Audio('sounds/monster_hit.wav'),
+        crit_hit: new Audio('sounds/crit_hit.wav'),
+        monster_defeat: new Audio('sounds/monster_defeat.wav'), // Moved here
+    },
+    ui: {
+        equip_armor: new Audio('sounds/equip_armor.wav'),
+        equip_weapon: new Audio('sounds/equip_weapon.wav'),
+        equip_jewelry: new Audio('sounds/equip_jewelry.wav'),
+        salvage: new Audio('sounds/salvage.wav'),
+        socket_gem: new Audio('sounds/socket_gem.wav'),
+        gem_success: new Audio('sounds/gem_success.wav'),
+        gem_fail: new Audio('sounds/gem_fail.wav'),
+        permanent_upgrade_buy: new Audio('sounds/cha_ching.wav'),
+    },
+    loot: {
+        hunt_reward: new Audio('sounds/hunt_reward.wav'),
+        unique_drop: new Audio('sounds/unique_drop.wav'),
+    }
 };
+// --- END OF MODIFICATION ---
+
 const POOL_SIZE = 10; // Number of clones for high-frequency sounds
 const soundPool = {
     monster_hit: [],
@@ -35,19 +43,21 @@ let currentMusicTrack = null;
 let currentTrackName = null;
 let isInitialized = false;
 
-// --- START OF MODIFICATION: Global Volume Cap ---
-// This constant scales all audio. 0.5 means 100% in-game volume is 50% of max hardware volume.
 const GLOBAL_VOLUME_CEILING = 0.2;
-// --- END OF MODIFICATION ---
 
 let volumeSettings = {
     master: 0.5,
     music: 0.5,
     sfx: 0.15,
-    // Store previous non-zero volume for toggling mute
+    sfx_combat: 1.0,
+    sfx_ui: 0.8,
+    sfx_loot: 1.0,
     _lastMaster: 0.5,
     _lastMusic: 0.5,
     _lastSfx: 0.15,
+    _lastSfx_combat: 1.0,
+    _lastSfx_ui: 0.8,
+    _lastSfx_loot: 1.0,
 };
 
 /**
@@ -65,13 +75,21 @@ function loadVolumeSettings() {
     if (savedSettings) {
         try {
             const parsed = JSON.parse(savedSettings);
-            // Ensure all keys are present and are numbers
-            volumeSettings.master = typeof parsed.master === 'number' ? parsed.master : 0.5;
-            volumeSettings.music = typeof parsed.music === 'number' ? parsed.music : 0.15;
-            volumeSettings.sfx = typeof parsed.sfx === 'number' ? parsed.sfx : 0.35;
-            volumeSettings._lastMaster = typeof parsed._lastMaster === 'number' && parsed._lastMaster > 0 ? parsed._lastMaster : 0.5;
-            volumeSettings._lastMusic = typeof parsed._lastMusic === 'number' && parsed._lastMusic > 0 ? parsed._lastMusic : 0.15;
-            volumeSettings._lastSfx = typeof parsed._lastSfx === 'number' && parsed._lastSfx > 0 ? parsed._lastSfx : 0.35;
+            const defaults = { ...volumeSettings }; 
+            
+            volumeSettings.master = typeof parsed.master === 'number' ? parsed.master : defaults.master;
+            volumeSettings.music = typeof parsed.music === 'number' ? parsed.music : defaults.music;
+            volumeSettings.sfx = typeof parsed.sfx === 'number' ? parsed.sfx : defaults.sfx;
+            volumeSettings.sfx_combat = typeof parsed.sfx_combat === 'number' ? parsed.sfx_combat : defaults.sfx_combat;
+            volumeSettings.sfx_ui = typeof parsed.sfx_ui === 'number' ? parsed.sfx_ui : defaults.sfx_ui;
+            volumeSettings.sfx_loot = typeof parsed.sfx_loot === 'number' ? parsed.sfx_loot : defaults.sfx_loot;
+            
+            volumeSettings._lastMaster = typeof parsed._lastMaster === 'number' && parsed._lastMaster > 0 ? parsed._lastMaster : defaults._lastMaster;
+            volumeSettings._lastMusic = typeof parsed._lastMusic === 'number' && parsed._lastMusic > 0 ? parsed._lastMusic : defaults._lastMusic;
+            volumeSettings._lastSfx = typeof parsed._lastSfx === 'number' && parsed._lastSfx > 0 ? parsed._lastSfx : defaults._lastSfx;
+            volumeSettings._lastSfx_combat = typeof parsed._lastSfx_combat === 'number' && parsed._lastSfx_combat > 0 ? parsed._lastSfx_combat : defaults._lastSfx_combat;
+            volumeSettings._lastSfx_ui = typeof parsed._lastSfx_ui === 'number' && parsed._lastSfx_ui > 0 ? parsed._lastSfx_ui : defaults._lastSfx_ui;
+            volumeSettings._lastSfx_loot = typeof parsed._lastSfx_loot === 'number' && parsed._lastSfx_loot > 0 ? parsed._lastSfx_loot : defaults._lastSfx_loot;
 
         } catch (e) {
             console.error("Failed to parse volume settings, using defaults.", e);
@@ -79,13 +97,13 @@ function loadVolumeSettings() {
     }
 }
 
+
 /**
  * Reloads volume settings from localStorage and applies them.
  * Useful after a full game state reset like Prestige.
  */
 export function reloadVolumeSettings() {
     loadVolumeSettings();
-    // Re-apply music volume in case it was playing
     setRealmMusic(currentTrackName);
 }
 
@@ -96,25 +114,54 @@ export function reloadVolumeSettings() {
 export function initSounds() {
     if (isInitialized) return;
 
-    // Load volume settings from localStorage
     loadVolumeSettings();
 
-    // Set all music tracks to loop
     for (const key in musicTracks) {
         musicTracks[key].loop = true;
     }
     
-    // Create sound pools for high-frequency sounds
     for (const soundName in soundPool) {
-        for (let i = 0; i < POOL_SIZE; i++) {
-            const clone = sounds[soundName].cloneNode();
-            soundPool[soundName].push(clone);
+        let masterSound = null;
+        for (const category in sounds) {
+            if (sounds[category][soundName]) {
+                masterSound = sounds[category][soundName];
+                break;
+            }
+        }
+        if (masterSound) {
+            for (let i = 0; i < POOL_SIZE; i++) {
+                // --- FIX: Cast the cloned node to HTMLAudioElement ---
+                const clone = /** @type {HTMLAudioElement} */ (masterSound.cloneNode());
+                soundPool[soundName].push(clone);
+            }
+        } else {
+            console.error(`Sound "${soundName}" for pooling not found in any category.`);
         }
     }
 
     isInitialized = true;
     console.log("Sound manager initialized. Volume settings:", volumeSettings);
 }
+
+/**
+ * Finds a sound object and its category by name.
+ * @param {string} name The key of the sound.
+ * @returns {{sound: HTMLAudioElement, category: string}|null}
+ */
+function findSound(name) {
+    for (const category in sounds) {
+        if (sounds[category][name]) {
+            return { sound: sounds[category][name], category };
+        }
+    }
+    // --- Fallback check for monster_defeat which was missed in categorization ---
+    if (name === 'monster_defeat') {
+        const combatSound = sounds.combat[name];
+        if (combatSound) return { sound: combatSound, category: 'combat' };
+    }
+    return null;
+}
+
 
 /**
  * Plays a sound effect by its key name.
@@ -126,18 +173,19 @@ export function playSound(name) {
         return;
     }
 
-    const masterSound = sounds[name];
-    if (!masterSound) {
-        console.warn(`Sound not found in 'sounds' object: ${name}`);
+    const soundData = findSound(name);
+    if (!soundData) {
+        console.warn(`Sound not found in any category: ${name}`);
         return;
     }
 
-    // --- START MODIFICATION: Calculate final volume ---
-    const finalVolume = volumeSettings.master * volumeSettings.sfx * GLOBAL_VOLUME_CEILING;
+    const { sound: masterSound, category } = soundData;
+    const subCategoryVolume = volumeSettings[`sfx_${category}`] || 1.0;
+
+    const finalVolume = volumeSettings.master * volumeSettings.sfx * subCategoryVolume * GLOBAL_VOLUME_CEILING;
     if (finalVolume <= 0) {
-        return; // Don't play if volume is zero
+        return;
     }
-    // --- END MODIFICATION ---
 
     if (soundPool[name]) {
         const pool = soundPool[name];
@@ -145,21 +193,20 @@ export function playSound(name) {
 
         const soundToPlay = pool[index];
         soundToPlay.currentTime = 0;
-        soundToPlay.volume = finalVolume; // Apply calculated volume
+        soundToPlay.volume = finalVolume;
         soundToPlay.playbackRate = 1 + (Math.random() - 0.5) * 0.3;
         soundToPlay.play().catch(e => { if (e.name !== 'AbortError') console.error(e); });
 
         poolIndexes[name] = (index + 1) % POOL_SIZE;
     } else {
-        const soundClone = masterSound.cloneNode();
-        soundClone.volume = finalVolume; // Apply calculated volume
+        // --- FIX: Cast the cloned node to HTMLAudioElement ---
+        const soundClone = /** @type {HTMLAudioElement} */ (masterSound.cloneNode());
+        soundClone.volume = finalVolume;
         soundClone.play().catch(e => { if (e.name !== 'AbortError') console.error(e); });
     }
 }
 
-/**
- * Stops any currently playing music track.
- */
+
 function stopMusic() {
     if (currentMusicTrack) {
         currentMusicTrack.pause();
@@ -168,11 +215,7 @@ function stopMusic() {
     }
 }
 
-/**
- * Sets the background music for a specific realm.
- * Handles stopping the old track and starting the new one.
- * @param {string | null} realmName The name of the realm, or null to stop music.
- */
+
 export function setRealmMusic(realmName) {
     if (!isInitialized) return;
 
@@ -200,34 +243,33 @@ export function setRealmMusic(realmName) {
 
 /**
  * Updates a specific volume category, saves it, and applies the change.
- * @param {'master'|'music'|'sfx'} category The category to update.
+ * @param {'master'|'music'|'sfx'|'sfx_combat'|'sfx_ui'|'sfx_loot'} category The category to update.
  * @param {number} value The new volume level (0.0 to 1.0).
  */
 export function updateVolume(category, value) {
     if (volumeSettings.hasOwnProperty(category)) {
         volumeSettings[category] = value;
-        // If we are adjusting a category, store this as the last non-zero volume for mute toggling
         if (value > 0) {
             if (category === 'master') volumeSettings._lastMaster = value;
-            if (category === 'music') volumeSettings._lastMusic = value;
-            if (category === 'sfx') volumeSettings._lastSfx = value;
+            else if (category === 'music') volumeSettings._lastMusic = value;
+            else if (category === 'sfx') volumeSettings._lastSfx = value;
+            else if (category === 'sfx_combat') volumeSettings._lastSfx_combat = value;
+            else if (category === 'sfx_ui') volumeSettings._lastSfx_ui = value;
+            else if (category === 'sfx_loot') volumeSettings._lastSfx_loot = value;
         }
         
         saveVolumeSettings();
         
-        // Apply the new volume to the currently playing music track
         if (category === 'master' || category === 'music') {
             if (currentMusicTrack) {
                 const newMusicVolume = volumeSettings.master * volumeSettings.music * GLOBAL_VOLUME_CEILING;
                 currentMusicTrack.volume = newMusicVolume;
-                // If music was off and now it's on, try to play it
                 if (newMusicVolume > 0 && currentMusicTrack.paused) {
                     setRealmMusic(currentTrackName);
                 } else if (newMusicVolume <= 0 && !currentMusicTrack.paused) {
                     stopMusic();
                 }
             } else if (volumeSettings.master * volumeSettings.music > 0) {
-                // If music was off and we turn it up, start playing it
                 setRealmMusic(currentTrackName);
             }
         }
@@ -236,7 +278,7 @@ export function updateVolume(category, value) {
 
 /**
  * Toggles a category between 0 and its last known non-zero volume.
- * @param {'master'|'music'|'sfx'} category The category to toggle.
+ * @param {'master'|'music'|'sfx'|'sfx_combat'|'sfx_ui'|'sfx_loot'} category The category to toggle.
  */
 export function toggleCategoryMute(category) {
     if (category === 'master') {
@@ -248,8 +290,18 @@ export function toggleCategoryMute(category) {
     } else if (category === 'sfx') {
         const newVolume = volumeSettings.sfx > 0 ? 0 : volumeSettings._lastSfx;
         updateVolume('sfx', newVolume);
+    } else if (category === 'sfx_combat') {
+        const newVolume = volumeSettings.sfx_combat > 0 ? 0 : volumeSettings._lastSfx_combat;
+        updateVolume('sfx_combat', newVolume);
+    } else if (category === 'sfx_ui') {
+        const newVolume = volumeSettings.sfx_ui > 0 ? 0 : volumeSettings._lastSfx_ui;
+        updateVolume('sfx_ui', newVolume);
+    } else if (category === 'sfx_loot') {
+        const newVolume = volumeSettings.sfx_loot > 0 ? 0 : volumeSettings._lastSfx_loot;
+        updateVolume('sfx_loot', newVolume);
     }
 }
+
 
 /**
  * Gets the current volume settings for the UI.
