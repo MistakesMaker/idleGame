@@ -7,7 +7,7 @@ import { STATS } from './data/stat_pools.js';
 import { PERMANENT_UPGRADES } from './data/upgrades.js';
 import { logMessage, formatNumber, getUpgradeCost, findSubZoneByLevel, findFirstLevelOfZone, isBossLevel, isBigBossLevel, getCombinedItemStats, isMiniBossLevel, findNextAvailableSpot, findEmptySpot, getRandomInt, getTravelOptionsForHunt } from './utils.js';
 import * as ui from './ui.js';
-import { showSimpleTooltip } from './ui.js'; 
+import { showSimpleTooltip, showPromptModal  } from './ui.js'; 
 import * as player from './player_actions.js';
 import * as logic from './game_logic.js';
 import { HUNT_POOLS } from './data/hunts.js';
@@ -2647,18 +2647,26 @@ function startNewMonster() {
                 autoSave();
             });
 
-            let pressTimer;
-            btn.addEventListener('touchstart', () => {
-                pressTimer = window.setTimeout(() => {
-                    const currentName = gameState.presets[index].name;
-                    const newName = prompt("Enter a new name for the preset:", currentName);
-                    if (newName && newName.trim() !== "") {
-                        gameState.presets[index].name = newName.trim();
-                        logMessage(elements.gameLogEl, `Renamed preset to: <b>${newName.trim()}</b>`, '', isAutoScrollingLog);
+            const handleRename = () => {
+                const currentName = gameState.presets[index].name;
+                // --- THIS IS THE NEW PART ---
+                ui.showPromptModal(
+                    'Rename Preset',
+                    `Enter a new name for "${currentName}":`,
+                    currentName,
+                    (newName) => {
+                        // This code runs only if the user clicks "Confirm"
+                        gameState.presets[index].name = newName;
+                        logMessage(elements.gameLogEl, `Renamed preset to: <b>${newName}</b>`, '', isAutoScrollingLog);
                         ui.updateActivePresetButton(elements, gameState);
                         autoSave();
                     }
-                }, 1000); 
+                );
+            };
+
+            let pressTimer;
+            btn.addEventListener('touchstart', () => {
+                pressTimer = window.setTimeout(handleRename, 1000); 
             }, { passive: true });
 
             const clearPressTimer = () => clearTimeout(pressTimer);
@@ -2666,16 +2674,8 @@ function startNewMonster() {
             btn.addEventListener('touchmove', clearPressTimer);
             btn.addEventListener('touchcancel', clearPressTimer);
 
-            btn.addEventListener('dblclick', () => {
-                const currentName = gameState.presets[index].name;
-                const newName = prompt("Enter a new name for the preset:", currentName);
-                if (newName && newName.trim() !== "") {
-                    gameState.presets[index].name = newName.trim();
-                    logMessage(elements.gameLogEl, `Renamed preset to: <b>${newName.trim()}</b>`, '', isAutoScrollingLog);
-                    ui.updateActivePresetButton(elements, gameState);
-                    autoSave();
-                }
-            });
+            btn.addEventListener('dblclick', handleRename);
+            // --- END: This is the entire replacement block ---
         });
 
             const buffsContainer = document.getElementById('active-buffs-container');

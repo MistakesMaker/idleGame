@@ -3668,3 +3668,65 @@ export function updateCombatStatsDisplay(elements, playerStats) {
     clickDamageDisplay.className = `currency-tier-${clickTier}`;
     clickDamageDisplay.textContent = formatNumber(playerStats.totalClickDamage);
 }
+
+// At the end of file: ui.js
+
+/**
+ * Shows a custom prompt modal for user input.
+ * @param {string} title - The title to display on the modal.
+ * @param {string} message - The instructional message for the user.
+ * @param {string} defaultValue - The initial value for the input field.
+ * @param {function(string): void} onConfirm - Callback function executed with the input's value when confirmed.
+ */
+export function showPromptModal(title, message, defaultValue, onConfirm) {
+    const backdrop = document.getElementById('prompt-modal-backdrop');
+    const titleEl = document.getElementById('prompt-title');
+    const messageEl = document.getElementById('prompt-message');
+    const inputEl = /** @type {HTMLInputElement} */(document.getElementById('prompt-input'));
+    const confirmBtn = document.getElementById('prompt-confirm-btn');
+    const cancelBtn = document.getElementById('prompt-cancel-btn');
+
+    if (!backdrop || !titleEl || !messageEl || !inputEl || !confirmBtn || !cancelBtn) {
+        console.error("Prompt modal elements not found!");
+        return;
+    }
+
+    titleEl.textContent = title;
+    messageEl.textContent = message;
+    inputEl.value = defaultValue;
+    
+    // Create new event listeners each time to avoid multiple triggers
+    const confirmHandler = () => {
+        const value = inputEl.value.trim();
+        if (value) {
+            onConfirm(value);
+        }
+        closeModal();
+    };
+    
+    const cancelHandler = () => {
+        closeModal();
+    };
+
+    const backdropHandler = (e) => {
+        if (e.target === backdrop) {
+            closeModal();
+        }
+    };
+    
+    function closeModal() {
+        backdrop.classList.add('hidden');
+        // IMPORTANT: Clean up the listeners to prevent memory leaks
+        confirmBtn.removeEventListener('click', confirmHandler);
+        cancelBtn.removeEventListener('click', cancelHandler);
+        backdrop.removeEventListener('click', backdropHandler);
+    }
+
+    confirmBtn.addEventListener('click', confirmHandler);
+    cancelBtn.addEventListener('click', cancelHandler);
+    backdrop.addEventListener('click', backdropHandler);
+
+    backdrop.classList.remove('hidden');
+    inputEl.focus();
+    inputEl.select();
+}
