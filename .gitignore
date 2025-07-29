@@ -4,4 +4,4 @@ node_modules/
 main.js
 package-lock.json
 package.json
-node_modules/
+preload.js
