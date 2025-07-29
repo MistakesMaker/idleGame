@@ -1916,11 +1916,14 @@ function startNewMonster() {
         }
         ui.updateHuntsButtonGlow(gameState);
         setupEventListeners();
+        window.addEventListener('resize', handleWindowResize);
         recalculateStats();
         startNewMonster();
         logMessage(elements.gameLogEl, savedData ? "Saved game loaded!" : "Welcome! Your progress will be saved automatically.", '', isAutoScrollingLog);
         
         fullUIRender();
+        
+
         
         autoSave(); 
         setInterval(autoSave, 30000);
@@ -3848,7 +3851,30 @@ function startNewMonster() {
         });
     }
 }
+ function handleWindowResize() {
+        const activeAccordionContent = /** @type {HTMLElement} */(document.querySelector('.accordion-content[style*="max-height"]'));
+        if (activeAccordionContent && activeAccordionContent.style.maxHeight !== '0px') {
+            
+            const mapContainer = /** @type {HTMLElement} */(activeAccordionContent.querySelector('#map-container'));
+            if (!mapContainer) return;
 
+            activeAccordionContent.style.maxHeight = 'none';
+            const newScrollHeight = activeAccordionContent.scrollHeight;
+            activeAccordionContent.style.maxHeight = `${newScrollHeight}px`;
+
+            const activeHeader = /** @type {HTMLElement} */(document.querySelector('.accordion-header.active'));
+            const activeRealmIndex = activeHeader?.dataset.realmIndex;
+            
+            if (activeRealmIndex) {
+                const realm = REALMS[parseInt(activeRealmIndex, 10)];
+                const viewingZoneId = activeAccordionContent.querySelector('#back-to-world-map-btn.hidden') ? 'world' : document.querySelector('#map-title').textContent;
+                const zoneId = Object.keys(realm.zones).find(id => realm.zones[id].name === viewingZoneId) || 'world';
+
+                // Now this call is valid because we exported and imported the function
+                ui.drawMapPaths(mapContainer, realm, zoneId, gameState);
+            }
+        }
+    }
     function purchaseHuntShopItem(itemId) {
         const result = player.purchaseHuntShopItem(gameState, itemId);
         logMessage(elements.gameLogEl, result.message, result.success ? 'legendary' : 'rare', isAutoScrollingLog);

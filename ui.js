@@ -2134,7 +2134,7 @@ function renderMap(contentEl, realm, viewingZoneId, gameState, fightingZoneId, {
  * @param {string} viewingZoneId - The ID of the zone being viewed.
  * @param {object} gameState - The current game state.
  */
-function drawMapPaths(mapContainerEl, realm, viewingZoneId, gameState) {
+export function drawMapPaths(mapContainerEl, realm, viewingZoneId, gameState) {
     const zone = realm.zones[viewingZoneId];
     if (!zone || !mapContainerEl) return;
 
