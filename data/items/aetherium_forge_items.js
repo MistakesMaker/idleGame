@@ -1,5 +1,5 @@
 // --- START OF FILE data/items/aetherium_forge_items.js ---
-
+    /*,
 import { STATS } from '../stat_pools.js';
 
 export const aetheriumForgeItems = {
@@ -128,3 +128,4 @@ export const aetheriumForgeItems = {
         ]
     }
 };
+*/
