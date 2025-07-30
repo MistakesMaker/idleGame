@@ -1,5 +1,4 @@
 // --- START OF FILE data/items/sunken_world_items.js ---
-/*,
 import { STATS } from '../stat_pools.js';
 
 export const sunkenWorldItems = {
@@ -128,4 +127,3 @@ export const sunkenWorldItems = {
         ]
     }
 };
-*/

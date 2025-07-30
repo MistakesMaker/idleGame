@@ -1,5 +1,4 @@
 // --- START OF FILE data/items/celestial_planes_items.js ---
-/*,
 import { STATS } from '../stat_pools.js';
 
 export const celestialPlanesItems = {
@@ -128,4 +127,3 @@ export const celestialPlanesItems = {
         ]
     }
 };
-*/
