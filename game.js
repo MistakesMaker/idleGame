@@ -135,7 +135,26 @@ document.addEventListener('DOMContentLoaded', () => {
             stats: new Map(),
         }
     };
-    
+
+    const DERIVED_STAT_DESCRIPTIONS = {
+    clickDamage: {
+        title: 'Click Damage',
+        description: 'The total damage you deal each time you click the monster.'
+    },
+    dps: {
+        title: 'Damage Per Second (DPS)',
+        description: 'The total damage your hero deals automatically every second.'
+    },
+    goldGain: {
+        title: 'Gold Gain',
+        description: 'Increases the amount of gold dropped by monsters by this percentage.'
+    },
+    magicFind: {
+        title: 'Magic Find',
+        description: 'Improves the rarity of the items that drop. Quaranteed legendaries at 100%.'
+    }
+};
+
     const defaultEquipmentState = { sword: null, shield: null, helmet: null, necklace: null, platebody: null, platelegs: null, ring1: null, ring2: null, belt: null };
 
     function getDefaultGameState() {
@@ -3228,7 +3247,7 @@ function startNewMonster() {
             else if (p.querySelector('#magic-find-stat')) statKey = 'magicFind';
             else return;
 
-            ui.showStatBreakdownTooltip(elements, statKey, statBreakdown, gameState);
+            ui.showStatBreakdownTooltip(elements, statKey, statBreakdown, gameState, DERIVED_STAT_DESCRIPTIONS);
             const rect = p.getBoundingClientRect();
             elements.statTooltipEl.style.left = `${rect.left}px`;
             elements.statTooltipEl.style.top = `${rect.bottom + 5}px`;

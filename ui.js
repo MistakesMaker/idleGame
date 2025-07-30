@@ -2959,13 +2959,22 @@ export async function showDevToolModal(elements, wikiData) {
 }
 
 /**
- * Generates and displays the stat breakdown tooltip.
+ * Generates and displays the stat breakdown tooltip, now including a description.
  * @param {DOMElements} elements The DOM elements object.
  * @param {string} statKey The key of the stat to display (e.g., 'clickDamage').
  * @param {object} statBreakdown The object containing the breakdown data.
  * @param {object} gameState The current game state.
+ * @param {object} statDescriptions An object containing the title and description for each stat.
  */
-export function showStatBreakdownTooltip(elements, statKey, statBreakdown, gameState) {
+/**
+ * Generates and displays the stat breakdown tooltip, now including a description.
+ * @param {DOMElements} elements The DOM elements object.
+ * @param {string} statKey The key of the stat to display (e.g., 'clickDamage').
+ * @param {object} statBreakdown The object containing the breakdown data.
+ * @param {object} gameState The current game state.
+ * @param {object} statDescriptions An object containing the title and description for each stat.
+ */
+export function showStatBreakdownTooltip(elements, statKey, statBreakdown, gameState, statDescriptions) {
     const { statTooltipEl } = elements;
     if (!statBreakdown[statKey]) {
         statTooltipEl.innerHTML = '<h4>Error</h4><p>No breakdown available for this stat.</p>';
@@ -2974,23 +2983,27 @@ export function showStatBreakdownTooltip(elements, statKey, statBreakdown, gameS
 
     const data = statBreakdown[statKey];
     const statInfo = Object.values(STATS).find(s => s.key === statKey) || { name: 'Stat', type: 'flat' };
+    const descriptionContent = statDescriptions[statKey];
 
-    let html = `<h4>${statInfo.name} Breakdown</h4><ul>`;
+    let html = `<h4>${statInfo.name} Breakdown</h4>`;
+    
+    if (descriptionContent && descriptionContent.description) {
+        html += `<p style="font-size: 0.9em; color: #bdc3c7; margin: 5px 0 10px 0; border-bottom: 1px solid #4a637e; padding-bottom: 10px;">${descriptionContent.description}</p>`;
+    }
+    
+    html += '<ul>';
     
     data.sources.forEach(source => {
-        // Skip rendering the 'Base' source for damage stats as it's not meaningful to the player
         if ((statKey === 'clickDamage' || statKey === 'dps') && source.label === 'Base') {
             return;
         }
         if (source.value !== 0) {
-             // --- THIS IS THE FIX ---
             let valueStr;
             if (source.isPercent) {
                 valueStr = `+${source.value >= 1000 ? formatNumber(source.value) : source.value.toFixed(2)}%`;
             } else {
                 valueStr = `+${formatNumber(source.value)}`;
             }
-            // --- END OF FIX ---
             html += `<li>${source.label}: ${valueStr}</li>`;
         }
     });
