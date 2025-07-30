@@ -5,6 +5,7 @@ import { GEMS } from '../gems.js';
 import { CONSUMABLES } from '../consumables.js';
 
 export const underdarkMonsters = {
+    /*
     // ====================================================================================
     // --- Crystal Caverns (Levels 401-500) ---
     // ====================================================================================
@@ -590,4 +591,5 @@ export const underdarkMonsters = {
             { item: GEMS.BASE_TOPAZ_T5, weight: 7 },
         ]
     }
+        */
 };

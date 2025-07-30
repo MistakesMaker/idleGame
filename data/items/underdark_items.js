@@ -2,6 +2,7 @@
 import { STATS } from '../stat_pools.js';
 
 export const underdarkItems = {
+    /*
     // ====================================================================================
     // --- Crystal Caverns (Levels 401-500) ---
     // ====================================================================================
@@ -805,4 +806,5 @@ export const underdarkItems = {
             { key: STATS.DPS.key, min: 1, max: 4035978 },
         ]
     }
+        */
 };
