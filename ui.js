@@ -404,6 +404,11 @@ export function renderGrid(containerEl, items, options = {}) {
             pos = findEmptySpot(item.width || 1, item.height || 1, tempPlacement);
             if(pos) {
                 tempPlacement.push({ ...item, x: pos.x, y: pos.y });
+                // --- START: THIS IS THE FIX ---
+                // Write the newly calculated position back to the original item object.
+                item.x = pos.x;
+                item.y = pos.y;
+                // --- END: THIS IS THE FIX ---
             }
         } else {
             pos = { x: item.x, y: item.y };
