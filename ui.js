@@ -520,13 +520,19 @@ export function updateHeroPanel(elements, gameState, heldKeys = new Set()) {
 }
 
 
+// In file: ui.js
+
 /**
- * Updates only the derived stats panel (Click Dmg, DPS, etc.).
+ * Updates both the Derived Stats panel and the top-level Combat Stats in the Actions panel.
+ * This ensures all stat displays are perfectly synchronized.
  * @param {DOMElements} elements The object containing all DOM elements.
  * @param {object} playerStats The calculated player stats.
  */
 export function updateStatsPanel(elements, playerStats) {
-    const { clickDamageStatEl, dpsStatEl, bonusGoldStatEl, magicFindStatEl } = elements;
+    const { 
+        clickDamageStatEl, dpsStatEl, bonusGoldStatEl, magicFindStatEl,
+        clickDamageDisplay, dpsDisplay // <-- Now includes elements from the Actions Panel
+    } = elements;
     
     const getNumberTier = (amount) => {
         if (amount < 1e3) return 0; if (amount < 1e6) return 1; if (amount < 1e9) return 2;
@@ -534,22 +540,36 @@ export function updateStatsPanel(elements, playerStats) {
         return 6;
     };
     
+    // Calculate tiers
     const dpsTier = getNumberTier(playerStats.totalDps);
     const clickTier = getNumberTier(playerStats.totalClickDamage);
     
-    dpsStatEl.className = `currency-tier-${dpsTier}`;
-    dpsStatEl.textContent = formatNumber(playerStats.totalDps);
-    
-    clickDamageStatEl.className = `currency-tier-${clickTier}`;
-    clickDamageStatEl.textContent = formatNumber(playerStats.totalClickDamage);
+    // --- Update Derived Stats Panel ---
+    if (dpsStatEl) {
+        dpsStatEl.className = `currency-tier-${dpsTier}`;
+        dpsStatEl.textContent = formatNumber(playerStats.totalDps);
+    }
+    if (clickDamageStatEl) {
+        clickDamageStatEl.className = `currency-tier-${clickTier}`;
+        clickDamageStatEl.textContent = formatNumber(playerStats.totalClickDamage);
+    }
+    if (bonusGoldStatEl) {
+        bonusGoldStatEl.textContent = `${playerStats.bonusGold >= 1000 ? formatNumber(playerStats.bonusGold) : playerStats.bonusGold.toFixed(2)}%`;
+    }
+    if (magicFindStatEl) {
+        magicFindStatEl.textContent = `${playerStats.magicFind >= 1000 ? formatNumber(playerStats.magicFind) : playerStats.magicFind.toFixed(2)}%`;
+    }
 
-   // --- START OF MODIFICATION ---
-    // Use formatNumber for large percentages, but keep decimals for smaller ones.
-    bonusGoldStatEl.textContent = `${playerStats.bonusGold >= 1000 ? formatNumber(playerStats.bonusGold) : playerStats.bonusGold.toFixed(2)}%`;
-    magicFindStatEl.textContent = `${playerStats.magicFind >= 1000 ? formatNumber(playerStats.magicFind) : playerStats.magicFind.toFixed(2)}%`;
-    // --- END OF MODIFICATION ---
+    // --- Update Actions Panel Stats (ensuring they always match) ---
+    if (dpsDisplay) {
+        dpsDisplay.className = `currency-tier-${dpsTier}`;
+        dpsDisplay.textContent = formatNumber(playerStats.totalDps);
+    }
+    if (clickDamageDisplay) {
+        clickDamageDisplay.className = `currency-tier-${clickTier}`;
+        clickDamageDisplay.textContent = formatNumber(playerStats.totalClickDamage);
+    }
 }
-
 
 /**
  * Updates only the gold upgrades panel.
@@ -883,7 +903,6 @@ export function updateUI(elements, gameState, playerStats, currentMonster, salva
     updateMonsterUI(elements, gameState, currentMonster);
     updateLootPanel(elements, currentMonster, gameState);
     updatePrestigeUI(elements, gameState);
-    updateCombatStatsDisplay(elements, playerStats);
     updateHuntsButton(gameState);
 
     // Grid Renders for the active inventory sub-view
@@ -3643,33 +3662,6 @@ export function updateVolumeSlidersUI(elements, volumeSettings) {
         if (icon) icon.className = volumeSettings.sfx_loot > 0 ? 'fas fa-volume-up' : 'fas fa-volume-mute';
     }
 }
-// 
-/**
- * Updates the permanent combat stat display in the actions panel.
- * @param {DOMElements} elements The DOM elements object.
- * @param {object} playerStats The calculated player stats.
- */
-export function updateCombatStatsDisplay(elements, playerStats) {
-    const { clickDamageDisplay, dpsDisplay } = elements;
-    if (!clickDamageDisplay || !dpsDisplay) return;
-
-    const getNumberTier = (amount) => {
-        if (amount < 1e3) return 0; if (amount < 1e6) return 1; if (amount < 1e9) return 2;
-        if (amount < 1e12) return 3; if (amount < 1e15) return 4; if (amount < 1e18) return 5;
-        return 6;
-    };
-
-    const dpsTier = getNumberTier(playerStats.totalDps);
-    const clickTier = getNumberTier(playerStats.totalClickDamage);
-    
-    dpsDisplay.className = `currency-tier-${dpsTier}`;
-    dpsDisplay.textContent = formatNumber(playerStats.totalDps);
-    
-    clickDamageDisplay.className = `currency-tier-${clickTier}`;
-    clickDamageDisplay.textContent = formatNumber(playerStats.totalClickDamage);
-}
-
-// At the end of file: ui.js
 
 /**
  * Shows a custom prompt modal for user input.
