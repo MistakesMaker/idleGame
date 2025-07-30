@@ -30,18 +30,6 @@ export const CONSUMABLES = {
             key: 'wisdomOfTheOverworldUsed'
         }
     },
-     WISDOM_OF_THE_UNDERDARK: {
-        id: 'WISDOM_OF_THE_UNDERDARK',
-        name: "Wisdom of the Underdark",
-        type: 'consumable',
-        icon: 'images/consumables/wisdom_of_the_underdark.png',
-        width: 2, height: 2,
-        description: "A one-time use scroll from a forgotten realm. When consumed, permanently increases your T5-T8 gems combining success rate from 50% to 60%.",
-        effect: {
-            type: 'permanentFlag',
-            key: 'wisdomOfTheUnderdarkUsed'
-        }
-    },
     ARTISAN_DRILL: {
         id: 'ARTISAN_DRILL',
         name: "Artisan's Drill",
