@@ -2,6 +2,7 @@
 import { STATS } from '../stat_pools.js';
 
 export const aetheriumForgeItems = {
+    /*
     // 1601-1700
     REALITY_CUTTER: {
         id: 'REALITY_CUTTER',
@@ -126,4 +127,5 @@ export const aetheriumForgeItems = {
             { key: STATS.MAGIC_FIND.key, min: 2000, max: 6000 }
         ]
     }
+*/
 };

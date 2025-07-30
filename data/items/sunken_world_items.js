@@ -2,6 +2,7 @@
 import { STATS } from '../stat_pools.js';
 
 export const sunkenWorldItems = {
+    /*
     // 801-900
     TRIDENT_OF_TIDES: {
         id: 'TRIDENT_OF_TIDES',
@@ -125,5 +126,5 @@ export const sunkenWorldItems = {
             { key: STATS.GOLD_GAIN.key, min: 1000, max: 3000 },
             { key: STATS.MAGIC_FIND.key, min: 100, max: 300 }
         ]
-    }
+    */
 };

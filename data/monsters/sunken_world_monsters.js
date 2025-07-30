@@ -4,6 +4,7 @@ import { ITEMS } from '../items.js';
 import { GEMS } from '../gems.js';
 
 export const sunkenWorldMonsters = {
+/*
     // --- Zone: Tide-Wracked Coast (Levels 801-900) ---
     GHOSTLY_PIRATE: {
         name: "Ghostly Pirate",
@@ -125,4 +126,5 @@ export const sunkenWorldMonsters = {
             { item: ITEMS.EYE_OF_THE_MAELSTROM, weight: 5 }
         ]
     }
+*/
 };

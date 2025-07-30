@@ -185,6 +185,7 @@ export const REALMS = [
             }
         }
     },
+    /*,
     {
         name: "The Sunken World",
         mapImage: "images/sunken_world_map.png",
@@ -386,4 +387,5 @@ export const REALMS = [
             }
         }
     }
+    */
 ];

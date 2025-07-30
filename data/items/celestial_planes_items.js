@@ -2,6 +2,7 @@
 import { STATS } from '../stat_pools.js';
 
 export const celestialPlanesItems = {
+    /*
     // 1201-1300
     BLADE_OF_THE_SERAPH: {
         id: 'BLADE_OF_THE_SERAPH',
@@ -126,4 +127,5 @@ export const celestialPlanesItems = {
             { key: STATS.MAGIC_FIND.key, min: 400, max: 1200 }
         ]
     }
+    */
 };

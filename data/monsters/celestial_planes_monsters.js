@@ -4,6 +4,7 @@ import { ITEMS } from '../items.js';
 import { GEMS } from '../gems.js';
 
 export const celestialPlanesMonsters = {
+    /*
     // --- Zone: Azure Pathway (Levels 1201-1300) ---
     CLOUD_SERPENT: {
         name: "Cloud Serpent",
@@ -125,4 +126,5 @@ export const celestialPlanesMonsters = {
             { item: ITEMS.HEART_OF_A_STAR, weight: 5 }
         ]
     }
+*/
 };

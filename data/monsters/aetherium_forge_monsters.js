@@ -4,6 +4,7 @@ import { ITEMS } from '../items.js';
 import { GEMS } from '../gems.js';
 
 export const aetheriumForgeMonsters = {
+    /*
     // --- Zone: Mana Wastes (Levels 1601-1700) ---
     MANA_WRAITH: {
         name: "Mana Wraith",
@@ -125,4 +126,5 @@ export const aetheriumForgeMonsters = {
             { item: ITEMS.THE_FIRST_SPARK, weight: 5 }
         ]
     }
+*/
 };
