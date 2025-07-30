@@ -864,7 +864,9 @@ export function renderEquipmentStatsSummary(elements, gameState) {
         const statInfo = Object.values(STATS).find(s => s.key === statKey) || { name: statKey, type: 'flat' };
         const value = totalStats[statKey];
         const isPercent = statInfo.type === 'percent';
-        const statValue = isPercent ? `+${value.toFixed(2)}%` : `+${formatNumber(value)}`;
+        const statValue = isPercent 
+            ? `+${value >= 1000 ? formatNumber(value) : value.toFixed(2)}%` 
+            : `+${formatNumber(value)}`;
         const iconClass = statIconMap[statKey] || 'fa-question-circle';
         
         let statName = statInfo.name;
