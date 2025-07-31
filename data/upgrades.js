@@ -49,8 +49,8 @@ export const PERMANENT_UPGRADES = {
         baseCost: 3500, // Lowered from 5000
         costScalar: 1.8,      // Lowered for a gentler curve
         bonusType: 'PERCENT',
-        bonusPerLevel: 0.5,     // Increased from 0.2
-        maxLevel: 200,      // Capped at 100% (0.5 * 200)
+        bonusPerLevel: 1,     // Increased from 0.2
+        maxLevel: 100,      // Capped at 100% 
     },
     CRITICAL_DAMAGE: {
         id: 'CRITICAL_DAMAGE',
@@ -115,8 +115,8 @@ export const PERMANENT_UPGRADES = {
         baseCost: 50000, // Lowered from 100000
         costScalar: 2.5,
         bonusType: 'PERCENT',
-        bonusPerLevel: 0.2, // Increased from 0.1
-        maxLevel: 500, // Capped at 100% (0.2 * 500)
+        bonusPerLevel: 0.5, // Increased from 0.1
+        maxLevel: 200, // Capped at 100% (0.5 * 200)
     },
     HUNTERS_ACUMEN: {
         id: 'HUNTERS_ACUMEN',
