@@ -300,7 +300,7 @@ export const CONSUMABLES = {
         type: 'consumable',
         icon: 'images/consumables/prestige_token.png',
         width: 2, height: 2,
-        description: "A special token earned from the Hunter's Board. Consuming it allows you to Prestige immediately, regardless of your current level. This does not affect regular Prestige level requirements.",
+        description: "Consuming it allows you to Prestige immediately, regardless of your current level. This does not affect regular Prestige level requirements.",
         effect: {
             type: 'triggerPrestigeView',
             key: 'prestige'

@@ -3309,19 +3309,15 @@ function createHuntShopItemHTML(shopItem, gameState) {
     const isUnlocked = !shopItem.unlock || gameState.hunts.totalCompleted >= shopItem.unlock;
     const isPurchased = (shopItem.oneTimePurchase && gameState.purchasedOneTimeShopItems.includes(shopItem.id)) || (shopItem.id === 'PRESTIGE_TOKEN' && gameState.prestigeTokenPurchasedThisRun);
     
-    // --- START OF MODIFICATION ---
-    // Calculate the final cost for display, accounting for dynamic pricing.
     let finalCost = shopItem.cost;
     if (shopItem.id === 'PRESTIGE_TOKEN') {
         const purchaseCount = gameState.prestigeTokenPurchases || 0;
         finalCost = shopItem.cost + (purchaseCount * 10);
     }
     const canAfford = gameState.hunts.tokens >= finalCost;
-    // --- END OF MODIFICATION ---
 
     let itemData, name, description, icon;
 
-    // Handle special, non-consumable items
     if (shopItem.id === 'HUNT_CANCEL') {
         name = "Cancel Active Hunt";
         description = "Abandon your current hunt if you get stuck. Does not refund reroll costs.";
@@ -3338,7 +3334,25 @@ function createHuntShopItemHTML(shopItem, gameState) {
         }
         name = itemData.name;
         icon = itemData.icon;
-        description = (itemData.tier >= 1 && itemData.stats) ? `A powerful Tier ${itemData.tier} gem.` : itemData.description;
+
+        // --- START OF MODIFICATION (This is the corrected logic) ---
+        if (itemData.tier >= 1 && itemData.stats) {
+            const statKey = Object.keys(itemData.stats)[0];
+            const statValue = itemData.stats[statKey];
+            const statInfo = Object.values(STATS).find(s => s.key === statKey);
+            
+            if (statInfo) {
+                const valueStr = statInfo.type === 'percent' ? `${statValue.toFixed(2)}%` : formatNumber(statValue);
+                // The next line is the only one that changes.
+                description = `<b>+${valueStr} ${statInfo.name}</b>`;
+            } else {
+                // Fallback in case stat info isn't found
+                description = `A Tier ${itemData.tier} gem.`;
+            }
+        } else {
+            description = itemData.description;
+        }
+        // --- END OF MODIFICATION ---
     }
 
     let buttonContent;
@@ -3349,11 +3363,11 @@ function createHuntShopItemHTML(shopItem, gameState) {
         buttonContent = `Purchased`;
         buttonDisabled = 'disabled';
     } else if (!isUnlocked) {
-        buttonContent = `<span>${formatNumber(finalCost)}</span><img src="images/icons/hunt_token.png" alt="Token">`; // Use finalCost
+        buttonContent = `<span>${formatNumber(finalCost)}</span><img src="images/icons/hunt_token.png" alt="Token">`;
         buttonDisabled = 'disabled';
         unlockReqHTML = `<div class="shop-item-unlock-req">Requires ${shopItem.unlock} Hunts</div>`;
     } else {
-        buttonContent = `<span>${formatNumber(finalCost)}</span><img src="images/icons/hunt_token.png" alt="Token">`; // Use finalCost
+        buttonContent = `<span>${formatNumber(finalCost)}</span><img src="images/icons/hunt_token.png" alt="Token">`;
         if (!canAfford) {
             buttonDisabled = 'disabled';
         }
