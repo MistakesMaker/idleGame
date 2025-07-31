@@ -896,7 +896,7 @@ export function updateHuntsButton(gameState) {
 /**
  * The main UI update function.
  */
-export function updateUI(elements, gameState, playerStats, currentMonster, salvageMode, craftingGems = [], selectedItemForForge = null, bulkCombineSelection = {}, bulkCombineDeselectedIds = new Set()) {
+export function updateUI(elements, gameState, playerStats, currentMonster, salvageMode, craftingGems = [], selectedItemForForge = null, bulkCombineSelection = {}, bulkCombineDeselectedIds = new Set(), prestigeFromToken = false) {
     const {
         inventorySlotsEl, gemSlotsEl, forgeInventorySlotsEl, consumablesSlotsEl,
         prestigeEquipmentPaperdoll, prestigeInventoryDisplay, prestigeSelectionCount, prestigeSelectionMax
@@ -969,6 +969,7 @@ export function updateUI(elements, gameState, playerStats, currentMonster, salva
 
     // Prestige View
      if (elements.prestigeView.classList.contains('active') && gameState.unlockedFeatures.prestige) {
+        elements.cancelPrestigeButton.classList.toggle('hidden', prestigeFromToken); 
         // --- START OF MODIFICATION ---
         // 1. Get the IDs of items currently on the active paperdoll.
         const equippedItemIds = new Set(Object.values(gameState.equipment).filter(Boolean).map(item => item.id));
@@ -2640,7 +2641,24 @@ export function updatePrestigeUI(elements, gameState) {
     }
 
     const nextPrestigeLevel = gameState.nextPrestigeLevel || 100;
-    prestigeRequirementTextEl.innerHTML = `Defeat the boss at Level <b>${nextPrestigeLevel}</b> to Prestige.`;
+    
+    // Set the original prestige requirement text
+    prestigeRequirementTextEl.innerHTML = `Defeat the boss at Level <b>${nextPrestigeLevel}</b> to Prestige`;
+
+    // --- START OF MODIFICATION ---
+    // Calculate and display the cost for the hunt prestige option
+    const prestigeTokenShopItem = HUNT_SHOP_INVENTORY.Utility.find(item => item.id === 'PRESTIGE_TOKEN');
+    if (prestigeTokenShopItem) {
+        const purchaseCount = gameState.prestigeTokenPurchases || 0;
+        const currentCost = prestigeTokenShopItem.cost + (purchaseCount * 10);
+
+        // Append the new information as a separate paragraph
+        prestigeRequirementTextEl.innerHTML += ` or use a Mark of the Hunter</span> from the Hunt Shop.
+            </p>
+        `;
+    }
+    // --- END OF MODIFICATION ---
+    
     (/** @type {HTMLButtonElement} */ (prestigeButton)).disabled = !gameState.currentRunCompletedLevels.includes(nextPrestigeLevel);
 }
 
@@ -3287,8 +3305,17 @@ export function switchHuntsSubView(subViewIdToShow) {
  */
 function createHuntShopItemHTML(shopItem, gameState) {
     const isUnlocked = !shopItem.unlock || gameState.hunts.totalCompleted >= shopItem.unlock;
-    const isPurchased = shopItem.oneTimePurchase && gameState.purchasedOneTimeShopItems.includes(shopItem.id);
-    const canAfford = gameState.hunts.tokens >= shopItem.cost;
+    const isPurchased = (shopItem.oneTimePurchase && gameState.purchasedOneTimeShopItems.includes(shopItem.id)) || (shopItem.id === 'PRESTIGE_TOKEN' && gameState.prestigeTokenPurchasedThisRun);
+    
+    // --- START OF MODIFICATION ---
+    // Calculate the final cost for display, accounting for dynamic pricing.
+    let finalCost = shopItem.cost;
+    if (shopItem.id === 'PRESTIGE_TOKEN') {
+        const purchaseCount = gameState.prestigeTokenPurchases || 0;
+        finalCost = shopItem.cost + (purchaseCount * 10);
+    }
+    const canAfford = gameState.hunts.tokens >= finalCost;
+    // --- END OF MODIFICATION ---
 
     let itemData, name, description, icon;
 
@@ -3302,34 +3329,16 @@ function createHuntShopItemHTML(shopItem, gameState) {
         description = "Gain one extra bounty reroll for the day.";
         icon = 'images/icons/reroll_charge.png';
     } else {
-        // Check both GEMS and CONSUMABLES
         itemData = GEMS[shopItem.id] || CONSUMABLES[shopItem.id];
-        
         if (!itemData) {
             console.error(`Shop item with ID "${shopItem.id}" could not be found in GEMS or CONSUMABLES data. Skipping render.`);
             return `<div class="hunt-shop-item locked"><div class="shop-item-details"><div class="shop-item-name">Invalid Item</div><div class="shop-item-desc">ID: ${shopItem.id}</div></div></div>`;
         }
-        
         name = itemData.name;
         icon = itemData.icon;
-
-        if (itemData.tier >= 1 && itemData.stats) {
-            const statKey = Object.keys(itemData.stats)[0];
-            const statValue = itemData.stats[statKey];
-            const statInfo = Object.values(STATS).find(s => s.key === statKey);
-            
-            if (statInfo) {
-                const valueStr = statInfo.type === 'percent' ? `${statValue.toFixed(2)}%` : formatNumber(statValue);
-                description = `A powerful Tier ${itemData.tier} gem.<br><b>+${valueStr} ${statInfo.name}</b>`;
-            } else {
-                description = `A powerful Tier ${itemData.tier} gem.`;
-            }
-        } else {
-            description = itemData.description;
-        }
+        description = (itemData.tier >= 1 && itemData.stats) ? `A powerful Tier ${itemData.tier} gem.` : itemData.description;
     }
 
-    // --- START OF MODIFICATION ---
     let buttonContent;
     let buttonDisabled = '';
     let unlockReqHTML = '';
@@ -3338,18 +3347,17 @@ function createHuntShopItemHTML(shopItem, gameState) {
         buttonContent = `Purchased`;
         buttonDisabled = 'disabled';
     } else if (!isUnlocked) {
-        buttonContent = `<span>${shopItem.cost}</span><img src="images/icons/hunt_token.png" alt="Token">`;
+        buttonContent = `<span>${formatNumber(finalCost)}</span><img src="images/icons/hunt_token.png" alt="Token">`; // Use finalCost
         buttonDisabled = 'disabled';
         unlockReqHTML = `<div class="shop-item-unlock-req">Requires ${shopItem.unlock} Hunts</div>`;
     } else {
-        buttonContent = `<span>${shopItem.cost}</span><img src="images/icons/hunt_token.png" alt="Token">`;
+        buttonContent = `<span>${formatNumber(finalCost)}</span><img src="images/icons/hunt_token.png" alt="Token">`; // Use finalCost
         if (!canAfford) {
             buttonDisabled = 'disabled';
         }
     }
 
     const buttonHTML = `<button class="shop-item-buy-btn" data-item-id="${shopItem.id}" ${buttonDisabled}>${buttonContent}</button>`;
-    // --- END OF MODIFICATION ---
 
     const classes = ['hunt-shop-item'];
     if (!isUnlocked) classes.push('locked');

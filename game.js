@@ -7,7 +7,7 @@ import { STATS } from './data/stat_pools.js';
 import { PERMANENT_UPGRADES } from './data/upgrades.js';
 import { logMessage, formatNumber, getUpgradeCost, findSubZoneByLevel, findFirstLevelOfZone, isBossLevel, isBigBossLevel, getCombinedItemStats, isMiniBossLevel, findNextAvailableSpot, findEmptySpot, getRandomInt, getTravelOptionsForHunt } from './utils.js';
 import * as ui from './ui.js';
-import { showSimpleTooltip, showPromptModal  } from './ui.js'; 
+import { showSimpleTooltip, showPromptModal, switchView } from './ui.js';
 import * as player from './player_actions.js';
 import * as logic from './game_logic.js';
 import { HUNT_POOLS } from './data/hunts.js';
@@ -89,7 +89,7 @@ function addTapListener(element, handler) {
 document.addEventListener('DOMContentLoaded', () => {
 
     let gameState = {};
-    
+    let prestigeFromToken = false;
     // --- Separate state for UI/View concerns ---
     let currentViewingRealmIndex = 0;
     let currentViewingZoneId = 'world';
@@ -192,6 +192,9 @@ document.addEventListener('DOMContentLoaded', () => {
             // --- NEW PROPERTIES START HERE ---
             permanentStatBonuses: { totalClickDamage: 0, totalDps: 0 }, // For Tomes
             purchasedOneTimeShopItems: [], // For tracking one-time shop buys
+            prestigeTokenPurchases: 0,
+            prestigeTokenPurchasedThisRun: false,
+            isTokenPrestigePending: false,
             activeTargetedConsumable: null, // For tracking items like the Artisan's Drill
             // --- NEW PROPERTIES END HERE ---
             wisdomOfTheOverworldDropped: false,
@@ -790,7 +793,7 @@ function startNewMonster() {
     
     function fullUIRender() {
         ui.updateTabVisibility(gameState);
-        ui.updateUI(elements, gameState, playerStats, currentMonster, salvageMode, craftingGems, selectedItemForForge, bulkCombineSelection, bulkCombineDeselectedIds);
+        ui.updateUI(elements, gameState, playerStats, currentMonster, salvageMode, craftingGems, selectedItemForForge, bulkCombineSelection, bulkCombineDeselectedIds, prestigeFromToken);
         renderMapAccordion();
         ui.renderPermanentUpgrades(elements, gameState);
         ui.updateActiveBuffsUI(elements, gameState.activeBuffs);
@@ -2346,7 +2349,16 @@ function startNewMonster() {
                         () => {
                             const result = player.consumeItem(gameState, item.id);
                             logMessage(elements.gameLogEl, result.message, 'legendary', isAutoScrollingLog);
+                            
                             if (result.success) {
+                                if (result.specialAction === 'showPrestigeView') {
+                                    prestigeFromToken = true; // <-- ADD THIS LINE
+                                    document.querySelector('.actions-panel').classList.add('hidden');
+                                    document.querySelector('.upgrades-panel').classList.add('hidden');
+                                    switchView(elements, 'prestige-view', gameState);
+                                }
+                                // --- END OF MODIFICATION ---
+
                                 if (gameState.activeTargetedConsumable) {
                                     ui.updateTargetingHighlights(elements, gameState);
                                 }
@@ -3315,11 +3327,13 @@ function startNewMonster() {
         });
     
         addTapListener(elements.cancelPrestigeButton, () => {
-            document.querySelector('.actions-panel').classList.remove('hidden');
-            document.querySelector('.upgrades-panel').classList.remove('hidden');
-            ui.switchView(elements, 'map-view', gameState);
-            fullUIRender();
-        });
+        prestigeFromToken = false;
+        gameState.isTokenPrestigePending = false; // <-- ADD THIS LINE
+        document.querySelector('.actions-panel').classList.remove('hidden');
+        document.querySelector('.upgrades-panel').classList.remove('hidden');
+        ui.switchView(elements, 'map-view', gameState);
+        fullUIRender();
+    });
     
         addTapListener(elements.prestigeEquipmentPaperdoll, (event) => {
             if (!(event.target instanceof Element)) return;
@@ -3358,6 +3372,33 @@ function startNewMonster() {
         });
     
         addTapListener(elements.confirmPrestigeButton, () => {
+            // --- START OF MODIFICATION ---
+            // If this is a token prestige, find and consume the token first.
+            if (gameState.isTokenPrestigePending) {
+                const tokenIndex = gameState.consumables.findIndex(c => c.baseId === 'PRESTIGE_TOKEN');
+                if (tokenIndex > -1) {
+                    const stack = gameState.consumables[tokenIndex];
+                    if (stack.quantity > 1) {
+                        stack.quantity--;
+                    } else {
+                        gameState.consumables.splice(tokenIndex, 1);
+                    }
+                } else {
+                    // This is a safety check. If the token is somehow gone, cancel the prestige.
+                    logMessage(elements.gameLogEl, "Error: Prestige Token not found. Cancelling prestige.", 'rare', isAutoScrollingLog);
+                    
+                    // Reset flags and return to the map view
+                    prestigeFromToken = false;
+                    gameState.isTokenPrestigePending = false;
+                    document.querySelector('.actions-panel').classList.remove('hidden');
+                    document.querySelector('.upgrades-panel').classList.remove('hidden');
+                    switchView(elements, 'map-view', gameState);
+                    fullUIRender();
+                    return; // Stop the function here
+                }
+            }
+            // --- END OF MODIFICATION ---
+
             selectedItemForForge = null;
             selectedGemForSocketing = null;
 
@@ -3365,6 +3406,7 @@ function startNewMonster() {
                 .map(slotName => gameState.equipment[slotName])
                 .filter(Boolean);
             
+            // ... (The rest of the prestige logic remains exactly the same) ...
             const newAbsorbedStats = {};
             const newAbsorbedSynergies = {}; 
             const newAbsorbedUniqueEffects = {};
@@ -3438,8 +3480,9 @@ function startNewMonster() {
                 },
                 tutorialCompleted: gameState.tutorialCompleted,
                 permanentUpgrades: gameState.permanentUpgrades,
-                permanentStatBonuses: gameState.permanentStatBonuses, // Keep Tome bonuses
-                purchasedOneTimeShopItems: gameState.purchasedOneTimeShopItems, // Keep one-time purchases
+                permanentStatBonuses: gameState.permanentStatBonuses, 
+                purchasedOneTimeShopItems: gameState.purchasedOneTimeShopItems,
+                prestigeTokenPurchases: gameState.prestigeTokenPurchases || 0,
                 salvageFilter: gameState.salvageFilter,
                 wikiFavorites: gameState.wikiFavorites, 
                 unlockedPrestigeSlots: gameState.unlockedPrestigeSlots,
@@ -3449,15 +3492,15 @@ function startNewMonster() {
                 prestigeCount: oldPrestigeCount + 1,
                 completedLevels: gameState.completedLevels, 
                 maxLevel: 1,
-                nextPrestigeLevel: currentPrestigeLevel + 100,
+                nextPrestigeLevel: prestigeFromToken ? currentPrestigeLevel : currentPrestigeLevel + 100,
                 hero: prestgedHeroState,
                 currentFightingLevel: 1,
                 currentRunCompletedLevels: [],
                 hunts: {
-                    ...baseState.hunts, // Resets daily rerolls, active, available
-                    completionCounts: gameState.hunts.completionCounts || {}, // Keep permanent counts
-                    totalCompleted: gameState.hunts.totalCompleted || 0, // Keep permanent total
-                    tokens: 0, // <-- RESET TOKENS
+                    ...baseState.hunts, 
+                    completionCounts: gameState.hunts.completionCounts || {}, 
+                    totalCompleted: gameState.hunts.totalCompleted || 0, 
+                    tokens: 0, 
                 },
             };
             gameState.equipment = gameState.presets[gameState.activePresetIndex].equipment;
@@ -3474,6 +3517,8 @@ function startNewMonster() {
     
             logMessage(elements.gameLogEl, `PRESTIGE! You are reborn with greater power. Your next goal is Level ${gameState.nextPrestigeLevel}.`, 'legendary', isAutoScrollingLog);
             
+            prestigeFromToken = false;
+
             document.querySelector('.actions-panel').classList.remove('hidden');
             document.querySelector('.upgrades-panel').classList.remove('hidden');
             ui.switchView(elements, 'map-view', gameState);
@@ -3483,6 +3528,7 @@ function startNewMonster() {
             fullUIRender();
             autoSave();
         });
+
     }
 
     function showUnlockConfirmationModal(slotName) {
