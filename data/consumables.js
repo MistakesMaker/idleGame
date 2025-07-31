@@ -293,4 +293,17 @@ export const CONSUMABLES = {
             duration: 900 // 15 minutes in seconds
         }
     },
+    // --- NEW PRESTIGE ITEM ---
+    PRESTIGE_TOKEN: {
+        id: 'PRESTIGE_TOKEN',
+        name: "Mark of the Hunter",
+        type: 'consumable',
+        icon: 'images/consumables/prestige_token.png',
+        width: 2, height: 2,
+        description: "Consuming it allows you to Prestige immediately, regardless of your current level. This does not affect regular Prestige level requirements.",
+        effect: {
+            type: 'triggerPrestigeView',
+            key: 'prestige'
+        }
+    },
 };

@@ -819,27 +819,38 @@ export function buyPermanentUpgrade(gameState, upgradeId) {
  * Consumes an item, applying its effect and removing it from the player's possession.
  * @param {object} gameState - The main game state object.
  * @param {string|number} stackId - The ID of the consumable stack to use.
- * @returns {{success: boolean, message: string}}
+ * @returns {{success: boolean, message: string, specialAction: string|null}}
  */
 export function consumeItem(gameState, stackId) {
     const stackIndex = gameState.consumables.findIndex(c => c.id === stackId);
     if (stackIndex === -1) {
-        return { success: false, message: "Consumable item not found." };
+        return { success: false, message: "Consumable item not found.", specialAction: null };
     }
 
     const stack = gameState.consumables[stackIndex];
     const itemBase = CONSUMABLES[stack.baseId];
     if (!itemBase || !itemBase.effect) {
-        return { success: false, message: "Item has no defined effect." };
+        return { success: false, message: "Item has no defined effect.", specialAction: null };
     }
 
     const effect = itemBase.effect;
-    let message = `You consumed the ${stack.name}!`;
+    let message = `You activated the ${stack.name}!`;
+
+    let result = { success: true, message: message, specialAction: null };
 
     switch (effect.type) {
+        case 'triggerPrestigeView':
+            // --- START OF MODIFICATION ---
+            // Set the persistent flag and prepare the special action.
+            gameState.isTokenPrestigePending = true; 
+            result.specialAction = 'showPrestigeView';
+            result.message = "The Mark glows with power, opening the path to a new beginning...";
+            // --- END OF MODIFICATION ---
+            break;
+
         case 'permanentFlag':
             if (gameState[effect.key]) {
-                return { success: false, message: "You have already gained this permanent effect." };
+                return { success: false, message: "You have already gained this permanent effect.", specialAction: null };
             }
             gameState[effect.key] = true;
             break;
@@ -850,21 +861,21 @@ export function consumeItem(gameState, stackId) {
 
             if (existingBuff) {
                 existingBuff.expiresAt = newExpiresAt;
-                message = `You refreshed the duration of <b>${effect.name}</b>!`;
+                result.message = `You refreshed the duration of <b>${effect.name}</b>!`;
             } else {
                 gameState.activeBuffs.push({ ...effect, expiresAt: newExpiresAt });
-                message = `You feel the effects of <b>${effect.name}</b>!`;
+                result.message = `You feel the effects of <b>${effect.name}</b>!`;
             }
             break;   
 
         case 'resource':
             gameState[effect.resource] = (gameState[effect.resource] || 0) + effect.amount;
-            message = `You gained <b>${formatNumber(effect.amount)} ${effect.resource.charAt(0).toUpperCase() + effect.resource.slice(1)}</b>!`;
+            result.message = `You gained <b>${formatNumber(effect.amount)} ${effect.resource.charAt(0).toUpperCase() + effect.resource.slice(1)}</b>!`;
             break;
         
         case 'permanentStat':
             gameState.permanentStatBonuses[effect.key] = (gameState.permanentStatBonuses[effect.key] || 0) + effect.value;
-            message += ` Your power grows permanently!`;
+            result.message += ` Your power grows permanently!`;
             break;
 
         case 'targetedItemModifier':
@@ -873,20 +884,25 @@ export function consumeItem(gameState, stackId) {
                 effect: effect.key,
                 name: stack.name
             };
-            message = `Select an item to use your <b>${stack.name}</b> on.`;
+            result.message = `Select an item to use your <b>${stack.name}</b> on.`;
             break;
 
         default:
-            return { success: false, message: "Unknown consumable effect type." };
+            return { success: false, message: "Unknown consumable effect type.", specialAction: null };
     }
 
-    if (stack.quantity && stack.quantity > 1) {
-        stack.quantity--;
-    } else {
-        gameState.consumables.splice(stackIndex, 1);
+    // --- START OF MODIFICATION ---
+    // Only remove the item if it's NOT our special prestige token.
+    if (effect.type !== 'triggerPrestigeView') {
+        if (stack.quantity && stack.quantity > 1) {
+            stack.quantity--;
+        } else {
+            gameState.consumables.splice(stackIndex, 1);
+        }
     }
+    // --- END OF MODIFICATION ---
     
-    return { success: true, message };
+    return result;
 }
 
 /**
@@ -1215,46 +1231,58 @@ export function purchaseHuntShopItem(gameState, itemId) {
     if (shopItem.oneTimePurchase && gameState.purchasedOneTimeShopItems.includes(itemId)) {
         return { success: false, message: "You have already purchased this unique item.", itemType: null };
     }
-    if (gameState.hunts.tokens < shopItem.cost) {
-        return { success: false, message: `You need ${shopItem.cost} tokens to buy this.`, itemType: null };
+
+    // --- START OF MODIFICATION ---
+    // Special check for the prestige token
+    if (itemId === 'PRESTIGE_TOKEN' && gameState.prestigeTokenPurchasedThisRun) {
+        return { success: false, message: "You have already purchased a Mark of the Hunter on this run.", itemType: null };
+    }
+    // --- END OF MODIFICATION ---
+
+    // Calculate the final cost, accounting for dynamic pricing.
+    let finalCost = shopItem.cost;
+    if (itemId === 'PRESTIGE_TOKEN') {
+        const purchaseCount = gameState.prestigeTokenPurchases || 0;
+        finalCost = shopItem.cost + (purchaseCount * 10);
     }
 
+    if (gameState.hunts.tokens < finalCost) {
+        return { success: false, message: `You need ${formatNumber(finalCost)} tokens to buy this.`, itemType: null };
+    }
+    
     // Special handlers for non-item shop actions
     if (itemId === 'HUNT_REROLL') {
-        gameState.hunts.tokens -= shopItem.cost;
+        gameState.hunts.tokens -= finalCost;
         gameState.hunts.dailyRerollsLeft++;
         return { success: true, message: "Purchased 1 Bounty Reroll charge.", itemType: 'utility' };
     }
     if (itemId === 'HUNT_CANCEL') {
-        // The cancel function handles its own cost. We just trigger it.
         const cancelResult = cancelActiveHunt(gameState);
         return { ...cancelResult, itemType: 'utility' };
     }
 
-    // --- START OF THE ACTUAL FIX ---
-    // Unified lookup for the item's base definition from all relevant data files.
     const itemBase = GEMS[itemId] || CONSUMABLES[itemId];
 
     if (!itemBase) {
-        // This will now correctly catch any item ID that doesn't exist in our data.
         return { success: false, message: "Data not found for this item.", itemType: null };
     }
 
-    // If we found the item, proceed with the purchase.
-    gameState.hunts.tokens -= shopItem.cost;
+    // Deduct the final cost and increment the purchase counter if necessary.
+    gameState.hunts.tokens -= finalCost;
+    if (itemId === 'PRESTIGE_TOKEN') {
+        gameState.prestigeTokenPurchases = (gameState.prestigeTokenPurchases || 0) + 1;
+        gameState.prestigeTokenPurchasedThisRun = true; // <-- SET THE FLAG
+    }
+    
     let itemType = null;
-
-    // Now, determine where to put the item based on its properties.
-    if (itemBase.tier >= 1) { // This is how we identify Gems.
+    if (itemBase.tier >= 1) {
         addToPlayerStacks(gameState, itemBase, 'gems');
         itemType = 'gem';
-    } else if (itemBase.type === 'consumable') { // This is how we identify Consumables.
+    } else if (itemBase.type === 'consumable') {
         addToPlayerStacks(gameState, itemBase, 'consumables');
         itemType = 'consumable';
     } else {
-        // This is a failsafe in case other item types are added to the shop later.
         console.error("Unknown item type purchased from Hunt Shop:", itemBase);
-        // We should still return success since the player was charged.
         return { success: true, message: `Purchased ${itemBase.name}, but it's an unknown type!`, itemType: null };
     }
 
@@ -1263,8 +1291,8 @@ export function purchaseHuntShopItem(gameState, itemId) {
     }
 
     return { success: true, message: `Purchased ${itemBase.name}!`, itemType };
-    // --- END OF THE ACTUAL FIX ---
 }
+
 export function resetAttributes(gameState) {
     const { strength, agility, luck } = gameState.hero.attributes;
     const totalSpentPoints = strength + agility + luck;

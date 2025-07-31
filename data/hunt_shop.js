@@ -25,11 +25,16 @@ export const HUNT_SHOP_INVENTORY = {
             id: 'HUNT_REROLL',
             cost: 5,
         },
+        {
+            id: 'PRESTIGE_TOKEN',
+            cost: 20, // This is the BASE cost. We'll make it dynamic later.
+        },
         { 
             id: 'ARTISAN_DRILL', 
             cost: 50,
             unlock: 100 
         },
+    
     ],
 
     // ===================================

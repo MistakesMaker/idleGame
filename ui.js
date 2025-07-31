@@ -896,7 +896,7 @@ export function updateHuntsButton(gameState) {
 /**
  * The main UI update function.
  */
-export function updateUI(elements, gameState, playerStats, currentMonster, salvageMode, craftingGems = [], selectedItemForForge = null, bulkCombineSelection = {}, bulkCombineDeselectedIds = new Set()) {
+export function updateUI(elements, gameState, playerStats, currentMonster, salvageMode, craftingGems = [], selectedItemForForge = null, bulkCombineSelection = {}, bulkCombineDeselectedIds = new Set(), prestigeFromToken = false) {
     const {
         inventorySlotsEl, gemSlotsEl, forgeInventorySlotsEl, consumablesSlotsEl,
         prestigeEquipmentPaperdoll, prestigeInventoryDisplay, prestigeSelectionCount, prestigeSelectionMax
@@ -969,6 +969,7 @@ export function updateUI(elements, gameState, playerStats, currentMonster, salva
 
     // Prestige View
      if (elements.prestigeView.classList.contains('active') && gameState.unlockedFeatures.prestige) {
+        elements.cancelPrestigeButton.classList.toggle('hidden', prestigeFromToken); 
         // --- START OF MODIFICATION ---
         // 1. Get the IDs of items currently on the active paperdoll.
         const equippedItemIds = new Set(Object.values(gameState.equipment).filter(Boolean).map(item => item.id));
@@ -2298,8 +2299,9 @@ export function populateWikiFilters(elements, allItemTypes, allStatKeys) {
  * @param {Array<string>} wikiFavorites - An array of favorited item IDs.
  * @param {boolean} showOnlyFavorites - Flag to determine if only favorites should be shown.
  * @param {boolean} showUpgradesOnly - Flag to determine if only upgrades should be shown.
+ * @param {object} gameState - The entire game state, needed for the card HTML function. // <-- ADD THIS
  */
-export function renderWikiResults(containerEl, filteredData, wikiFavorites, showOnlyFavorites, showUpgradesOnly) {
+export function renderWikiResults(containerEl, filteredData, wikiFavorites, showOnlyFavorites, showUpgradesOnly, gameState) { // <-- ADD gameState
     containerEl.innerHTML = '';
 
     const dataToRender = [...filteredData];
@@ -2334,7 +2336,7 @@ export function renderWikiResults(containerEl, filteredData, wikiFavorites, show
         const card = document.createElement('div');
         card.className = 'wiki-item-card';
         card.dataset.itemId = result.itemData.id;
-        card.innerHTML = createWikiItemCardHTML(result.itemData, isFavorited, result.comparison);
+        card.innerHTML = createWikiItemCardHTML(result.itemData, isFavorited, result.comparison, gameState); // <-- PASS gameState
         containerEl.appendChild(card);
     });
 }
@@ -2348,7 +2350,7 @@ export function renderWikiResults(containerEl, filteredData, wikiFavorites, show
  * @param {object|null} comparison - Optional comparison data for the "Show Upgrades" view.
  * @returns {string} The HTML string for the card.
  */
-function createWikiItemCardHTML(itemData, isFavorited, comparison) {
+function createWikiItemCardHTML(itemData, isFavorited, comparison, gameState) { // <-- MODIFIED: Add gameState
     const itemBase = ITEMS[itemData.id] || GEMS[itemData.id] || CONSUMABLES[itemData.id];
     const isUnique = itemBase.isUnique ? 'unique-item-name' : '';
     const rarity = itemBase.type === 'consumable' ? '' : (itemBase.rarity || 'common');
@@ -2357,8 +2359,8 @@ function createWikiItemCardHTML(itemData, isFavorited, comparison) {
 
     let statsHtml = '<ul>';
     
-    // --- START: Reworked Stat Display Logic ---
-    if (comparison) { // "Show Upgrades" view
+    // ... (The entire "Stats & Effects" logic remains exactly the same) ...
+    if (comparison) { 
         const allStatKeys = new Set(Object.keys(comparison.diffs));
         itemBase.possibleStats?.forEach(s => allStatKeys.add(s.key));
 
@@ -2380,7 +2382,6 @@ function createWikiItemCardHTML(itemData, isFavorited, comparison) {
             if (potentialStat) {
                 text = `+ ${formatNumber(potentialStat.min)}${valueSuffix} - ${formatNumber(potentialStat.max)}${valueSuffix} ${statName}`;
             } else {
-                // Stat exists on equipped item but not this one, so it's a downgrade
                 text = `(Loses ${statName})`;
             }
             
@@ -2390,26 +2391,20 @@ function createWikiItemCardHTML(itemData, isFavorited, comparison) {
             statsHtml += `<li class="${cssClass}">${text}</li>`;
         });
 
-    } else { // Normal view
-        // --- START OF FIX ---
-        // Add specific logic for Gems, Consumables, and regular Gear.
-        if (GEMS[itemBase.id]) { // It's a gem
+    } else {
+        if (GEMS[itemBase.id]) {
             const gem = GEMS[itemBase.id];
             if (gem.stats) {
                 for (const statKey in gem.stats) {
                     const statInfo = Object.values(STATS).find(s => s.key === statKey);
                     const statName = statInfo ? statInfo.name : statKey;
                     const value = gem.stats[statKey];
-                    
-                    // --- THIS IS THE FIX ---
                     let statValue;
                     if (statInfo && statInfo.type === 'percent') {
                         statValue = `${value >= 1000 ? formatNumber(value) : value.toFixed(2)}%`;
                     } else {
                         statValue = formatNumber(value);
                     }
-                    // --- END OF FIX ---
-                    
                     statsHtml += `<li>+ ${statValue} ${statName}</li>`;
                 }
             }
@@ -2427,7 +2422,6 @@ function createWikiItemCardHTML(itemData, isFavorited, comparison) {
                 statsHtml += `<li>+ ${formatNumber(stat.min)}${valueSuffix} - ${formatNumber(stat.max)}${valueSuffix} ${statName}</li>`;
             });
         }
-        // --- END OF FIX ---
     }
 
     if (itemBase.canHaveSockets && itemBase.maxSockets > 0) {
@@ -2444,17 +2438,25 @@ function createWikiItemCardHTML(itemData, isFavorited, comparison) {
         const effect = UNIQUE_EFFECTS[itemBase.uniqueEffect];
         statsHtml += `<li style="margin-top: 8px;"><b>${effect.name}:</b> ${effect.description}</li>`;
     }
-    // --- END: Reworked Stat Display Logic ---
 
     statsHtml += '</ul>';
 
     let dropsHtml = '<ul>';
-    if (itemData.dropSources.length > 0) {
-        const sortedSources = itemData.dropSources.sort((a, b) => a.level - b.level);
+    
+    // --- START OF MODIFICATION ---
+    // Calculate lifetime progress to filter the sources
+    const highestLevelEverReached = gameState.completedLevels.length > 0 ? Math.max(...gameState.completedLevels) : 0;
+    const highestUnlockedRealm = REALMS.slice().reverse().find(realm => highestLevelEverReached >= realm.requiredLevel);
+    const maxRealmIndex = highestUnlockedRealm ? REALMS.indexOf(highestUnlockedRealm) : -1;
+    
+    // Filter the sources based on the player's lifetime progress
+    const accessibleSources = itemData.dropSources.filter(source => source.realmIndex <= maxRealmIndex);
+    // --- END OF MODIFICATION ---
+
+    if (accessibleSources.length > 0) { // <-- MODIFIED: Use the filtered list
+        const sortedSources = accessibleSources.sort((a, b) => a.level - b.level); // <-- MODIFIED: Use the filtered list
         sortedSources.forEach(source => {
             if (source.isHunt) {
-                // Add an icon for hunt sources to ensure proper alignment.
-                // It uses the specific icon if available (like for the shop) or a default hunt icon.
                 const iconSrc = source.monster.image || 'images/icons/hunt_count1.png';
                 dropsHtml += `
                     <li class="wiki-drop-source">
@@ -2479,10 +2481,12 @@ function createWikiItemCardHTML(itemData, isFavorited, comparison) {
             }
         });
     } else {
-        dropsHtml = '<li>No known drop sources.</li>';
+        // This case should now be rare, but it's a good fallback
+        dropsHtml = '<li>No accessible drop sources found.</li>';
     }
     dropsHtml += '</ul>';
-
+    
+    // ... (The final return statement remains the same) ...
     return `
         <i class="${starClass} wiki-favorite-star" data-item-id="${itemData.id}"></i>
         <div class="wiki-item-header ${rarity}">
@@ -2501,7 +2505,6 @@ function createWikiItemCardHTML(itemData, isFavorited, comparison) {
         </div>
     `;
 }
-
 /**
  * Shows the modal for selecting a monster to travel to.
  * @param {DOMElements} elements - The main DOM elements object.
@@ -2640,7 +2643,24 @@ export function updatePrestigeUI(elements, gameState) {
     }
 
     const nextPrestigeLevel = gameState.nextPrestigeLevel || 100;
-    prestigeRequirementTextEl.innerHTML = `Defeat the boss at Level <b>${nextPrestigeLevel}</b> to Prestige.`;
+    
+    // Set the original prestige requirement text
+    prestigeRequirementTextEl.innerHTML = `Defeat the boss at Level <b>${nextPrestigeLevel}</b> to Prestige`;
+
+    // --- START OF MODIFICATION ---
+    // Calculate and display the cost for the hunt prestige option
+    const prestigeTokenShopItem = HUNT_SHOP_INVENTORY.Utility.find(item => item.id === 'PRESTIGE_TOKEN');
+    if (prestigeTokenShopItem) {
+        const purchaseCount = gameState.prestigeTokenPurchases || 0;
+        const currentCost = prestigeTokenShopItem.cost + (purchaseCount * 10);
+
+        // Append the new information as a separate paragraph
+        prestigeRequirementTextEl.innerHTML += ` or use a Mark of the Hunter</span> from the Hunt Shop.
+            </p>
+        `;
+    }
+    // --- END OF MODIFICATION ---
+    
     (/** @type {HTMLButtonElement} */ (prestigeButton)).disabled = !gameState.currentRunCompletedLevels.includes(nextPrestigeLevel);
 }
 
@@ -3287,12 +3307,17 @@ export function switchHuntsSubView(subViewIdToShow) {
  */
 function createHuntShopItemHTML(shopItem, gameState) {
     const isUnlocked = !shopItem.unlock || gameState.hunts.totalCompleted >= shopItem.unlock;
-    const isPurchased = shopItem.oneTimePurchase && gameState.purchasedOneTimeShopItems.includes(shopItem.id);
-    const canAfford = gameState.hunts.tokens >= shopItem.cost;
+    const isPurchased = (shopItem.oneTimePurchase && gameState.purchasedOneTimeShopItems.includes(shopItem.id)) || (shopItem.id === 'PRESTIGE_TOKEN' && gameState.prestigeTokenPurchasedThisRun);
+    
+    let finalCost = shopItem.cost;
+    if (shopItem.id === 'PRESTIGE_TOKEN') {
+        const purchaseCount = gameState.prestigeTokenPurchases || 0;
+        finalCost = shopItem.cost + (purchaseCount * 10);
+    }
+    const canAfford = gameState.hunts.tokens >= finalCost;
 
     let itemData, name, description, icon;
 
-    // Handle special, non-consumable items
     if (shopItem.id === 'HUNT_CANCEL') {
         name = "Cancel Active Hunt";
         description = "Abandon your current hunt if you get stuck. Does not refund reroll costs.";
@@ -3302,17 +3327,15 @@ function createHuntShopItemHTML(shopItem, gameState) {
         description = "Gain one extra bounty reroll for the day.";
         icon = 'images/icons/reroll_charge.png';
     } else {
-        // Check both GEMS and CONSUMABLES
         itemData = GEMS[shopItem.id] || CONSUMABLES[shopItem.id];
-        
         if (!itemData) {
             console.error(`Shop item with ID "${shopItem.id}" could not be found in GEMS or CONSUMABLES data. Skipping render.`);
             return `<div class="hunt-shop-item locked"><div class="shop-item-details"><div class="shop-item-name">Invalid Item</div><div class="shop-item-desc">ID: ${shopItem.id}</div></div></div>`;
         }
-        
         name = itemData.name;
         icon = itemData.icon;
 
+        // --- START OF MODIFICATION (This is the corrected logic) ---
         if (itemData.tier >= 1 && itemData.stats) {
             const statKey = Object.keys(itemData.stats)[0];
             const statValue = itemData.stats[statKey];
@@ -3320,16 +3343,18 @@ function createHuntShopItemHTML(shopItem, gameState) {
             
             if (statInfo) {
                 const valueStr = statInfo.type === 'percent' ? `${statValue.toFixed(2)}%` : formatNumber(statValue);
-                description = `A powerful Tier ${itemData.tier} gem.<br><b>+${valueStr} ${statInfo.name}</b>`;
+                // The next line is the only one that changes.
+                description = `<b>+${valueStr} ${statInfo.name}</b>`;
             } else {
-                description = `A powerful Tier ${itemData.tier} gem.`;
+                // Fallback in case stat info isn't found
+                description = `A Tier ${itemData.tier} gem.`;
             }
         } else {
             description = itemData.description;
         }
+        // --- END OF MODIFICATION ---
     }
 
-    // --- START OF MODIFICATION ---
     let buttonContent;
     let buttonDisabled = '';
     let unlockReqHTML = '';
@@ -3338,18 +3363,17 @@ function createHuntShopItemHTML(shopItem, gameState) {
         buttonContent = `Purchased`;
         buttonDisabled = 'disabled';
     } else if (!isUnlocked) {
-        buttonContent = `<span>${shopItem.cost}</span><img src="images/icons/hunt_token.png" alt="Token">`;
+        buttonContent = `<span>${formatNumber(finalCost)}</span><img src="images/icons/hunt_token.png" alt="Token">`;
         buttonDisabled = 'disabled';
         unlockReqHTML = `<div class="shop-item-unlock-req">Requires ${shopItem.unlock} Hunts</div>`;
     } else {
-        buttonContent = `<span>${shopItem.cost}</span><img src="images/icons/hunt_token.png" alt="Token">`;
+        buttonContent = `<span>${formatNumber(finalCost)}</span><img src="images/icons/hunt_token.png" alt="Token">`;
         if (!canAfford) {
             buttonDisabled = 'disabled';
         }
     }
 
     const buttonHTML = `<button class="shop-item-buy-btn" data-item-id="${shopItem.id}" ${buttonDisabled}>${buttonContent}</button>`;
-    // --- END OF MODIFICATION ---
 
     const classes = ['hunt-shop-item'];
     if (!isUnlocked) classes.push('locked');

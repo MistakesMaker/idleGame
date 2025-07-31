@@ -19,6 +19,17 @@
 */
 
 export const PERMANENT_UPGRADES = {
+        LEGACY_KEEPER: {
+        id: 'LEGACY_KEEPER',
+        name: "Legacy Keeper",
+        description: "Carry over <span>{value}</span> additional item(s) through Prestige.",
+        icon: 'fas fa-archive',
+        baseCost: 1000000, // Starts very expensive
+        costScalar: 100,  // Cost scales extremely fast
+        bonusType: 'FLAT',
+        bonusPerLevel: 1, // +1 item slot per level
+        maxLevel: 8, 
+    },
     GOLD_MASTERY: {
         id: 'GOLD_MASTERY',
         name: "Gold Mastery",
@@ -106,16 +117,5 @@ export const PERMANENT_UPGRADES = {
         bonusType: 'PERCENT',
         bonusPerLevel: 0.1, // +0.1% per level
         maxLevel: Infinity,
-    },
-    LEGACY_KEEPER: {
-        id: 'LEGACY_KEEPER',
-        name: "Legacy Keeper",
-        description: "Carry over <span>{value}</span> additional item(s) through Prestige.",
-        icon: 'fas fa-archive',
-        baseCost: 1000000, // Starts very expensive
-        costScalar: 100,  // Cost scales extremely fast
-        bonusType: 'FLAT',
-        bonusPerLevel: 1, // +1 item slot per level
-        maxLevel: 8, 
     },
 };

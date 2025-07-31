@@ -7,7 +7,7 @@ import { STATS } from './data/stat_pools.js';
 import { PERMANENT_UPGRADES } from './data/upgrades.js';
 import { logMessage, formatNumber, getUpgradeCost, findSubZoneByLevel, findFirstLevelOfZone, isBossLevel, isBigBossLevel, getCombinedItemStats, isMiniBossLevel, findNextAvailableSpot, findEmptySpot, getRandomInt, getTravelOptionsForHunt } from './utils.js';
 import * as ui from './ui.js';
-import { showSimpleTooltip, showPromptModal  } from './ui.js'; 
+import { showSimpleTooltip, showPromptModal, switchView } from './ui.js';
 import * as player from './player_actions.js';
 import * as logic from './game_logic.js';
 import { HUNT_POOLS } from './data/hunts.js';
@@ -89,7 +89,7 @@ function addTapListener(element, handler) {
 document.addEventListener('DOMContentLoaded', () => {
 
     let gameState = {};
-    
+    let prestigeFromToken = false;
     // --- Separate state for UI/View concerns ---
     let currentViewingRealmIndex = 0;
     let currentViewingZoneId = 'world';
@@ -192,6 +192,9 @@ document.addEventListener('DOMContentLoaded', () => {
             // --- NEW PROPERTIES START HERE ---
             permanentStatBonuses: { totalClickDamage: 0, totalDps: 0 }, // For Tomes
             purchasedOneTimeShopItems: [], // For tracking one-time shop buys
+            prestigeTokenPurchases: 0,
+            prestigeTokenPurchasedThisRun: false,
+            isTokenPrestigePending: false,
             activeTargetedConsumable: null, // For tracking items like the Artisan's Drill
             // --- NEW PROPERTIES END HERE ---
             wisdomOfTheOverworldDropped: false,
@@ -790,7 +793,7 @@ function startNewMonster() {
     
     function fullUIRender() {
         ui.updateTabVisibility(gameState);
-        ui.updateUI(elements, gameState, playerStats, currentMonster, salvageMode, craftingGems, selectedItemForForge, bulkCombineSelection, bulkCombineDeselectedIds);
+        ui.updateUI(elements, gameState, playerStats, currentMonster, salvageMode, craftingGems, selectedItemForForge, bulkCombineSelection, bulkCombineDeselectedIds, prestigeFromToken);
         renderMapAccordion();
         ui.renderPermanentUpgrades(elements, gameState);
         ui.updateActiveBuffsUI(elements, gameState.activeBuffs);
@@ -1104,14 +1107,12 @@ function startNewMonster() {
         let totalXPGained = 0;
         let totalScrapGained = 0;
         
-        // --- START OF MODIFICATION ---
         const startingProgressLevel = gameState.currentFightingLevel;
         let lastLevelBeforeStop = gameState.currentFightingLevel;
-        // --- END OF MODIFICATION ---
+        const startingLevel = gameState.hero.level; // Capture starting hero level
 
         if (!gameState.isAutoProgressing) {
-            // --- "CAMPING" MODE ---
-            // Player was farming a single level.
+            // --- "CAMPING" MODE (REWORKED) ---
             const level = gameState.currentFightingLevel;
             const { newMonster, newMonsterState } = logic.generateMonster(level);
             
@@ -1119,44 +1120,56 @@ function startNewMonster() {
             const totalKills = Math.floor(offlineDurationSeconds / timeToKill);
 
             if (totalKills > 0) {
-                // Calculate rewards for a single kill and then multiply.
-                const tier = Math.floor((level - 1) / 10);
-                const effectiveLevel = level - (tier * 1);
-                let baseGoldDrop = 10 + (3 * Math.pow(effectiveLevel, 2.1));
-                let xpPerKill = 20 * Math.pow(level, 1.2);
-                
-                if (isBigBossLevel(level)) { xpPerKill *= 3; baseGoldDrop *= 3; } 
-                else if (isBossLevel(level)) { xpPerKill *= 2; baseGoldDrop *= 2; } 
-                else if (isMiniBossLevel(level)) { xpPerKill *= 1.5; baseGoldDrop *= 1.5; }
-                
-                const goldMasteryLevel = gameState.permanentUpgrades.GOLD_MASTERY || 0;
-                const goldMasteryBonus = PERMANENT_UPGRADES.GOLD_MASTERY.bonusPerLevel * goldMasteryLevel;
-                const goldAfterMastery = baseGoldDrop * (1 + (goldMasteryBonus / 100));
+                for (let i = 0; i < totalKills; i++) {
+                    const tier = Math.floor((level - 1) / 10);
+                    const effectiveLevel = level - (tier * 1);
+                    let baseGoldDrop = 10 + (3 * Math.pow(effectiveLevel, 2.1));
+                    let xpPerKill = 20 * Math.pow(level, 1.2);
+                    
+                    if (isBigBossLevel(level)) { xpPerKill *= 3; baseGoldDrop *= 3; } 
+                    else if (isBossLevel(level)) { xpPerKill *= 2; baseGoldDrop *= 2; } 
+                    else if (isMiniBossLevel(level)) { xpPerKill *= 1.5; baseGoldDrop *= 1.5; }
+                    
+                    // --- START OF MODIFICATION ---
+                    // Apply XP reduction based on the hero's CURRENT simulated level
+                    const levelDifference = gameState.hero.level - level;
+                    if (levelDifference > 0) {
+                        const reductionPercent = levelDifference * 0.01;
+                        const xpMultiplier = Math.max(0.1, 1 - reductionPercent);
+                        xpPerKill *= xpMultiplier;
+                    }
+                    // --- END OF MODIFICATION ---
+                    
+                    const goldMasteryLevel = gameState.permanentUpgrades.GOLD_MASTERY || 0;
+                    const goldMasteryBonus = PERMANENT_UPGRADES.GOLD_MASTERY.bonusPerLevel * goldMasteryLevel;
+                    const goldAfterMastery = baseGoldDrop * (1 + (goldMasteryBonus / 100));
 
-                const finalGoldPerKill = Math.ceil(goldAfterMastery * (1 + (playerStats.bonusGold / 100)));
-                xpPerKill = Math.ceil(xpPerKill * (1 + (playerStats.bonusXp / 100)));
+                    const finalGoldPerKill = Math.ceil(goldAfterMastery * (1 + (playerStats.bonusGold / 100)));
+                    const finalXpPerKill = Math.ceil(xpPerKill * (1 + (playerStats.bonusXp / 100)));
 
-                const dropsPerKill = (newMonster.data.dropChance / 100);
-                const scrapPerKill = dropsPerKill * (2 * playerStats.scrapBonus);
+                    const dropsPerKill = (newMonster.data.dropChance / 100);
+                    const scrapPerKill = dropsPerKill * (2 * playerStats.scrapBonus);
 
-                totalGoldGained = Math.floor(finalGoldPerKill * totalKills);
-                totalXPGained = Math.floor(xpPerKill * totalKills);
-                totalScrapGained = Math.floor(scrapPerKill * totalKills);
+                    totalGoldGained += finalGoldPerKill;
+                    totalXPGained += finalXpPerKill;
+                    totalScrapGained += scrapPerKill;
+
+                    // --- START OF MODIFICATION ---
+                    // Apply XP for this single kill immediately to update hero level for the next iteration
+                    player.gainXP(gameState, finalXpPerKill, 0); // Bonus already applied
+                    // --- END OF MODIFICATION ---
+                }
             }
         } else {
-            // --- "PROGRESSING" MODE ---
-            // Player was auto-progressing. Simulate level by level.
+            // --- "PROGRESSING" MODE (REWORKED) ---
             let remainingTime = offlineDurationSeconds;
             let currentSimLevel = gameState.currentFightingLevel;
-            // lastLevelBeforeStop is already defined above
+            lastLevelBeforeStop = currentSimLevel;
 
             while (remainingTime > 1) {
-                // --- START OF MODIFICATION ---
-                // Safety check to ensure the next level exists in the realms data.
                 if (!findSubZoneByLevel(currentSimLevel)) {
-                    break; // Stop simulating if we've reached the end of content.
+                    break; 
                 }
-                // --- END OF MODIFICATION ---
                 const { newMonster, newMonsterState } = logic.generateMonster(currentSimLevel);
                 
                 const timeToKill = Math.max(1, newMonsterState.maxHp / playerStats.totalDps);
@@ -1166,14 +1179,9 @@ function startNewMonster() {
                 remainingTime -= timeToKill;
                 lastLevelBeforeStop = currentSimLevel;
 
-                if (!gameState.completedLevels.includes(currentSimLevel)) {
-                    gameState.completedLevels.push(currentSimLevel);
-                }
-                if (!gameState.currentRunCompletedLevels.includes(currentSimLevel)) {
-                    gameState.currentRunCompletedLevels.push(currentSimLevel);
-                }
+                if (!gameState.completedLevels.includes(currentSimLevel)) gameState.completedLevels.push(currentSimLevel);
+                if (!gameState.currentRunCompletedLevels.includes(currentSimLevel)) gameState.currentRunCompletedLevels.push(currentSimLevel);
 
-                // Calculate rewards for this specific kill.
                 const tier = Math.floor((currentSimLevel - 1) / 10);
                 const effectiveLevel = currentSimLevel - (tier * 1);
                 let baseGoldDrop = 10 + (3 * Math.pow(effectiveLevel, 2.1));
@@ -1183,34 +1191,46 @@ function startNewMonster() {
                 else if (isBossLevel(currentSimLevel)) { xpPerKill *= 2; baseGoldDrop *= 2; }
                 else if (isMiniBossLevel(currentSimLevel)) { xpPerKill *= 1.5; baseGoldDrop *= 1.5; }
                 
+                // --- START OF MODIFICATION ---
+                // Apply XP reduction based on the hero's CURRENT simulated level
+                const levelDifference = gameState.hero.level - currentSimLevel;
+                if (levelDifference > 0) {
+                    const reductionPercent = levelDifference * 0.01;
+                    const xpMultiplier = Math.max(0.1, 1 - reductionPercent);
+                    xpPerKill *= xpMultiplier;
+                }
+                // --- END OF MODIFICATION ---
+
                 const goldMasteryLevel = gameState.permanentUpgrades.GOLD_MASTERY || 0;
                 const goldMasteryBonus = PERMANENT_UPGRADES.GOLD_MASTERY.bonusPerLevel * goldMasteryLevel;
                 const goldAfterMastery = baseGoldDrop * (1 + (goldMasteryBonus / 100));
 
                 const finalGoldPerKill = Math.ceil(goldAfterMastery * (1 + (playerStats.bonusGold / 100)));
-                xpPerKill = Math.ceil(xpPerKill * (1 + (playerStats.bonusXp / 100)));
+                const finalXpPerKill = Math.ceil(xpPerKill * (1 + (playerStats.bonusXp / 100)));
 
                 const dropsPerKill = (newMonster.data.dropChance / 100);
                 const scrapPerKill = dropsPerKill * (2 * playerStats.scrapBonus);
 
-                totalGoldGained += Math.floor(finalGoldPerKill);
-                totalXPGained += Math.floor(xpPerKill);
-                totalScrapGained += Math.floor(scrapPerKill);
+                totalGoldGained += finalGoldPerKill;
+                totalXPGained += finalXpPerKill;
+                totalScrapGained += scrapPerKill;
+
+                // --- START OF MODIFICATION ---
+                // Apply XP for this single kill immediately to update hero level for the next iteration
+                player.gainXP(gameState, finalXpPerKill, 0); // Bonus already applied
+                // --- END OF MODIFICATION ---
 
                 currentSimLevel++;
             }
-             // Update player's level to where they progressed to offline.
             gameState.currentFightingLevel = lastLevelBeforeStop;
             gameState.maxLevel = Math.max(gameState.maxLevel, lastLevelBeforeStop);
         }
 
-        // --- APPLY REWARDS AND SHOW MODAL ---
         if (totalGoldGained === 0 && totalXPGained === 0 && totalScrapGained === 0) return;
 
-        const startingLevel = gameState.hero.level;
-        gameState.gold += totalGoldGained;
-        gameState.scrap += totalScrapGained;
-        player.gainXP(gameState, totalXPGained, playerStats.bonusXp);
+        // --- APPLY FINAL REWARDS (XP is already applied) ---
+        gameState.gold += Math.floor(totalGoldGained);
+        gameState.scrap += Math.floor(totalScrapGained);
         const finalLevel = gameState.hero.level;
 
         recalculateStats();
@@ -1222,7 +1242,6 @@ function startNewMonster() {
         elements.offlineXp.textContent = formatNumber(totalXPGained);
         elements.offlineScrap.textContent = formatNumber(totalScrapGained);
         
-        // --- START OF MODIFICATION ---
         const levelsProgressed = lastLevelBeforeStop - startingProgressLevel;
         if (gameState.isAutoProgressing && levelsProgressed > 0) {
             elements.offlineLevels.innerHTML = `<i class="fas fa-arrow-up"></i> Progressed <b>${levelsProgressed}</b> levels! (Lvl ${startingProgressLevel} → Lvl ${lastLevelBeforeStop})`;
@@ -1230,7 +1249,6 @@ function startNewMonster() {
         } else {
             elements.offlineLevels.classList.add('hidden');
         }
-        // --- END OF MODIFICATION ---
 
         const existingLevelUps = elements.offlineRewards.querySelectorAll('.level-up-summary');
         existingLevelUps.forEach(el => el.remove());
@@ -1307,6 +1325,7 @@ function startNewMonster() {
                 dropSources: []
             };
     
+            // ... (The code for finding monster drop sources remains the same)
             for (const monsterKey in MONSTERS) {
                 const monster = MONSTERS[monsterKey];
                 if (monster.lootTable && monster.lootTable.length > 0) {
@@ -1336,6 +1355,7 @@ function startNewMonster() {
                     }
                 }
             }
+            // ... (The code for finding hunt rewards remains the same)
             for (const tier of HUNT_POOLS) {
                 for (const hunt of tier.hunts) {
                     if (hunt.rewardIds.includes(itemBase.id)) {
@@ -1351,27 +1371,30 @@ function startNewMonster() {
                     }
                 }
             }
+            // ... (The code for finding shop items remains the same)
             for (const category in HUNT_SHOP_INVENTORY) {
                 const shopItems = HUNT_SHOP_INVENTORY[category];
                 const shopItem = shopItems.find(item => item.id === itemBase.id);
                 if (shopItem) {
-                    // --- START OF FIX ---
-                    // Add a simple check for correct pluralization of "Token".
                     const tokenLabel = shopItem.cost === 1 ? 'Token' : 'Tokens';
                     itemEntry.dropSources.push({
-                        monster: { name: "Hunt Shop", image: "images/icons/hunt_token.png" }, // Use a token as the icon
-                        chance: 100, // It's a purchase, so chance is 100% if you have tokens
-                        location: `Hunt Shop (${shopItem.cost} ${tokenLabel})`, // Use the corrected label
-                        level: shopItem.unlock || 0, // Use the unlock requirement as the 'level' for sorting
+                        monster: { name: "Hunt Shop", image: "images/icons/hunt_token.png" },
+                        chance: 100,
+                        location: `Hunt Shop (${shopItem.cost} ${tokenLabel})`,
+                        level: shopItem.unlock || 0,
                         realmIndex: 0,
                         isHunt: true,
                     });
-                    // --- END OF FIX ---
-                    break; // An item can only be in the shop once
+                    break;
                 }
             }
 
-            wikiState.data.push(itemEntry);
+            // --- START OF MODIFICATION ---
+            // Only add the item to the wiki if it has at least one drop source.
+            if (itemEntry.dropSources.length > 0) {
+                wikiState.data.push(itemEntry);
+            }
+            // --- END OF MODIFICATION ---
         }
     }
 
@@ -1566,7 +1589,7 @@ function startNewMonster() {
             return true;
         });
     
-        ui.renderWikiResults(elements.wikiResultsContainer, finalFiltered, gameState.wikiFavorites, wikiShowFavorites, wikiShowUpgradesOnly);
+        ui.renderWikiResults(elements.wikiResultsContainer, finalFiltered, gameState.wikiFavorites, wikiShowFavorites, wikiShowUpgradesOnly, gameState); 
     }
 // --- END OF REPLACEMENT ---
     
@@ -2346,7 +2369,16 @@ function startNewMonster() {
                         () => {
                             const result = player.consumeItem(gameState, item.id);
                             logMessage(elements.gameLogEl, result.message, 'legendary', isAutoScrollingLog);
+                            
                             if (result.success) {
+                                if (result.specialAction === 'showPrestigeView') {
+                                    prestigeFromToken = true; // <-- ADD THIS LINE
+                                    document.querySelector('.actions-panel').classList.add('hidden');
+                                    document.querySelector('.upgrades-panel').classList.add('hidden');
+                                    switchView(elements, 'prestige-view', gameState);
+                                }
+                                // --- END OF MODIFICATION ---
+
                                 if (gameState.activeTargetedConsumable) {
                                     ui.updateTargetingHighlights(elements, gameState);
                                 }
@@ -3315,11 +3347,13 @@ function startNewMonster() {
         });
     
         addTapListener(elements.cancelPrestigeButton, () => {
-            document.querySelector('.actions-panel').classList.remove('hidden');
-            document.querySelector('.upgrades-panel').classList.remove('hidden');
-            ui.switchView(elements, 'map-view', gameState);
-            fullUIRender();
-        });
+        prestigeFromToken = false;
+        gameState.isTokenPrestigePending = false; // <-- ADD THIS LINE
+        document.querySelector('.actions-panel').classList.remove('hidden');
+        document.querySelector('.upgrades-panel').classList.remove('hidden');
+        ui.switchView(elements, 'map-view', gameState);
+        fullUIRender();
+    });
     
         addTapListener(elements.prestigeEquipmentPaperdoll, (event) => {
             if (!(event.target instanceof Element)) return;
@@ -3358,6 +3392,33 @@ function startNewMonster() {
         });
     
         addTapListener(elements.confirmPrestigeButton, () => {
+            // --- START OF MODIFICATION ---
+            // If this is a token prestige, find and consume the token first.
+            if (gameState.isTokenPrestigePending) {
+                const tokenIndex = gameState.consumables.findIndex(c => c.baseId === 'PRESTIGE_TOKEN');
+                if (tokenIndex > -1) {
+                    const stack = gameState.consumables[tokenIndex];
+                    if (stack.quantity > 1) {
+                        stack.quantity--;
+                    } else {
+                        gameState.consumables.splice(tokenIndex, 1);
+                    }
+                } else {
+                    // This is a safety check. If the token is somehow gone, cancel the prestige.
+                    logMessage(elements.gameLogEl, "Error: Prestige Token not found. Cancelling prestige.", 'rare', isAutoScrollingLog);
+                    
+                    // Reset flags and return to the map view
+                    prestigeFromToken = false;
+                    gameState.isTokenPrestigePending = false;
+                    document.querySelector('.actions-panel').classList.remove('hidden');
+                    document.querySelector('.upgrades-panel').classList.remove('hidden');
+                    switchView(elements, 'map-view', gameState);
+                    fullUIRender();
+                    return; // Stop the function here
+                }
+            }
+            // --- END OF MODIFICATION ---
+
             selectedItemForForge = null;
             selectedGemForSocketing = null;
 
@@ -3365,6 +3426,7 @@ function startNewMonster() {
                 .map(slotName => gameState.equipment[slotName])
                 .filter(Boolean);
             
+            // ... (The rest of the prestige logic remains exactly the same) ...
             const newAbsorbedStats = {};
             const newAbsorbedSynergies = {}; 
             const newAbsorbedUniqueEffects = {};
@@ -3438,8 +3500,9 @@ function startNewMonster() {
                 },
                 tutorialCompleted: gameState.tutorialCompleted,
                 permanentUpgrades: gameState.permanentUpgrades,
-                permanentStatBonuses: gameState.permanentStatBonuses, // Keep Tome bonuses
-                purchasedOneTimeShopItems: gameState.purchasedOneTimeShopItems, // Keep one-time purchases
+                permanentStatBonuses: gameState.permanentStatBonuses, 
+                purchasedOneTimeShopItems: gameState.purchasedOneTimeShopItems,
+                prestigeTokenPurchases: gameState.prestigeTokenPurchases || 0,
                 salvageFilter: gameState.salvageFilter,
                 wikiFavorites: gameState.wikiFavorites, 
                 unlockedPrestigeSlots: gameState.unlockedPrestigeSlots,
@@ -3449,15 +3512,15 @@ function startNewMonster() {
                 prestigeCount: oldPrestigeCount + 1,
                 completedLevels: gameState.completedLevels, 
                 maxLevel: 1,
-                nextPrestigeLevel: currentPrestigeLevel + 100,
+                nextPrestigeLevel: prestigeFromToken ? currentPrestigeLevel : currentPrestigeLevel + 100,
                 hero: prestgedHeroState,
                 currentFightingLevel: 1,
                 currentRunCompletedLevels: [],
                 hunts: {
-                    ...baseState.hunts, // Resets daily rerolls, active, available
-                    completionCounts: gameState.hunts.completionCounts || {}, // Keep permanent counts
-                    totalCompleted: gameState.hunts.totalCompleted || 0, // Keep permanent total
-                    tokens: 0, // <-- RESET TOKENS
+                    ...baseState.hunts, 
+                    completionCounts: gameState.hunts.completionCounts || {}, 
+                    totalCompleted: gameState.hunts.totalCompleted || 0, 
+                    tokens: 0, 
                 },
             };
             gameState.equipment = gameState.presets[gameState.activePresetIndex].equipment;
@@ -3474,6 +3537,8 @@ function startNewMonster() {
     
             logMessage(elements.gameLogEl, `PRESTIGE! You are reborn with greater power. Your next goal is Level ${gameState.nextPrestigeLevel}.`, 'legendary', isAutoScrollingLog);
             
+            prestigeFromToken = false;
+
             document.querySelector('.actions-panel').classList.remove('hidden');
             document.querySelector('.upgrades-panel').classList.remove('hidden');
             ui.switchView(elements, 'map-view', gameState);
@@ -3483,6 +3548,7 @@ function startNewMonster() {
             fullUIRender();
             autoSave();
         });
+
     }
 
     function showUnlockConfirmationModal(slotName) {
