@@ -296,7 +296,7 @@ export const CONSUMABLES = {
     // --- NEW PRESTIGE ITEM ---
     PRESTIGE_TOKEN: {
         id: 'PRESTIGE_TOKEN',
-        name: "Mark of the Hunter",
+        name: "Purchase Prestige",
         type: 'consumable',
         icon: 'images/consumables/prestige_token.png',
         width: 2, height: 2,
