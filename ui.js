@@ -2299,8 +2299,9 @@ export function populateWikiFilters(elements, allItemTypes, allStatKeys) {
  * @param {Array<string>} wikiFavorites - An array of favorited item IDs.
  * @param {boolean} showOnlyFavorites - Flag to determine if only favorites should be shown.
  * @param {boolean} showUpgradesOnly - Flag to determine if only upgrades should be shown.
+ * @param {object} gameState - The entire game state, needed for the card HTML function. // <-- ADD THIS
  */
-export function renderWikiResults(containerEl, filteredData, wikiFavorites, showOnlyFavorites, showUpgradesOnly) {
+export function renderWikiResults(containerEl, filteredData, wikiFavorites, showOnlyFavorites, showUpgradesOnly, gameState) { // <-- ADD gameState
     containerEl.innerHTML = '';
 
     const dataToRender = [...filteredData];
@@ -2335,7 +2336,7 @@ export function renderWikiResults(containerEl, filteredData, wikiFavorites, show
         const card = document.createElement('div');
         card.className = 'wiki-item-card';
         card.dataset.itemId = result.itemData.id;
-        card.innerHTML = createWikiItemCardHTML(result.itemData, isFavorited, result.comparison);
+        card.innerHTML = createWikiItemCardHTML(result.itemData, isFavorited, result.comparison, gameState); // <-- PASS gameState
         containerEl.appendChild(card);
     });
 }
@@ -2349,7 +2350,7 @@ export function renderWikiResults(containerEl, filteredData, wikiFavorites, show
  * @param {object|null} comparison - Optional comparison data for the "Show Upgrades" view.
  * @returns {string} The HTML string for the card.
  */
-function createWikiItemCardHTML(itemData, isFavorited, comparison) {
+function createWikiItemCardHTML(itemData, isFavorited, comparison, gameState) { // <-- MODIFIED: Add gameState
     const itemBase = ITEMS[itemData.id] || GEMS[itemData.id] || CONSUMABLES[itemData.id];
     const isUnique = itemBase.isUnique ? 'unique-item-name' : '';
     const rarity = itemBase.type === 'consumable' ? '' : (itemBase.rarity || 'common');
@@ -2358,8 +2359,8 @@ function createWikiItemCardHTML(itemData, isFavorited, comparison) {
 
     let statsHtml = '<ul>';
     
-    // --- START: Reworked Stat Display Logic ---
-    if (comparison) { // "Show Upgrades" view
+    // ... (The entire "Stats & Effects" logic remains exactly the same) ...
+    if (comparison) { 
         const allStatKeys = new Set(Object.keys(comparison.diffs));
         itemBase.possibleStats?.forEach(s => allStatKeys.add(s.key));
 
@@ -2381,7 +2382,6 @@ function createWikiItemCardHTML(itemData, isFavorited, comparison) {
             if (potentialStat) {
                 text = `+ ${formatNumber(potentialStat.min)}${valueSuffix} - ${formatNumber(potentialStat.max)}${valueSuffix} ${statName}`;
             } else {
-                // Stat exists on equipped item but not this one, so it's a downgrade
                 text = `(Loses ${statName})`;
             }
             
@@ -2391,26 +2391,20 @@ function createWikiItemCardHTML(itemData, isFavorited, comparison) {
             statsHtml += `<li class="${cssClass}">${text}</li>`;
         });
 
-    } else { // Normal view
-        // --- START OF FIX ---
-        // Add specific logic for Gems, Consumables, and regular Gear.
-        if (GEMS[itemBase.id]) { // It's a gem
+    } else {
+        if (GEMS[itemBase.id]) {
             const gem = GEMS[itemBase.id];
             if (gem.stats) {
                 for (const statKey in gem.stats) {
                     const statInfo = Object.values(STATS).find(s => s.key === statKey);
                     const statName = statInfo ? statInfo.name : statKey;
                     const value = gem.stats[statKey];
-                    
-                    // --- THIS IS THE FIX ---
                     let statValue;
                     if (statInfo && statInfo.type === 'percent') {
                         statValue = `${value >= 1000 ? formatNumber(value) : value.toFixed(2)}%`;
                     } else {
                         statValue = formatNumber(value);
                     }
-                    // --- END OF FIX ---
-                    
                     statsHtml += `<li>+ ${statValue} ${statName}</li>`;
                 }
             }
@@ -2428,7 +2422,6 @@ function createWikiItemCardHTML(itemData, isFavorited, comparison) {
                 statsHtml += `<li>+ ${formatNumber(stat.min)}${valueSuffix} - ${formatNumber(stat.max)}${valueSuffix} ${statName}</li>`;
             });
         }
-        // --- END OF FIX ---
     }
 
     if (itemBase.canHaveSockets && itemBase.maxSockets > 0) {
@@ -2445,17 +2438,25 @@ function createWikiItemCardHTML(itemData, isFavorited, comparison) {
         const effect = UNIQUE_EFFECTS[itemBase.uniqueEffect];
         statsHtml += `<li style="margin-top: 8px;"><b>${effect.name}:</b> ${effect.description}</li>`;
     }
-    // --- END: Reworked Stat Display Logic ---
 
     statsHtml += '</ul>';
 
     let dropsHtml = '<ul>';
-    if (itemData.dropSources.length > 0) {
-        const sortedSources = itemData.dropSources.sort((a, b) => a.level - b.level);
+    
+    // --- START OF MODIFICATION ---
+    // Calculate lifetime progress to filter the sources
+    const highestLevelEverReached = gameState.completedLevels.length > 0 ? Math.max(...gameState.completedLevels) : 0;
+    const highestUnlockedRealm = REALMS.slice().reverse().find(realm => highestLevelEverReached >= realm.requiredLevel);
+    const maxRealmIndex = highestUnlockedRealm ? REALMS.indexOf(highestUnlockedRealm) : -1;
+    
+    // Filter the sources based on the player's lifetime progress
+    const accessibleSources = itemData.dropSources.filter(source => source.realmIndex <= maxRealmIndex);
+    // --- END OF MODIFICATION ---
+
+    if (accessibleSources.length > 0) { // <-- MODIFIED: Use the filtered list
+        const sortedSources = accessibleSources.sort((a, b) => a.level - b.level); // <-- MODIFIED: Use the filtered list
         sortedSources.forEach(source => {
             if (source.isHunt) {
-                // Add an icon for hunt sources to ensure proper alignment.
-                // It uses the specific icon if available (like for the shop) or a default hunt icon.
                 const iconSrc = source.monster.image || 'images/icons/hunt_count1.png';
                 dropsHtml += `
                     <li class="wiki-drop-source">
@@ -2480,10 +2481,12 @@ function createWikiItemCardHTML(itemData, isFavorited, comparison) {
             }
         });
     } else {
-        dropsHtml = '<li>No known drop sources.</li>';
+        // This case should now be rare, but it's a good fallback
+        dropsHtml = '<li>No accessible drop sources found.</li>';
     }
     dropsHtml += '</ul>';
-
+    
+    // ... (The final return statement remains the same) ...
     return `
         <i class="${starClass} wiki-favorite-star" data-item-id="${itemData.id}"></i>
         <div class="wiki-item-header ${rarity}">
@@ -2502,7 +2505,6 @@ function createWikiItemCardHTML(itemData, isFavorited, comparison) {
         </div>
     `;
 }
-
 /**
  * Shows the modal for selecting a monster to travel to.
  * @param {DOMElements} elements - The main DOM elements object.

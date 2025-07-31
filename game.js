@@ -1310,6 +1310,7 @@ function startNewMonster() {
                 dropSources: []
             };
     
+            // ... (The code for finding monster drop sources remains the same)
             for (const monsterKey in MONSTERS) {
                 const monster = MONSTERS[monsterKey];
                 if (monster.lootTable && monster.lootTable.length > 0) {
@@ -1339,6 +1340,7 @@ function startNewMonster() {
                     }
                 }
             }
+            // ... (The code for finding hunt rewards remains the same)
             for (const tier of HUNT_POOLS) {
                 for (const hunt of tier.hunts) {
                     if (hunt.rewardIds.includes(itemBase.id)) {
@@ -1354,27 +1356,30 @@ function startNewMonster() {
                     }
                 }
             }
+            // ... (The code for finding shop items remains the same)
             for (const category in HUNT_SHOP_INVENTORY) {
                 const shopItems = HUNT_SHOP_INVENTORY[category];
                 const shopItem = shopItems.find(item => item.id === itemBase.id);
                 if (shopItem) {
-                    // --- START OF FIX ---
-                    // Add a simple check for correct pluralization of "Token".
                     const tokenLabel = shopItem.cost === 1 ? 'Token' : 'Tokens';
                     itemEntry.dropSources.push({
-                        monster: { name: "Hunt Shop", image: "images/icons/hunt_token.png" }, // Use a token as the icon
-                        chance: 100, // It's a purchase, so chance is 100% if you have tokens
-                        location: `Hunt Shop (${shopItem.cost} ${tokenLabel})`, // Use the corrected label
-                        level: shopItem.unlock || 0, // Use the unlock requirement as the 'level' for sorting
+                        monster: { name: "Hunt Shop", image: "images/icons/hunt_token.png" },
+                        chance: 100,
+                        location: `Hunt Shop (${shopItem.cost} ${tokenLabel})`,
+                        level: shopItem.unlock || 0,
                         realmIndex: 0,
                         isHunt: true,
                     });
-                    // --- END OF FIX ---
-                    break; // An item can only be in the shop once
+                    break;
                 }
             }
 
-            wikiState.data.push(itemEntry);
+            // --- START OF MODIFICATION ---
+            // Only add the item to the wiki if it has at least one drop source.
+            if (itemEntry.dropSources.length > 0) {
+                wikiState.data.push(itemEntry);
+            }
+            // --- END OF MODIFICATION ---
         }
     }
 
@@ -1569,7 +1574,7 @@ function startNewMonster() {
             return true;
         });
     
-        ui.renderWikiResults(elements.wikiResultsContainer, finalFiltered, gameState.wikiFavorites, wikiShowFavorites, wikiShowUpgradesOnly);
+        ui.renderWikiResults(elements.wikiResultsContainer, finalFiltered, gameState.wikiFavorites, wikiShowFavorites, wikiShowUpgradesOnly, gameState); 
     }
 // --- END OF REPLACEMENT ---
     
