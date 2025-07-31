@@ -2988,14 +2988,6 @@ export async function showDevToolModal(elements, wikiData) {
  * @param {object} gameState The current game state.
  * @param {object} statDescriptions An object containing the title and description for each stat.
  */
-/**
- * Generates and displays the stat breakdown tooltip, now including a description.
- * @param {DOMElements} elements The DOM elements object.
- * @param {string} statKey The key of the stat to display (e.g., 'clickDamage').
- * @param {object} statBreakdown The object containing the breakdown data.
- * @param {object} gameState The current game state.
- * @param {object} statDescriptions An object containing the title and description for each stat.
- */
 export function showStatBreakdownTooltip(elements, statKey, statBreakdown, gameState, statDescriptions) {
     const { statTooltipEl } = elements;
     if (!statBreakdown[statKey]) {
@@ -3004,63 +2996,63 @@ export function showStatBreakdownTooltip(elements, statKey, statBreakdown, gameS
     }
 
     const data = statBreakdown[statKey];
-    const statInfo = Object.values(STATS).find(s => s.key === statKey) || { name: 'Stat', type: 'flat' };
     const descriptionContent = statDescriptions[statKey];
 
-    let html = `<h4>${statInfo.name} Breakdown</h4>`;
+    let html = `<h4>${descriptionContent.title} Breakdown</h4>`;
     
     if (descriptionContent && descriptionContent.description) {
         html += `<p style="font-size: 0.9em; color: #bdc3c7; margin: 5px 0 10px 0; border-bottom: 1px solid #4a637e; padding-bottom: 10px;">${descriptionContent.description}</p>`;
     }
     
     html += '<ul>';
-    
-    data.sources.forEach(source => {
-        if ((statKey === 'clickDamage' || statKey === 'dps') && source.label === 'Base') {
-            return;
-        }
-        if (source.value !== 0) {
-            let valueStr;
-            if (source.isPercent) {
-                valueStr = `+${source.value >= 1000 ? formatNumber(source.value) : source.value.toFixed(2)}%`;
-            } else {
-                valueStr = `+${formatNumber(source.value)}`;
-            }
-            html += `<li>${source.label}: ${valueStr}</li>`;
+
+    // --- START OF NEW LOGIC ---
+    const groupedSources = new Map();
+
+    // Group all sources by their label
+    data.base.forEach(source => {
+        if (source.value > 0.001) {
+            if (!groupedSources.has(source.label)) groupedSources.set(source.label, {});
+            groupedSources.get(source.label).base = source;
         }
     });
 
-    const buffStatMap = {
-        'goldGain': 'bonusGold',
-        'magicFind': 'magicFind',
-        'bonusXp': 'bonusXp',
-    };
-    const relevantBuffKey = buffStatMap[statKey];
-
-    if (relevantBuffKey && gameState.activeBuffs) {
-        gameState.activeBuffs.forEach(buff => {
-            if (buff.statKey === relevantBuffKey && buff.value > 0) {
-                const valueStr = `+${buff.value.toFixed(2)}%`;
-                html += `<li>From ${buff.name}: ${valueStr}</li>`;
-            }
-        });
-    }
-
-    if (data.multipliers && data.multipliers.length > 0) {
-        html += `<li class="tooltip-divider"></li>`;
+    if (data.multipliers) {
         data.multipliers.forEach(multi => {
-            if (multi.value !== 0) {
-                // --- START OF MODIFICATION ---
-                if (multi.label.includes('(%)')) {
-                    html += `<li>${multi.label.replace(' (%)', '')}: +${multi.value.toFixed(1)}%</li>`;
-                } else {
-                    html += `<li>${multi.label}: +${multi.value.toFixed(1)}%</li>`;
-                }
+            if (multi.flatValue > 0.001) {
+                if (!groupedSources.has(multi.label)) groupedSources.set(multi.label, {});
+                groupedSources.get(multi.label).multiplier = multi;
             }
         });
     }
 
-    if (data.synergy > 0) {
+    // Define a custom sort order for the labels
+    const sortOrder = ["From Prestige", "From Gear", "From Agility", "From Strength", "From Gold Upgrades"];
+    const sortedLabels = Array.from(groupedSources.keys()).sort((a, b) => {
+        const indexA = sortOrder.indexOf(a);
+        const indexB = sortOrder.indexOf(b);
+        if (indexA !== -1 && indexB !== -1) return indexA - indexB;
+        if (indexA !== -1) return -1;
+        if (indexB !== -1) return 1;
+        return a.localeCompare(b); // Fallback for any other sources
+    });
+    
+    // Build the HTML from the sorted and grouped data
+    sortedLabels.forEach(label => {
+        const group = groupedSources.get(label);
+        if (group.base) {
+            const source = group.base;
+            const valueStr = source.isPercent ? `+${source.value.toFixed(2)}%` : `+${formatNumber(source.value)}`;
+            html += `<li>${source.label}: ${valueStr}</li>`;
+        }
+        if (group.multiplier) {
+            const multi = group.multiplier;
+            html += `<li>${multi.label}: +${multi.percent.toFixed(1)}% <span style="color: #95a5a6;">(+${formatNumber(multi.flatValue)})</span></li>`;
+        }
+    });
+    // --- END OF NEW LOGIC ---
+
+    if (data.synergy > 0.001) {
         html += `<li class="tooltip-divider"></li>`;
         html += `<li>From Synergy: +${formatNumber(data.synergy)}</li>`;
     }
