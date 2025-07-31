@@ -1107,14 +1107,12 @@ function startNewMonster() {
         let totalXPGained = 0;
         let totalScrapGained = 0;
         
-        // --- START OF MODIFICATION ---
         const startingProgressLevel = gameState.currentFightingLevel;
         let lastLevelBeforeStop = gameState.currentFightingLevel;
-        // --- END OF MODIFICATION ---
+        const startingLevel = gameState.hero.level; // Capture starting hero level
 
         if (!gameState.isAutoProgressing) {
-            // --- "CAMPING" MODE ---
-            // Player was farming a single level.
+            // --- "CAMPING" MODE (REWORKED) ---
             const level = gameState.currentFightingLevel;
             const { newMonster, newMonsterState } = logic.generateMonster(level);
             
@@ -1122,44 +1120,56 @@ function startNewMonster() {
             const totalKills = Math.floor(offlineDurationSeconds / timeToKill);
 
             if (totalKills > 0) {
-                // Calculate rewards for a single kill and then multiply.
-                const tier = Math.floor((level - 1) / 10);
-                const effectiveLevel = level - (tier * 1);
-                let baseGoldDrop = 10 + (3 * Math.pow(effectiveLevel, 2.1));
-                let xpPerKill = 20 * Math.pow(level, 1.2);
-                
-                if (isBigBossLevel(level)) { xpPerKill *= 3; baseGoldDrop *= 3; } 
-                else if (isBossLevel(level)) { xpPerKill *= 2; baseGoldDrop *= 2; } 
-                else if (isMiniBossLevel(level)) { xpPerKill *= 1.5; baseGoldDrop *= 1.5; }
-                
-                const goldMasteryLevel = gameState.permanentUpgrades.GOLD_MASTERY || 0;
-                const goldMasteryBonus = PERMANENT_UPGRADES.GOLD_MASTERY.bonusPerLevel * goldMasteryLevel;
-                const goldAfterMastery = baseGoldDrop * (1 + (goldMasteryBonus / 100));
+                for (let i = 0; i < totalKills; i++) {
+                    const tier = Math.floor((level - 1) / 10);
+                    const effectiveLevel = level - (tier * 1);
+                    let baseGoldDrop = 10 + (3 * Math.pow(effectiveLevel, 2.1));
+                    let xpPerKill = 20 * Math.pow(level, 1.2);
+                    
+                    if (isBigBossLevel(level)) { xpPerKill *= 3; baseGoldDrop *= 3; } 
+                    else if (isBossLevel(level)) { xpPerKill *= 2; baseGoldDrop *= 2; } 
+                    else if (isMiniBossLevel(level)) { xpPerKill *= 1.5; baseGoldDrop *= 1.5; }
+                    
+                    // --- START OF MODIFICATION ---
+                    // Apply XP reduction based on the hero's CURRENT simulated level
+                    const levelDifference = gameState.hero.level - level;
+                    if (levelDifference > 0) {
+                        const reductionPercent = levelDifference * 0.01;
+                        const xpMultiplier = Math.max(0.1, 1 - reductionPercent);
+                        xpPerKill *= xpMultiplier;
+                    }
+                    // --- END OF MODIFICATION ---
+                    
+                    const goldMasteryLevel = gameState.permanentUpgrades.GOLD_MASTERY || 0;
+                    const goldMasteryBonus = PERMANENT_UPGRADES.GOLD_MASTERY.bonusPerLevel * goldMasteryLevel;
+                    const goldAfterMastery = baseGoldDrop * (1 + (goldMasteryBonus / 100));
 
-                const finalGoldPerKill = Math.ceil(goldAfterMastery * (1 + (playerStats.bonusGold / 100)));
-                xpPerKill = Math.ceil(xpPerKill * (1 + (playerStats.bonusXp / 100)));
+                    const finalGoldPerKill = Math.ceil(goldAfterMastery * (1 + (playerStats.bonusGold / 100)));
+                    const finalXpPerKill = Math.ceil(xpPerKill * (1 + (playerStats.bonusXp / 100)));
 
-                const dropsPerKill = (newMonster.data.dropChance / 100);
-                const scrapPerKill = dropsPerKill * (2 * playerStats.scrapBonus);
+                    const dropsPerKill = (newMonster.data.dropChance / 100);
+                    const scrapPerKill = dropsPerKill * (2 * playerStats.scrapBonus);
 
-                totalGoldGained = Math.floor(finalGoldPerKill * totalKills);
-                totalXPGained = Math.floor(xpPerKill * totalKills);
-                totalScrapGained = Math.floor(scrapPerKill * totalKills);
+                    totalGoldGained += finalGoldPerKill;
+                    totalXPGained += finalXpPerKill;
+                    totalScrapGained += scrapPerKill;
+
+                    // --- START OF MODIFICATION ---
+                    // Apply XP for this single kill immediately to update hero level for the next iteration
+                    player.gainXP(gameState, finalXpPerKill, 0); // Bonus already applied
+                    // --- END OF MODIFICATION ---
+                }
             }
         } else {
-            // --- "PROGRESSING" MODE ---
-            // Player was auto-progressing. Simulate level by level.
+            // --- "PROGRESSING" MODE (REWORKED) ---
             let remainingTime = offlineDurationSeconds;
             let currentSimLevel = gameState.currentFightingLevel;
-            // lastLevelBeforeStop is already defined above
+            lastLevelBeforeStop = currentSimLevel;
 
             while (remainingTime > 1) {
-                // --- START OF MODIFICATION ---
-                // Safety check to ensure the next level exists in the realms data.
                 if (!findSubZoneByLevel(currentSimLevel)) {
-                    break; // Stop simulating if we've reached the end of content.
+                    break; 
                 }
-                // --- END OF MODIFICATION ---
                 const { newMonster, newMonsterState } = logic.generateMonster(currentSimLevel);
                 
                 const timeToKill = Math.max(1, newMonsterState.maxHp / playerStats.totalDps);
@@ -1169,14 +1179,9 @@ function startNewMonster() {
                 remainingTime -= timeToKill;
                 lastLevelBeforeStop = currentSimLevel;
 
-                if (!gameState.completedLevels.includes(currentSimLevel)) {
-                    gameState.completedLevels.push(currentSimLevel);
-                }
-                if (!gameState.currentRunCompletedLevels.includes(currentSimLevel)) {
-                    gameState.currentRunCompletedLevels.push(currentSimLevel);
-                }
+                if (!gameState.completedLevels.includes(currentSimLevel)) gameState.completedLevels.push(currentSimLevel);
+                if (!gameState.currentRunCompletedLevels.includes(currentSimLevel)) gameState.currentRunCompletedLevels.push(currentSimLevel);
 
-                // Calculate rewards for this specific kill.
                 const tier = Math.floor((currentSimLevel - 1) / 10);
                 const effectiveLevel = currentSimLevel - (tier * 1);
                 let baseGoldDrop = 10 + (3 * Math.pow(effectiveLevel, 2.1));
@@ -1186,34 +1191,46 @@ function startNewMonster() {
                 else if (isBossLevel(currentSimLevel)) { xpPerKill *= 2; baseGoldDrop *= 2; }
                 else if (isMiniBossLevel(currentSimLevel)) { xpPerKill *= 1.5; baseGoldDrop *= 1.5; }
                 
+                // --- START OF MODIFICATION ---
+                // Apply XP reduction based on the hero's CURRENT simulated level
+                const levelDifference = gameState.hero.level - currentSimLevel;
+                if (levelDifference > 0) {
+                    const reductionPercent = levelDifference * 0.01;
+                    const xpMultiplier = Math.max(0.1, 1 - reductionPercent);
+                    xpPerKill *= xpMultiplier;
+                }
+                // --- END OF MODIFICATION ---
+
                 const goldMasteryLevel = gameState.permanentUpgrades.GOLD_MASTERY || 0;
                 const goldMasteryBonus = PERMANENT_UPGRADES.GOLD_MASTERY.bonusPerLevel * goldMasteryLevel;
                 const goldAfterMastery = baseGoldDrop * (1 + (goldMasteryBonus / 100));
 
                 const finalGoldPerKill = Math.ceil(goldAfterMastery * (1 + (playerStats.bonusGold / 100)));
-                xpPerKill = Math.ceil(xpPerKill * (1 + (playerStats.bonusXp / 100)));
+                const finalXpPerKill = Math.ceil(xpPerKill * (1 + (playerStats.bonusXp / 100)));
 
                 const dropsPerKill = (newMonster.data.dropChance / 100);
                 const scrapPerKill = dropsPerKill * (2 * playerStats.scrapBonus);
 
-                totalGoldGained += Math.floor(finalGoldPerKill);
-                totalXPGained += Math.floor(xpPerKill);
-                totalScrapGained += Math.floor(scrapPerKill);
+                totalGoldGained += finalGoldPerKill;
+                totalXPGained += finalXpPerKill;
+                totalScrapGained += scrapPerKill;
+
+                // --- START OF MODIFICATION ---
+                // Apply XP for this single kill immediately to update hero level for the next iteration
+                player.gainXP(gameState, finalXpPerKill, 0); // Bonus already applied
+                // --- END OF MODIFICATION ---
 
                 currentSimLevel++;
             }
-             // Update player's level to where they progressed to offline.
             gameState.currentFightingLevel = lastLevelBeforeStop;
             gameState.maxLevel = Math.max(gameState.maxLevel, lastLevelBeforeStop);
         }
 
-        // --- APPLY REWARDS AND SHOW MODAL ---
         if (totalGoldGained === 0 && totalXPGained === 0 && totalScrapGained === 0) return;
 
-        const startingLevel = gameState.hero.level;
-        gameState.gold += totalGoldGained;
-        gameState.scrap += totalScrapGained;
-        player.gainXP(gameState, totalXPGained, playerStats.bonusXp);
+        // --- APPLY FINAL REWARDS (XP is already applied) ---
+        gameState.gold += Math.floor(totalGoldGained);
+        gameState.scrap += Math.floor(totalScrapGained);
         const finalLevel = gameState.hero.level;
 
         recalculateStats();
@@ -1225,7 +1242,6 @@ function startNewMonster() {
         elements.offlineXp.textContent = formatNumber(totalXPGained);
         elements.offlineScrap.textContent = formatNumber(totalScrapGained);
         
-        // --- START OF MODIFICATION ---
         const levelsProgressed = lastLevelBeforeStop - startingProgressLevel;
         if (gameState.isAutoProgressing && levelsProgressed > 0) {
             elements.offlineLevels.innerHTML = `<i class="fas fa-arrow-up"></i> Progressed <b>${levelsProgressed}</b> levels! (Lvl ${startingProgressLevel} → Lvl ${lastLevelBeforeStop})`;
@@ -1233,7 +1249,6 @@ function startNewMonster() {
         } else {
             elements.offlineLevels.classList.add('hidden');
         }
-        // --- END OF MODIFICATION ---
 
         const existingLevelUps = elements.offlineRewards.querySelectorAll('.level-up-summary');
         existingLevelUps.forEach(el => el.remove());
