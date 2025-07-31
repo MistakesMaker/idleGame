@@ -35,8 +35,8 @@ export const PERMANENT_UPGRADES = {
         name: "Gold Mastery",
         description: "Increases the base Gold dropped by monsters by <span>{value}%</span>.",
         icon: 'fas fa-coins',
-        baseCost: 1000,
-        costScalar: 1.25,
+        baseCost: 250,      // Lowered from 1000
+        costScalar: 1.22,     // Lowered for a gentler curve 1.25
         bonusType: 'PERCENT',
         bonusPerLevel: 1, // +1% per level
         maxLevel: Infinity,
@@ -46,19 +46,19 @@ export const PERMANENT_UPGRADES = {
         name: "Critical Power",
         description: "Gain a <span>{value}%</span> chance to deal a critical hit.",
         icon: 'fas fa-bolt',
-        baseCost: 5000,
-        costScalar: 2.2,
+        baseCost: 3500, // Lowered from 5000
+        costScalar: 1.8,      // Lowered for a gentler curve
         bonusType: 'PERCENT',
-        bonusPerLevel: 0.2, // +0.2% per level
-        maxLevel: 500, // Capped at 100%
+        bonusPerLevel: 0.5,     // Increased from 0.2
+        maxLevel: 200,      // Capped at 100% (0.5 * 200)
     },
     CRITICAL_DAMAGE: {
         id: 'CRITICAL_DAMAGE',
         name: "Critical Damage",
         description: "Critical hits deal an additional <span>{value}%</span> damage. Base crit damage is 1.5x.",
         icon: 'fas fa-crosshairs',
-        baseCost: 4000,
-        costScalar: 1.4,
+        baseCost: 800,      // Lowered from 4000
+        costScalar: 1.35,     // Lowered for a gentler curve
         bonusType: 'PERCENT',
         bonusPerLevel: 5, // +5% per level
         maxLevel: Infinity,
@@ -79,8 +79,8 @@ export const PERMANENT_UPGRADES = {
         name: "Scrap Scavenger",
         description: "Gain <span>{value}%</span> more Scrap from salvaging items.",
         icon: 'fas fa-cogs',
-        baseCost: 7500,
-        costScalar: 1.5,
+        baseCost: 500,      // Lowered from 7500
+        costScalar: 1.45,     // Lowered for a gentler curve 1.5
         bonusType: 'PERCENT',
         bonusPerLevel: 2, // +2% per level
         maxLevel: Infinity,
@@ -91,18 +91,18 @@ export const PERMANENT_UPGRADES = {
         description: "Gain a <span>{value}%</span> chance to double any gem drop you receive.",
         icon: 'fas fa-search-plus',
         baseCost: 50000,
-        costScalar: 2.0,
+        costScalar: 1.9,      // Lowered for a gentler curve
         bonusType: 'PERCENT',
-        bonusPerLevel: 0.5, // +0.5% per level
-        maxLevel: 200, // Capped at 100%
+        bonusPerLevel: 1,       // Increased from 0.5
+        maxLevel: 100,      // Capped at 100% (1 * 100)
     },
     BOSS_HUNTER: {
         id: 'BOSS_HUNTER',
         name: "Boss Hunter",
         description: "Deal <span>{value}%</span> more damage to Mini-Bosses, Bosses, and Big Bosses.",
         icon: 'fas fa-skull-crossbones',
-        baseCost: 20000,
-        costScalar: 1.6,
+        baseCost: 10000, // Lowered from 20000
+        costScalar: 1.55,     // Lowered for a gentler curve
         bonusType: 'PERCENT',
         bonusPerLevel: 2, // +2% per level
         maxLevel: Infinity,
@@ -112,11 +112,11 @@ export const PERMANENT_UPGRADES = {
         name: "Swift Strikes",
         description: "Your attacks have a <span>{value}%</span> chance to hit an additional time.",
         icon: 'fas fa-fighter-jet',
-        baseCost: 100000,
-        costScalar: 2.8,
+        baseCost: 50000, // Lowered from 100000
+        costScalar: 2.5,
         bonusType: 'PERCENT',
-        bonusPerLevel: 0.1, // +0.1% per level
-        maxLevel: Infinity,
+        bonusPerLevel: 0.2, // Increased from 0.1
+        maxLevel: 500, // Capped at 100% (0.2 * 500)
     },
     HUNTERS_ACUMEN: {
         id: 'HUNTERS_ACUMEN',
