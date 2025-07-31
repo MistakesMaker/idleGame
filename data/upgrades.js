@@ -118,4 +118,15 @@ export const PERMANENT_UPGRADES = {
         bonusPerLevel: 0.1, // +0.1% per level
         maxLevel: Infinity,
     },
+    HUNTERS_ACUMEN: {
+        id: 'HUNTERS_ACUMEN',
+        name: "Hunter's Acumen",
+        description: "Gain <span>{value}</span> additional Hunt Token(s) from completing bounties.",
+        icon: 'fas fa-book-reader',
+        baseCost: 1000000,   // More expensive than Prestige Power
+        costScalar: 15,      // Scales very quickly
+        bonusType: 'FLAT',
+        bonusPerLevel: 1,       // +1 token per level
+        maxLevel: Infinity,
+    },
 };

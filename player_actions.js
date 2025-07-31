@@ -1131,15 +1131,20 @@ export function completeHunt(gameState) {
     gameState.hunts.completionCounts[activeHunt.id] = count + 1;
     gameState.hunts.totalCompleted++;
     
-    // --- START MODIFICATION: Unlock Hunt Travel ---
     let justUnlockedTravel = false;
     if (gameState.hunts.totalCompleted >= 5 && !gameState.unlockedFeatures.huntTravel) {
         gameState.unlockedFeatures.huntTravel = true;
         justUnlockedTravel = true;
     }
-    // --- END MODIFICATION ---
 
-    const tokensGained = activeHunt.tokenReward || getRandomInt(1, 3);
+    // --- START OF MODIFICATION ---
+    // Calculate bonus tokens from the new permanent upgrade
+    const acumenLevel = gameState.permanentUpgrades.HUNTERS_ACUMEN || 0;
+    const bonusTokens = PERMANENT_UPGRADES.HUNTERS_ACUMEN.bonusPerLevel * acumenLevel;
+    const baseTokens = activeHunt.tokenReward || getRandomInt(1, 3);
+    const tokensGained = baseTokens + bonusTokens;
+    // --- END OF MODIFICATION ---
+    
     gameState.hunts.tokens += tokensGained;
     
     gameState.hunts.active = null;

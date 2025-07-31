@@ -3174,28 +3174,35 @@ export function renderHuntsView(elements, gameState) {
  * @returns {string}
  */
 function createHuntCardHTML(hunt, index, isActive, gameState, progress = 0) {
-    // Safety check for invalid hunt data
     if (!hunt || !hunt.rewardId) {
         console.error("Attempted to render an invalid hunt object:", hunt);
-        return ''; // Return an empty string to prevent a crash
+        return '';
     }
     const reward = CONSUMABLES[hunt.rewardId];
     if (!reward) {
         console.error(`Could not find consumable with ID "${hunt.rewardId}" for a hunt.`, hunt);
-        return ''; // Return an empty string to prevent a crash
+        return '';
     }
 
     const description = hunt.description.replace('{quantity}', formatNumber(hunt.quantity));
 
+    // --- START OF MODIFICATION ---
+    // Calculate the TOTAL token reward for display purposes
+    const acumenLevel = gameState.permanentUpgrades.HUNTERS_ACUMEN || 0;
+    const bonusTokens = PERMANENT_UPGRADES.HUNTERS_ACUMEN.bonusPerLevel * acumenLevel;
+    const totalTokenReward = (hunt.tokenReward || 0) + bonusTokens;
+
     const tokenRewardHTML = `
         <div class="hunt-token-reward">
-            <span>${hunt.tokenReward}</span>
+            <span>${totalTokenReward}</span>
             <img src="images/icons/hunt_token.png" alt="Token">
         </div>
     `;
+    // --- END OF MODIFICATION ---
 
     let actionButtonHTML;
     if (isActive) {
+        // ... (the rest of the function remains exactly the same)
         const progressPercent = Math.min(100, (progress / hunt.quantity) * 100);
         const isComplete = progress >= hunt.quantity;
 
@@ -3217,8 +3224,6 @@ function createHuntCardHTML(hunt, index, isActive, gameState, progress = 0) {
         actionButtonHTML = `<div class="hunt-actions"><button data-index="${index}">Accept</button></div>`;
     }
 
-    // --- START OF MODIFICATION ---
-    // The token reward is now its own column, and removed from inside the consumable reward div.
     return `
         <div class="hunt-card">
             ${tokenRewardHTML}
@@ -3235,7 +3240,6 @@ function createHuntCardHTML(hunt, index, isActive, gameState, progress = 0) {
             </div>
         </div>
     `;
-    // --- END OF MODIFICATION ---
 }
 
 /**
