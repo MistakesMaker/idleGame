@@ -311,9 +311,9 @@ document.addEventListener('DOMContentLoaded', () => {
     statBreakdown.clickDamage.sources.push({ label: 'Base', value: 1 });
     
     if (gameState.activeBuffs) {
-        // ... (active buffs logic remains the same)
         gameState.activeBuffs.forEach(buff => {
             if (buff.stats) {
+                // Apply the buff to the stat variables
                 bonusGold += buff.stats.bonusGold || 0;
                 magicFind += buff.stats.magicFind || 0;
                 bonusXp += buff.stats.bonusXp || 0;
@@ -322,11 +322,24 @@ document.addEventListener('DOMContentLoaded', () => {
                 bonusCritDamage += buff.stats.bonusCritDamage || 0;
                 dpsToClickDamagePercent += buff.stats.dpsToClickDamagePercent || 0;
                 bonusClickDamagePercent += buff.stats.bonusClickDamagePercent || 0;
+                
+                // --- START OF MODIFICATION ---
+                // ALSO add the buff to the breakdown object for the UI tooltip
+                if (buff.stats.bonusGold) {
+                    statBreakdown.goldGain.sources.push({ label: `From ${buff.name}`, value: buff.stats.bonusGold, isPercent: true });
+                }
+                if (buff.stats.magicFind) {
+                    statBreakdown.magicFind.sources.push({ label: `From ${buff.name}`, value: buff.stats.magicFind, isPercent: true });
+                }
+                if (buff.stats.bonusClickDamagePercent) {
+                    statBreakdown.clickDamage.multipliers.push({ label: `From ${buff.name}`, value: buff.stats.bonusClickDamagePercent });
+                }
+                // --- END OF MODIFICATION ---
             }
         });
     }
     
-    // ... (prestige stats logic remains the same)
+    // ... (The rest of the function remains exactly the same)
     if (absorbed.clickDamage) {
         const rawValue = absorbed.clickDamage;
         const totalValue = rawValue * prestigeMultiplier;
@@ -368,7 +381,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
     
-    // ... (gear stats logic remains the same)
     let clickFromGear = 0, dpsFromGear = 0, goldFromGear = 0, magicFromGear = 0;
     let synergyFromGems = 0;
     for (const item of Object.values(gameState.equipment)) {
@@ -395,7 +407,6 @@ document.addEventListener('DOMContentLoaded', () => {
     statBreakdown.goldGain.sources.push({ label: 'From Gear', value: goldFromGear, isPercent: true });
     statBreakdown.magicFind.sources.push({ label: 'From Gear', value: magicFromGear, isPercent: true });
     
-    // ... (attribute bonuses logic remains the same)
     const strengthBonusClickFlat = hero.attributes.strength * 5;
     const strengthBonusClickPercent = hero.attributes.strength * 0.2;
     baseClickDamage += strengthBonusClickFlat;
@@ -416,7 +427,6 @@ document.addEventListener('DOMContentLoaded', () => {
     magicFind += luckBonusMagicFind;
     statBreakdown.magicFind.sources.push({ label: 'From Luck', value: luckBonusMagicFind, isPercent: true });
 
-    // ... (permanent upgrades logic remains the same)
     magicFind += permanentUpgradeBonuses.magicFind;
     statBreakdown.magicFind.sources.push({ label: 'From Upgrades', value: permanentUpgradeBonuses.magicFind, isPercent: true });
 
@@ -425,29 +435,24 @@ document.addEventListener('DOMContentLoaded', () => {
         statBreakdown.magicFind.sources.push({ label: 'From Tomes', value: permStatBonuses.magicFind, isPercent: true });
     }
     
-    // --- START OF MODIFICATION ---
-    // Add flat bonuses from Gold Upgrades
     const flatClickFromUpgrades = gameState.upgrades.clickDamage * 5;
     const flatDpsFromUpgrades = gameState.upgrades.dps * 10;
     baseClickDamage += flatClickFromUpgrades;
     baseDps += flatDpsFromUpgrades;
     statBreakdown.clickDamage.sources.push({ label: 'From Gold Upgrades (Flat)', value: flatClickFromUpgrades });
     statBreakdown.dps.sources.push({ label: 'From Gold Upgrades (Flat)', value: flatDpsFromUpgrades });
-    // --- END OF MODIFICATION ---
 
-    // --- Multipliers ---
     let finalClickDamage = baseClickDamage * (1 + (strengthBonusClickPercent / 100));
     let finalDps = baseDps * (1 + (agilityBonusDpsPercent / 100));
 
     const clickUpgradeBonusPercent = gameState.upgrades.clickDamage * 1;
     finalClickDamage *= (1 + (clickUpgradeBonusPercent / 100));
-    statBreakdown.clickDamage.multipliers.push({ label: 'From Gold Upgrades (%)', value: clickUpgradeBonusPercent }); // Renamed for clarity
+    statBreakdown.clickDamage.multipliers.push({ label: 'From Gold Upgrades (%)', value: clickUpgradeBonusPercent });
     
     const dpsUpgradeBonusPercent = gameState.upgrades.dps * 1;
     finalDps *= (1 + (dpsUpgradeBonusPercent / 100));
-    statBreakdown.dps.multipliers.push({ label: 'From Gold Upgrades (%)', value: dpsUpgradeBonusPercent }); // Renamed for clarity
+    statBreakdown.dps.multipliers.push({ label: 'From Gold Upgrades (%)', value: dpsUpgradeBonusPercent });
     
-    // ... (The rest of the function remains the same) ...
     const dpsToClickSynergyValue = (gameState.absorbedSynergies && gameState.absorbedSynergies['dps_to_clickDamage']) || 0;
     const totalSynergy = synergyFromGems + (dpsToClickSynergyValue * prestigeMultiplier);
     
