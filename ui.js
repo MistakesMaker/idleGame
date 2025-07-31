@@ -3050,7 +3050,12 @@ export function showStatBreakdownTooltip(elements, statKey, statBreakdown, gameS
         html += `<li class="tooltip-divider"></li>`;
         data.multipliers.forEach(multi => {
             if (multi.value !== 0) {
-                html += `<li>${multi.label}: +${multi.value.toFixed(1)}%</li>`;
+                // --- START OF MODIFICATION ---
+                if (multi.label.includes('(%)')) {
+                    html += `<li>${multi.label.replace(' (%)', '')}: +${multi.value.toFixed(1)}%</li>`;
+                } else {
+                    html += `<li>${multi.label}: +${multi.value.toFixed(1)}%</li>`;
+                }
             }
         });
     }

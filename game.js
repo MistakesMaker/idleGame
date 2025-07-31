@@ -302,7 +302,6 @@ document.addEventListener('DOMContentLoaded', () => {
     let magicFind = 0;
     let bonusXp = 0;
 
-    // --- NEW POTION BUFFS ---
     let bonusBossDamagePercent = 0;
     let bonusCritChance = 0;
     let bonusCritDamage = 0;
@@ -312,6 +311,7 @@ document.addEventListener('DOMContentLoaded', () => {
     statBreakdown.clickDamage.sources.push({ label: 'Base', value: 1 });
     
     if (gameState.activeBuffs) {
+        // ... (active buffs logic remains the same)
         gameState.activeBuffs.forEach(buff => {
             if (buff.stats) {
                 bonusGold += buff.stats.bonusGold || 0;
@@ -326,7 +326,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
     
-    // --- Prestige Stats (separated for clarity) ---
+    // ... (prestige stats logic remains the same)
     if (absorbed.clickDamage) {
         const rawValue = absorbed.clickDamage;
         const totalValue = rawValue * prestigeMultiplier;
@@ -368,7 +368,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
     
-    // --- Gear Stats ---
+    // ... (gear stats logic remains the same)
     let clickFromGear = 0, dpsFromGear = 0, goldFromGear = 0, magicFromGear = 0;
     let synergyFromGems = 0;
     for (const item of Object.values(gameState.equipment)) {
@@ -395,7 +395,7 @@ document.addEventListener('DOMContentLoaded', () => {
     statBreakdown.goldGain.sources.push({ label: 'From Gear', value: goldFromGear, isPercent: true });
     statBreakdown.magicFind.sources.push({ label: 'From Gear', value: magicFromGear, isPercent: true });
     
-    // --- Attribute Bonuses ---
+    // ... (attribute bonuses logic remains the same)
     const strengthBonusClickFlat = hero.attributes.strength * 5;
     const strengthBonusClickPercent = hero.attributes.strength * 0.2;
     baseClickDamage += strengthBonusClickFlat;
@@ -416,7 +416,7 @@ document.addEventListener('DOMContentLoaded', () => {
     magicFind += luckBonusMagicFind;
     statBreakdown.magicFind.sources.push({ label: 'From Luck', value: luckBonusMagicFind, isPercent: true });
 
-    // --- Permanent Upgrades & Bonuses ---
+    // ... (permanent upgrades logic remains the same)
     magicFind += permanentUpgradeBonuses.magicFind;
     statBreakdown.magicFind.sources.push({ label: 'From Upgrades', value: permanentUpgradeBonuses.magicFind, isPercent: true });
 
@@ -425,19 +425,29 @@ document.addEventListener('DOMContentLoaded', () => {
         statBreakdown.magicFind.sources.push({ label: 'From Tomes', value: permStatBonuses.magicFind, isPercent: true });
     }
     
+    // --- START OF MODIFICATION ---
+    // Add flat bonuses from Gold Upgrades
+    const flatClickFromUpgrades = gameState.upgrades.clickDamage * 5;
+    const flatDpsFromUpgrades = gameState.upgrades.dps * 10;
+    baseClickDamage += flatClickFromUpgrades;
+    baseDps += flatDpsFromUpgrades;
+    statBreakdown.clickDamage.sources.push({ label: 'From Gold Upgrades (Flat)', value: flatClickFromUpgrades });
+    statBreakdown.dps.sources.push({ label: 'From Gold Upgrades (Flat)', value: flatDpsFromUpgrades });
+    // --- END OF MODIFICATION ---
+
     // --- Multipliers ---
     let finalClickDamage = baseClickDamage * (1 + (strengthBonusClickPercent / 100));
     let finalDps = baseDps * (1 + (agilityBonusDpsPercent / 100));
 
     const clickUpgradeBonusPercent = gameState.upgrades.clickDamage * 1;
     finalClickDamage *= (1 + (clickUpgradeBonusPercent / 100));
-    statBreakdown.clickDamage.multipliers.push({ label: 'From Gold Upgrades', value: clickUpgradeBonusPercent });
+    statBreakdown.clickDamage.multipliers.push({ label: 'From Gold Upgrades (%)', value: clickUpgradeBonusPercent }); // Renamed for clarity
     
     const dpsUpgradeBonusPercent = gameState.upgrades.dps * 1;
     finalDps *= (1 + (dpsUpgradeBonusPercent / 100));
-    statBreakdown.dps.multipliers.push({ label: 'From Gold Upgrades', value: dpsUpgradeBonusPercent });
+    statBreakdown.dps.multipliers.push({ label: 'From Gold Upgrades (%)', value: dpsUpgradeBonusPercent }); // Renamed for clarity
     
-    // --- Synergy & Potion Click Damage ---
+    // ... (The rest of the function remains the same) ...
     const dpsToClickSynergyValue = (gameState.absorbedSynergies && gameState.absorbedSynergies['dps_to_clickDamage']) || 0;
     const totalSynergy = synergyFromGems + (dpsToClickSynergyValue * prestigeMultiplier);
     
@@ -448,12 +458,10 @@ document.addEventListener('DOMContentLoaded', () => {
         statBreakdown.clickDamage.synergy = synergyBonus;
     }
 
-    // --- NEW POTION BUFFS (Multiplicative) ---
     if (bonusClickDamagePercent > 0) {
         finalClickDamage *= (1 + (bonusClickDamagePercent / 100));
     }
 
-    // --- FINAL MULTIPLIERS FROM TOMES ---
     if (permStatBonuses.totalClickDamage > 0) {
         const tomeMultiplier = 1 + (permStatBonuses.totalClickDamage / 100);
         finalClickDamage *= tomeMultiplier;
@@ -464,7 +472,6 @@ document.addEventListener('DOMContentLoaded', () => {
         finalDps *= tomeMultiplier;
         statBreakdown.dps.multipliers.push({ label: 'From Tomes', value: permStatBonuses.totalDps });
     }
-
 
     playerStats = {
         baseClickDamage: baseClickDamage,
@@ -2993,6 +3000,31 @@ function startNewMonster() {
                 logMessage(elements.gameLogEl, result.message, 'rare', isAutoScrollingLog);
             }
         });
+
+        const goldUpgradeTooltipTrigger = document.getElementById('gold-upgrade-tooltip-trigger');
+    if (goldUpgradeTooltipTrigger) {
+        goldUpgradeTooltipTrigger.addEventListener('mouseover', (e) => {
+            const tooltipHTML = `
+                <div class="item-header" style="color: #f1c40f;">Gold Upgrade Bonuses</div>
+                <ul style="margin-top: 5px; text-align: left;">
+                    <li><b>Improve Clicks:</b><br>+5 Flat & +1% Total Damage per Level</li>
+                    <li style="margin-top: 5px;"><b>Improve Idle DPS:</b><br>+10 Flat & +1% Total DPS per Level</li>
+                </ul>
+            `;
+            
+            elements.tooltipEl.className = 'hidden simple-tooltip rare';
+            elements.tooltipEl.innerHTML = tooltipHTML;
+
+            const rect = goldUpgradeTooltipTrigger.getBoundingClientRect();
+            elements.tooltipEl.style.left = `${rect.left}px`;
+            elements.tooltipEl.style.top = `${rect.bottom + 5}px`;
+            elements.tooltipEl.classList.remove('hidden');
+        });
+
+        goldUpgradeTooltipTrigger.addEventListener('mouseout', () => {
+            elements.tooltipEl.classList.add('hidden');
+        });
+    }
         
         setupLogScrollListeners();
         setupItemTooltipListeners();
