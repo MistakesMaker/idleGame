@@ -3143,15 +3143,19 @@ export function renderHuntsView(elements, gameState) {
     // --- START OF NEW LOGIC ---
     if (totalHuntsIcon instanceof HTMLImageElement) {
         const count = gameState.hunts.totalCompleted;
-        if (count <= 99) {
-            totalHuntsIcon.src = 'images/icons/hunt_count1.png';
-        } else if (count <= 249) {
-            totalHuntsIcon.src = 'images/icons/hunt_count2.png';
-        } else if (count <= 499) {
-            totalHuntsIcon.src = 'images/icons/hunt_count3.png';
-        } else {
-            totalHuntsIcon.src = 'images/icons/hunt_count4.png';
-        }
+        const interval = 50;
+        const maxIconNumber = 20;
+
+        // Calculate which icon tier the player is in.
+        // e.g., count 0-49 -> floor(0...0.98) + 1 = 1
+        // e.g., count 50-99 -> floor(1...1.98) + 1 = 2
+        const calculatedIconNumber = Math.floor(count / interval) + 1;
+
+        // Use Math.min to clamp the number, so it never goes above our highest available image.
+        const finalIconNumber = Math.min(calculatedIconNumber, maxIconNumber);
+
+        // Set the image source dynamically.
+        totalHuntsIcon.src = `images/icons/hunt_count${finalIconNumber}.png`;
     }
     // --- END OF NEW LOGIC ---
 
