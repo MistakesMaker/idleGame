@@ -570,12 +570,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // --- START OF FIX (Part 2): Use the saved 'defeatedLevel' for the check. ---
         const wasBossDefeated = isBigBossLevel(defeatedLevel) || isBossLevel(defeatedLevel);
-            if (wasBossDefeated && defeatedLevel === gameState.nextPrestigeLevel && !gameState.unlockedFeatures.prestige) {
+        if (wasBossDefeated && defeatedLevel === gameState.nextPrestigeLevel && !gameState.unlockedFeatures.prestige) {
             gameState.unlockedFeatures.prestige = true;
             logMessage(elements.gameLogEl, '<b>Prestige Unlocked!</b> You can now reset your progress for powerful permanent bonuses.', 'legendary', isAutoScrollingLog);
             
+            // --- NEW FORGE UNLOCK LOGIC ---
+            gameState.unlockedFeatures.forge = true;
+            logMessage(elements.gameLogEl, '<b>The Forge is Unlocked!</b> You can now use Scrap to enhance your gear before prestiging.', 'legendary', isAutoScrollingLog);
+            ui.updateTabVisibility(gameState); // <-- ADD THIS LINE
+            ui.flashTab('forge-view');
+            // --- END NEW LOGIC ---
+
             // Show the advisor modal instead of just updating the UI
-            showPrestigeAdvisorModal(elements, gameState, () => {
+            showPrestigeAdvisorModal(elements, gameState, () => { 
                 // This is the callback function that runs when "Take Me to Prestige!" is clicked
                 document.querySelector('.actions-panel').classList.add('hidden');
                 document.querySelector('.upgrades-panel').classList.add('hidden');
@@ -1248,6 +1255,14 @@ document.addEventListener('DOMContentLoaded', () => {
             p.innerHTML = `<i class="fas fa-star"></i> <b>Prestige Unlocked!</b>`;
             p.className = 'legendary unlock-summary';
             elements.offlineRewards.appendChild(p);
+
+            // --- NEW OFFLINE FORGE UNLOCK ---
+            gameState.unlockedFeatures.forge = true;
+            const forgeP = document.createElement('p');
+            forgeP.innerHTML = `<i class="fas fa-hammer"></i> <b>The Forge is Unlocked!</b>`;
+            forgeP.className = 'legendary unlock-summary';
+            elements.offlineRewards.appendChild(forgeP);
+            // --- END OFFLINE FORGE UNLOCK ---
         }
         // --- END OF NEW OFFLINE UNLOCK LOGIC ---
 
@@ -2290,12 +2305,6 @@ document.addEventListener('DOMContentLoaded', () => {
             if (result.count > 0) {
                 sound_manager.playSound('salvage');
                 logMessage(elements.gameLogEl, `Salvaged ${result.count} items for a total of ${formatNumber(result.scrapGained)} Scrap.`, 'uncommon', isAutoScrollingLog);
-                if (!gameState.unlockedFeatures.forge) {
-                    gameState.unlockedFeatures.forge = true;
-                    logMessage(elements.gameLogEl, '<b>The Forge is Unlocked!</b> You can now use Scrap to reroll item stats.', 'legendary', isAutoScrollingLog);
-                    ui.updateTabVisibility(gameState);
-                    ui.flashTab('forge-view');
-                }
             } else {
                 logMessage(elements.gameLogEl, "No items selected for salvage.", '', isAutoScrollingLog);
             }
@@ -2316,12 +2325,6 @@ document.addEventListener('DOMContentLoaded', () => {
             if (result.count > 0) {
                 sound_manager.playSound('salvage');
                 logMessage(elements.gameLogEl, `Salvaged ${result.count} ${rarity} items for ${formatNumber(result.scrapGained)} Scrap.`, 'uncommon', isAutoScrollingLog);
-                if (!gameState.unlockedFeatures.forge) {
-                    gameState.unlockedFeatures.forge = true;
-                    logMessage(elements.gameLogEl, '<b>The Forge is Unlocked!</b> You can now use Scrap to reroll item stats.', 'legendary', isAutoScrollingLog);
-                    ui.updateTabVisibility(gameState);
-                    ui.flashTab('forge-view');
-                }
                 ui.renderGrid(elements.inventorySlotsEl, gameState.inventory, { calculatePositions: false });
                 ui.updateCurrency(elements, gameState);
                 autoSave();
@@ -2718,6 +2721,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
         addTapListener(elements.offlineProgressCloseBtn, () => {
             elements.offlineProgressModalBackdrop.classList.add('hidden');
+
+            // --- NEW: Handle UI updates after offline unlocks ---
+            // If the forge was just unlocked offline, update the UI accordingly.
+            if (gameState.unlockedFeatures.forge) {
+                ui.updateTabVisibility(gameState);
+                ui.flashTab('forge-view');
+            }
+            // If the wiki was just unlocked offline...
+            if (gameState.unlockedFeatures.wiki) {
+                ui.updateTabVisibility(gameState);
+                ui.flashTab('wiki-view');
+            }
+            // Update prestige UI in case that was unlocked too
+            if (gameState.unlockedFeatures.prestige) {
+                ui.updatePrestigeUI(elements, gameState);
+            }
         });
 
         addTapListener(elements.modalCloseBtnEl, () => elements.modalBackdropEl.classList.add('hidden'));

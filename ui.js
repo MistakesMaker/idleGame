@@ -1747,6 +1747,8 @@ export function showPrestigeAdvisorModal(elements, gameState, switchToPrestigeVi
     goToForgeBtn.onclick = () => {
         closeModal();
         switchView(elements, 'forge-view', gameState);
+        // Explicitly render the forge content after switching views
+        renderForgeInventory(elements.forgeInventorySlotsEl, player.getAllItems(gameState));
     };
 
     goToUpgradesBtn.onclick = () => {
@@ -1888,7 +1890,7 @@ export function switchView(elements, viewIdToShow, gameState) {
     const featureUnlockMap = {
         'inventory-view': { flag: unlockedFeatures.inventory, title: 'Inventory Locked', message: 'Find your first piece of gear to unlock the inventory.', icon: 'fa-box-open' },
         'equipment-view': { flag: unlockedFeatures.equipment, title: 'Equipment Locked', message: 'Equip an item from your inventory to unlock this view.', icon: 'fa-user-shield' },
-        'forge-view': { flag: unlockedFeatures.forge, title: 'Forge Locked', message: 'Salvage an item for Scrap to unlock the Forge.', icon: 'fa-hammer' },
+        'forge-view': { flag: unlockedFeatures.forge, title: 'Forge Locked', message: 'Defeat lvl 100 boss to unlock forge.', icon: 'fa-hammer' },
         'wiki-view': { flag: unlockedFeatures.wiki, title: 'Wiki Locked', message: 'Encounter a boss to unlock the Item Wiki.', icon: 'fa-book' },
         'prestige-view': { flag: unlockedFeatures.prestige, title: 'Prestige Locked', message: 'Defeat the boss at Level 100 to unlock Prestige.', icon: 'fa-star' }
     };
