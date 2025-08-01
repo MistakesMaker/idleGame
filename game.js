@@ -30,6 +30,12 @@ function addTapListener(element, handler) {
     let touchMoved = false;
 
     const handleTouchStart = (e) => {
+        // --- START OF FIX (1/2) - JSDoc syntax ---
+        // Do not even start processing a touch if the element is disabled.
+        // This JSDoc cast tells the type checker that 'element' has a 'disabled' property.
+        if ((/** @type {HTMLButtonElement} */ (element)).disabled) return;
+        // --- END OF FIX (1/2) ---
+
         // We only care about the first touch to avoid issues with multi-touch gestures.
         if (e.touches.length > 1) {
             touchMoved = true; // Treat multi-touch as a reason to not fire the tap.
@@ -63,6 +69,15 @@ function addTapListener(element, handler) {
     };
 
     const handleClick = (e) => {
+        // --- START OF FIX (2/2) - JSDoc syntax ---
+        // Explicitly check for the disabled state for standard mouse clicks.
+        if ((/** @type {HTMLButtonElement} */ (element)).disabled) {
+            e.preventDefault();
+            e.stopPropagation();
+            return;
+        }
+        // --- END OF FIX (2/2) ---
+
         // If e.defaultPrevented is true, it means the touchend handler already
         // ran and called e.preventDefault(). We must not run the handler again.
         if (e.defaultPrevented) {
