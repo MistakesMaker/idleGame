@@ -2718,7 +2718,7 @@ export function updatePrestigeUI(elements, gameState) {
     const prestigeTokenShopItem = HUNT_SHOP_INVENTORY.Utility.find(item => item.id === 'PRESTIGE_TOKEN');
     if (prestigeTokenShopItem) {
         const purchaseCount = gameState.prestigeTokenPurchases || 0;
-        const currentCost = prestigeTokenShopItem.cost + (purchaseCount * 10);
+        const currentCost = prestigeTokenShopItem.cost + (purchaseCount * 20);
 
         // Append the new information as a separate paragraph
         prestigeRequirementTextEl.innerHTML += ` or use a Mark of the Hunter</span> from the Hunt Shop.
@@ -3408,7 +3408,7 @@ function createHuntShopItemHTML(shopItem, gameState) {
     let finalCost = shopItem.cost;
     if (shopItem.id === 'PRESTIGE_TOKEN') {
         const purchaseCount = gameState.prestigeTokenPurchases || 0;
-        finalCost = shopItem.cost + (purchaseCount * 10);
+        finalCost = shopItem.cost + (purchaseCount * 20);
     }
     const canAfford = gameState.hunts.tokens >= finalCost;
 

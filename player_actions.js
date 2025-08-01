@@ -1248,7 +1248,7 @@ export function purchaseHuntShopItem(gameState, itemId) {
     let finalCost = shopItem.cost;
     if (itemId === 'PRESTIGE_TOKEN') {
         const purchaseCount = gameState.prestigeTokenPurchases || 0;
-        finalCost = shopItem.cost + (purchaseCount * 10);
+        finalCost = shopItem.cost + (purchaseCount * 20);
     }
 
     if (gameState.hunts.tokens < finalCost) {
