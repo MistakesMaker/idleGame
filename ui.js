@@ -1907,7 +1907,7 @@ export function switchView(elements, viewIdToShow, gameState) {
     
     const config = featureUnlockMap[viewIdToShow];
     
-    if (config && !config.flag) {
+    if (config && !config.flag && !(viewIdToShow === 'prestige-view' && gameState.isTokenPrestigePending)) { 
         lockedViewTitle.textContent = config.title;
         lockedViewMessage.textContent = config.message;
         lockedViewIcon.className = `fas ${config.icon} locked-view-icon`;
