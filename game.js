@@ -1396,10 +1396,12 @@ document.addEventListener('DOMContentLoaded', () => {
         let results = [];
     
         if (wikiShowUpgradesOnly) {
-            // ... (The code for "Show Upgrades Only" remains exactly the same) ...
             const potentialUpgrades = [];
             
             const slotsToCheck = new Set();
+            const emptySlots = new Set();
+
+            // Determine which slots to check based on filters
             if (wikiState.filters.type) {
                 if (wikiState.filters.type === 'ring') {
                     slotsToCheck.add('ring1');
@@ -1408,19 +1410,32 @@ document.addEventListener('DOMContentLoaded', () => {
                     slotsToCheck.add(wikiState.filters.type);
                 }
             } else {
-                Object.keys(gameState.equipment).forEach(slot => {
-                    if (gameState.equipment[slot]) {
-                        slotsToCheck.add(slot);
-                    }
-                });
+                // If no filter, check all slots
+                Object.keys(gameState.equipment).forEach(slot => slotsToCheck.add(slot));
             }
 
+            // Identify which of the slots to check are actually empty
+            slotsToCheck.forEach(slot => {
+                if (!gameState.equipment[slot]) {
+                    emptySlots.add(slot.replace(/\d/g, '')); // Add generic type like 'ring'
+                }
+            });
+            
             wikiState.data.forEach(itemData => {
                 const potentialItemBase = itemData.base;
                 if (potentialItemBase.type === 'consumable' || GEMS[potentialItemBase.id]) return;
 
                 const itemType = potentialItemBase.type;
 
+                // --- NEW LOGIC for EMPTY SLOTS ---
+                // If the item's type matches an empty slot we are checking, it's automatically an upgrade.
+                if (emptySlots.has(itemType)) {
+                    // We create a "dummy" comparison object to signify it's an upgrade for an empty slot.
+                    potentialUpgrades.push({ itemData, comparison: { isUpgrade: true, diffs: {} } });
+                    return; // Move to the next item
+                }
+
+                // --- EXISTING LOGIC for OCCUPIED SLOTS ---
                 const checkItem = (equippedItem) => {
                     if (!equippedItem || itemType !== equippedItem.type.replace(/\d/g, '')) return null;
                     return getUpgradeComparison(potentialItemBase, equippedItem);
@@ -1441,7 +1456,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                     comparison = bestComp;
                 } else {
-                    if (!slotsToCheck.has(itemType)) return;
+                    if (!slotsToCheck.has(itemType) || !gameState.equipment[itemType]) return;
                     comparison = checkItem(gameState.equipment[itemType]);
                 }
 
