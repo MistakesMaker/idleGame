@@ -3597,6 +3597,16 @@ document.addEventListener('DOMContentLoaded', () => {
             };
             gameState.equipment = gameState.presets[gameState.activePresetIndex].equipment;
 
+            // --- START OF FIX: Explicitly wipe all preset equipment ---
+            // This is a failsafe to prevent any items on inactive presets from
+            // surviving the prestige reset, closing the exploit.
+            for (const preset of gameState.presets) {
+                preset.equipment = { ...defaultEquipmentState };
+            }
+            // After the wipe, re-assign the master equipment reference to the now-empty active preset.
+            gameState.equipment = gameState.presets[gameState.activePresetIndex].equipment;
+            // --- END OF FIX ---
+
             if (oldPresetNames) {
                 gameState.presets.forEach((preset, index) => {
                     if (oldPresetNames[index]) {
