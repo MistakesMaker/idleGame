@@ -2008,7 +2008,7 @@ document.addEventListener('DOMContentLoaded', () => {
             sfxLootVolumeSlider, sfxLootMuteBtn
         } = elements;
 
-        addTapListener(settingsToggleBtn, () => settingsPanel.classList.add('open'));
+        addTapListener(settingsToggleBtn, () => settingsPanel.classList.toggle('open'));
         addTapListener(settingsCloseBtn, () => settingsPanel.classList.remove('open'));
 
         // Master Volume
