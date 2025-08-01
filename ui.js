@@ -910,6 +910,14 @@ export function updateUI(elements, gameState, playerStats, currentMonster, salva
     updateMonsterUI(elements, gameState, currentMonster);
     updateLootPanel(elements, currentMonster, gameState);
     updatePrestigeUI(elements, gameState);
+        // --- START: Prestige Advisor Button Visibility ---
+    const advisorBtn = document.getElementById('prestige-advisor-btn');
+    if (advisorBtn) {
+        // Show the button only if prestige is unlocked AND it's the very first prestige run.
+        const shouldBeVisible = gameState.unlockedFeatures.prestige && gameState.prestigeCount === 0;
+        advisorBtn.classList.toggle('hidden', !shouldBeVisible);
+    }
+    // --- END: Prestige Advisor Button Visibility ---
     updateHuntsButton(gameState);
 
     // Grid Renders for the active inventory sub-view
@@ -1705,7 +1713,63 @@ export function showConfirmationModal(elements, title, bodyHtml, onConfirm) {
 
     elements.modalBackdropEl.classList.remove('hidden');
 }
+/**
+ * Shows the one-time Prestige Advisor modal, with buttons that navigate the UI.
+ * @param {DOMElements} elements The main DOM elements object.
+ * @param {object} gameState The current game state.
+ * @param {function} switchToPrestigeViewCallback Callback to switch to the prestige view.
+ */
+export function showPrestigeAdvisorModal(elements, gameState, switchToPrestigeViewCallback) {
+    const backdrop = document.getElementById('prestige-advisor-modal-backdrop');
+    if (!backdrop) return;
 
+    const closeModal = () => backdrop.classList.add('hidden');
+
+    // Button functionalities
+    const goToWikiBtn = document.getElementById('advisor-goto-wiki-btn');
+    const goToGemsBtn = document.getElementById('advisor-goto-gems-btn');
+    const goToForgeBtn = document.getElementById('advisor-goto-forge-btn');
+    const goToUpgradesBtn = document.getElementById('advisor-goto-upgrades-btn');
+    const closeBtn = document.getElementById('advisor-close-btn');
+    const prestigeBtn = document.getElementById('advisor-prestige-btn');
+
+    goToWikiBtn.onclick = () => {
+        closeModal();
+        switchView(elements, 'wiki-view', gameState);
+    };
+
+    goToGemsBtn.onclick = () => {
+        closeModal();
+        switchView(elements, 'inventory-view', gameState);
+        switchInventorySubView('inventory-gems-view');
+    };
+
+    goToForgeBtn.onclick = () => {
+        closeModal();
+        switchView(elements, 'forge-view', gameState);
+    };
+    
+    goToUpgradesBtn.onclick = () => {
+        closeModal();
+        const upgradesPanel = document.querySelector('.upgrades-panel');
+        if (upgradesPanel) {
+            upgradesPanel.classList.add('flash-panel-glow');
+            setTimeout(() => {
+                upgradesPanel.classList.remove('flash-panel-glow');
+            }, 4500); // Duration of animation (1.5s * 3 iterations)
+        }
+    };
+
+    closeBtn.onclick = closeModal;
+    closeBtn.onclick = closeModal;
+
+    prestigeBtn.onclick = () => {
+        closeModal();
+        switchToPrestigeViewCallback();
+    };
+
+    backdrop.classList.remove('hidden');
+}
 
 export function createMapNode(name, iconSrc, coords, isUnlocked, isCompleted, currentFightingLevel, levelRange = null, isBoss = false, isFightingZone = false) {
     const node = document.createElement('div');

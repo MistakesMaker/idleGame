@@ -7,7 +7,7 @@ import { STATS } from './data/stat_pools.js';
 import { PERMANENT_UPGRADES } from './data/upgrades.js';
 import { logMessage, formatNumber, getUpgradeCost, findSubZoneByLevel, findFirstLevelOfZone, isBossLevel, isBigBossLevel, getCombinedItemStats, isMiniBossLevel, findNextAvailableSpot, findEmptySpot, getRandomInt, getTravelOptionsForHunt } from './utils.js';
 import * as ui from './ui.js';
-import { showSimpleTooltip, showPromptModal, switchView } from './ui.js';
+import { showSimpleTooltip, showPromptModal, switchView, showPrestigeAdvisorModal } from './ui.js';
 import * as player from './player_actions.js';
 import * as logic from './game_logic.js';
 import { HUNT_POOLS } from './data/hunts.js';
@@ -547,10 +547,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // --- START OF FIX (Part 2): Use the saved 'defeatedLevel' for the check. ---
         const wasBossDefeated = isBigBossLevel(defeatedLevel) || isBossLevel(defeatedLevel);
-        if (wasBossDefeated && defeatedLevel === gameState.nextPrestigeLevel && !gameState.unlockedFeatures.prestige) {
+            if (wasBossDefeated && defeatedLevel === gameState.nextPrestigeLevel && !gameState.unlockedFeatures.prestige) {
             gameState.unlockedFeatures.prestige = true;
             logMessage(elements.gameLogEl, '<b>Prestige Unlocked!</b> You can now reset your progress for powerful permanent bonuses.', 'legendary', isAutoScrollingLog);
-            ui.updatePrestigeUI(elements, gameState);
+            
+            // Show the advisor modal instead of just updating the UI
+            showPrestigeAdvisorModal(elements, gameState, () => {
+                // This is the callback function that runs when "Take Me to Prestige!" is clicked
+                document.querySelector('.actions-panel').classList.add('hidden');
+                document.querySelector('.upgrades-panel').classList.add('hidden');
+                switchView(elements, 'prestige-view', gameState);
+                fullUIRender(); // Ensure prestige view is rendered correctly
+            });
+
+            ui.updatePrestigeUI(elements, gameState); // Still update this to enable the button in the background
         }
         if (isMiniBossLevel(defeatedLevel) && !gameState.unlockedFeatures.wiki) {
             gameState.unlockedFeatures.wiki = true;
@@ -3040,6 +3050,19 @@ document.addEventListener('DOMContentLoaded', () => {
                     updateWakeLock();
                     autoSave();
                 }
+            });
+        }
+                // --- Prestige Advisor Button Listener ---
+        const advisorBtn = document.getElementById('prestige-advisor-btn');
+        if (advisorBtn) {
+            addTapListener(advisorBtn, () => {
+                showPrestigeAdvisorModal(elements, gameState, () => {
+                    // This is the callback function that runs when "Take Me to Prestige!" is clicked
+                    document.querySelector('.actions-panel').classList.add('hidden');
+                    document.querySelector('.upgrades-panel').classList.add('hidden');
+                    switchView(elements, 'prestige-view', gameState);
+                    fullUIRender(); // Ensure prestige view is rendered correctly
+                });
             });
         }
 

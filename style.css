@@ -2964,3 +2964,116 @@ input[type="range"]:focus::-moz-range-thumb {
     transform: translateX(1.5rem); /* 24px */
     background-color: white;
 }
+/* --- Prestige Advisor Modal --- */
+#prestige-advisor-modal-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.85);
+    z-index: 10005; /* Highest z-index to appear on top of everything */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    backdrop-filter: blur(4px);
+}
+
+#prestige-advisor-modal {
+    background: #2c3e50;
+    border: 2px solid #f1c40f;
+    box-shadow: 0 0 25px rgba(241, 196, 15, 0.5);
+    border-radius: 12px;
+    width: 90%;
+    max-width: 600px;
+    padding: 25px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+#prestige-advisor-modal h3 {
+    margin-top: 0;
+    font-size: 2em;
+    text-shadow: 0 0 8px #f1c40f;
+}
+
+#prestige-advisor-intro {
+    font-size: 1.1em;
+    color: #bdc3c7;
+    line-height: 1.5;
+    margin-bottom: 10px;
+}
+
+#prestige-advisor-tips {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    text-align: left;
+}
+
+.advisor-tip {
+    display: flex;
+    align-items: flex-start;
+    gap: 15px;
+    background-color: rgba(0, 0, 0, 0.2);
+    padding: 15px;
+    border-radius: 8px;
+    border-left: 4px solid #3498db;
+}
+
+.advisor-tip .tip-icon {
+    font-size: 2.5em;
+    color: #3498db;
+    flex-shrink: 0;
+    margin-top: 5px;
+}
+
+.advisor-tip .tip-text h4 {
+    margin: 0 0 5px 0;
+    color: #ecf0f1;
+}
+
+.advisor-tip .tip-text p {
+    margin: 0 0 10px 0;
+    font-size: 0.95em;
+    color: #95a5a6;
+}
+
+.advisor-tip .tip-text button {
+    font-size: 0.9em;
+    padding: 5px 10px;
+    margin: 0;
+}
+
+#prestige-advisor-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 15px;
+    margin-top: 10px;
+    border-top: 1px solid #4a637e;
+    padding-top: 20px;
+}
+
+#advisor-close-btn {
+    background: #7f8c8d;
+    border-bottom-color: #6c7a7b;
+}
+
+#advisor-prestige-btn {
+    background: linear-gradient(145deg, #f1c40f, #e67e22);
+    border-bottom-color: #d35400;
+    animation: pulse 2s infinite;
+}
+/* --- Panel Flashing Animation --- */
+.flash-panel-glow {
+    animation: flash-panel 1.5s ease-in-out 3;
+}
+
+@keyframes flash-panel {
+    50% {
+        box-shadow: 0 0 25px 5px rgba(46, 204, 113, 0.7);
+        border-color: #2ecc71;
+    }
+}
