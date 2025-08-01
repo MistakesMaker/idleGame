@@ -1306,7 +1306,7 @@ export function resetAttributes(gameState) {
         return { success: false, message: "You have no attribute points to reset." };
     }
 
-    const costPerPoint = 100;
+    const costPerPoint = 10;
     const totalCost = totalSpentPoints * costPerPoint;
 
     if (gameState.scrap < totalCost) {
