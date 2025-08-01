@@ -1078,6 +1078,7 @@ const finalDungeonItems = {
         type: 'helmet',
         icon: 'images/icons/dragonbone_headdress.png',
         width: 2, height: 2,
+        isUnique: true,
         canHaveSockets: true,
         maxSockets: 2,
         possibleStats: [
@@ -1091,6 +1092,7 @@ const finalDungeonItems = {
         type: 'necklace',
         icon: 'images/icons/eye_of_the_dragon.png',
         width: 2, height: 2,
+        isUnique: true,
         canHaveSockets: true,
         maxSockets: 1,
         possibleStats: [
@@ -1105,6 +1107,7 @@ const finalDungeonItems = {
         type: 'ring',
         icon: 'images/icons/dragonfire_loop.png',
         width: 1, height: 1,
+        isUnique: true,
         canHaveSockets: true,
         maxSockets: 2,
         possibleStats: [
@@ -1119,6 +1122,7 @@ const finalDungeonItems = {
         type: 'belt',
         icon: 'images/icons/dragonscale_belt.png',
         width: 2, height: 1,
+        isUnique: true,
         canHaveSockets: true,
         maxSockets: 1,
         possibleStats: [
