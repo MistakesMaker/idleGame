@@ -2953,14 +2953,30 @@ export function renderPermanentUpgrades(elements, gameState) {
         const cost = Math.floor(upgrade.baseCost * Math.pow(upgrade.costScalar, currentLevel));
         const isMaxed = currentLevel >= upgrade.maxLevel;
         
-        const bonus = upgrade.bonusPerLevel * currentLevel;
-        
         const card = document.createElement('div');
         card.className = 'permanent-upgrade-card';
         if (gameState.gold < cost && !isMaxed) card.classList.add('disabled');
         if (isMaxed) card.classList.add('maxed');
 
-        const description = upgrade.description.replace('{value}', bonus.toFixed(2).replace(/\.?0+$/, '')); // Format bonus and remove trailing zeros
+        // --- START OF MODIFICATION (Corrected Logic) ---
+        let description = upgrade.description;
+        
+        if (typeof upgrade.bonusPerLevel === 'object') {
+            // Handles multi-value upgrades like Prestige Surge
+            const bonusClick = upgrade.bonusPerLevel.click * currentLevel;
+            const bonusDps = upgrade.bonusPerLevel.dps * currentLevel;
+            // The <span> tag with the green color is now added here, not in the data file
+            description = description.replace('{valueClick}', `<span>${formatNumber(bonusClick)}</span>`);
+            description = description.replace('{valueDps}', `<span>${formatNumber(bonusDps)}</span>`);
+        } else {
+            // Handles standard, single-value upgrades
+            const bonus = upgrade.bonusPerLevel * currentLevel;
+            const bonusString = (upgrade.bonusType === 'PERCENT')
+                ? bonus.toFixed(2).replace(/\.?0+$/, '')
+                : formatNumber(bonus);
+            description = description.replace('{value}', `<span>${bonusString}</span>`); 
+        }
+        // --- END OF MODIFICATION ---
 
         card.innerHTML = `
             <div class="upgrade-icon"><i class="${upgrade.icon}"></i></div>
@@ -3093,7 +3109,7 @@ export function showStatBreakdownTooltip(elements, statKey, statBreakdown, gameS
     }
 
     // Define a custom sort order for the labels
-    const sortOrder = ["From Prestige", "From Prestige Power", "From Gear", "From Agility", "From Strength", "From Gold Upgrades"];
+    const sortOrder = ["From Prestige", "From Prestige Power", "From Prestige Surge", "From Gear", "From Agility", "From Strength", "From Gold Upgrades"];
     const sortedLabels = Array.from(groupedSources.keys()).sort((a, b) => {
         const indexA = sortOrder.indexOf(a);
         const indexB = sortOrder.indexOf(b);

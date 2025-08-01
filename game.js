@@ -30,6 +30,12 @@ function addTapListener(element, handler) {
     let touchMoved = false;
 
     const handleTouchStart = (e) => {
+        // --- START OF FIX (1/2) - JSDoc syntax ---
+        // Do not even start processing a touch if the element is disabled.
+        // This JSDoc cast tells the type checker that 'element' has a 'disabled' property.
+        if ((/** @type {HTMLButtonElement} */ (element)).disabled) return;
+        // --- END OF FIX (1/2) ---
+
         // We only care about the first touch to avoid issues with multi-touch gestures.
         if (e.touches.length > 1) {
             touchMoved = true; // Treat multi-touch as a reason to not fire the tap.
@@ -63,6 +69,15 @@ function addTapListener(element, handler) {
     };
 
     const handleClick = (e) => {
+        // --- START OF FIX (2/2) - JSDoc syntax ---
+        // Explicitly check for the disabled state for standard mouse clicks.
+        if ((/** @type {HTMLButtonElement} */ (element)).disabled) {
+            e.preventDefault();
+            e.stopPropagation();
+            return;
+        }
+        // --- END OF FIX (2/2) ---
+
         // If e.defaultPrevented is true, it means the touchend handler already
         // ran and called e.preventDefault(). We must not run the handler again.
         if (e.defaultPrevented) {
@@ -352,6 +367,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // --- Gather all FLAT stat sources ---
         // Prestige
+        // --- START OF MODIFICATION: Separate Prestige Power for Tooltip ---
         if (absorbed.clickDamage) {
             const totalValue = absorbed.clickDamage * prestigeMultiplier;
             const powerBonus = totalValue - absorbed.clickDamage;
@@ -380,6 +396,28 @@ document.addEventListener('DOMContentLoaded', () => {
             statBreakdown.magicFind.base.push({ label: 'From Prestige', value: absorbed.magicFind, isPercent: true });
             if (powerBonus > 0) statBreakdown.magicFind.base.push({ label: 'From Prestige Power', value: powerBonus, isPercent: true });
         }
+        // --- END OF MODIFICATION ---
+
+        // --- START OF MODIFICATION: Add Prestige Surge Bonus ---
+        const prestigeSurgeLevel = permUpgrades.PRESTIGE_SURGE || 0;
+        if (prestigeSurgeLevel > 0) {
+            const prestigeCount = gameState.prestigeCount || 0;
+            const surgeBonuses = permUpgradeDefs.PRESTIGE_SURGE.bonusPerLevel; // Now an object
+
+            const clickBonus = surgeBonuses.click * prestigeSurgeLevel * prestigeCount;
+            const dpsBonus = surgeBonuses.dps * prestigeSurgeLevel * prestigeCount;
+
+            if (clickBonus > 0) {
+                baseClickDamage += clickBonus;
+                statBreakdown.clickDamage.base.push({ label: 'From Prestige Surge', value: clickBonus });
+            }
+            if (dpsBonus > 0) {
+                baseDps += dpsBonus;
+                statBreakdown.dps.base.push({ label: 'From Prestige Surge', value: dpsBonus });
+            }
+        }
+        // --- END OF MODIFICATION ---
+
         // Gear
         let clickFromGear = 0, dpsFromGear = 0, goldFromGear = 0, magicFromGear = 0, synergyFromGems = 0;
         for (const item of Object.values(gameState.equipment)) {
