@@ -1,5 +1,3 @@
-// --- START OF FILE sound_manager.js ---
-
 // --- START OF MODIFICATION: Categorize sounds ---
 const sounds = {
     combat: {
@@ -18,6 +16,7 @@ const sounds = {
         permanent_upgrade_buy: new Audio('sounds/cha_ching.wav'),
     },
     loot: {
+        hunt_completed: new Audio('sounds/hunt_completed.wav'),
         hunt_reward: new Audio('sounds/hunt_reward.wav'),
         unique_drop: new Audio('sounds/unique_drop.wav'),
     }
@@ -168,7 +167,7 @@ function findSound(name) {
  * Handles the global mute state and allows for rapid re-playing of sounds.
  * @param {string} name The key of the sound to play (e.g., 'monster_hit').
  */
-export function playSound(name) {
+export function playSound(name, volumeMultiplier = 1) { // <-- CHANGE THIS LINE
     if (!isInitialized) {
         return;
     }
@@ -185,7 +184,7 @@ export function playSound(name) {
     const subCategoryVolume = volumeSettings[`sfx_${category}`] ?? 1.0;
     // --- END OF FIX ---
 
-    const finalVolume = volumeSettings.master * volumeSettings.sfx * subCategoryVolume * GLOBAL_VOLUME_CEILING;
+    const finalVolume = volumeSettings.master * volumeSettings.sfx * subCategoryVolume * volumeMultiplier * GLOBAL_VOLUME_CEILING;
     if (finalVolume <= 0) {
         return;
     }

@@ -1748,7 +1748,7 @@ export function showPrestigeAdvisorModal(elements, gameState, switchToPrestigeVi
         closeModal();
         switchView(elements, 'forge-view', gameState);
     };
-    
+
     goToUpgradesBtn.onclick = () => {
         closeModal();
         const upgradesPanel = document.querySelector('.upgrades-panel');
@@ -3339,7 +3339,16 @@ export function updateActiveBuffsUI(elements, activeBuffs) {
 export function updateHuntsButtonGlow(gameState) {
     const huntsBtn = document.getElementById('hunts-btn');
     if (!huntsBtn) return;
+
     const isComplete = gameState.hunts.active && gameState.hunts.progress >= gameState.hunts.active.quantity;
+    const wasAlreadyGlowing = huntsBtn.classList.contains('hunt-ready-glow');
+
+    // If the hunt is now complete, but the button wasn't glowing before,
+    // it means the hunt was JUST completed on this frame. Play the sound.
+    if (isComplete && !wasAlreadyGlowing) {
+        playSound('hunt_completed', 5);
+    }
+
     huntsBtn.classList.toggle('hunt-ready-glow', isComplete);
 }
 
