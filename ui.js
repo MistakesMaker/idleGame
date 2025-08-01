@@ -2972,7 +2972,7 @@ export function renderPermanentUpgrades(elements, gameState) {
             const bonusString = (upgrade.bonusType === 'PERCENT')
                 ? bonus.toFixed(2).replace(/\.?0+$/, '')
                 : formatNumber(bonus);
-            description = description.replace('{value}', `<span>${bonusString}%</span>`);
+            description = description.replace('{value}', `<span>${bonusString}</span>`); 
         }
         // --- END OF MODIFICATION ---
 
