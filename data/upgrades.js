@@ -19,17 +19,6 @@
 */
 
 export const PERMANENT_UPGRADES = {
-        LEGACY_KEEPER: {
-        id: 'LEGACY_KEEPER',
-        name: "Legacy Keeper",
-        description: "Carry over <span>{value}</span> additional item(s) through Prestige.",
-        icon: 'fas fa-archive',
-        baseCost: 1000000, // Starts very expensive
-        costScalar: 100,  // Cost scales extremely fast
-        bonusType: 'FLAT',
-        bonusPerLevel: 1, // +1 item slot per level
-        maxLevel: 8, 
-    },
     GOLD_MASTERY: {
         id: 'GOLD_MASTERY',
         name: "Gold Mastery",
@@ -39,6 +28,17 @@ export const PERMANENT_UPGRADES = {
         costScalar: 1.22,     // Lowered for a gentler curve 1.25
         bonusType: 'PERCENT',
         bonusPerLevel: 1, // +1% per level
+        maxLevel: Infinity,
+    },
+        SCRAP_SCAVENGER: {
+        id: 'SCRAP_SCAVENGER',
+        name: "Scrap Scavenger",
+        description: "Gain <span>{value}%</span> more Scrap from salvaging items.",
+        icon: 'fas fa-cogs',
+        baseCost: 500,      // Lowered from 7500
+        costScalar: 1.45,     // Lowered for a gentler curve 1.5
+        bonusType: 'PERCENT',
+        bonusPerLevel: 2, // +2% per level
         maxLevel: Infinity,
     },
     CRITICAL_POWER: {
@@ -63,24 +63,13 @@ export const PERMANENT_UPGRADES = {
         bonusPerLevel: 5, // +5% per level
         maxLevel: Infinity,
     },
-    PRESTIGE_POWER: {
-        id: 'PRESTIGE_POWER',
-        name: "Prestige Power",
-        description: "For each Prestige, increase absorbed stat bonuses by <span>{value}%</span>.",
-        icon: 'fas fa-award',
-        baseCost: 100000,
-        costScalar: 3,
-        bonusType: 'PERCENT',
-        bonusPerLevel: 0.25, // %0.25 per level
-        maxLevel: Infinity,
-    },
-    SCRAP_SCAVENGER: {
-        id: 'SCRAP_SCAVENGER',
-        name: "Scrap Scavenger",
-        description: "Gain <span>{value}%</span> more Scrap from salvaging items.",
-        icon: 'fas fa-cogs',
-        baseCost: 500,      // Lowered from 7500
-        costScalar: 1.45,     // Lowered for a gentler curve 1.5
+    BOSS_HUNTER: {
+        id: 'BOSS_HUNTER',
+        name: "Boss Hunter",
+        description: "Deal <span>{value}%</span> more damage to Mini-Bosses, Bosses, and Big Bosses.",
+        icon: 'fas fa-skull-crossbones',
+        baseCost: 10000, // Lowered from 20000
+        costScalar: 1.55,     // Lowered for a gentler curve
         bonusType: 'PERCENT',
         bonusPerLevel: 2, // +2% per level
         maxLevel: Infinity,
@@ -95,17 +84,6 @@ export const PERMANENT_UPGRADES = {
         bonusType: 'PERCENT',
         bonusPerLevel: 1,       // Increased from 0.5
         maxLevel: 100,      // Capped at 100% (1 * 100)
-    },
-    BOSS_HUNTER: {
-        id: 'BOSS_HUNTER',
-        name: "Boss Hunter",
-        description: "Deal <span>{value}%</span> more damage to Mini-Bosses, Bosses, and Big Bosses.",
-        icon: 'fas fa-skull-crossbones',
-        baseCost: 10000, // Lowered from 20000
-        costScalar: 1.55,     // Lowered for a gentler curve
-        bonusType: 'PERCENT',
-        bonusPerLevel: 2, // +2% per level
-        maxLevel: Infinity,
     },
     SWIFT_STRIKES: {
         id: 'SWIFT_STRIKES',
@@ -128,5 +106,38 @@ export const PERMANENT_UPGRADES = {
         bonusType: 'FLAT',
         bonusPerLevel: 1,       // +1 token per level
         maxLevel: Infinity,
+    },
+        PRESTIGE_POWER: {
+        id: 'PRESTIGE_POWER',
+        name: "Prestige Power",
+        description: "For each Prestige, increase absorbed stat bonuses by <span>{value}%</span>.",
+        icon: 'fas fa-award',
+        baseCost: 100000,
+        costScalar: 3,
+        bonusType: 'PERCENT',
+        bonusPerLevel: 0.25, // %0.25 per level
+        maxLevel: Infinity,
+    },
+    PRESTIGE_SURGE: {
+        id: 'PRESTIGE_SURGE',
+        name: "Prestige Surge",
+        description: "Gain a flat {valueClick} Click Damage and {valueDps} DPS bonus for each time you have prestiged.",
+        icon: 'fas fa-meteor',
+        baseCost: 25000,   // High cost, as it's very powerful
+        costScalar: 3,      // Scales very quickly
+        bonusType: 'FLAT',
+        bonusPerLevel: { click: 200, dps: 1000 },
+        maxLevel: Infinity,
+    },
+    LEGACY_KEEPER: {
+        id: 'LEGACY_KEEPER',
+        name: "Legacy Keeper",
+        description: "Carry over <span>{value}</span> additional item(s) through Prestige.",
+        icon: 'fas fa-archive',
+        baseCost: 1000000, // Starts very expensive
+        costScalar: 100,  // Cost scales extremely fast
+        bonusType: 'FLAT',
+        bonusPerLevel: 1, // +1 item slot per level
+        maxLevel: 8, 
     },
 };

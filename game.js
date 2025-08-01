@@ -352,6 +352,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // --- Gather all FLAT stat sources ---
         // Prestige
+        // --- START OF MODIFICATION: Separate Prestige Power for Tooltip ---
         if (absorbed.clickDamage) {
             const totalValue = absorbed.clickDamage * prestigeMultiplier;
             const powerBonus = totalValue - absorbed.clickDamage;
@@ -380,6 +381,28 @@ document.addEventListener('DOMContentLoaded', () => {
             statBreakdown.magicFind.base.push({ label: 'From Prestige', value: absorbed.magicFind, isPercent: true });
             if (powerBonus > 0) statBreakdown.magicFind.base.push({ label: 'From Prestige Power', value: powerBonus, isPercent: true });
         }
+        // --- END OF MODIFICATION ---
+
+        // --- START OF MODIFICATION: Add Prestige Surge Bonus ---
+        const prestigeSurgeLevel = permUpgrades.PRESTIGE_SURGE || 0;
+        if (prestigeSurgeLevel > 0) {
+            const prestigeCount = gameState.prestigeCount || 0;
+            const surgeBonuses = permUpgradeDefs.PRESTIGE_SURGE.bonusPerLevel; // Now an object
+
+            const clickBonus = surgeBonuses.click * prestigeSurgeLevel * prestigeCount;
+            const dpsBonus = surgeBonuses.dps * prestigeSurgeLevel * prestigeCount;
+
+            if (clickBonus > 0) {
+                baseClickDamage += clickBonus;
+                statBreakdown.clickDamage.base.push({ label: 'From Prestige Surge', value: clickBonus });
+            }
+            if (dpsBonus > 0) {
+                baseDps += dpsBonus;
+                statBreakdown.dps.base.push({ label: 'From Prestige Surge', value: dpsBonus });
+            }
+        }
+        // --- END OF MODIFICATION ---
+
         // Gear
         let clickFromGear = 0, dpsFromGear = 0, goldFromGear = 0, magicFromGear = 0, synergyFromGems = 0;
         for (const item of Object.values(gameState.equipment)) {
