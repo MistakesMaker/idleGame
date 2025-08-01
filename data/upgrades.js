@@ -132,7 +132,7 @@ export const PERMANENT_UPGRADES = {
     LEGACY_KEEPER: {
         id: 'LEGACY_KEEPER',
         name: "Legacy Keeper",
-        description: "Carry over <span>{value}</span> additional item(s) through Prestige.",
+        description: "Unlock {value} additional Legacy Slot(s) to absorb items during Prestige.",
         icon: 'fas fa-archive',
         baseCost: 1000000, // Starts very expensive
         costScalar: 100,  // Cost scales extremely fast
