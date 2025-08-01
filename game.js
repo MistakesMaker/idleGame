@@ -580,13 +580,6 @@ document.addEventListener('DOMContentLoaded', () => {
         currentMonster = newMonster;
         gameState.monster = newMonsterState;
         ui.updateMonsterUI(elements, gameState, currentMonster);
-    
-        if (!gameState.unlockedFeatures.wiki && (gameState.maxLevel > 25 || gameState.completedLevels.includes(25))) {
-            gameState.unlockedFeatures.wiki = true;
-            logMessage(elements.gameLogEl, '<b>Item Wiki Unlocked!</b> You can now research items and their drop locations.', 'legendary', isAutoScrollingLog);
-            ui.updateTabVisibility(gameState);
-            ui.flashTab('wiki-view');
-        }
     }
 
     function attack(baseDamage, isClick = false) {
@@ -1147,6 +1140,29 @@ document.addEventListener('DOMContentLoaded', () => {
             gameState.currentFightingLevel = lastLevelBeforeStop;
             gameState.maxLevel = Math.max(gameState.maxLevel, lastLevelBeforeStop);
         }
+                // --- START OF NEW OFFLINE UNLOCK LOGIC ---
+        // After simulating progress, check if any milestone levels were passed.
+        const existingUnlocks = elements.offlineRewards.querySelectorAll('.unlock-summary');
+        existingUnlocks.forEach(el => el.remove());
+
+        // Check for Wiki Unlock
+        if (!gameState.unlockedFeatures.wiki && gameState.completedLevels.includes(25)) {
+            gameState.unlockedFeatures.wiki = true;
+            const p = document.createElement('p');
+            p.innerHTML = `<i class="fas fa-book"></i> <b>Wiki Unlocked!</b>`;
+            p.className = 'legendary unlock-summary';
+            elements.offlineRewards.appendChild(p);
+        }
+
+        // Check for Prestige Unlock
+        if (!gameState.unlockedFeatures.prestige && gameState.completedLevels.includes(gameState.nextPrestigeLevel)) {
+            gameState.unlockedFeatures.prestige = true;
+            const p = document.createElement('p');
+            p.innerHTML = `<i class="fas fa-star"></i> <b>Prestige Unlocked!</b>`;
+            p.className = 'legendary unlock-summary';
+            elements.offlineRewards.appendChild(p);
+        }
+        // --- END OF NEW OFFLINE UNLOCK LOGIC ---
 
         if (totalGoldGained === 0 && totalXPGained === 0 && totalScrapGained === 0) return;
 
