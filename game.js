@@ -617,11 +617,18 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function startNewMonster() {
-        const { newMonster, newMonsterState } = logic.generateMonster(gameState.currentFightingLevel, gameState.specialEncounter);
-        currentMonster = newMonster;
-        gameState.monster = newMonsterState;
-        ui.updateMonsterUI(elements, gameState, currentMonster);
+    const { newMonster, newMonsterState } = logic.generateMonster(gameState.currentFightingLevel, gameState.specialEncounter);
+    currentMonster = newMonster;
+    gameState.monster = newMonsterState;
+    ui.updateMonsterUI(elements, gameState, currentMonster);
+
+    if (!gameState.unlockedFeatures.wiki && gameState.currentFightingLevel === 25) {
+        gameState.unlockedFeatures.wiki = true;
+        logMessage(elements.gameLogEl, '<b>Item Wiki Unlocked!</b> You can now research items and their drop locations.', 'legendary', isAutoScrollingLog);
+        ui.updateTabVisibility(gameState);
+        ui.flashTab('wiki-view');
     }
+}
 
     function attack(baseDamage, isClick = false) {
         if (gameState.monster.hp <= 0) return;
@@ -1193,7 +1200,7 @@ document.addEventListener('DOMContentLoaded', () => {
         existingUnlocks.forEach(el => el.remove());
 
         // Check for Wiki Unlock
-        if (!gameState.unlockedFeatures.wiki && gameState.completedLevels.includes(25)) {
+        if (!gameState.unlockedFeatures.wiki && gameState.completedLevels.includes(24)) {
             gameState.unlockedFeatures.wiki = true;
             const p = document.createElement('p');
             p.innerHTML = `<i class="fas fa-book"></i> <b>Wiki Unlocked!</b>`;
