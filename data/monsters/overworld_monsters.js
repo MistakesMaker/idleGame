@@ -506,7 +506,7 @@ const finalDungeonMonsters = {
         image: 'images/monsters/succubus.png',
         dropChance: 35,
         lootTable: [
-            { item: ITEMS.SIGNET_OF_THE_LEECH, weight: 1 },
+            { item: GEMS.BASE_RUBY, weight: 0.5 },
             { item: ITEMS.BLOODSTONE_PENDANT, weight: 1 },
         ]
     },
