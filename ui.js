@@ -3141,7 +3141,7 @@ export function renderHuntsView(elements, gameState) {
                 // --- END OF FIX ---
 
                 if (gemA.tier !== gemB.tier) {
-                    return gemA.tier - gemB.tier;
+                    return gemA.tier - b.tier;
                 }
                 return a.cost - b.cost;
             });
