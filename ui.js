@@ -3091,7 +3091,7 @@ export function showStatBreakdownTooltip(elements, statKey, statBreakdown, gameS
     }
 
     // Define a custom sort order for the labels
-    const sortOrder = ["From Prestige", "From Gear", "From Agility", "From Strength", "From Gold Upgrades"];
+    const sortOrder = ["From Prestige", "From Prestige Power", "From Gear", "From Agility", "From Strength", "From Gold Upgrades"];
     const sortedLabels = Array.from(groupedSources.keys()).sort((a, b) => {
         const indexA = sortOrder.indexOf(a);
         const indexB = sortOrder.indexOf(b);

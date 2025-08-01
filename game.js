@@ -352,11 +352,34 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // --- Gather all FLAT stat sources ---
         // Prestige
-        if (absorbed.clickDamage) { baseClickDamage += absorbed.clickDamage * prestigeMultiplier; statBreakdown.clickDamage.base.push({ label: 'From Prestige', value: absorbed.clickDamage * prestigeMultiplier }); }
-        if (absorbed.dps) { baseDps += absorbed.dps * prestigeMultiplier; statBreakdown.dps.base.push({ label: 'From Prestige', value: absorbed.dps * prestigeMultiplier }); }
-        if (absorbed.goldGain) { bonusGold += absorbed.goldGain * prestigeMultiplier; statBreakdown.goldGain.base.push({ label: 'From Prestige', value: absorbed.goldGain * prestigeMultiplier, isPercent: true }); }
-        if (absorbed.magicFind) { magicFind += absorbed.magicFind * prestigeMultiplier; statBreakdown.magicFind.base.push({ label: 'From Prestige', value: absorbed.magicFind * prestigeMultiplier, isPercent: true }); }
-
+        if (absorbed.clickDamage) {
+            const totalValue = absorbed.clickDamage * prestigeMultiplier;
+            const powerBonus = totalValue - absorbed.clickDamage;
+            baseClickDamage += totalValue;
+            statBreakdown.clickDamage.base.push({ label: 'From Prestige', value: absorbed.clickDamage });
+            if (powerBonus > 0) statBreakdown.clickDamage.base.push({ label: 'From Prestige Power', value: powerBonus });
+        }
+        if (absorbed.dps) {
+            const totalValue = absorbed.dps * prestigeMultiplier;
+            const powerBonus = totalValue - absorbed.dps;
+            baseDps += totalValue;
+            statBreakdown.dps.base.push({ label: 'From Prestige', value: absorbed.dps });
+            if (powerBonus > 0) statBreakdown.dps.base.push({ label: 'From Prestige Power', value: powerBonus });
+        }
+        if (absorbed.goldGain) {
+            const totalValue = absorbed.goldGain * prestigeMultiplier;
+            const powerBonus = totalValue - absorbed.goldGain;
+            bonusGold += totalValue;
+            statBreakdown.goldGain.base.push({ label: 'From Prestige', value: absorbed.goldGain, isPercent: true });
+            if (powerBonus > 0) statBreakdown.goldGain.base.push({ label: 'From Prestige Power', value: powerBonus, isPercent: true });
+        }
+        if (absorbed.magicFind) {
+            const totalValue = absorbed.magicFind * prestigeMultiplier;
+            const powerBonus = totalValue - absorbed.magicFind;
+            magicFind += totalValue;
+            statBreakdown.magicFind.base.push({ label: 'From Prestige', value: absorbed.magicFind, isPercent: true });
+            if (powerBonus > 0) statBreakdown.magicFind.base.push({ label: 'From Prestige Power', value: powerBonus, isPercent: true });
+        }
         // Gear
         let clickFromGear = 0, dpsFromGear = 0, goldFromGear = 0, magicFromGear = 0, synergyFromGems = 0;
         for (const item of Object.values(gameState.equipment)) {
