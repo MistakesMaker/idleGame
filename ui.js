@@ -3118,6 +3118,11 @@ export function showStatBreakdownTooltip(elements, statKey, statBreakdown, gameS
     if (descriptionContent && descriptionContent.description) {
         html += `<p style="font-size: 0.9em; color: #bdc3c7; margin: 5px 0 10px 0; border-bottom: 1px solid #4a637e; padding-bottom: 10px;">${descriptionContent.description}</p>`;
     }
+    // --- START: Add this new block ---
+if (statKey === 'magicFind') {
+    html += `<p style="font-size: 0.9em; color: #2ecc71; margin-top: -5px;">Also increases Scrap Gain from salvaging by the same percentage.</p>`;
+}
+// --- END: Add this new block ---
     
     html += '<ul>';
 

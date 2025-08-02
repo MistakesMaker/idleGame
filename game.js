@@ -502,7 +502,7 @@ document.addEventListener('DOMContentLoaded', () => {
             critDamage: 1.5 + ((permanentUpgradeBonuses.critDamage + bonusCritDamage) / 100),
             multiStrikeChance: permanentUpgradeBonuses.multiStrike,
             bossDamageBonus: 1 + ((permanentUpgradeBonuses.bossDamage + bonusBossDamagePercent) / 100),
-            scrapBonus: 1 + (permanentUpgradeBonuses.scrap / 100),
+            scrapBonus: 1 + (permanentUpgradeBonuses.scrap / 100) + (magicFind / 100),
             gemFindChance: permanentUpgradeBonuses.gemFind,
             legacyKeeperBonus: permanentUpgradeBonuses.legacyKeeper,
         };
