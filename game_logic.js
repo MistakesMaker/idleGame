@@ -238,14 +238,27 @@ export function dropLoot(currentMonster, gameState, playerStats) {
                 logMessages.push({ message: `Auto-salvaged <span class="epic">${baseGem.name}</span> for ${scrapGained} scrap.`, class: '' });
                 return null; // Return null to indicate it was salvaged
             }
-            // Use the new stacking function
+            // Use the stacking function
             const updatedStack = player.addToPlayerStacks(gameState, baseGem, 'gems');
             return updatedStack;
         };
-        
+
+        // Handle the first, guaranteed gem drop
         const initialDrop = handleGemDrop(itemBaseToDrop);
         if (initialDrop) {
-             droppedGems.push(initialDrop); // We animate the stack
+            droppedGems.push(initialDrop); // Animate the first gem
+        }
+
+        // --- NEW: Gem Find Roll for a duplicate ---
+        if (playerStats.gemFindChance > 0 && Math.random() * 100 < playerStats.gemFindChance) {
+            logMessages.push({ message: `Your Gem Find perk uncovered a bonus <span class="epic">${itemBaseToDrop.name}</span>!`, class: '' });
+            events.push('gemFind'); // For the visual popup
+
+            // Handle the second, bonus gem drop (this also respects auto-salvage)
+            const bonusDrop = handleGemDrop(itemBaseToDrop);
+            if (bonusDrop) {
+                droppedGems.push(bonusDrop); // Animate the second gem
+            }
         }
 
         return { droppedItems, droppedGems, logMessages, events };
@@ -400,6 +413,9 @@ export function monsterDefeated(gameState, playerStats, currentMonster) {
     const goldMasteryBonus = PERMANENT_UPGRADES.GOLD_MASTERY.bonusPerLevel * goldMasteryLevel;
     let goldAfterMastery = baseGoldDrop * (1 + (goldMasteryBonus / 100));
 
+    // --- START OF MODIFICATION (Replace the old line) ---
+    // The playerStats.bonusGold now contains the combined multiplicative total,
+    // so we can use it directly here.
     let finalGoldGained = Math.ceil(goldAfterMastery * (1 + (playerStats.bonusGold / 100)));
     xpGained = Math.ceil(xpGained);
 

@@ -9,6 +9,7 @@
 * icon: Path to the item's image.
 * width/height: Item's size in the inventory grid.
 * description: Player-facing explanation of what the item does.
+* requiresConfirmation: (Optional) If true, a confirmation modal will appear before use.
 * effect: An object describing the item's function.
 *   - type: 'permanentFlag' -> Sets a boolean flag in gameState to true.
 *   - type: 'resource' -> Instantly grants a specified amount of a resource.
@@ -25,6 +26,7 @@ export const CONSUMABLES = {
         icon: 'images/consumables/wisdom_of_the_overworld.png',
         width: 2, height: 2,
         description: "A one-time use scroll from ancient times. When consumed, permanently increases your T1-T4 gems combining success rate from 50% to 60%.",
+        requiresConfirmation: true,
         effect: {
             type: 'permanentFlag',
             key: 'wisdomOfTheOverworldUsed'
@@ -37,6 +39,7 @@ export const CONSUMABLES = {
         icon: 'images/consumables/wisdom_of_the_underdark.png',
         width: 2, height: 2,
         description: "A one-time use scroll from a forgotten realm. When consumed, permanently increases your T5-T8 gems combining success rate from 50% to 60%.",
+        requiresConfirmation: true,
         effect: {
             type: 'permanentFlag',
             key: 'wisdomOfTheUnderdarkUsed'
@@ -49,6 +52,7 @@ export const CONSUMABLES = {
         icon: 'images/consumables/artisan_drill.png',
         width: 2, height: 2,
         description: "A master craftsman's tool. Use on an item to carve a new socket, up to the item's maximum potential. Requires selecting an item after use.",
+        requiresConfirmation: true,
         effect: {
             type: 'targetedItemModifier',
             key: 'addSocket'
@@ -61,6 +65,7 @@ export const CONSUMABLES = {
         icon: 'images/consumables/tome_of_strength.png',
         width: 2, height: 2,
         description: "A book of forgotten power. Consuming it permanently increases your total Click Damage by 5%.",
+        requiresConfirmation: true,
         effect: {
             type: 'permanentStat',
             key: 'totalClickDamage',
@@ -74,6 +79,7 @@ export const CONSUMABLES = {
         icon: 'images/consumables/tome_of_agility.png',
         width: 2, height: 2,
         description: "A book of forgotten techniques. Consuming it permanently increases your total DPS by 5%.",
+        requiresConfirmation: true,
         effect: {
             type: 'permanentStat',
             key: 'totalDps',
@@ -129,12 +135,12 @@ export const CONSUMABLES = {
         type: 'consumable',
         icon: 'images/consumables/gold_booster_minor.png',
         width: 1, height: 1,
-        description: "A charm of minor fortune. Increases Gold Gain by 50% for 10 minutes.",
+        description: "A charm of minor fortune. Increases your total Gold Gain by 50% for 10 minutes.",
         effect: {
             type: 'timedBuff',
-            name: 'Minor Gold Boost',
-            stats: { bonusGold: 50 },
-            duration: 600 // 10 minutes in seconds
+            name: 'Minor Gold Multiplier',
+            stats: { totalGoldGain: 50 },
+            duration: 600
         }
     },
     GOLD_BOOSTER_MAJOR: {
@@ -143,11 +149,11 @@ export const CONSUMABLES = {
         type: 'consumable',
         icon: 'images/consumables/gold_booster_major.png',
         width: 1, height: 1,
-        description: "A charm of major fortune. Increases Gold Gain by 200% for 10 minutes.",
+        description: "A charm of major fortune. Increases your total Gold Gain by 200% for 10 minutes.",
         effect: {
             type: 'timedBuff',
-            name: 'Major Gold Boost',
-            stats: { bonusGold: 200 },
+            name: 'Major Gold Multiplier',
+            stats: { totalGoldGain: 200 },
             duration: 600
         }
     },
@@ -162,7 +168,7 @@ export const CONSUMABLES = {
             type: 'timedBuff',
             name: 'Minor XP Boost',
             stats: { bonusXp: 50 },
-            duration: 900 // 15 minutes
+            duration: 900
         }
     },
     XP_ELIXIR_MAJOR: {
@@ -190,7 +196,7 @@ export const CONSUMABLES = {
             type: 'timedBuff',
             name: 'Minor Luck',
             stats: { magicFind: 10 },
-            duration: 600 // 10 minutes
+            duration: 600
         }
     },
     GEM_SEEKER_DRAFT_MINOR: {
@@ -207,8 +213,6 @@ export const CONSUMABLES = {
             duration: 600
         }
     },
-
-    // --- NEW POTIONS START HERE ---
     POTION_FUSED_POWER: {
         id: 'POTION_FUSED_POWER',
         name: 'Potion of Fused Power',
@@ -220,7 +224,7 @@ export const CONSUMABLES = {
             type: 'timedBuff',
             name: 'Fused Power',
             stats: { dpsToClickDamagePercent: 100 },
-            duration: 300 // 5 minutes in seconds
+            duration: 300
         }
     },
     POTION_GIANTS_STRENGTH: {
@@ -234,7 +238,7 @@ export const CONSUMABLES = {
             type: 'timedBuff',
             name: "Giant's Strength",
             stats: { bonusClickDamagePercent: 100 },
-            duration: 300 // 5 minutes in seconds
+            duration: 300
         }
     },
     POTION_BOSS_SLAYER: {
@@ -248,7 +252,7 @@ export const CONSUMABLES = {
             type: 'timedBuff',
             name: "Boss Slayer",
             stats: { bonusBossDamagePercent: 100 },
-            duration: 300 // 3 minutes in seconds
+            duration: 180
         }
     },
     POTION_DEADLY_FOCUS: {
@@ -262,7 +266,7 @@ export const CONSUMABLES = {
             type: 'timedBuff',
             name: "Deadly Focus",
             stats: { bonusCritChance: 30, bonusCritDamage: 50 },
-            duration: 300 // 5 minutes in seconds
+            duration: 300
         }
     },
     POTION_RAGING_AUTOMATON: {
@@ -276,7 +280,7 @@ export const CONSUMABLES = {
             type: 'timedBuff',
             name: "Raging Automaton",
             specialEffect: 'guaranteedDpsCrit',
-            duration: 300 // 5 minutes in seconds
+            duration: 300
         }
     },
     POTION_LIQUID_LUCK: {
@@ -285,22 +289,23 @@ export const CONSUMABLES = {
         type: 'consumable',
         icon: 'images/consumables/potion_liquid_luck.png',
         width: 1, height: 1,
-        description: "For 15 minutes, gain +1000% Gold Gain, +100% Magic Find.",
+        // --- MODIFICATION ---
+        description: "For 15 minutes, gain +1000% icrease to your total Gold Gain and +100% increase to your Magic Find.",
         effect: {
             type: 'timedBuff',
-            name: "Liquid Luck",
-            stats: { bonusGold: 1000, magicFind: 100 },
-            duration: 900 // 15 minutes in seconds
+            name: "Liquid Luck Boost",
+            stats: { totalGoldGain: 1000, magicFind: 100 }, // CHANGED from bonusGold
+            duration: 900
         }
     },
-    // --- NEW PRESTIGE ITEM ---
     PRESTIGE_TOKEN: {
         id: 'PRESTIGE_TOKEN',
-        name: "Purchase Prestige",
+        name: "Mark of the Hunter",
         type: 'consumable',
         icon: 'images/consumables/prestige_token.png',
         width: 2, height: 2,
         description: "Consuming it allows you to Prestige immediately, regardless of your current level. This does not affect regular Prestige level requirements.",
+        requiresConfirmation: true,
         effect: {
             type: 'triggerPrestigeView',
             key: 'prestige'

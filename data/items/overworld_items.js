@@ -321,7 +321,6 @@ const greenMeadowsItems = {
         type: 'necklace',
         icon: 'images/icons/amulet_of_power.png',
         width: 2, height: 2,
-        isUnique: true,
         possibleStats: [
             { key: STATS.CLICK_DAMAGE.key, min: 200, max: 250 },
             { key: STATS.DPS.key, min: 400, max: 750 }
@@ -385,7 +384,6 @@ const greenMeadowsItems = {
         canHaveSockets: true,
         maxSockets: 1,
         width: 1, height: 1,
-        isUnique: true,
         possibleStats: [
             { key: STATS.GOLD_GAIN.key, min: 25, max: 50 },
             { key: STATS.MAGIC_FIND.key, min: 1.5, max: 4.5 },
@@ -449,7 +447,6 @@ const orcVolcanoItems = {
         type: 'belt',
         icon: 'images/icons/belt_of_the_giant.png',
         width: 2, height: 1,
-        isUnique: true,
         possibleStats: [
             { key: STATS.DPS.key, min: 2000, max: 6000 },
             { key: STATS.CLICK_DAMAGE.key, min: 50, max: 550 },
@@ -617,6 +614,7 @@ const orcVolcanoItems = {
         type: 'helmet',
         icon: 'images/icons/helm_of_valor.png',
         width: 2, height: 2,
+        isUnique: true,
         canHaveSockets: true,
         maxSockets: 2,
         possibleStats: [
@@ -880,7 +878,6 @@ const undeadDesertItems = {
         type: 'ring',
         icon: 'images/icons/signet_of_the_leech.png',
         width: 1, height: 1,
-        isUnique: true,
         possibleStats: [
             { key: STATS.DPS.key, min: 2000, max: 6000 },
             { key: STATS.MAGIC_FIND.key, min: 1, max: 3 },
@@ -1078,11 +1075,13 @@ const finalDungeonItems = {
         type: 'helmet',
         icon: 'images/icons/dragonbone_headdress.png',
         width: 2, height: 2,
+        isUnique: true,
         canHaveSockets: true,
         maxSockets: 2,
         possibleStats: [
-            { key: STATS.DPS.key, min: 12000, max: 29000 },
-            { key: STATS.GOLD_GAIN.key, min: 30, max: 90 },
+            // Re-balanced based on Level 420 budget
+            { key: STATS.DPS.key, min: 1, max: 960000 },
+            { key: STATS.GOLD_GAIN.key, min: 1, max: 1250 },
         ]
     },
     EYE_OF_THE_DRAGON: {
@@ -1091,12 +1090,14 @@ const finalDungeonItems = {
         type: 'necklace',
         icon: 'images/icons/eye_of_the_dragon.png',
         width: 2, height: 2,
+        isUnique: true,
         canHaveSockets: true,
         maxSockets: 1,
         possibleStats: [
-            { key: STATS.CLICK_DAMAGE.key, min: 500, max: 1300 },
-            { key: STATS.DPS.key, min: 10000, max: 26000 },
-            { key: STATS.MAGIC_FIND.key, min: 2, max: 6 },
+            // Re-balanced based on Level 420 budget
+            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 80000 },
+            { key: STATS.DPS.key, min: 1, max: 480000 },
+            { key: STATS.MAGIC_FIND.key, min: 1, max: 15 },
         ]
     },
     DRAGONFIRE_LOOP: {
@@ -1105,12 +1106,14 @@ const finalDungeonItems = {
         type: 'ring',
         icon: 'images/icons/dragonfire_loop.png',
         width: 1, height: 1,
+        isUnique: true,
         canHaveSockets: true,
         maxSockets: 2,
         possibleStats: [
-            { key: STATS.CLICK_DAMAGE.key, min: 2000, max: 6000 },
-            { key: STATS.DPS.key, min: 9000, max: 14000 },
-            { key: STATS.GOLD_GAIN.key, min: 25, max: 75 },
+            // Re-balanced based on Level 420 budget
+            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 120000 },
+            { key: STATS.DPS.key, min: 1, max: 240000 },
+            { key: STATS.GOLD_GAIN.key, min: 1, max: 625 },
         ]
     },
     DRAGONSCALE_BELT: {
@@ -1119,11 +1122,13 @@ const finalDungeonItems = {
         type: 'belt',
         icon: 'images/icons/dragonscale_belt.png',
         width: 2, height: 1,
+        isUnique: true,
         canHaveSockets: true,
         maxSockets: 1,
         possibleStats: [
-            { key: STATS.DPS.key, min: 8000, max: 24000 },
-            { key: STATS.CLICK_DAMAGE.key, min: 200, max: 1500 },
+            // Re-balanced based on Level 420 budget
+            { key: STATS.DPS.key, min: 1, max: 480000 },
+            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 48000 },
         ]
     },
 };

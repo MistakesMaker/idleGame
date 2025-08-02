@@ -42,18 +42,18 @@ export const HUNT_SHOP_INVENTORY = {
     // ===================================
     Potions: [
         { id: 'SCRAP_CACHE_SMALL', cost: 2 },
-        { id: 'GOLD_BOOSTER_MINOR', cost: 3 },
+        { id: 'GOLD_BOOSTER_MINOR', cost: 5 },
         { id: 'XP_ELIXIR_MINOR', cost: 5, unlock: 10 },
-        { id: 'GEM_SEEKER_DRAFT_MINOR', cost: 20, unlock: 50 },
-        { id: 'GOLD_BOOSTER_MAJOR', cost: 10, unlock: 50 },
         { id: 'MAGIC_FIND_POTION_MINOR', cost: 12, unlock: 50 },
-        { id: 'POTION_BOSS_SLAYER', cost: 15, unlock: 100 },
+        { id: 'GOLD_BOOSTER_MAJOR', cost: 15, unlock: 50 },
+        { id: 'GEM_SEEKER_DRAFT_MINOR', cost: 20, unlock: 50 },
         { id: 'XP_ELIXIR_MAJOR', cost: 15, unlock: 100 },
-        { id: 'POTION_LIQUID_LUCK', cost: 20, unlock: 100 },
+        { id: 'POTION_BOSS_SLAYER', cost: 25, unlock: 100 },
         { id: 'POTION_GIANTS_STRENGTH', cost: 25, unlock: 150 },
-        { id: 'POTION_FUSED_POWER', cost: 25, unlock: 150 },
-        { id: 'POTION_DEADLY_FOCUS', cost: 30, unlock: 200 },
-        { id: 'POTION_RAGING_AUTOMATON', cost: 50, unlock: 300 },
+        { id: 'POTION_FUSED_POWER', cost: 40, unlock: 150 },
+        { id: 'POTION_DEADLY_FOCUS', cost: 40, unlock: 200 },
+        { id: 'POTION_LIQUID_LUCK', cost: 50, unlock: 250 },
+        { id: 'POTION_RAGING_AUTOMATON', cost: 60, unlock: 300 },
     ],
     
     // ===================================
@@ -118,13 +118,13 @@ export const HUNT_SHOP_INVENTORY = {
     Permanent: [
         {
             id: 'TOME_OF_STRENGTH',
-            cost: 100, 
-            unlock: 200, 
+            cost: 500, 
+            unlock: 300, 
         },
         {
             id: 'TOME_OF_AGILITY',
-            cost: 100,
-            unlock: 200
+            cost: 500,
+            unlock: 300
         }
     ],
 };

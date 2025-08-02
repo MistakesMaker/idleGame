@@ -182,10 +182,10 @@ export const underdarkMonsters = {
     SPORE_BAT: {
         name: 'Spore Bat',
         image: 'images/monsters/spore_bat.png',
-        dropChance: 15,
+        dropChance: 20,
         lootTable: [
             { item: ITEMS.SPOREWEAVE_PANTS, weight: 1 },
-            { item: ITEMS.FUNGAL_CRAWLER_RING, weight: 0.1 }, // Rare cross-drop
+            { item: ITEMS.FUNGAL_CRAWLER_RING, weight: 0.7 }, // Rare cross-drop
         ]
     },
     FUNGAL_HULK: {

@@ -535,8 +535,8 @@ export function updateHeroPanel(elements, gameState, heldKeys = new Set()) {
  */
 export function updateStatsPanel(elements, playerStats) {
     const { 
-        clickDamageStatEl, dpsStatEl, bonusGoldStatEl, magicFindStatEl,
-        clickDamageDisplay, dpsDisplay // <-- Now includes elements from the Actions Panel
+        clickDamageStatEl, dpsStatEl, bonusGoldStatEl, totalGoldGainStatEl, magicFindStatEl,
+        clickDamageDisplay, dpsDisplay
     } = elements;
     
     const getNumberTier = (amount) => {
@@ -545,11 +545,9 @@ export function updateStatsPanel(elements, playerStats) {
         return 6;
     };
     
-    // Calculate tiers
     const dpsTier = getNumberTier(playerStats.totalDps);
     const clickTier = getNumberTier(playerStats.totalClickDamage);
     
-    // --- Update Derived Stats Panel ---
     if (dpsStatEl) {
         dpsStatEl.className = `currency-tier-${dpsTier}`;
         dpsStatEl.textContent = formatNumber(playerStats.totalDps);
@@ -561,11 +559,15 @@ export function updateStatsPanel(elements, playerStats) {
     if (bonusGoldStatEl) {
         bonusGoldStatEl.textContent = `${playerStats.bonusGold >= 1000 ? formatNumber(playerStats.bonusGold) : playerStats.bonusGold.toFixed(2)}%`;
     }
+    // --- START OF NEW CODE ---
+    if (totalGoldGainStatEl) {
+        totalGoldGainStatEl.textContent = `${playerStats.totalGoldGain >= 1000 ? formatNumber(playerStats.totalGoldGain) : playerStats.totalGoldGain.toFixed(2)}%`;
+    }
+    // --- END OF NEW CODE ---
     if (magicFindStatEl) {
         magicFindStatEl.textContent = `${playerStats.magicFind >= 1000 ? formatNumber(playerStats.magicFind) : playerStats.magicFind.toFixed(2)}%`;
     }
 
-    // --- Update Actions Panel Stats (ensuring they always match) ---
     if (dpsDisplay) {
         dpsDisplay.className = `currency-tier-${dpsTier}`;
         dpsDisplay.textContent = formatNumber(playerStats.totalDps);
@@ -910,6 +912,14 @@ export function updateUI(elements, gameState, playerStats, currentMonster, salva
     updateMonsterUI(elements, gameState, currentMonster);
     updateLootPanel(elements, currentMonster, gameState);
     updatePrestigeUI(elements, gameState);
+        // --- START: Prestige Advisor Button Visibility ---
+    const advisorBtn = document.getElementById('prestige-advisor-btn');
+    if (advisorBtn) {
+        // Show the button only if prestige is unlocked AND it's the very first prestige run.
+        const shouldBeVisible = gameState.unlockedFeatures.prestige && gameState.prestigeCount === 0;
+        advisorBtn.classList.toggle('hidden', !shouldBeVisible);
+    }
+    // --- END: Prestige Advisor Button Visibility ---
     updateHuntsButton(gameState);
 
     // Grid Renders for the active inventory sub-view
@@ -1483,17 +1493,25 @@ export function getItemIcon(type) {
     }
 }
 
-export function showDamagePopup(popupContainerEl, damage, isCrit = false, isMultiStrike = false) {
-    const popup = document.createElement('div');
+export function showDamagePopup(popupContainerEl, damage, isCrit = false, isMultiStrike = false, pool = [], poolIndex = 0) {
+    if (!pool || pool.length === 0) return 0; // Safety check
+
+    const popup = pool[poolIndex];
+    
+    // Reset any previous animation classes
+    popup.className = '';
+    
     let content = `-${formatNumber(damage)}`;
     if (isMultiStrike) {
         content += ' (Multi!)';
     }
     popup.textContent = content;
-    popup.className = 'damage-popup';
+    popup.className = 'damage-popup'; // Apply the base class for styling
     if (isCrit) {
         popup.classList.add('crit');
     }
+    
+    // Position it
     if (isMultiStrike) {
         popup.style.left = `${50 + Math.random() * 20}%`;
         popup.style.top = `${20 + Math.random() * 20}%`;
@@ -1502,8 +1520,16 @@ export function showDamagePopup(popupContainerEl, damage, isCrit = false, isMult
         popup.style.top = `${40 + Math.random() * 20}%`;
     }
     
-    popupContainerEl.appendChild(popup);
-    setTimeout(() => popup.remove(), 1000);
+    // Make it visible and start the animation
+    popup.style.display = 'block';
+    
+    // After the animation, instead of removing it, just hide it.
+    setTimeout(() => {
+        popup.style.display = 'none';
+    }, 1000);
+
+    // Return the next index for the pool
+    return (poolIndex + 1) % pool.length;
 }
 
 export function showGoldPopup(popupContainerEl, gold) {
@@ -1705,7 +1731,74 @@ export function showConfirmationModal(elements, title, bodyHtml, onConfirm) {
 
     elements.modalBackdropEl.classList.remove('hidden');
 }
+/**
+ * Shows the one-time Prestige Advisor modal, with buttons that navigate the UI.
+ * @param {DOMElements} elements The main DOM elements object.
+ * @param {object} gameState The current game state.
+ * @param {function} switchToPrestigeViewCallback Callback to switch to the prestige view.
+ */
+export function showPrestigeAdvisorModal(elements, gameState, switchToPrestigeViewCallback) {
+    const backdrop = document.getElementById('prestige-advisor-modal-backdrop');
+    if (!backdrop) return;
 
+    const closeModal = () => backdrop.classList.add('hidden');
+
+    // Button functionalities
+    const goToWikiBtn = document.getElementById('advisor-goto-wiki-btn');
+    const goToGemsBtn = document.getElementById('advisor-goto-gems-btn');
+    const goToForgeBtn = document.getElementById('advisor-goto-forge-btn');
+    const goToUpgradesBtn = document.getElementById('advisor-goto-upgrades-btn');
+    const closeBtn = document.getElementById('advisor-close-btn');
+    const prestigeBtn = /** @type {HTMLButtonElement} */(document.getElementById('advisor-prestige-btn'));
+
+    goToWikiBtn.onclick = () => {
+        closeModal();
+        switchView(elements, 'wiki-view', gameState);
+    };
+
+    goToGemsBtn.onclick = () => {
+        closeModal();
+        switchView(elements, 'inventory-view', gameState);
+        switchInventorySubView('inventory-gems-view');
+    };
+
+    goToForgeBtn.onclick = () => {
+        closeModal();
+        switchView(elements, 'forge-view', gameState);
+        // Explicitly render the forge content after switching views
+        renderForgeInventory(elements.forgeInventorySlotsEl, player.getAllItems(gameState));
+    };
+
+    goToUpgradesBtn.onclick = () => {
+        closeModal();
+        const upgradesPanel = document.querySelector('.upgrades-panel');
+        if (upgradesPanel) {
+            upgradesPanel.classList.add('flash-panel-glow');
+            setTimeout(() => {
+                upgradesPanel.classList.remove('flash-panel-glow');
+            }, 4500); // Duration of animation (1.5s * 3 iterations)
+        }
+    };
+
+    closeBtn.onclick = closeModal;
+    closeBtn.onclick = closeModal;
+const canPrestige = gameState.currentRunCompletedLevels.includes(gameState.nextPrestigeLevel);
+
+if (canPrestige) {
+    prestigeBtn.disabled = false;
+    prestigeBtn.textContent = 'Take Me to Prestige!';
+    prestigeBtn.onclick = () => {
+        closeModal();
+        switchToPrestigeViewCallback();
+    };
+} else {
+    prestigeBtn.disabled = true;
+    prestigeBtn.textContent = 'Prestige Locked';
+    prestigeBtn.onclick = null; // Clear the click handler just in case
+}
+
+    backdrop.classList.remove('hidden');
+}
 
 export function createMapNode(name, iconSrc, coords, isUnlocked, isCompleted, currentFightingLevel, levelRange = null, isBoss = false, isFightingZone = false) {
     const node = document.createElement('div');
@@ -1824,7 +1917,7 @@ export function switchView(elements, viewIdToShow, gameState) {
     const featureUnlockMap = {
         'inventory-view': { flag: unlockedFeatures.inventory, title: 'Inventory Locked', message: 'Find your first piece of gear to unlock the inventory.', icon: 'fa-box-open' },
         'equipment-view': { flag: unlockedFeatures.equipment, title: 'Equipment Locked', message: 'Equip an item from your inventory to unlock this view.', icon: 'fa-user-shield' },
-        'forge-view': { flag: unlockedFeatures.forge, title: 'Forge Locked', message: 'Salvage an item for Scrap to unlock the Forge.', icon: 'fa-hammer' },
+        'forge-view': { flag: unlockedFeatures.forge, title: 'Forge Locked', message: 'Defeat lvl 100 boss to unlock forge.', icon: 'fa-hammer' },
         'wiki-view': { flag: unlockedFeatures.wiki, title: 'Wiki Locked', message: 'Encounter a boss to unlock the Item Wiki.', icon: 'fa-book' },
         'prestige-view': { flag: unlockedFeatures.prestige, title: 'Prestige Locked', message: 'Defeat the boss at Level 100 to unlock Prestige.', icon: 'fa-star' }
     };
@@ -1843,7 +1936,7 @@ export function switchView(elements, viewIdToShow, gameState) {
     
     const config = featureUnlockMap[viewIdToShow];
     
-    if (config && !config.flag) {
+    if (config && !config.flag && !(viewIdToShow === 'prestige-view' && gameState.isTokenPrestigePending)) { 
         lockedViewTitle.textContent = config.title;
         lockedViewMessage.textContent = config.message;
         lockedViewIcon.className = `fas ${config.icon} locked-view-icon`;
@@ -2247,12 +2340,41 @@ export function drawMapPaths(mapContainerEl, realm, viewingZoneId, gameState) {
 export function populateWikiFilters(elements, allItemTypes, allStatKeys) {
     const { wikiTypeFilter, wikiStatsFilterContainer } = elements;
 
-    allItemTypes.forEach(type => {
-        const option = document.createElement('option');
-        option.value = type;
-        option.textContent = type.charAt(0).toUpperCase() + type.slice(1);
-        wikiTypeFilter.appendChild(option);
-    });
+// --- START: Replace the forEach loop with this ---
+const sortedTypes = Array.from(allItemTypes);
+
+// Define a custom sort order. Items not in this list will be sorted alphabetically at the end.
+const sortOrder = [
+    'sword', 'shield', 'helmet', 'platebody', 'platelegs', 'belt', 'ring', 'necklace',
+    'Uniques', 'Gems', 'Consumables'
+];
+
+sortedTypes.sort((a, b) => {
+    const indexA = sortOrder.indexOf(a);
+    const indexB = sortOrder.indexOf(b);
+
+    if (indexA !== -1 && indexB !== -1) {
+        // Both items are in the custom sort order
+        return indexA - indexB;
+    } else if (indexA !== -1) {
+        // Only 'a' is in the custom sort order, so it comes first
+        return -1;
+    } else if (indexB !== -1) {
+        // Only 'b' is in the custom sort order, so it comes first
+        return 1;
+    } else {
+        // Neither are in the custom sort order, sort them alphabetically
+        return a.localeCompare(b);
+    }
+});
+
+sortedTypes.forEach(type => {
+    const option = document.createElement('option');
+    option.value = type;
+    option.textContent = type.charAt(0).toUpperCase() + type.slice(1);
+    wikiTypeFilter.appendChild(option);
+});
+// --- END: Replacement block ---
 
     wikiStatsFilterContainer.innerHTML = '';
     Array.from(allStatKeys).sort().forEach(statKey => {
@@ -2652,7 +2774,7 @@ export function updatePrestigeUI(elements, gameState) {
     const prestigeTokenShopItem = HUNT_SHOP_INVENTORY.Utility.find(item => item.id === 'PRESTIGE_TOKEN');
     if (prestigeTokenShopItem) {
         const purchaseCount = gameState.prestigeTokenPurchases || 0;
-        const currentCost = prestigeTokenShopItem.cost + (purchaseCount * 10);
+        const currentCost = prestigeTokenShopItem.cost + (purchaseCount * 20);
 
         // Append the new information as a separate paragraph
         prestigeRequirementTextEl.innerHTML += ` or use a Mark of the Hunter</span> from the Hunt Shop.
@@ -2662,6 +2784,14 @@ export function updatePrestigeUI(elements, gameState) {
     // --- END OF MODIFICATION ---
     
     (/** @type {HTMLButtonElement} */ (prestigeButton)).disabled = !gameState.currentRunCompletedLevels.includes(nextPrestigeLevel);
+// --- START: Add this block ---
+const prestigeHelpTrigger = document.getElementById('prestige-help-trigger');
+if (prestigeHelpTrigger) {
+    // Show the help icon only if prestige is unlocked AND the player has prestiged at least once.
+    const shouldBeVisible = gameState.unlockedFeatures.prestige && gameState.prestigeCount > 0;
+    prestigeHelpTrigger.classList.toggle('hidden', !shouldBeVisible);
+}
+// --- END: Add this block ---
 }
 
 export function updateAutoProgressToggle(elements, isAutoProgressing) {
@@ -2887,14 +3017,30 @@ export function renderPermanentUpgrades(elements, gameState) {
         const cost = Math.floor(upgrade.baseCost * Math.pow(upgrade.costScalar, currentLevel));
         const isMaxed = currentLevel >= upgrade.maxLevel;
         
-        const bonus = upgrade.bonusPerLevel * currentLevel;
-        
         const card = document.createElement('div');
         card.className = 'permanent-upgrade-card';
         if (gameState.gold < cost && !isMaxed) card.classList.add('disabled');
         if (isMaxed) card.classList.add('maxed');
 
-        const description = upgrade.description.replace('{value}', bonus.toFixed(2).replace(/\.?0+$/, '')); // Format bonus and remove trailing zeros
+        // --- START OF MODIFICATION (Corrected Logic) ---
+        let description = upgrade.description;
+        
+        if (typeof upgrade.bonusPerLevel === 'object') {
+            // Handles multi-value upgrades like Prestige Surge
+            const bonusClick = upgrade.bonusPerLevel.click * currentLevel;
+            const bonusDps = upgrade.bonusPerLevel.dps * currentLevel;
+            // The <span> tag with the green color is now added here, not in the data file
+            description = description.replace('{valueClick}', `<span>${formatNumber(bonusClick)}</span>`);
+            description = description.replace('{valueDps}', `<span>${formatNumber(bonusDps)}</span>`);
+        } else {
+            // Handles standard, single-value upgrades
+            const bonus = upgrade.bonusPerLevel * currentLevel;
+            const bonusString = (upgrade.bonusType === 'PERCENT')
+                ? bonus.toFixed(2).replace(/\.?0+$/, '')
+                : formatNumber(bonus);
+            description = description.replace('{value}', `<span>${bonusString}</span>`); 
+        }
+        // --- END OF MODIFICATION ---
 
         card.innerHTML = `
             <div class="upgrade-icon"><i class="${upgrade.icon}"></i></div>
@@ -2988,14 +3134,6 @@ export async function showDevToolModal(elements, wikiData) {
  * @param {object} gameState The current game state.
  * @param {object} statDescriptions An object containing the title and description for each stat.
  */
-/**
- * Generates and displays the stat breakdown tooltip, now including a description.
- * @param {DOMElements} elements The DOM elements object.
- * @param {string} statKey The key of the stat to display (e.g., 'clickDamage').
- * @param {object} statBreakdown The object containing the breakdown data.
- * @param {object} gameState The current game state.
- * @param {object} statDescriptions An object containing the title and description for each stat.
- */
 export function showStatBreakdownTooltip(elements, statKey, statBreakdown, gameState, statDescriptions) {
     const { statTooltipEl } = elements;
     if (!statBreakdown[statKey]) {
@@ -3004,66 +3142,103 @@ export function showStatBreakdownTooltip(elements, statKey, statBreakdown, gameS
     }
 
     const data = statBreakdown[statKey];
-    const statInfo = Object.values(STATS).find(s => s.key === statKey) || { name: 'Stat', type: 'flat' };
     const descriptionContent = statDescriptions[statKey];
 
-    let html = `<h4>${statInfo.name} Breakdown</h4>`;
+    let html = `<h4>${descriptionContent.title}</h4>`;
     
     if (descriptionContent && descriptionContent.description) {
         html += `<p style="font-size: 0.9em; color: #bdc3c7; margin: 5px 0 10px 0; border-bottom: 1px solid #4a637e; padding-bottom: 10px;">${descriptionContent.description}</p>`;
     }
     
     html += '<ul>';
-    
-    data.sources.forEach(source => {
-        if ((statKey === 'clickDamage' || statKey === 'dps') && source.label === 'Base') {
-            return;
-        }
-        if (source.value !== 0) {
-            let valueStr;
-            if (source.isPercent) {
-                valueStr = `+${source.value >= 1000 ? formatNumber(source.value) : source.value.toFixed(2)}%`;
-            } else {
-                valueStr = `+${formatNumber(source.value)}`;
+
+    if (statKey === 'goldGain') {
+        const sources = data.sources || [];
+        
+        // Group sources by their label to combine Luck's bonuses and handle potions
+        const groupedSources = new Map();
+        sources.forEach(source => {
+            if (!groupedSources.has(source.label)) {
+                groupedSources.set(source.label, { additive: 0, multiplicative: 0, effectiveValue: 0 });
             }
-            html += `<li>${source.label}: ${valueStr}</li>`;
-        }
-    });
-
-    const buffStatMap = {
-        'goldGain': 'bonusGold',
-        'magicFind': 'magicFind',
-        'bonusXp': 'bonusXp',
-    };
-    const relevantBuffKey = buffStatMap[statKey];
-
-    if (relevantBuffKey && gameState.activeBuffs) {
-        gameState.activeBuffs.forEach(buff => {
-            if (buff.statKey === relevantBuffKey && buff.value > 0) {
-                const valueStr = `+${buff.value.toFixed(2)}%`;
-                html += `<li>From ${buff.name}: ${valueStr}</li>`;
+            const group = groupedSources.get(source.label);
+            if (source.type === 'additive') {
+                group.additive += source.value;
+            } else if (source.type === 'multiplicative') {
+                group.multiplicative += source.value;
+                group.effectiveValue += source.effectiveValue || 0;
             }
         });
-    }
 
-    if (data.multipliers && data.multipliers.length > 0) {
-        html += `<li class="tooltip-divider"></li>`;
-        data.multipliers.forEach(multi => {
-            if (multi.value !== 0) {
-                html += `<li>${multi.label}: +${multi.value.toFixed(1)}%</li>`;
+        // Display the grouped sources
+        groupedSources.forEach((values, label) => {
+            // Case 1: Source provides BOTH types (e.g., Luck)
+            if (values.additive > 0 && values.multiplicative > 0) {
+                const additiveStr = `+${values.additive.toFixed(2)}%`;
+                const multiStr = `+${values.multiplicative.toFixed(2)}% Multi`;
+                const effectiveStr = `<span style="color: #95a5a6;">(+${values.effectiveValue.toFixed(2)}%)</span>`;
+                html += `<li>${label}: ${additiveStr} & ${multiStr} ${effectiveStr}</li>`;
+            } 
+            // Case 2: Source provides ONLY additive bonus (e.g., Gear, Prestige)
+            else if (values.additive > 0) {
+                html += `<li>${label}: +${values.additive.toFixed(2)}%</li>`;
+            } 
+            // Case 3: Source provides ONLY multiplicative bonus (e.g., Gold Booster potions)
+            else if (values.multiplicative > 0) {
+                const multiStr = `+${values.multiplicative.toFixed(2)}% Multi`;
+                const effectiveStr = `<span style="color: #95a5a6;">(+${values.effectiveValue.toFixed(2)}%)</span>`;
+                html += `<li>${label}: ${multiStr} ${effectiveStr}</li>`;
             }
         });
-    }
 
-    if (data.synergy > 0) {
-        html += `<li class="tooltip-divider"></li>`;
-        html += `<li>From Synergy: +${formatNumber(data.synergy)}</li>`;
+    } else {
+        // This is the existing logic for all other stats (Click Dmg, DPS, etc.)
+        const groupedSources = new Map();
+        data.base.forEach(source => {
+            if (source.value > 0.001) {
+                if (!groupedSources.has(source.label)) groupedSources.set(source.label, {});
+                groupedSources.get(source.label).base = source;
+            }
+        });
+        if (data.multipliers) {
+            data.multipliers.forEach(multi => {
+                if (multi.flatValue > 0.001) {
+                    if (!groupedSources.has(multi.label)) groupedSources.set(multi.label, {});
+                    groupedSources.get(multi.label).multiplier = multi;
+                }
+            });
+        }
+        const sortOrder = ["From Prestige", "From Prestige Power", "From Prestige Surge", "From Gear", "From Agility", "From Strength", "From Gold Upgrades"];
+        const sortedLabels = Array.from(groupedSources.keys()).sort((a, b) => {
+            const indexA = sortOrder.indexOf(a);
+            const indexB = sortOrder.indexOf(b);
+            if (indexA !== -1 && indexB !== -1) return indexA - indexB;
+            if (indexA !== -1) return -1;
+            if (indexB !== -1) return 1;
+            return a.localeCompare(b);
+        });
+        sortedLabels.forEach(label => {
+            const group = groupedSources.get(label);
+            if (group.base) {
+                const source = group.base;
+                if (statKey === 'clickDamage' && source.label === 'Base') return;
+                const valueStr = source.isPercent ? `+${source.value.toFixed(2)}%` : `+${formatNumber(source.value)}`;
+                html += `<li>${label}: ${valueStr}</li>`;
+            }
+            if (group.multiplier) {
+                const multi = group.multiplier;
+                html += `<li>${multi.label}: +${multi.percent.toFixed(1)}% <span style="color: #95a5a6;">(+${formatNumber(multi.flatValue)})</span></li>`;
+            }
+        });
+        if (data.synergy > 0.001) {
+            html += `<li class="tooltip-divider"></li>`;
+            html += `<li>From Synergy: +${formatNumber(data.synergy)}</li>`;
+        }
     }
     
     html += '</ul>';
     statTooltipEl.innerHTML = html;
 }
-
 /**
  * Renders the Hunts modal UI, including main tabs and shop sub-tabs.
  * @param {DOMElements} elements
@@ -3082,15 +3257,19 @@ export function renderHuntsView(elements, gameState) {
     // --- START OF NEW LOGIC ---
     if (totalHuntsIcon instanceof HTMLImageElement) {
         const count = gameState.hunts.totalCompleted;
-        if (count <= 99) {
-            totalHuntsIcon.src = 'images/icons/hunt_count1.png';
-        } else if (count <= 249) {
-            totalHuntsIcon.src = 'images/icons/hunt_count2.png';
-        } else if (count <= 499) {
-            totalHuntsIcon.src = 'images/icons/hunt_count3.png';
-        } else {
-            totalHuntsIcon.src = 'images/icons/hunt_count4.png';
-        }
+        const interval = 50;
+        const maxIconNumber = 20;
+
+        // Calculate which icon tier the player is in.
+        // e.g., count 0-49 -> floor(0...0.98) + 1 = 1
+        // e.g., count 50-99 -> floor(1...1.98) + 1 = 2
+        const calculatedIconNumber = Math.floor(count / interval) + 1;
+
+        // Use Math.min to clamp the number, so it never goes above our highest available image.
+        const finalIconNumber = Math.min(calculatedIconNumber, maxIconNumber);
+
+        // Set the image source dynamically.
+        totalHuntsIcon.src = `images/icons/hunt_count${finalIconNumber}.png`;
     }
     // --- END OF NEW LOGIC ---
 
@@ -3144,7 +3323,7 @@ export function renderHuntsView(elements, gameState) {
                 // --- END OF FIX ---
 
                 if (gemA.tier !== gemB.tier) {
-                    return gemA.tier - gemB.tier;
+                    return gemA.tier - b.tier;
                 }
                 return a.cost - b.cost;
             });
@@ -3169,28 +3348,35 @@ export function renderHuntsView(elements, gameState) {
  * @returns {string}
  */
 function createHuntCardHTML(hunt, index, isActive, gameState, progress = 0) {
-    // Safety check for invalid hunt data
     if (!hunt || !hunt.rewardId) {
         console.error("Attempted to render an invalid hunt object:", hunt);
-        return ''; // Return an empty string to prevent a crash
+        return '';
     }
     const reward = CONSUMABLES[hunt.rewardId];
     if (!reward) {
         console.error(`Could not find consumable with ID "${hunt.rewardId}" for a hunt.`, hunt);
-        return ''; // Return an empty string to prevent a crash
+        return '';
     }
 
     const description = hunt.description.replace('{quantity}', formatNumber(hunt.quantity));
 
+    // --- START OF MODIFICATION ---
+    // Calculate the TOTAL token reward for display purposes
+    const acumenLevel = gameState.permanentUpgrades.HUNTERS_ACUMEN || 0;
+    const bonusTokens = PERMANENT_UPGRADES.HUNTERS_ACUMEN.bonusPerLevel * acumenLevel;
+    const totalTokenReward = (hunt.tokenReward || 0) + bonusTokens;
+
     const tokenRewardHTML = `
         <div class="hunt-token-reward">
-            <span>${hunt.tokenReward}</span>
+            <span>${totalTokenReward}</span>
             <img src="images/icons/hunt_token.png" alt="Token">
         </div>
     `;
+    // --- END OF MODIFICATION ---
 
     let actionButtonHTML;
     if (isActive) {
+        // ... (the rest of the function remains exactly the same)
         const progressPercent = Math.min(100, (progress / hunt.quantity) * 100);
         const isComplete = progress >= hunt.quantity;
 
@@ -3212,8 +3398,6 @@ function createHuntCardHTML(hunt, index, isActive, gameState, progress = 0) {
         actionButtonHTML = `<div class="hunt-actions"><button data-index="${index}">Accept</button></div>`;
     }
 
-    // --- START OF MODIFICATION ---
-    // The token reward is now its own column, and removed from inside the consumable reward div.
     return `
         <div class="hunt-card">
             ${tokenRewardHTML}
@@ -3230,7 +3414,6 @@ function createHuntCardHTML(hunt, index, isActive, gameState, progress = 0) {
             </div>
         </div>
     `;
-    // --- END OF MODIFICATION ---
 }
 
 /**
@@ -3274,7 +3457,16 @@ export function updateActiveBuffsUI(elements, activeBuffs) {
 export function updateHuntsButtonGlow(gameState) {
     const huntsBtn = document.getElementById('hunts-btn');
     if (!huntsBtn) return;
+
     const isComplete = gameState.hunts.active && gameState.hunts.progress >= gameState.hunts.active.quantity;
+    const wasAlreadyGlowing = huntsBtn.classList.contains('hunt-ready-glow');
+
+    // If the hunt is now complete, but the button wasn't glowing before,
+    // it means the hunt was JUST completed on this frame. Play the sound.
+    if (isComplete && !wasAlreadyGlowing) {
+        playSound('hunt_completed', 5);
+    }
+
     huntsBtn.classList.toggle('hunt-ready-glow', isComplete);
 }
 
@@ -3312,7 +3504,7 @@ function createHuntShopItemHTML(shopItem, gameState) {
     let finalCost = shopItem.cost;
     if (shopItem.id === 'PRESTIGE_TOKEN') {
         const purchaseCount = gameState.prestigeTokenPurchases || 0;
-        finalCost = shopItem.cost + (purchaseCount * 10);
+        finalCost = shopItem.cost + (purchaseCount * 20);
     }
     const canAfford = gameState.hunts.tokens >= finalCost;
 
@@ -3432,9 +3624,9 @@ export function showHuntShopTooltip(elements, targetEl, itemId) {
     `;
 
     const rect = targetEl.getBoundingClientRect();
-    elements.tooltipEl.style.left = `${rect.left}px`;
-    elements.tooltipEl.style.top = `${rect.bottom + 5}px`;
+    // Show it first to get accurate dimensions, then position it.
     elements.tooltipEl.classList.remove('hidden');
+    positionTooltip(elements.tooltipEl, rect);
 }
 
 /**
@@ -3633,8 +3825,7 @@ export function showSimpleTooltip(elements, targetEl, text) {
     
     // Recalculate position after content is set to get the correct width
     tooltipEl.classList.remove('hidden'); 
-    tooltipEl.style.left = `${rect.left + (rect.width / 2) - (tooltipEl.offsetWidth / 2)}px`;
-    tooltipEl.style.top = `${rect.bottom + 5}px`;
+    positionTooltip(tooltipEl, rect);
 }
 
 // --- START: New Function ---
@@ -3765,4 +3956,52 @@ export function showPromptModal(title, message, defaultValue, onConfirm) {
     backdrop.classList.remove('hidden');
     inputEl.focus();
     inputEl.select();
+}
+
+/**
+ * Calculates and applies the optimal on-screen position for the tooltip.
+ * It prevents the tooltip from rendering outside the viewport.
+ * @param {HTMLElement} tooltipEl The tooltip element itself.
+ * @param {DOMRect} targetRect The bounding rectangle of the element being hovered.
+ */
+export function positionTooltip(tooltipEl, targetRect) {
+    const tooltipWidth = tooltipEl.offsetWidth;
+    const tooltipHeight = tooltipEl.offsetHeight;
+    const windowWidth = window.innerWidth;
+    const windowHeight = window.innerHeight;
+    const margin = 10; // Space from the cursor and screen edges
+
+    let left, top;
+
+    // --- Horizontal Positioning ---
+    // Try positioning to the right first
+    if (targetRect.right + tooltipWidth + margin < windowWidth) {
+        left = targetRect.right + margin;
+    } 
+    // If it doesn't fit, position to the left
+    else {
+        left = targetRect.left - tooltipWidth - margin;
+    }
+    // Final check to prevent going off the left edge (for very wide tooltips)
+    if (left < margin) {
+        left = margin;
+    }
+
+
+    // --- Vertical Positioning ---
+    // Try positioning at the same top level
+    top = targetRect.top;
+    
+    // If it goes off the bottom of the screen...
+    if (top + tooltipHeight + margin > windowHeight) {
+        // ...move it up so its bottom aligns with the screen bottom.
+        top = windowHeight - tooltipHeight - margin;
+    }
+    // Final check to prevent going off the top edge
+    if (top < margin) {
+        top = margin;
+    }
+
+    tooltipEl.style.left = `${left}px`;
+    tooltipEl.style.top = `${top}px`;
 }

@@ -1131,15 +1131,20 @@ export function completeHunt(gameState) {
     gameState.hunts.completionCounts[activeHunt.id] = count + 1;
     gameState.hunts.totalCompleted++;
     
-    // --- START MODIFICATION: Unlock Hunt Travel ---
     let justUnlockedTravel = false;
     if (gameState.hunts.totalCompleted >= 5 && !gameState.unlockedFeatures.huntTravel) {
         gameState.unlockedFeatures.huntTravel = true;
         justUnlockedTravel = true;
     }
-    // --- END MODIFICATION ---
 
-    const tokensGained = activeHunt.tokenReward || getRandomInt(1, 3);
+    // --- START OF MODIFICATION ---
+    // Calculate bonus tokens from the new permanent upgrade
+    const acumenLevel = gameState.permanentUpgrades.HUNTERS_ACUMEN || 0;
+    const bonusTokens = PERMANENT_UPGRADES.HUNTERS_ACUMEN.bonusPerLevel * acumenLevel;
+    const baseTokens = activeHunt.tokenReward || getRandomInt(1, 3);
+    const tokensGained = baseTokens + bonusTokens;
+    // --- END OF MODIFICATION ---
+    
     gameState.hunts.tokens += tokensGained;
     
     gameState.hunts.active = null;
@@ -1243,7 +1248,7 @@ export function purchaseHuntShopItem(gameState, itemId) {
     let finalCost = shopItem.cost;
     if (itemId === 'PRESTIGE_TOKEN') {
         const purchaseCount = gameState.prestigeTokenPurchases || 0;
-        finalCost = shopItem.cost + (purchaseCount * 10);
+        finalCost = shopItem.cost + (purchaseCount * 20);
     }
 
     if (gameState.hunts.tokens < finalCost) {
@@ -1301,7 +1306,7 @@ export function resetAttributes(gameState) {
         return { success: false, message: "You have no attribute points to reset." };
     }
 
-    const costPerPoint = 100;
+    const costPerPoint = 10;
     const totalCost = totalSpentPoints * costPerPoint;
 
     if (gameState.scrap < totalCost) {

@@ -135,7 +135,6 @@ const greenMeadowsMonsters = {
         // MODIFIED!
         lootTable: [
             { item: ITEMS.KNIGHTS_PLATELEGS, weight: 1}, //added clcik dmg pants
-            { item: ITEMS.AMULET_OF_POWER, weight: 1 },
             { item: ITEMS.RING_OF_WEALTH, weight: 1 },
             { item: ITEMS.HUNTERS_MEDALLION, weight: 2 }, // NEW!
         ]
@@ -507,7 +506,7 @@ const finalDungeonMonsters = {
         image: 'images/monsters/succubus.png',
         dropChance: 35,
         lootTable: [
-            { item: ITEMS.SIGNET_OF_THE_LEECH, weight: 1 },
+            { item: GEMS.BASE_RUBY, weight: 0.5 },
             { item: ITEMS.BLOODSTONE_PENDANT, weight: 1 },
         ]
     },

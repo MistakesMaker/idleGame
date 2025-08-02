@@ -268,6 +268,7 @@ export const underdarkItems = {
         type: 'ring',
         icon: 'images/icons/glowcap_ring.png',
         width: 1, height: 1,
+        isUnique: true,
         canHaveSockets: true,
         maxSockets: 1,
         possibleStats: [ 
@@ -547,6 +548,7 @@ export const underdarkItems = {
         type: 'ring',
         icon: 'images/icons/drow_noble_signet.png',
         width: 1, height: 1,
+        isUnique: true,
         canHaveSockets: true,
         maxSockets: 3,
         possibleStats: [ { key: STATS.GOLD_GAIN.key, min: 1, max: 2000 } ]
@@ -685,6 +687,7 @@ export const underdarkItems = {
         type: 'sword',
         icon: 'images/icons/abyssal_edge.png',
         width: 2, height: 3,
+        isUnique: true,
         canHaveSockets: true,
         maxSockets: 3,
         possibleStats: [ { key: STATS.CLICK_DAMAGE.key, min: 1, max: 887204 } ] // Specialist Bonus Applied

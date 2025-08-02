@@ -249,6 +249,7 @@
             <div id="wiki-view" class="view">
                 <h3>Wiki & Item Index</h3>
                 <p class="small-text-hint">Discover items and where to find them. Data is revealed as you progress through the realms.</p>
+                <p class="small-text-hint">Hint: Click on an item or its drop source to instantly travel to that location and begin your hunt.</p>
                 <div id="wiki-controls">
                     <div class="wiki-filter-row">
                         <input type="text" id="wiki-search-input" placeholder="Search by item name...">
@@ -335,7 +336,7 @@
             <button id="hunts-btn">Hunts</button>
 
             <div id="upgrades-area">
-                <h3>Gold Upgrades</h3>
+                <h3>Gold Upgrades <span id="gold-upgrade-tooltip-trigger" class="fas fa-question-circle" style="font-size: 0.8em; color: #bdc3c7; cursor: pointer;"></span></h3>
                 <p>These upgrades reset on Prestige.</p>
                 <div id="upgrade-click-damage" class="upgrade-button">
                     <p>Improve Clicks (<span id="upgrade-click-level">Lvl 0</span>)</p>
@@ -358,7 +359,13 @@
                         <!-- Absorbed stats will be dynamically inserted here -->
                      </div>
                 </div>
-                <button id="prestige-button" disabled>Prestige Now</button>
+                <button id="prestige-advisor-btn" class="hidden">Prestige Advisor</button>
+                <!-- START OF MODIFICATION -->
+                <div class="prestige-button-container">
+                    <button id="prestige-button" disabled>Prestige Now</button>
+                    <span id="prestige-help-trigger" class="fas fa-question-circle hidden"></span>
+                </div>
+                <!-- END OF MODIFICATION -->
                 <button id="view-prestige-slots-btn">View Prestige Slots</button>
             </div>
         </div>
@@ -445,6 +452,13 @@
                 
                 <div id="other-settings">
                      <h4>Game</h4>
+                     <div class="settings-toggle-group">
+                        <label for="keep-screen-on-toggle">
+                            Keep Screen On
+                            <span id="keep-screen-on-tooltip-trigger" class="fas fa-question-circle" style="font-size: 0.8em; color: #bdc3c7; cursor: help;"></span>
+                        </label>
+                        <input type="checkbox" id="keep-screen-on-toggle" class="toggle-switch">
+                     </div>
                      <button id="reset-game-btn">Hard Reset Game</button>
                 </div>
             </div>
@@ -593,7 +607,51 @@
             <button id="dev-tool-close-btn">Close</button>
         </div>
     </div>
-
+    <!-- NEW PRESTIGE ADVISOR MODAL -->
+    <div id="prestige-advisor-modal-backdrop" class="hidden">
+        <div id="prestige-advisor-modal">
+            <h3 id="prestige-advisor-title">Prestige Unlocked!</h3>
+            <p id="prestige-advisor-intro">Congratulations! You can now reset your run to gain permanent power. Before you do, here are some tips to maximize your first Prestige bonus:</p>
+            <div id="prestige-advisor-tips">
+                <div class="advisor-tip">
+                    <div class="tip-icon"><i class="fas fa-book-open"></i></div>
+                    <div class="tip-text">
+                        <h4>Find Better Gear</h4>
+                        <p>The gear in your legacy slots will be absorbed permanently. Use the <b>Wiki</b> to research powerful items and hunt down the bosses that drop them for the best possible start to your next run!</p>
+                        <button id="advisor-goto-wiki-btn">Go to Wiki</button>
+                    </div>
+                </div>
+                <div class="advisor-tip">
+                    <div class="tip-icon"><i class="fas fa-gem"></i></div>
+                    <div class="tip-text">
+                        <h4>Empower with Gems</h4>
+                        <p>Socketed gems are also absorbed! Fill your legacy gear with your best gems to add their stats to your permanent bonuses.</p>
+                        <button id="advisor-goto-gems-btn">Go to Gems</button>
+                    </div>
+                </div>
+                <div class="advisor-tip">
+                    <div class="tip-icon"><i class="fas fa-hammer"></i></div>
+                    <div class="tip-text">
+                        <h4>Enhance at the Forge</h4>
+                        <p>Use your Scrap at the Forge to increase the stats on your best items before you absorb them. Every little bit counts!</p>
+                        <button id="advisor-goto-forge-btn">Go to Forge</button>
+                    </div>
+                </div>
+                <div class="advisor-tip">
+                    <div class="tip-icon"><i class="fas fa-infinity"></i></div>
+                    <div class="tip-text">
+                        <h4>Purchase Permanent Upgrades</h4>
+                        <p>Spend your Gold on upgrades that last forever! Upgrades like <b>Legacy Keeper</b> and <b>Prestige Surge</b> are vital for a powerful start to your next run.</p>
+                        <button id="advisor-goto-upgrades-btn">View Permanent Upgrades</button>
+                    </div>
+                </div>
+            </div>
+            <div id="prestige-advisor-actions">
+                <button id="advisor-close-btn">I'll Prepare More</button>
+                <button id="advisor-prestige-btn">Take Me to Prestige!</button>
+            </div>
+        </div>
+    </div>
     <!-- MODIFIED HUNTS MODAL -->
     <div id="hunts-modal-backdrop" class="hidden">
         <div id="hunts-modal">
@@ -666,6 +724,7 @@
     </div>
 
     <!-- Scripts -->
+    <script src="https://unpkg.com/nosleep.js/dist/NoSleep.min.js"></script>
     <script type="module" src="game.js"></script>
 </body>
 </html>
