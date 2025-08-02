@@ -2537,50 +2537,55 @@ wikiState.data.forEach(d => {
             } else {
                 const item = itemOrStack;
                 // Helper function to perform the consumption and UI updates
-const performConsumption = (consumableItem) => {
-    const result = player.consumeItem(gameState, consumableItem.id);
-    logMessage(elements.gameLogEl, result.message, 'legendary', isAutoScrollingLog);
+                const performConsumption = (consumableItem) => {
+                    // --- START OF FIX ---
+                    // Explicitly hide the tooltip as soon as the consumption action starts.
+                    elements.tooltipEl.classList.add('hidden');
+                    // --- END OF FIX ---
+                    
+                    const result = player.consumeItem(gameState, consumableItem.id);
+                    logMessage(elements.gameLogEl, result.message, 'legendary', isAutoScrollingLog);
 
-    if (result.success) {
-        if (result.specialAction === 'showPrestigeView') {
-            prestigeFromToken = true;
-            document.querySelector('.actions-panel').classList.add('hidden');
-            document.querySelector('.upgrades-panel').classList.add('hidden');
-            switchView(elements, 'prestige-view', gameState);
-        }
+                    if (result.success) {
+                        if (result.specialAction === 'showPrestigeView') {
+                            prestigeFromToken = true;
+                            document.querySelector('.actions-panel').classList.add('hidden');
+                            document.querySelector('.upgrades-panel').classList.add('hidden');
+                            switchView(elements, 'prestige-view', gameState);
+                        }
 
-        if (gameState.activeTargetedConsumable) {
-            ui.updateTargetingHighlights(elements, gameState);
-        }
-        fullUIRender();
-        recalculateStats();
-        autoSave();
-    }
-};
-if (item.type === 'consumable') {
-    if (gameState.activeTargetedConsumable) {
-        logMessage(elements.gameLogEl, "You cannot use another item while targeting.", "rare", isAutoScrollingLog);
-        return;
-    }
+                        if (gameState.activeTargetedConsumable) {
+                            ui.updateTargetingHighlights(elements, gameState);
+                        }
+                        fullUIRender();
+                        recalculateStats();
+                        autoSave();
+                    }
+                };
+                if (item.type === 'consumable') {
+                    if (gameState.activeTargetedConsumable) {
+                        logMessage(elements.gameLogEl, "You cannot use another item while targeting.", "rare", isAutoScrollingLog);
+                        return;
+                    }
 
-    const itemBase = CONSUMABLES[item.baseId];
+                    const itemBase = CONSUMABLES[item.baseId];
 
-    if (itemBase && itemBase.requiresConfirmation) {
-        // This item needs a pop-up
-        ui.showConfirmationModal(
-            elements,
-            `Use ${item.name}?`,
-            `<p>${item.description}</p><p>This action is irreversible.</p>`,
-            () => {
-                performConsumption(item);
-            }
-        );
-    } else {
-        // This item can be used instantly
-        performConsumption(item);
-    }
-    return; // End the click handler here
-}
+                    if (itemBase && itemBase.requiresConfirmation) {
+                        // This item needs a pop-up
+                        ui.showConfirmationModal(
+                            elements,
+                            `Use ${item.name}?`,
+                            `<p>${item.description}</p><p>This action is irreversible.</p>`,
+                            () => {
+                                performConsumption(item);
+                            }
+                        );
+                    } else {
+                        // This item can be used instantly
+                        performConsumption(item);
+                    }
+                    return; // End the click handler here
+                }
                 if (gameState.activeTargetedConsumable) {
                     const result = player.applyTargetedConsumable(gameState, item);
                     logMessage(elements.gameLogEl, result.message, result.success ? 'epic' : 'rare', isAutoScrollingLog);
@@ -2643,11 +2648,9 @@ if (item.type === 'consumable') {
                     ui.updateItemInGrid(elements.inventorySlotsEl, item, { salvageSelections: salvageMode.selections });
                 } else {
                     const result = player.equipItem(gameState, item);
-                    // --- START OF FIX ---
-                    // Explicitly hide the tooltip after the equip action,
-                    // as the mouseout event may not fire correctly.
+                    
                     elements.tooltipEl.classList.add('hidden');
-                    // --- END OF FIX ---
+                    
                     if (result.success) {
                         if (result.isPendingRing) {
                             pendingRingEquip = result.item;
