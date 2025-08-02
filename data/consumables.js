@@ -9,6 +9,7 @@
 * icon: Path to the item's image.
 * width/height: Item's size in the inventory grid.
 * description: Player-facing explanation of what the item does.
+* requiresConfirmation: (Optional) If true, a confirmation modal will appear before use.
 * effect: An object describing the item's function.
 *   - type: 'permanentFlag' -> Sets a boolean flag in gameState to true.
 *   - type: 'resource' -> Instantly grants a specified amount of a resource.
@@ -25,6 +26,7 @@ export const CONSUMABLES = {
         icon: 'images/consumables/wisdom_of_the_overworld.png',
         width: 2, height: 2,
         description: "A one-time use scroll from ancient times. When consumed, permanently increases your T1-T4 gems combining success rate from 50% to 60%.",
+        requiresConfirmation: true, // --- ADD THIS LINE ---
         effect: {
             type: 'permanentFlag',
             key: 'wisdomOfTheOverworldUsed'
@@ -37,6 +39,7 @@ export const CONSUMABLES = {
         icon: 'images/consumables/wisdom_of_the_underdark.png',
         width: 2, height: 2,
         description: "A one-time use scroll from a forgotten realm. When consumed, permanently increases your T5-T8 gems combining success rate from 50% to 60%.",
+        requiresConfirmation: true, // --- ADD THIS LINE ---
         effect: {
             type: 'permanentFlag',
             key: 'wisdomOfTheUnderdarkUsed'
@@ -49,6 +52,7 @@ export const CONSUMABLES = {
         icon: 'images/consumables/artisan_drill.png',
         width: 2, height: 2,
         description: "A master craftsman's tool. Use on an item to carve a new socket, up to the item's maximum potential. Requires selecting an item after use.",
+        requiresConfirmation: true, // --- ADD THIS LINE ---
         effect: {
             type: 'targetedItemModifier',
             key: 'addSocket'
@@ -61,6 +65,7 @@ export const CONSUMABLES = {
         icon: 'images/consumables/tome_of_strength.png',
         width: 2, height: 2,
         description: "A book of forgotten power. Consuming it permanently increases your total Click Damage by 5%.",
+        requiresConfirmation: true, // --- ADD THIS LINE ---
         effect: {
             type: 'permanentStat',
             key: 'totalClickDamage',
@@ -74,6 +79,7 @@ export const CONSUMABLES = {
         icon: 'images/consumables/tome_of_agility.png',
         width: 2, height: 2,
         description: "A book of forgotten techniques. Consuming it permanently increases your total DPS by 5%.",
+        requiresConfirmation: true, // --- ADD THIS LINE ---
         effect: {
             type: 'permanentStat',
             key: 'totalDps',
@@ -301,6 +307,7 @@ export const CONSUMABLES = {
         icon: 'images/consumables/prestige_token.png',
         width: 2, height: 2,
         description: "Consuming it allows you to Prestige immediately, regardless of your current level. This does not affect regular Prestige level requirements.",
+        requiresConfirmation: true, // --- ADD THIS LINE ---
         effect: {
             type: 'triggerPrestigeView',
             key: 'prestige'

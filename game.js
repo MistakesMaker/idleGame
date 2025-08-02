@@ -2480,40 +2480,51 @@ document.addEventListener('DOMContentLoaded', () => {
                 ui.updateSocketingHighlights(elements, selectedGemForSocketing, gameState);
             } else {
                 const item = itemOrStack;
-                if (item.type === 'consumable') {
-                    if (gameState.activeTargetedConsumable) {
-                        logMessage(elements.gameLogEl, "You cannot use another item while targeting.", "rare", isAutoScrollingLog);
-                        return;
-                    }
-                    ui.showConfirmationModal(
-                        elements,
-                        `Use ${item.name}?`,
-                        `<p>${item.description}</p><p>This action is irreversible.</p>`,
-                        () => {
-                            const result = player.consumeItem(gameState, item.id);
-                            logMessage(elements.gameLogEl, result.message, 'legendary', isAutoScrollingLog);
+                // Helper function to perform the consumption and UI updates
+const performConsumption = (consumableItem) => {
+    const result = player.consumeItem(gameState, consumableItem.id);
+    logMessage(elements.gameLogEl, result.message, 'legendary', isAutoScrollingLog);
 
-                            if (result.success) {
-                                if (result.specialAction === 'showPrestigeView') {
-                                    prestigeFromToken = true; // <-- ADD THIS LINE
-                                    document.querySelector('.actions-panel').classList.add('hidden');
-                                    document.querySelector('.upgrades-panel').classList.add('hidden');
-                                    switchView(elements, 'prestige-view', gameState);
-                                }
-                                // --- END OF MODIFICATION ---
+    if (result.success) {
+        if (result.specialAction === 'showPrestigeView') {
+            prestigeFromToken = true;
+            document.querySelector('.actions-panel').classList.add('hidden');
+            document.querySelector('.upgrades-panel').classList.add('hidden');
+            switchView(elements, 'prestige-view', gameState);
+        }
 
-                                if (gameState.activeTargetedConsumable) {
-                                    ui.updateTargetingHighlights(elements, gameState);
-                                }
-                                fullUIRender();
-                                recalculateStats();
-                                autoSave();
-                            }
-                        }
-                    );
-                    return;
-                }
+        if (gameState.activeTargetedConsumable) {
+            ui.updateTargetingHighlights(elements, gameState);
+        }
+        fullUIRender();
+        recalculateStats();
+        autoSave();
+    }
+};
+if (item.type === 'consumable') {
+    if (gameState.activeTargetedConsumable) {
+        logMessage(elements.gameLogEl, "You cannot use another item while targeting.", "rare", isAutoScrollingLog);
+        return;
+    }
 
+    const itemBase = CONSUMABLES[item.baseId];
+
+    if (itemBase && itemBase.requiresConfirmation) {
+        // This item needs a pop-up
+        ui.showConfirmationModal(
+            elements,
+            `Use ${item.name}?`,
+            `<p>${item.description}</p><p>This action is irreversible.</p>`,
+            () => {
+                performConsumption(item);
+            }
+        );
+    } else {
+        // This item can be used instantly
+        performConsumption(item);
+    }
+    return; // End the click handler here
+}
                 if (gameState.activeTargetedConsumable) {
                     const result = player.applyTargetedConsumable(gameState, item);
                     logMessage(elements.gameLogEl, result.message, result.success ? 'epic' : 'rare', isAutoScrollingLog);
