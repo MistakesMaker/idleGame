@@ -359,7 +359,12 @@
                      </div>
                 </div>
                 <button id="prestige-advisor-btn" class="hidden">Prestige Advisor</button>
-                <button id="prestige-button" disabled>Prestige Now</button>
+                <!-- START OF MODIFICATION -->
+                <div class="prestige-button-container">
+                    <button id="prestige-button" disabled>Prestige Now</button>
+                    <span id="prestige-help-trigger" class="fas fa-question-circle hidden"></span>
+                </div>
+                <!-- END OF MODIFICATION -->
                 <button id="view-prestige-slots-btn">View Prestige Slots</button>
             </div>
         </div>
@@ -447,12 +452,10 @@
                 <div id="other-settings">
                      <h4>Game</h4>
                      <div class="settings-toggle-group">
-                        <!-- START OF MODIFICATION -->
                         <label for="keep-screen-on-toggle">
                             Keep Screen On
                             <span id="keep-screen-on-tooltip-trigger" class="fas fa-question-circle" style="font-size: 0.8em; color: #bdc3c7; cursor: help;"></span>
                         </label>
-                        <!-- END OF MODIFICATION -->
                         <input type="checkbox" id="keep-screen-on-toggle" class="toggle-switch">
                      </div>
                      <button id="reset-game-btn">Hard Reset Game</button>

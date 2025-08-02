@@ -1747,7 +1747,7 @@ export function showPrestigeAdvisorModal(elements, gameState, switchToPrestigeVi
     const goToForgeBtn = document.getElementById('advisor-goto-forge-btn');
     const goToUpgradesBtn = document.getElementById('advisor-goto-upgrades-btn');
     const closeBtn = document.getElementById('advisor-close-btn');
-    const prestigeBtn = document.getElementById('advisor-prestige-btn');
+    const prestigeBtn = /** @type {HTMLButtonElement} */(document.getElementById('advisor-prestige-btn'));
 
     goToWikiBtn.onclick = () => {
         closeModal();
@@ -1780,11 +1780,20 @@ export function showPrestigeAdvisorModal(elements, gameState, switchToPrestigeVi
 
     closeBtn.onclick = closeModal;
     closeBtn.onclick = closeModal;
+const canPrestige = gameState.currentRunCompletedLevels.includes(gameState.nextPrestigeLevel);
 
+if (canPrestige) {
+    prestigeBtn.disabled = false;
+    prestigeBtn.textContent = 'Take Me to Prestige!';
     prestigeBtn.onclick = () => {
         closeModal();
         switchToPrestigeViewCallback();
     };
+} else {
+    prestigeBtn.disabled = true;
+    prestigeBtn.textContent = 'Prestige Locked';
+    prestigeBtn.onclick = null; // Clear the click handler just in case
+}
 
     backdrop.classList.remove('hidden');
 }
@@ -2744,6 +2753,14 @@ export function updatePrestigeUI(elements, gameState) {
     // --- END OF MODIFICATION ---
     
     (/** @type {HTMLButtonElement} */ (prestigeButton)).disabled = !gameState.currentRunCompletedLevels.includes(nextPrestigeLevel);
+// --- START: Add this block ---
+const prestigeHelpTrigger = document.getElementById('prestige-help-trigger');
+if (prestigeHelpTrigger) {
+    // Show the help icon only if prestige is unlocked AND the player has prestiged at least once.
+    const shouldBeVisible = gameState.unlockedFeatures.prestige && gameState.prestigeCount > 0;
+    prestigeHelpTrigger.classList.toggle('hidden', !shouldBeVisible);
+}
+// --- END: Add this block ---
 }
 
 export function updateAutoProgressToggle(elements, isAutoProgressing) {

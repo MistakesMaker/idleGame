@@ -3227,6 +3227,29 @@ if (keepScreenOnTooltipTrigger) {
                 });
             });
         }
+const prestigeHelpTrigger = document.getElementById('prestige-help-trigger');
+if (prestigeHelpTrigger) {
+    // Click listener (remains the same)
+    addTapListener(prestigeHelpTrigger, () => {
+        showPrestigeAdvisorModal(elements, gameState, () => {
+            document.querySelector('.actions-panel').classList.add('hidden');
+            document.querySelector('.upgrades-panel').classList.add('hidden');
+            switchView(elements, 'prestige-view', gameState);
+            fullUIRender();
+        });
+    });
+
+    // --- START: Add these new listeners ---
+    prestigeHelpTrigger.addEventListener('mouseover', (e) => {
+        if (e.currentTarget instanceof HTMLElement) {
+            showSimpleTooltip(elements, e.currentTarget, "Click to open the Prestige Advisor.");
+        }
+    });
+    prestigeHelpTrigger.addEventListener('mouseout', () => {
+        elements.tooltipEl.classList.add('hidden');
+    });
+    // --- END: Add these new listeners ---
+}
 
         setupLogScrollListeners();
         setupItemTooltipListeners();

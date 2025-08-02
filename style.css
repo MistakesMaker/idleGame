@@ -3077,3 +3077,48 @@ input[type="range"]:focus::-moz-range-thumb {
         border-color: #2ecc71;
     }
 }
+.prestige-button-container {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem; /* 12px - Space between button and icon */
+    width: 100%;
+    margin: 0.3125rem 0; /* Match other buttons */
+}
+
+.prestige-button-container #prestige-button {
+    flex-grow: 1; /* Make the button take all available space */
+    margin: 0;
+}
+
+#prestige-help-trigger {
+    font-size: 1.5em; /* Make the icon a bit larger */
+    color: #bdc3c7;
+    cursor: pointer;
+    transition: color 0.2s ease, transform 0.2s ease;
+    flex-shrink: 0; /* Prevent the icon from shrinking */
+}
+
+#prestige-help-trigger:hover {
+    color: #f1c40f;
+    transform: scale(1.1);
+}
+
+#view-prestige-slots-btn {
+    width: 100%;
+    margin: 0.3125rem 0;
+}
+#advisor-prestige-btn:disabled {
+    background: #7f8c8d;
+    border-bottom-color: #6c7a7b;
+    animation: none;
+    box-shadow: none;
+    transform: none;
+}
+#advisor-close-btn {
+    background: #c0392b;
+    border-bottom-color: #922b21;
+}
+
+#advisor-close-btn:hover {
+    background: #e74c3c;
+}
