@@ -2976,7 +2976,6 @@ input[type="range"]:focus::-moz-range-thumb {
     display: flex;
     justify-content: center;
     align-items: center;
-    backdrop-filter: blur(4px);
 }
 
 #prestige-advisor-modal {
