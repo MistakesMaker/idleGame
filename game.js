@@ -386,9 +386,14 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         if (gameState.activeBuffs) {
             gameState.activeBuffs.forEach(buff => {
-                if (buff.stats?.bonusGold) {
+                // --- START OF MODIFICATION ---
+                if (buff.stats?.bonusGold) { // For buffs like Liquid Luck
                     statBreakdown.goldGain.sources.push({ label: `From ${buff.name}`, value: buff.stats.bonusGold, type: 'additive' });
                 }
+                if (buff.stats?.totalGoldGain) { // For buffs like Gold Boosters
+                    statBreakdown.goldGain.sources.push({ label: `From ${buff.name}`, value: buff.stats.totalGoldGain, type: 'multiplicative' });
+                }
+                // --- END OF MODIFICATION ---
             });
         }
 

@@ -3126,6 +3126,7 @@ export function showStatBreakdownTooltip(elements, statKey, statBreakdown, gameS
     if (statKey === 'goldGain') {
         const sources = data.sources || [];
         
+        // Group sources by their label to combine Luck's bonuses and handle potions
         const groupedSources = new Map();
         sources.forEach(source => {
             if (!groupedSources.has(source.label)) {
@@ -3140,30 +3141,36 @@ export function showStatBreakdownTooltip(elements, statKey, statBreakdown, gameS
             }
         });
 
+        // Display the grouped sources
         groupedSources.forEach((values, label) => {
-            if (label === 'From Luck') {
+            // Case 1: Source provides BOTH types (e.g., Luck)
+            if (values.additive > 0 && values.multiplicative > 0) {
                 const additiveStr = `+${values.additive.toFixed(2)}%`;
                 const multiStr = `+${values.multiplicative.toFixed(2)}% Multi`;
-                // --- THIS IS THE ONLY LINE THAT CHANGED ---
                 const effectiveStr = `<span style="color: #95a5a6;">(+${values.effectiveValue.toFixed(2)}%)</span>`;
                 html += `<li>${label}: ${additiveStr} & ${multiStr} ${effectiveStr}</li>`;
-            } else {
-                if (values.additive > 0) {
-                    html += `<li>${label}: +${values.additive.toFixed(2)}%</li>`;
-                }
+            } 
+            // Case 2: Source provides ONLY additive bonus (e.g., Gear, Prestige)
+            else if (values.additive > 0) {
+                html += `<li>${label}: +${values.additive.toFixed(2)}%</li>`;
+            } 
+            // Case 3: Source provides ONLY multiplicative bonus (e.g., Gold Booster potions)
+            else if (values.multiplicative > 0) {
+                const multiStr = `+${values.multiplicative.toFixed(2)}% Multi`;
+                const effectiveStr = `<span style="color: #95a5a6;">(+${values.effectiveValue.toFixed(2)}%)</span>`;
+                html += `<li>${label}: ${multiStr} ${effectiveStr}</li>`;
             }
         });
 
     } else {
+        // This is the existing logic for all other stats (Click Dmg, DPS, etc.)
         const groupedSources = new Map();
-
         data.base.forEach(source => {
             if (source.value > 0.001) {
                 if (!groupedSources.has(source.label)) groupedSources.set(source.label, {});
                 groupedSources.get(source.label).base = source;
             }
         });
-
         if (data.multipliers) {
             data.multipliers.forEach(multi => {
                 if (multi.flatValue > 0.001) {
@@ -3172,7 +3179,6 @@ export function showStatBreakdownTooltip(elements, statKey, statBreakdown, gameS
                 }
             });
         }
-
         const sortOrder = ["From Prestige", "From Prestige Power", "From Prestige Surge", "From Gear", "From Agility", "From Strength", "From Gold Upgrades"];
         const sortedLabels = Array.from(groupedSources.keys()).sort((a, b) => {
             const indexA = sortOrder.indexOf(a);
@@ -3182,7 +3188,6 @@ export function showStatBreakdownTooltip(elements, statKey, statBreakdown, gameS
             if (indexB !== -1) return 1;
             return a.localeCompare(b);
         });
-        
         sortedLabels.forEach(label => {
             const group = groupedSources.get(label);
             if (group.base) {
@@ -3196,7 +3201,6 @@ export function showStatBreakdownTooltip(elements, statKey, statBreakdown, gameS
                 html += `<li>${multi.label}: +${multi.percent.toFixed(1)}% <span style="color: #95a5a6;">(+${formatNumber(multi.flatValue)})</span></li>`;
             }
         });
-
         if (data.synergy > 0.001) {
             html += `<li class="tooltip-divider"></li>`;
             html += `<li>From Synergy: +${formatNumber(data.synergy)}</li>`;
