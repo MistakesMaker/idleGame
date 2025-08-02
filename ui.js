@@ -535,8 +535,8 @@ export function updateHeroPanel(elements, gameState, heldKeys = new Set()) {
  */
 export function updateStatsPanel(elements, playerStats) {
     const { 
-        clickDamageStatEl, dpsStatEl, bonusGoldStatEl, magicFindStatEl,
-        clickDamageDisplay, dpsDisplay // <-- Now includes elements from the Actions Panel
+        clickDamageStatEl, dpsStatEl, bonusGoldStatEl, totalGoldGainStatEl, magicFindStatEl,
+        clickDamageDisplay, dpsDisplay
     } = elements;
     
     const getNumberTier = (amount) => {
@@ -545,11 +545,9 @@ export function updateStatsPanel(elements, playerStats) {
         return 6;
     };
     
-    // Calculate tiers
     const dpsTier = getNumberTier(playerStats.totalDps);
     const clickTier = getNumberTier(playerStats.totalClickDamage);
     
-    // --- Update Derived Stats Panel ---
     if (dpsStatEl) {
         dpsStatEl.className = `currency-tier-${dpsTier}`;
         dpsStatEl.textContent = formatNumber(playerStats.totalDps);
@@ -561,11 +559,15 @@ export function updateStatsPanel(elements, playerStats) {
     if (bonusGoldStatEl) {
         bonusGoldStatEl.textContent = `${playerStats.bonusGold >= 1000 ? formatNumber(playerStats.bonusGold) : playerStats.bonusGold.toFixed(2)}%`;
     }
+    // --- START OF NEW CODE ---
+    if (totalGoldGainStatEl) {
+        totalGoldGainStatEl.textContent = `${playerStats.totalGoldGain >= 1000 ? formatNumber(playerStats.totalGoldGain) : playerStats.totalGoldGain.toFixed(2)}%`;
+    }
+    // --- END OF NEW CODE ---
     if (magicFindStatEl) {
         magicFindStatEl.textContent = `${playerStats.magicFind >= 1000 ? formatNumber(playerStats.magicFind) : playerStats.magicFind.toFixed(2)}%`;
     }
 
-    // --- Update Actions Panel Stats (ensuring they always match) ---
     if (dpsDisplay) {
         dpsDisplay.className = `currency-tier-${dpsTier}`;
         dpsDisplay.textContent = formatNumber(playerStats.totalDps);
@@ -3142,73 +3144,101 @@ export function showStatBreakdownTooltip(elements, statKey, statBreakdown, gameS
     const data = statBreakdown[statKey];
     const descriptionContent = statDescriptions[statKey];
 
-    let html = `<h4>${descriptionContent.title} Breakdown</h4>`;
+    let html = `<h4>${descriptionContent.title}</h4>`;
     
     if (descriptionContent && descriptionContent.description) {
         html += `<p style="font-size: 0.9em; color: #bdc3c7; margin: 5px 0 10px 0; border-bottom: 1px solid #4a637e; padding-bottom: 10px;">${descriptionContent.description}</p>`;
     }
-   /*if (statKey === 'magicFind') {
-        html += `<p style="font-size: 0.9em; color:  #bdc3c7; margin-top: 0px;">Also increases Scrap Gain from salvaging by the same percentage.</p>`;
-    }*/
     
     html += '<ul>';
 
-    const groupedSources = new Map();
-
-    data.base.forEach(source => {
-        if (source.value > 0.001) {
-            if (!groupedSources.has(source.label)) groupedSources.set(source.label, {});
-            groupedSources.get(source.label).base = source;
-        }
-    });
-
-    if (data.multipliers) {
-        data.multipliers.forEach(multi => {
-            if (multi.flatValue > 0.001) {
-                if (!groupedSources.has(multi.label)) groupedSources.set(multi.label, {});
-                groupedSources.get(multi.label).multiplier = multi;
+    if (statKey === 'goldGain') {
+        const sources = data.sources || [];
+        
+        // Group sources by their label to combine Luck's bonuses and handle potions
+        const groupedSources = new Map();
+        sources.forEach(source => {
+            if (!groupedSources.has(source.label)) {
+                groupedSources.set(source.label, { additive: 0, multiplicative: 0, effectiveValue: 0 });
+            }
+            const group = groupedSources.get(source.label);
+            if (source.type === 'additive') {
+                group.additive += source.value;
+            } else if (source.type === 'multiplicative') {
+                group.multiplicative += source.value;
+                group.effectiveValue += source.effectiveValue || 0;
             }
         });
-    }
 
-    const sortOrder = ["From Prestige", "From Prestige Power", "From Prestige Surge", "From Gear", "From Agility", "From Strength", "From Gold Upgrades"];
-    const sortedLabels = Array.from(groupedSources.keys()).sort((a, b) => {
-        const indexA = sortOrder.indexOf(a);
-        const indexB = sortOrder.indexOf(b);
-        if (indexA !== -1 && indexB !== -1) return indexA - indexB;
-        if (indexA !== -1) return -1;
-        if (indexB !== -1) return 1;
-        return a.localeCompare(b);
-    });
-    
-    sortedLabels.forEach(label => {
-        const group = groupedSources.get(label);
-        if (group.base) {
-            const source = group.base;
-            
-            // --- START OF FIX ---
-            // This line specifically hides the "Base: +1" from the Click Damage tooltip only.
-            if (statKey === 'clickDamage' && source.label === 'Base') return;
-            // --- END OF FIX ---
+        // Display the grouped sources
+        groupedSources.forEach((values, label) => {
+            // Case 1: Source provides BOTH types (e.g., Luck)
+            if (values.additive > 0 && values.multiplicative > 0) {
+                const additiveStr = `+${values.additive.toFixed(2)}%`;
+                const multiStr = `+${values.multiplicative.toFixed(2)}% Multi`;
+                const effectiveStr = `<span style="color: #95a5a6;">(+${values.effectiveValue.toFixed(2)}%)</span>`;
+                html += `<li>${label}: ${additiveStr} & ${multiStr} ${effectiveStr}</li>`;
+            } 
+            // Case 2: Source provides ONLY additive bonus (e.g., Gear, Prestige)
+            else if (values.additive > 0) {
+                html += `<li>${label}: +${values.additive.toFixed(2)}%</li>`;
+            } 
+            // Case 3: Source provides ONLY multiplicative bonus (e.g., Gold Booster potions)
+            else if (values.multiplicative > 0) {
+                const multiStr = `+${values.multiplicative.toFixed(2)}% Multi`;
+                const effectiveStr = `<span style="color: #95a5a6;">(+${values.effectiveValue.toFixed(2)}%)</span>`;
+                html += `<li>${label}: ${multiStr} ${effectiveStr}</li>`;
+            }
+        });
 
-            const valueStr = source.isPercent ? `+${source.value.toFixed(2)}%` : `+${formatNumber(source.value)}`;
-            html += `<li>${source.label}: ${valueStr}</li>`;
+    } else {
+        // This is the existing logic for all other stats (Click Dmg, DPS, etc.)
+        const groupedSources = new Map();
+        data.base.forEach(source => {
+            if (source.value > 0.001) {
+                if (!groupedSources.has(source.label)) groupedSources.set(source.label, {});
+                groupedSources.get(source.label).base = source;
+            }
+        });
+        if (data.multipliers) {
+            data.multipliers.forEach(multi => {
+                if (multi.flatValue > 0.001) {
+                    if (!groupedSources.has(multi.label)) groupedSources.set(multi.label, {});
+                    groupedSources.get(multi.label).multiplier = multi;
+                }
+            });
         }
-        if (group.multiplier) {
-            const multi = group.multiplier;
-            html += `<li>${multi.label}: +${multi.percent.toFixed(1)}% <span style="color: #95a5a6;">(+${formatNumber(multi.flatValue)})</span></li>`;
+        const sortOrder = ["From Prestige", "From Prestige Power", "From Prestige Surge", "From Gear", "From Agility", "From Strength", "From Gold Upgrades"];
+        const sortedLabels = Array.from(groupedSources.keys()).sort((a, b) => {
+            const indexA = sortOrder.indexOf(a);
+            const indexB = sortOrder.indexOf(b);
+            if (indexA !== -1 && indexB !== -1) return indexA - indexB;
+            if (indexA !== -1) return -1;
+            if (indexB !== -1) return 1;
+            return a.localeCompare(b);
+        });
+        sortedLabels.forEach(label => {
+            const group = groupedSources.get(label);
+            if (group.base) {
+                const source = group.base;
+                if (statKey === 'clickDamage' && source.label === 'Base') return;
+                const valueStr = source.isPercent ? `+${source.value.toFixed(2)}%` : `+${formatNumber(source.value)}`;
+                html += `<li>${label}: ${valueStr}</li>`;
+            }
+            if (group.multiplier) {
+                const multi = group.multiplier;
+                html += `<li>${multi.label}: +${multi.percent.toFixed(1)}% <span style="color: #95a5a6;">(+${formatNumber(multi.flatValue)})</span></li>`;
+            }
+        });
+        if (data.synergy > 0.001) {
+            html += `<li class="tooltip-divider"></li>`;
+            html += `<li>From Synergy: +${formatNumber(data.synergy)}</li>`;
         }
-    });
-
-    if (data.synergy > 0.001) {
-        html += `<li class="tooltip-divider"></li>`;
-        html += `<li>From Synergy: +${formatNumber(data.synergy)}</li>`;
     }
     
     html += '</ul>';
     statTooltipEl.innerHTML = html;
 }
-
 /**
  * Renders the Hunts modal UI, including main tabs and shop sub-tabs.
  * @param {DOMElements} elements
