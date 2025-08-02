@@ -1082,8 +1082,9 @@ const finalDungeonItems = {
         canHaveSockets: true,
         maxSockets: 2,
         possibleStats: [
-            { key: STATS.DPS.key, min: 12000, max: 29000 },
-            { key: STATS.GOLD_GAIN.key, min: 30, max: 90 },
+            // Re-balanced based on Level 420 budget
+            { key: STATS.DPS.key, min: 1, max: 960000 },
+            { key: STATS.GOLD_GAIN.key, min: 1, max: 1250 },
         ]
     },
     EYE_OF_THE_DRAGON: {
@@ -1096,9 +1097,10 @@ const finalDungeonItems = {
         canHaveSockets: true,
         maxSockets: 1,
         possibleStats: [
-            { key: STATS.CLICK_DAMAGE.key, min: 500, max: 1300 },
-            { key: STATS.DPS.key, min: 10000, max: 26000 },
-            { key: STATS.MAGIC_FIND.key, min: 2, max: 6 },
+            // Re-balanced based on Level 420 budget
+            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 80000 },
+            { key: STATS.DPS.key, min: 1, max: 480000 },
+            { key: STATS.MAGIC_FIND.key, min: 1, max: 15 },
         ]
     },
     DRAGONFIRE_LOOP: {
@@ -1111,9 +1113,10 @@ const finalDungeonItems = {
         canHaveSockets: true,
         maxSockets: 2,
         possibleStats: [
-            { key: STATS.CLICK_DAMAGE.key, min: 2000, max: 6000 },
-            { key: STATS.DPS.key, min: 9000, max: 14000 },
-            { key: STATS.GOLD_GAIN.key, min: 25, max: 75 },
+            // Re-balanced based on Level 420 budget
+            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 120000 },
+            { key: STATS.DPS.key, min: 1, max: 240000 },
+            { key: STATS.GOLD_GAIN.key, min: 1, max: 625 },
         ]
     },
     DRAGONSCALE_BELT: {
@@ -1126,8 +1129,9 @@ const finalDungeonItems = {
         canHaveSockets: true,
         maxSockets: 1,
         possibleStats: [
-            { key: STATS.DPS.key, min: 8000, max: 24000 },
-            { key: STATS.CLICK_DAMAGE.key, min: 200, max: 1500 },
+            // Re-balanced based on Level 420 budget
+            { key: STATS.DPS.key, min: 1, max: 480000 },
+            { key: STATS.CLICK_DAMAGE.key, min: 1, max: 48000 },
         ]
     },
 };
