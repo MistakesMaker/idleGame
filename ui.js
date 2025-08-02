@@ -2338,12 +2338,41 @@ export function drawMapPaths(mapContainerEl, realm, viewingZoneId, gameState) {
 export function populateWikiFilters(elements, allItemTypes, allStatKeys) {
     const { wikiTypeFilter, wikiStatsFilterContainer } = elements;
 
-    allItemTypes.forEach(type => {
-        const option = document.createElement('option');
-        option.value = type;
-        option.textContent = type.charAt(0).toUpperCase() + type.slice(1);
-        wikiTypeFilter.appendChild(option);
-    });
+// --- START: Replace the forEach loop with this ---
+const sortedTypes = Array.from(allItemTypes);
+
+// Define a custom sort order. Items not in this list will be sorted alphabetically at the end.
+const sortOrder = [
+    'sword', 'shield', 'helmet', 'platebody', 'platelegs', 'belt', 'ring', 'necklace',
+    'Uniques', 'Gems', 'Consumables'
+];
+
+sortedTypes.sort((a, b) => {
+    const indexA = sortOrder.indexOf(a);
+    const indexB = sortOrder.indexOf(b);
+
+    if (indexA !== -1 && indexB !== -1) {
+        // Both items are in the custom sort order
+        return indexA - indexB;
+    } else if (indexA !== -1) {
+        // Only 'a' is in the custom sort order, so it comes first
+        return -1;
+    } else if (indexB !== -1) {
+        // Only 'b' is in the custom sort order, so it comes first
+        return 1;
+    } else {
+        // Neither are in the custom sort order, sort them alphabetically
+        return a.localeCompare(b);
+    }
+});
+
+sortedTypes.forEach(type => {
+    const option = document.createElement('option');
+    option.value = type;
+    option.textContent = type.charAt(0).toUpperCase() + type.slice(1);
+    wikiTypeFilter.appendChild(option);
+});
+// --- END: Replacement block ---
 
     wikiStatsFilterContainer.innerHTML = '';
     Array.from(allStatKeys).sort().forEach(statKey => {
