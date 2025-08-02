@@ -3150,6 +3150,35 @@ if (item.type === 'consumable') {
         });
 
         const goldUpgradeTooltipTrigger = document.getElementById('gold-upgrade-tooltip-trigger');
+// --- START: Add this new block ---
+const keepScreenOnTooltipTrigger = document.getElementById('keep-screen-on-tooltip-trigger');
+if (keepScreenOnTooltipTrigger) {
+    keepScreenOnTooltipTrigger.addEventListener('mouseover', (e) => {
+        const tooltipHTML = `
+        <div class="item-header" style="color: #f1c40f;">Keep Screen On</div>
+        <p style="margin: 5px 0 0 0; font-size: 0.9em; max-width: 250px;">
+            Prevents your device's screen from automatically turning off. This allows you to leave the game running actively without interruption.
+            <br><br>
+            <span style="color: #e74c3c;">Note: This may increase battery usage.</span>
+        </p>
+    `;
+
+        elements.tooltipEl.className = 'hidden simple-tooltip rare';
+        elements.tooltipEl.innerHTML = tooltipHTML;
+
+        const rect = keepScreenOnTooltipTrigger.getBoundingClientRect();
+        elements.tooltipEl.style.left = `${rect.left - (elements.tooltipEl.offsetWidth / 2)}px`;
+        elements.tooltipEl.style.top = `${rect.bottom + 5}px`;
+        elements.tooltipEl.classList.remove('hidden');
+    });
+
+    keepScreenOnTooltipTrigger.addEventListener('mouseout', () => {
+        elements.tooltipEl.classList.add('hidden');
+    });
+}
+// --- END: Add this new block ---
+
+// --- Prestige Advisor Button Listener ---
         if (goldUpgradeTooltipTrigger) {
             goldUpgradeTooltipTrigger.addEventListener('mouseover', (e) => {
                 const tooltipHTML = `

@@ -249,7 +249,6 @@
             <div id="wiki-view" class="view">
                 <h3>Wiki & Item Index</h3>
                 <p class="small-text-hint">Discover items and where to find them. Data is revealed as you progress through the realms.</p>
-                <p class="small-text-hint">Hint: Click on an item or its drop source to instantly travel to that location and begin your hunt.</p>
                 <div id="wiki-controls">
                     <div class="wiki-filter-row">
                         <input type="text" id="wiki-search-input" placeholder="Search by item name...">
@@ -448,7 +447,12 @@
                 <div id="other-settings">
                      <h4>Game</h4>
                      <div class="settings-toggle-group">
-                        <label for="keep-screen-on-toggle">Keep Screen On</label>
+                        <!-- START OF MODIFICATION -->
+                        <label for="keep-screen-on-toggle">
+                            Keep Screen On
+                            <span id="keep-screen-on-tooltip-trigger" class="fas fa-question-circle" style="font-size: 0.8em; color: #bdc3c7; cursor: help;"></span>
+                        </label>
+                        <!-- END OF MODIFICATION -->
                         <input type="checkbox" id="keep-screen-on-toggle" class="toggle-switch">
                      </div>
                      <button id="reset-game-btn">Hard Reset Game</button>
