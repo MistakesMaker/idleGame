@@ -141,8 +141,9 @@ document.addEventListener('DOMContentLoaded', () => {
     let activeTargetedConsumable = null;
     const MODIFIER_KEYS = ['q', 'w', 'e', 'r'];
     const damagePopupPool = [];
-        let damagePopupPoolIndex = 0;
-
+    let damagePopupPoolIndex = 0;
+    let justUnlockedWikiOffline = false;
+    let justUnlockedForgeOffline = false;
     /** @type {DOMElements} */
     let elements = {};
 
@@ -1164,6 +1165,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function calculateOfflineProgress() {
+        justUnlockedWikiOffline = false;
+        justUnlockedForgeOffline = false;
         if (!gameState.lastSaveTimestamp) return;
 
         const offlineDurationSeconds = (Date.now() - gameState.lastSaveTimestamp) / 1000;
@@ -1303,6 +1306,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Check for Wiki Unlock
         if (!gameState.unlockedFeatures.wiki && gameState.completedLevels.includes(24)) {
             gameState.unlockedFeatures.wiki = true;
+            justUnlockedWikiOffline = true;
             const p = document.createElement('p');
             p.innerHTML = `<i class="fas fa-book"></i> <b>Wiki Unlocked!</b>`;
             p.className = 'legendary unlock-summary';
@@ -1319,6 +1323,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // --- NEW OFFLINE FORGE UNLOCK ---
             gameState.unlockedFeatures.forge = true;
+            justUnlockedForgeOffline = true;
             const forgeP = document.createElement('p');
             forgeP.innerHTML = `<i class="fas fa-hammer"></i> <b>The Forge is Unlocked!</b>`;
             forgeP.className = 'legendary unlock-summary';
@@ -2810,12 +2815,12 @@ if (item.type === 'consumable') {
 
             // --- NEW: Handle UI updates after offline unlocks ---
             // If the forge was just unlocked offline, update the UI accordingly.
-            if (gameState.unlockedFeatures.forge) {
+            if (justUnlockedForgeOffline) { // <-- CHANGE THIS LINE
                 ui.updateTabVisibility(gameState);
                 ui.flashTab('forge-view');
             }
             // If the wiki was just unlocked offline...
-            if (gameState.unlockedFeatures.wiki) {
+            if (justUnlockedWikiOffline) { // <-- CHANGE THIS LINE
                 ui.updateTabVisibility(gameState);
                 ui.flashTab('wiki-view');
             }
