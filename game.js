@@ -3395,7 +3395,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            const cost = totalSpentPoints * 100;
+            const cost = totalSpentPoints * 10;
 
             ui.showConfirmationModal(
                 elements,
