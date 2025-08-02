@@ -1397,9 +1397,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         const rect = element.getBoundingClientRect();
-        elements.tooltipEl.style.left = `${rect.right + 10}px`;
-        elements.tooltipEl.style.top = `${rect.top}px`;
+        // Show it first to get accurate dimensions, then position it.
         elements.tooltipEl.classList.remove('hidden');
+        ui.positionTooltip(elements.tooltipEl, rect);
     }
 
     function showRingComparisonTooltip(pendingItem, equippedItem, element) {
@@ -1410,9 +1410,9 @@ document.addEventListener('DOMContentLoaded', () => {
         elements.tooltipEl.innerHTML = ui.createItemComparisonTooltipHTML(pendingItem, equippedItem, null);
 
         const rect = element.getBoundingClientRect();
-        elements.tooltipEl.style.left = `${rect.right + 10}px`;
-        elements.tooltipEl.style.top = `${rect.top}px`;
+        // Show it first to get accurate dimensions, then position it.
         elements.tooltipEl.classList.remove('hidden');
+        ui.positionTooltip(elements.tooltipEl, rect);
     }
 
     /** Generic mouseout handler for item grids. */
@@ -2592,6 +2592,11 @@ if (item.type === 'consumable') {
                     ui.updateItemInGrid(elements.inventorySlotsEl, item, { salvageSelections: salvageMode.selections });
                 } else {
                     const result = player.equipItem(gameState, item);
+                    // --- START OF FIX ---
+                    // Explicitly hide the tooltip after the equip action,
+                    // as the mouseout event may not fire correctly.
+                    elements.tooltipEl.classList.add('hidden');
+                    // --- END OF FIX ---
                     if (result.success) {
                         if (result.isPendingRing) {
                             pendingRingEquip = result.item;
@@ -3538,12 +3543,16 @@ if (prestigeHelpTrigger) {
 
             ui.showStatBreakdownTooltip(elements, statKey, statBreakdown, gameState, DERIVED_STAT_DESCRIPTIONS);
             const rect = p.getBoundingClientRect();
-            elements.statTooltipEl.style.left = `${rect.left}px`;
-            elements.statTooltipEl.style.top = `${rect.bottom + 5}px`;
+            // --- START OF FIX 2 (REPLACE THIS BLOCK) ---
+            // OLD CODE:
+            // elements.statTooltipEl.style.left = `${rect.left}px`;
+            // elements.statTooltipEl.style.top = `${rect.bottom + 5}px`;
+            // elements.statTooltipEl.classList.remove('hidden');
+
+            // NEW CODE:
             elements.statTooltipEl.classList.remove('hidden');
-        });
-        derivedStatsArea.addEventListener('mouseout', () => {
-            elements.statTooltipEl.classList.add('hidden');
+            ui.positionTooltip(elements.statTooltipEl, rect);
+            // --- END OF FIX 2 ---
         });
     }
 

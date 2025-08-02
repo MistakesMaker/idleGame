@@ -3119,10 +3119,10 @@ export function showStatBreakdownTooltip(elements, statKey, statBreakdown, gameS
         html += `<p style="font-size: 0.9em; color: #bdc3c7; margin: 5px 0 10px 0; border-bottom: 1px solid #4a637e; padding-bottom: 10px;">${descriptionContent.description}</p>`;
     }
     // --- START: Add this new block ---
-if (statKey === 'magicFind') {
-    html += `<p style="font-size: 0.9em; color: #2ecc71; margin-top: -5px;">Also increases Scrap Gain from salvaging by the same percentage.</p>`;
-}
-// --- END: Add this new block ---
+    if (statKey === 'magicFind') {
+        html += `<p style="font-size: 0.9em; color: #2ecc71; margin-top: -5px;">Also increases Scrap Gain from salvaging by the same percentage.</p>`;
+    }
+    // --- END: Add this new block ---
     
     html += '<ul>';
 
@@ -3566,9 +3566,9 @@ export function showHuntShopTooltip(elements, targetEl, itemId) {
     `;
 
     const rect = targetEl.getBoundingClientRect();
-    elements.tooltipEl.style.left = `${rect.left}px`;
-    elements.tooltipEl.style.top = `${rect.bottom + 5}px`;
+    // Show it first to get accurate dimensions, then position it.
     elements.tooltipEl.classList.remove('hidden');
+    positionTooltip(elements.tooltipEl, rect);
 }
 
 /**
@@ -3767,8 +3767,7 @@ export function showSimpleTooltip(elements, targetEl, text) {
     
     // Recalculate position after content is set to get the correct width
     tooltipEl.classList.remove('hidden'); 
-    tooltipEl.style.left = `${rect.left + (rect.width / 2) - (tooltipEl.offsetWidth / 2)}px`;
-    tooltipEl.style.top = `${rect.bottom + 5}px`;
+    positionTooltip(tooltipEl, rect);
 }
 
 // --- START: New Function ---
@@ -3899,4 +3898,52 @@ export function showPromptModal(title, message, defaultValue, onConfirm) {
     backdrop.classList.remove('hidden');
     inputEl.focus();
     inputEl.select();
+}
+
+/**
+ * Calculates and applies the optimal on-screen position for the tooltip.
+ * It prevents the tooltip from rendering outside the viewport.
+ * @param {HTMLElement} tooltipEl The tooltip element itself.
+ * @param {DOMRect} targetRect The bounding rectangle of the element being hovered.
+ */
+export function positionTooltip(tooltipEl, targetRect) {
+    const tooltipWidth = tooltipEl.offsetWidth;
+    const tooltipHeight = tooltipEl.offsetHeight;
+    const windowWidth = window.innerWidth;
+    const windowHeight = window.innerHeight;
+    const margin = 10; // Space from the cursor and screen edges
+
+    let left, top;
+
+    // --- Horizontal Positioning ---
+    // Try positioning to the right first
+    if (targetRect.right + tooltipWidth + margin < windowWidth) {
+        left = targetRect.right + margin;
+    } 
+    // If it doesn't fit, position to the left
+    else {
+        left = targetRect.left - tooltipWidth - margin;
+    }
+    // Final check to prevent going off the left edge (for very wide tooltips)
+    if (left < margin) {
+        left = margin;
+    }
+
+
+    // --- Vertical Positioning ---
+    // Try positioning at the same top level
+    top = targetRect.top;
+    
+    // If it goes off the bottom of the screen...
+    if (top + tooltipHeight + margin > windowHeight) {
+        // ...move it up so its bottom aligns with the screen bottom.
+        top = windowHeight - tooltipHeight - margin;
+    }
+    // Final check to prevent going off the top edge
+    if (top < margin) {
+        top = margin;
+    }
+
+    tooltipEl.style.left = `${left}px`;
+    tooltipEl.style.top = `${top}px`;
 }
