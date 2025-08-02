@@ -3118,18 +3118,14 @@ export function showStatBreakdownTooltip(elements, statKey, statBreakdown, gameS
     if (descriptionContent && descriptionContent.description) {
         html += `<p style="font-size: 0.9em; color: #bdc3c7; margin: 5px 0 10px 0; border-bottom: 1px solid #4a637e; padding-bottom: 10px;">${descriptionContent.description}</p>`;
     }
-    // --- START: Add this new block ---
     if (statKey === 'magicFind') {
         html += `<p style="font-size: 0.9em; color: #2ecc71; margin-top: -5px;">Also increases Scrap Gain from salvaging by the same percentage.</p>`;
     }
-    // --- END: Add this new block ---
     
     html += '<ul>';
 
-    // --- START OF NEW LOGIC ---
     const groupedSources = new Map();
 
-    // Group all sources by their label
     data.base.forEach(source => {
         if (source.value > 0.001) {
             if (!groupedSources.has(source.label)) groupedSources.set(source.label, {});
@@ -3146,7 +3142,6 @@ export function showStatBreakdownTooltip(elements, statKey, statBreakdown, gameS
         });
     }
 
-    // Define a custom sort order for the labels
     const sortOrder = ["From Prestige", "From Prestige Power", "From Prestige Surge", "From Gear", "From Agility", "From Strength", "From Gold Upgrades"];
     const sortedLabels = Array.from(groupedSources.keys()).sort((a, b) => {
         const indexA = sortOrder.indexOf(a);
@@ -3154,14 +3149,19 @@ export function showStatBreakdownTooltip(elements, statKey, statBreakdown, gameS
         if (indexA !== -1 && indexB !== -1) return indexA - indexB;
         if (indexA !== -1) return -1;
         if (indexB !== -1) return 1;
-        return a.localeCompare(b); // Fallback for any other sources
+        return a.localeCompare(b);
     });
     
-    // Build the HTML from the sorted and grouped data
     sortedLabels.forEach(label => {
         const group = groupedSources.get(label);
         if (group.base) {
             const source = group.base;
+            
+            // --- START OF FIX ---
+            // This line specifically hides the "Base: +1" from the Click Damage tooltip only.
+            if (statKey === 'clickDamage' && source.label === 'Base') return;
+            // --- END OF FIX ---
+
             const valueStr = source.isPercent ? `+${source.value.toFixed(2)}%` : `+${formatNumber(source.value)}`;
             html += `<li>${source.label}: ${valueStr}</li>`;
         }
@@ -3170,7 +3170,6 @@ export function showStatBreakdownTooltip(elements, statKey, statBreakdown, gameS
             html += `<li>${multi.label}: +${multi.percent.toFixed(1)}% <span style="color: #95a5a6;">(+${formatNumber(multi.flatValue)})</span></li>`;
         }
     });
-    // --- END OF NEW LOGIC ---
 
     if (data.synergy > 0.001) {
         html += `<li class="tooltip-divider"></li>`;

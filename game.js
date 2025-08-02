@@ -3464,18 +3464,16 @@ if (prestigeHelpTrigger) {
         };
         const attributesArea = document.getElementById('attributes-area');
 
+        // This listener for the top attributes section is already correct.
         attributesArea.addEventListener('mouseover', (event) => {
             if (!(event.target instanceof Element)) return;
-
             const statSpan = event.target.closest('.attribute-row > span');
             if (!statSpan) return;
 
             const row = statSpan.closest('.attribute-row');
             if (!(row instanceof HTMLElement)) return;
-
             const attributeKey = row.dataset.attribute;
             if (!attributeKey) return;
-
             const content = statTooltipContent[attributeKey];
             if (!content) return;
 
@@ -3485,9 +3483,8 @@ if (prestigeHelpTrigger) {
 
             elements.statTooltipEl.innerHTML = html;
             const rect = statSpan.getBoundingClientRect();
-            elements.statTooltipEl.style.left = `${rect.right + 10}px`;
-            elements.statTooltipEl.style.top = `${rect.top}px`;
             elements.statTooltipEl.classList.remove('hidden');
+            ui.positionTooltip(elements.statTooltipEl, rect);
         });
         attributesArea.addEventListener('mouseout', (event) => {
             if (!(event.target instanceof Element)) return;
@@ -3496,6 +3493,7 @@ if (prestigeHelpTrigger) {
                 elements.statTooltipEl.classList.add('hidden');
             }
         });
+        
         addTapListener(elements.resetAttributesBtn, () => {
             const { strength, agility, luck } = gameState.hero.attributes;
             const totalSpentPoints = strength + agility + luck;
@@ -3527,12 +3525,18 @@ if (prestigeHelpTrigger) {
             );
         });
 
-
         const derivedStatsArea = document.getElementById('derived-stats-area');
-        derivedStatsArea.addEventListener('mouseover', (event) => {
-            if (!(event.target instanceof Element)) return;
+        
+        // --- START OF FIX: Use mouseenter to lock position ---
+        derivedStatsArea.addEventListener('mouseenter', (event) => {
+            if (!(event.target instanceof Element) || !(event instanceof MouseEvent)) return;
             const p = event.target.closest('p');
             if (!p) return;
+
+            // This check ensures the tooltip only shows when hovering the actual content
+            if (event.target === p) {
+                return;
+            }
 
             let statKey;
             if (p.querySelector('#click-damage-stat')) statKey = 'clickDamage';
@@ -3542,65 +3546,16 @@ if (prestigeHelpTrigger) {
             else return;
 
             ui.showStatBreakdownTooltip(elements, statKey, statBreakdown, gameState, DERIVED_STAT_DESCRIPTIONS);
-            const rect = p.getBoundingClientRect();
-            // --- START OF FIX 2 (REPLACE THIS BLOCK) ---
-            // OLD CODE:
-            // elements.statTooltipEl.style.left = `${rect.left}px`;
-            // elements.statTooltipEl.style.top = `${rect.bottom + 5}px`;
-            // elements.statTooltipEl.classList.remove('hidden');
+            
+            const rect = event.target.getBoundingClientRect(); 
 
-            // NEW CODE:
             elements.statTooltipEl.classList.remove('hidden');
             ui.positionTooltip(elements.statTooltipEl, rect);
-            // --- END OF FIX 2 ---
-        });
-    }
-
-    function setupLootTooltipListeners() {
-        const lootTableEl = elements.lootTableDisplayEl;
-        lootTableEl.addEventListener('mouseover', (event) => {
-            if (!(event.target instanceof Element)) return;
-            const entryEl = event.target.closest('.loot-table-entry');
-            if (!(entryEl instanceof HTMLElement)) return;
-
-            const lootIndexStr = entryEl.dataset.lootIndex;
-            if (!lootIndexStr) return;
-            const lootIndex = parseInt(lootIndexStr, 10);
-
-            const itemBase = currentMonster.data.lootTable[lootIndex]?.item;
-            if (!itemBase) return;
-            elements.tooltipEl.className = 'hidden';
-
-            if (itemBase.type === 'consumable') {
-                elements.tooltipEl.classList.add('legendary');
-                elements.tooltipEl.innerHTML = `
-                    <div class="item-header"><span class="legendary">${itemBase.name}</span></div>
-                    <ul><li>${itemBase.description}</li></ul>
-                `;
-            } else {
-                if (itemBase.tier >= 1) {
-                    elements.tooltipEl.innerHTML = ui.createGemTooltipHTML(itemBase);
-                    elements.tooltipEl.classList.add('gem-quality');
-                }
-                else if (isShiftPressed) {
-                    if (itemBase.type === 'ring') {
-                        elements.tooltipEl.innerHTML = ui.createLootComparisonTooltipHTML(itemBase, gameState.equipment.ring1, gameState.equipment.ring2);
-                    } else {
-                        const equippedItem = gameState.equipment[itemBase.type];
-                        elements.tooltipEl.innerHTML = ui.createLootComparisonTooltipHTML(itemBase, equippedItem);
-                    }
-                } else {
-                    elements.tooltipEl.innerHTML = ui.createLootTableTooltipHTML(itemBase);
-                }
-            }
-
-            const rect = entryEl.getBoundingClientRect();
-            elements.tooltipEl.style.left = `${rect.right + 10}px`;
-            elements.tooltipEl.style.top = `${rect.top}px`;
-            elements.tooltipEl.classList.remove('hidden');
-        });
-        lootTableEl.addEventListener('mouseout', () => {
-            elements.tooltipEl.classList.add('hidden');
+        }, true); // Use capture phase for better reliability
+        
+        // --- START OF FIX: Use mouseleave to correctly hide the tooltip ---
+        derivedStatsArea.addEventListener('mouseleave', () => {
+             elements.statTooltipEl.classList.add('hidden');
         });
     }
 
@@ -3826,6 +3781,52 @@ if (prestigeHelpTrigger) {
         });
 
     }
+    function setupLootTooltipListeners() {
+        const lootTableEl = elements.lootTableDisplayEl;
+        lootTableEl.addEventListener('mouseover', (event) => {
+            if (!(event.target instanceof Element)) return;
+            const entryEl = event.target.closest('.loot-table-entry');
+            if (!(entryEl instanceof HTMLElement)) return;
+
+            const lootIndexStr = entryEl.dataset.lootIndex;
+            if (!lootIndexStr) return;
+            const lootIndex = parseInt(lootIndexStr, 10);
+
+            const itemBase = currentMonster.data.lootTable[lootIndex]?.item;
+            if (!itemBase) return;
+            elements.tooltipEl.className = 'hidden';
+
+            if (itemBase.type === 'consumable') {
+                elements.tooltipEl.classList.add('legendary');
+                elements.tooltipEl.innerHTML = `
+                    <div class="item-header"><span class="legendary">${itemBase.name}</span></div>
+                    <ul><li>${itemBase.description}</li></ul>
+                `;
+            } else {
+                if (itemBase.tier >= 1) {
+                    elements.tooltipEl.innerHTML = ui.createGemTooltipHTML(itemBase);
+                    elements.tooltipEl.classList.add('gem-quality');
+                }
+                else if (isShiftPressed) {
+                    if (itemBase.type === 'ring') {
+                        elements.tooltipEl.innerHTML = ui.createLootComparisonTooltipHTML(itemBase, gameState.equipment.ring1, gameState.equipment.ring2);
+                    } else {
+                        const equippedItem = gameState.equipment[itemBase.type];
+                        elements.tooltipEl.innerHTML = ui.createLootComparisonTooltipHTML(itemBase, equippedItem);
+                    }
+                } else {
+                    elements.tooltipEl.innerHTML = ui.createLootTableTooltipHTML(itemBase);
+                }
+            }
+
+            const rect = entryEl.getBoundingClientRect();
+            elements.tooltipEl.classList.remove('hidden');
+            ui.positionTooltip(elements.tooltipEl, rect);
+        });
+        lootTableEl.addEventListener('mouseout', () => {
+            elements.tooltipEl.classList.add('hidden');
+        });
+    }    
 
     function showUnlockConfirmationModal(slotName) {
         elements.modalTitleEl.textContent = 'Confirm Unlock';
