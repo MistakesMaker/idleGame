@@ -413,6 +413,9 @@ export function monsterDefeated(gameState, playerStats, currentMonster) {
     const goldMasteryBonus = PERMANENT_UPGRADES.GOLD_MASTERY.bonusPerLevel * goldMasteryLevel;
     let goldAfterMastery = baseGoldDrop * (1 + (goldMasteryBonus / 100));
 
+    // --- START OF MODIFICATION (Replace the old line) ---
+    // The playerStats.bonusGold now contains the combined multiplicative total,
+    // so we can use it directly here.
     let finalGoldGained = Math.ceil(goldAfterMastery * (1 + (playerStats.bonusGold / 100)));
     xpGained = Math.ceil(xpGained);
 
