@@ -1718,24 +1718,24 @@ document.addEventListener('DOMContentLoaded', () => {
                 return false;
             }
 
-            // Filter 4: Type Dropdown (applies differently based on search)
-            const filterType = wikiState.filters.type;
+// Filter 4: Type Dropdown (applies differently based on search)
+const filterType = wikiState.filters.type;
+const skipTypeFilter = hasSearchText && filterType === "";
 
-            // This is the special case: if the user is searching with the default "All Gear" type,
-            // we should NOT filter by type, allowing the search to find anything.
-            const skipTypeFilter = hasSearchText && filterType === "";
-
-            if (!skipTypeFilter) {
-                if (filterType === 'Gems') {
-                    if (!GEMS[itemBase.id]) return false;
-                } else if (filterType === 'Consumables') {
-                    if (itemBase.type !== 'consumable') return false;
-                } else if (filterType) { // A specific gear type like "sword"
-                    if (itemBase.type !== filterType) return false;
-                } else { // The default "All Gear" (value: "") is active and there's no search text
-                    if (GEMS[itemBase.id] || itemBase.type === 'consumable') return false;
-                }
-            }
+if (!skipTypeFilter) {
+    if (filterType === 'Uniques') {
+        if (!itemBase.isUnique) return false;
+    } else if (filterType === 'Gems') {
+        if (!GEMS[itemBase.id]) return false;
+    } else if (filterType === 'Consumables') {
+        if (itemBase.type !== 'consumable') return false;
+    } else if (filterType) { // A specific gear type like "sword"
+        if (itemBase.type !== filterType) return false;
+    } else { // The default "All Gear" (value: "") is active and there's no search text
+        // When "All Gear" is selected, hide Gems and Consumables. Unique gear IS gear, so it should be shown.
+        if (GEMS[itemBase.id] || itemBase.type === 'consumable') return false;
+    }
+}
 
             // --- END OF NEW, CORRECTED LOGIC ---
 
@@ -2102,21 +2102,26 @@ document.addEventListener('DOMContentLoaded', () => {
         migrateStackablePositions(gameState.gems);
         migrateStackablePositions(gameState.consumables);
         buildWikiDatabase();
-        // --- START OF MODIFICATION ---
-        // Group all gems under a single "Gem" type for the filter dropdown.
-        const allItemTypes = new Set();
-        wikiState.data.forEach(d => {
-            if (d.base.type) { // Ensure the item has a type
-                if (GEMS[d.base.id]) {
-                    allItemTypes.add('Gems');
-                } else if (d.base.type === 'consumable') {
-                    allItemTypes.add('Consumables');
-                } else {
-                    allItemTypes.add(d.base.type);
-                }
-            }
-        });
-        // --- END OF MODIFICATION ---
+// --- START OF MODIFICATION ---
+const allItemTypes = new Set();
+wikiState.data.forEach(d => {
+    // Add 'Uniques' if the item is unique
+    if (d.base.isUnique) {
+        allItemTypes.add('Uniques');
+    }
+    
+    // Add the item's primary category
+    if (d.base.type) { 
+        if (GEMS[d.base.id]) {
+            allItemTypes.add('Gems');
+        } else if (d.base.type === 'consumable') {
+            allItemTypes.add('Consumables');
+        } else {
+            allItemTypes.add(d.base.type);
+        }
+    }
+});
+// --- END OF MODIFICATION ---
         const allStatKeys = new Set();
         wikiState.data.forEach(d => {
             d.base.possibleStats?.forEach(stat => allStatKeys.add(stat.key));
