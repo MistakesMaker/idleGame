@@ -52,7 +52,7 @@ export const HUNT_SHOP_INVENTORY = {
         { id: 'POTION_BOSS_SLAYER', cost: 25, unlock: 100 },
         { id: 'POTION_GIANTS_STRENGTH', cost: 25, unlock: 150 },
         { id: 'POTION_FUSED_POWER', cost: 40, unlock: 150 },
-        { id: 'POTION_DEADLY_FOCUS', cost: 30, unlock: 200 },
+        { id: 'POTION_DEADLY_FOCUS', cost: 40, unlock: 200 },
         { id: 'POTION_RAGING_AUTOMATON', cost: 50, unlock: 300 },
     ],
     
