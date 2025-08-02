@@ -321,7 +321,6 @@ const greenMeadowsItems = {
         type: 'necklace',
         icon: 'images/icons/amulet_of_power.png',
         width: 2, height: 2,
-        isUnique: true,
         possibleStats: [
             { key: STATS.CLICK_DAMAGE.key, min: 200, max: 250 },
             { key: STATS.DPS.key, min: 400, max: 750 }
@@ -385,7 +384,6 @@ const greenMeadowsItems = {
         canHaveSockets: true,
         maxSockets: 1,
         width: 1, height: 1,
-        isUnique: true,
         possibleStats: [
             { key: STATS.GOLD_GAIN.key, min: 25, max: 50 },
             { key: STATS.MAGIC_FIND.key, min: 1.5, max: 4.5 },
@@ -449,7 +447,6 @@ const orcVolcanoItems = {
         type: 'belt',
         icon: 'images/icons/belt_of_the_giant.png',
         width: 2, height: 1,
-        isUnique: true,
         possibleStats: [
             { key: STATS.DPS.key, min: 2000, max: 6000 },
             { key: STATS.CLICK_DAMAGE.key, min: 50, max: 550 },
@@ -617,6 +614,7 @@ const orcVolcanoItems = {
         type: 'helmet',
         icon: 'images/icons/helm_of_valor.png',
         width: 2, height: 2,
+        isUnique: true,
         canHaveSockets: true,
         maxSockets: 2,
         possibleStats: [
@@ -880,7 +878,6 @@ const undeadDesertItems = {
         type: 'ring',
         icon: 'images/icons/signet_of_the_leech.png',
         width: 1, height: 1,
-        isUnique: true,
         possibleStats: [
             { key: STATS.DPS.key, min: 2000, max: 6000 },
             { key: STATS.MAGIC_FIND.key, min: 1, max: 3 },
