@@ -113,6 +113,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentViewingZoneId = 'world';
     let isMapRenderPending = false; // Flag to control map re-rendering
 
+    let isHealthBarUpdatePending = false;
     let currentMonster = { name: "Slime", data: MONSTERS.SLIME };
     let playerStats = { baseClickDamage: 1, baseDps: 0, totalClickDamage: 1, totalDps: 0, bonusGold: 0, magicFind: 0, bonusXp: 0 };
     let statBreakdown = {};
@@ -139,6 +140,8 @@ document.addEventListener('DOMContentLoaded', () => {
     let heldKeys = new Set();
     let activeTargetedConsumable = null;
     const MODIFIER_KEYS = ['q', 'w', 'e', 'r'];
+    const damagePopupPool = [];
+        let damagePopupPoolIndex = 0;
 
     /** @type {DOMElements} */
     let elements = {};
@@ -708,6 +711,24 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 }
 
+    function requestHealthBarUpdate() {
+        // If an update is already scheduled for the next frame, do nothing.
+        if (isHealthBarUpdatePending) {
+            return;
+        }
+        // Mark that an update is now scheduled.
+        isHealthBarUpdatePending = true;
+
+        // Ask the browser to run our update logic before the next repaint.
+        requestAnimationFrame(() => {
+            // Perform the actual, expensive UI update.
+            ui.updateMonsterHealthBar(elements, gameState.monster);
+            
+            // Reset the flag so the next frame's clicks can schedule a new update.
+            isHealthBarUpdatePending = false;
+        });
+    }
+
     function attack(baseDamage, isClick = false) {
         if (gameState.monster.hp <= 0) return;
 
@@ -732,16 +753,18 @@ document.addEventListener('DOMContentLoaded', () => {
         gameState.monster.hp -= finalDamage;
 
         if (isClick) {
-            ui.showDamagePopup(elements.popupContainerEl, finalDamage, isCrit);
+            damagePopupPoolIndex = ui.showDamagePopup(elements.popupContainerEl, finalDamage, isCrit, false, damagePopupPool, damagePopupPoolIndex);
         } else {
+            // DPS popup logic remains unchanged
             ui.showDpsPopup(elements.popupContainerEl, finalDamage, isCrit);
         }
 
         if (Math.random() * 100 < playerStats.multiStrikeChance) {
             gameState.monster.hp -= finalDamage;
             if (isClick) {
-                ui.showDamagePopup(elements.popupContainerEl, finalDamage, isCrit, true);
+                damagePopupPoolIndex = ui.showDamagePopup(elements.popupContainerEl, finalDamage, isCrit, true, damagePopupPool, damagePopupPoolIndex);
             } else {
+                // DPS multi-strike popup logic remains unchanged
                 ui.showDpsPopup(elements.popupContainerEl, finalDamage, isCrit, true);
             }
         }
@@ -798,7 +821,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (gameState.monster.hp <= 0) {
             handleMonsterDefeated();
         }
-        ui.updateMonsterHealthBar(elements, gameState.monster);
+        requestHealthBarUpdate();
     }
 
     function updateActiveBuffs() {
@@ -831,7 +854,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 handleMonsterDefeated();
             }
             if (gameState.monster.hp > 0) {
-                ui.updateMonsterHealthBar(elements, gameState.monster);
+                requestHealthBarUpdate();
             }
         }
         updateActiveBuffs();
@@ -1851,8 +1874,22 @@ document.addEventListener('DOMContentLoaded', () => {
     function checkDailyResets() {
         player.checkDailyResets(gameState);
     }
+
+    function initializeDamagePopupPool() {
+        const POOL_SIZE = 30; // We can create 30 popups to handle very fast clicks.
+        for (let i = 0; i < POOL_SIZE; i++) {
+            const popup = document.createElement('div');
+            popup.style.position = 'absolute'; // Popups always need this
+            popup.style.pointerEvents = 'none'; // And this
+            popup.style.userSelect = 'none';
+            popup.style.display = 'none'; // Start hidden
+            elements.popupContainerEl.appendChild(popup);
+            damagePopupPool.push(popup);
+        }
+    }
     function main() {
         elements = ui.initDOMElements();
+        initializeDamagePopupPool();
         sound_manager.initSounds(); // Initialize the sound manager
         const gridContainersToObserve = [
             elements.inventorySlotsEl,

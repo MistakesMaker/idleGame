@@ -1491,17 +1491,25 @@ export function getItemIcon(type) {
     }
 }
 
-export function showDamagePopup(popupContainerEl, damage, isCrit = false, isMultiStrike = false) {
-    const popup = document.createElement('div');
+export function showDamagePopup(popupContainerEl, damage, isCrit = false, isMultiStrike = false, pool = [], poolIndex = 0) {
+    if (!pool || pool.length === 0) return 0; // Safety check
+
+    const popup = pool[poolIndex];
+    
+    // Reset any previous animation classes
+    popup.className = '';
+    
     let content = `-${formatNumber(damage)}`;
     if (isMultiStrike) {
         content += ' (Multi!)';
     }
     popup.textContent = content;
-    popup.className = 'damage-popup';
+    popup.className = 'damage-popup'; // Apply the base class for styling
     if (isCrit) {
         popup.classList.add('crit');
     }
+    
+    // Position it
     if (isMultiStrike) {
         popup.style.left = `${50 + Math.random() * 20}%`;
         popup.style.top = `${20 + Math.random() * 20}%`;
@@ -1510,8 +1518,16 @@ export function showDamagePopup(popupContainerEl, damage, isCrit = false, isMult
         popup.style.top = `${40 + Math.random() * 20}%`;
     }
     
-    popupContainerEl.appendChild(popup);
-    setTimeout(() => popup.remove(), 1000);
+    // Make it visible and start the animation
+    popup.style.display = 'block';
+    
+    // After the animation, instead of removing it, just hide it.
+    setTimeout(() => {
+        popup.style.display = 'none';
+    }, 1000);
+
+    // Return the next index for the pool
+    return (poolIndex + 1) % pool.length;
 }
 
 export function showGoldPopup(popupContainerEl, gold) {
