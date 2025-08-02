@@ -1165,6 +1165,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function calculateOfflineProgress() {
+        const forceCampingMode = true;
         justUnlockedWikiOffline = false;
         justUnlockedForgeOffline = false;
         if (!gameState.lastSaveTimestamp) return;
@@ -1183,8 +1184,8 @@ document.addEventListener('DOMContentLoaded', () => {
         let lastLevelBeforeStop = gameState.currentFightingLevel;
         const startingLevel = gameState.hero.level; // Capture starting hero level
 
-        if (!gameState.isAutoProgressing) {
-            // --- "CAMPING" MODE (REWORKED) ---
+        if (!gameState.isAutoProgressing || forceCampingMode) {
+         // --- "CAMPING" MODE (REWORKED) ---
             const level = gameState.currentFightingLevel;
             const { newMonster, newMonsterState } = logic.generateMonster(level);
 
