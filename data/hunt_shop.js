@@ -119,12 +119,12 @@ export const HUNT_SHOP_INVENTORY = {
         {
             id: 'TOME_OF_STRENGTH',
             cost: 500, 
-            unlock: 200, 
+            unlock: 300, 
         },
         {
             id: 'TOME_OF_AGILITY',
             cost: 500,
-            unlock: 200
+            unlock: 300
         }
     ],
 };
