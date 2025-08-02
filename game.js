@@ -173,7 +173,7 @@ document.addEventListener('DOMContentLoaded', () => {
         },
         magicFind: {
             title: 'Magic Find',
-            description: 'Improves the rarity of the items that drop. Quaranteed legendaries at 100%.'
+            description: 'Improves the rarity of the items that drop. Guaranteed legendaries at 100%.<br>Also increases Scrap Gain from salvaging by the same percentage.'
         }
     };
 
